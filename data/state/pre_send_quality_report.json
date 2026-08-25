@@ -1,30 +1,203 @@
 {
-  "status": "failed",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 1 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair completed with honest unresolved non-factual findings: operations=1, prose=0",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-08-24",
-  "pipeline_run_id": "20260824T080140+0100",
-  "digest_sha256": "73a22af476f86bc1f7d529adfb552934b991eedf4f9ee63cd84681e2a7de15e1",
-  "duration_seconds": 67.247,
-  "confidence": 0.0,
+  "run_date_london": "2026-08-25",
+  "pipeline_run_id": "20260825T080134+0100",
+  "digest_sha256": "49e2952b9b783901adbe41d291d839de6e82c2a288876ff0c1222a61eba6d41d",
+  "duration_seconds": 105.963,
+  "confidence": 0.85,
   "critical_errors": [
     {
       "line_index": 3,
       "section": "Свежие новости",
+      "problem": "Энди Бернэм не является премьер-министром.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 20,
+      "section": "Футбол",
+      "problem": "Неверная информация о клубе, за который играет Алехандро Гарначо.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 26,
+      "section": "Городской радар",
+      "problem": "Неправильное название нового хосписа.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 28,
+      "section": "IT и бизнес",
+      "problem": "Название города указано неверно.",
+      "risk": "geo",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 33,
+      "section": "Дальние анонсы",
+      "problem": "Событие не в Greater Manchester.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 42,
+      "section": "Дальние анонсы",
+      "problem": "Событие не в Greater Manchester.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 43,
+      "section": "Дальние анонсы",
+      "problem": "Событие не в Greater Manchester.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 44,
+      "section": "Дальние анонсы",
+      "problem": "Событие не в Greater Manchester.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 45,
+      "section": "Дальние анонсы",
+      "problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 10,
+      "section": "Свежие новости",
       "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'murder' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
+      "problem": "critical source fact dropped in translation: 'shooting' (weapon_violence/who/what) has no Russian rendering in the shipped line",
       "suggested_action": "repair",
-      "completeness_concept": "homicide"
+      "completeness_concept": "weapon_violence"
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "line_index": 3,
+      "section": "Свежие новости",
+      "action": "patch",
+      "replacement_text": "• Мэр Большого Манчестера Энди Бернэм заявил, что в сентябре планирует поездку в США для лоббирования у президента Трампа увеличения поддержки Украины. Это будет его первый визит в Америку с момента вступления в должность в июле, и он надеется, что поездка совпадет с заседанием Генеральной Ассамблеи ООН в Нью-Йорке.",
+      "reason": "Энди Бернэм является мэром Большого Манчестера, а не премьер-министром.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 20,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• Алехандро Гарначо провёл всего четыре минуты на поле за Манчестер Юнайтед в их поражении 0-4 от Брайтона, что вызывает беспокойство у экспертов.",
+      "reason": "Гарначо играет за Манчестер Юнайтед, а не за Астон Виллу.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 26,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Креативное агентство Truth Creative завершило ребрендинг для бывшего хосписа Святой Анны, который теперь называется хоспис Моя Коул.",
+      "reason": "Исправление названия нового хосписа на правильное.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 28,
+      "section": "IT и бизнес",
+      "action": "patch",
+      "replacement_text": "• Библиотека Ройтона в Олдхэме временно закрыта с 24 августа 2026 года для ремонта пола, дата повторного открытия не указана.",
+      "reason": "Название города указано неверно.",
+      "risk": "geo"
+    },
+    {
+      "line_index": 29,
+      "section": "IT и бизнес",
+      "action": "keep",
+      "reason": "Информация корректна и соответствует источнику.",
+      "risk": "factual",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 30,
+      "section": "IT и бизнес",
+      "action": "keep",
+      "reason": "Информация корректна и соответствует источнику.",
+      "risk": "factual",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 32,
+      "section": "Business/tech события для тебя",
+      "action": "patch",
+      "replacement_text": "• Сетевое мероприятие в Стокпорте пройдет 8 сентября 2026 года с 8:30 до 10:30; бесплатно для членов, £22 для не членов. Место проведения: Edgeley Park, Stockport County FC.",
+      "reason": "Добавлено место проведения для большей ясности.",
+      "risk": "product"
+    },
+    {
+      "line_index": 33,
+      "section": "Дальние анонсы",
+      "action": "strip",
+      "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 42,
+      "section": "Дальние анонсы",
+      "action": "strip",
+      "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 43,
+      "section": "Дальние анонсы",
+      "action": "strip",
+      "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 44,
+      "section": "Дальние анонсы",
+      "action": "strip",
+      "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 45,
+      "section": "Дальние анонсы",
+      "action": "strip",
+      "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 49,
+      "section": "Билеты / Ticket Radar",
+      "action": "patch",
+      "replacement_text": "• The Neighbourhood THE WORLD TOUR — 1 сентября, Co-op Live. Билеты и время указаны на официальной странице.",
+      "reason": "Исправление опечатки в названии тура.",
+      "risk": "format"
+    }
+  ],
   "warnings": [
-    "all judge calls failed: 12 failure(s)"
+    "В разделе 'Общественный транспорт сегодня' много информации о транспортных изменениях, но нет явного указания на то, как это может повлиять на поездки сегодня. Возможно, стоит добавить более явные указания на влияние на текущие поездки.",
+    "В строке 32 не указано место проведения мероприятия, что может затруднить понимание для читателей.",
+    "Опечатка в названии тура The Neighbourhood: 'THE WOURLD TOUR' вместо 'THE WORLD TOUR'.",
+    "Секция 'Что важно сегодня' не достигла минимального порога в 3 элемента.",
+    "Секция 'Русскоязычные концерты и стендап UK' отсутствует, не достигнув минимального порога в 1 элемент.",
+    "Секция 'Еда, открытия и рынки' содержит только 1 элемент, что ниже минимального порога в 3 элемента."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -33,14 +206,16 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 9,
+      "Общественный транспорт сегодня": 5,
       "Что важно сегодня": 2,
       "Футбол": 3,
       "Городской радар": 5,
+      "Еда, открытия и рынки": 1,
       "IT и бизнес": 3,
-      "Дальние анонсы": 2,
-      "Крупные концерты вне GM": 3,
-      "Русскоязычные концерты и стендап UK": 2
+      "Business/tech события для тебя": 2,
+      "Дальние анонсы": 13,
+      "Билеты / Ticket Radar": 5,
+      "Крупные концерты вне GM": 5
     },
     "core_counts": {
       "Погода": 1,
@@ -48,79 +223,75 @@
       "Свежие новости": 9,
       "Главная история дня": 1,
       "Городской радар": 5,
-      "Билеты / Ticket Radar": 0,
-      "Русскоязычные концерты и стендап UK": 2,
-      "Еда, открытия и рынки": 0,
-      "Business/tech события для тебя": 0,
+      "Билеты / Ticket Radar": 5,
+      "Русскоязычные концерты и стендап UK": 0,
+      "Еда, открытия и рынки": 1,
+      "Business/tech события для тебя": 2,
       "Футбол": 3
     },
-    "ticket_items": 5,
-    "core_items": 21,
+    "ticket_items": 10,
+    "core_items": 24,
     "writer_quality_counts": {
-      "included_candidates": 44,
-      "rendered_candidates": 40,
+      "included_candidates": 59,
+      "rendered_candidates": 55,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
-      "dropped_missing_draft_line": 1,
+      "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 1,
-      "replaced_from_plan_backup": 2,
-      "removed_with_reason": 2
+      "dropped_low_quality": 3,
+      "replaced_from_plan_backup": 1,
+      "removed_with_reason": 3
     },
     "source_health_counts": {
-      "ok": 111,
-      "partial": 0,
+      "ok": 106,
+      "partial": 2,
       "stale": 10,
-      "empty": 9,
-      "failed": 1,
-      "zero_yield": 80,
+      "empty": 11,
+      "failed": 2,
+      "zero_yield": 77,
       "no_contribution_breakdown": {
-        "fetch_failed": 1,
-        "all_rejected": 80,
-        "idle_no_items": 35
+        "fetch_failed": 2,
+        "all_rejected": 77,
+        "idle_no_items": 28
       },
       "zero_contribution_by_stage": {
-        "selected": 40,
-        "written": 40,
-        "parsed": 35,
-        "fetched": 1
+        "written": 43,
+        "selected": 34,
+        "parsed": 28,
+        "fetched": 2
       },
       "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 2 item(s), emergency floor 3",
-      "Билеты / Ticket Radar: 0 item(s), emergency floor 2",
-      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "Business/tech события для тебя: 0 item(s), emergency floor 1"
+      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
+      "Еда, открытия и рынки: 1 item(s), emergency floor 3"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [],
+    "warnings": [
+      "patch for line 20 has unchecked number/date token(s): 0",
+      "patch for line 32 has unchecked number/date token(s): 10:30, 8:30"
+    ],
     "can_apply_actions": true,
-    "action_count": 0,
-    "model_unavailable_fallback": {
-      "status": "ran",
-      "mode": "model_unavailable_fallback",
-      "defect_count": 0,
-      "findings": []
-    }
+    "action_count": 13
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 40,
-    "matched_lines": 40,
-    "applicable_lines": 2,
+    "checked_lines": 55,
+    "matched_lines": 55,
+    "applicable_lines": 1,
     "unmatched_lines": 0,
     "critical_omission_count": 1,
     "critical_omissions": [
       {
-        "line_index": 3,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/missing-murder-three-days-no-34476281",
-        "concept": "homicide",
-        "obligation": "charge/verdict/victim",
-        "source_hit": "murder"
+        "line_index": 10,
+        "source_url_key": "bbc.com/news/articles/c07le9ylrrko",
+        "concept": "weapon_violence",
+        "obligation": "who/what",
+        "source_hit": "shooting"
       }
     ],
     "noncritical_omissions": [],
@@ -132,65 +303,411 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 1,
-    "attempted": 1,
-    "applied": 1,
-    "model_patch_applied": 0,
-    "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 0,
-    "stripped": 1,
-    "unresolved": 0,
+    "requested": 13,
+    "attempted": 11,
+    "applied": 11,
+    "model_patch_applied": 2,
+    "deterministic_rewrite_used": 1,
+    "reserve_replacement_used": 1,
+    "stripped": 7,
+    "unresolved": 1,
     "blocking_unresolved": 0,
-    "resolved": 1,
-    "resolved_in_place": 0,
-    "resolved_by_replacement": 0,
-    "resolved_by_removal": 1,
-    "fact_lock_rejected": 0,
-    "enrich_attempted": 1,
+    "resolved": 8,
+    "resolved_in_place": 4,
+    "resolved_by_replacement": 1,
+    "resolved_by_removal": 3,
+    "fact_lock_rejected": 1,
+    "enrich_attempted": 11,
     "post_check_errors": [],
-    "geo_contract_rejected": [],
+    "geo_contract_rejected": [
+      {
+        "line_index": 28,
+        "section": "IT и бизнес",
+        "geo_scope": "gm",
+        "reason": "Название города указано неверно.",
+        "gm_anchor_present": true
+      }
+    ],
     "source_link_metadata_rejected": [],
     "actions": [
       {
         "line_index": 3,
         "section": "Свежие новости",
+        "requested_action": "patch",
+        "reason": "Энди Бернэм является мэром Большого Манчестера, а не премьер-министром.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Энди Бернэм не является премьер-министром.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "last_24h-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-prime-minister-andy-burnham-says-34511682-f7675afef004",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/prime-minister-andy-burnham-says-34511682",
+        "original_html": "• Премьер-министр Энди Бернэм заявил, что в сентябре планирует поездку в США для лоббирования у президента Трампа увеличения поддержки Украины. Это будет его первый визит в Америку с момента вступления в должность в июле, и он надеется, что поездка совпадет с заседанием Генеральной Ассамблеи ООН в Нью-Йорке. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/prime-minister-andy-burnham-says-34511682\">MEN</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 20,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Гарначо играет за Манчестер Юнайтед, а не за Астон Виллу.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неверная информация о клубе, за который играет Алехандро Гарначо.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "football-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-alejandro-garnacho-villa-man-utd-34511507-b36af7153572",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/alejandro-garnacho-villa-man-utd-34511507",
+        "original_html": "• Алехандро Гарначо провёл всего четыре минуты на поле за Астон Виллу в их поражении 0-4 от Брайтона, что вызывает беспокойство у экспертов. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/alejandro-garnacho-villa-man-utd-34511507\">MEN Manchester United</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 26,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Исправление названия нового хосписа на правильное.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неправильное название нового хосписа.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "city_watch-07",
+        "candidate_fingerprint": "url-prolificnorth-co-uk-news-manchester-agency-completes-rebrand-for-former-st-annes-hospice-ddfe9d6fb1a2",
+        "original_url_identity": "prolificnorth.co.uk/news/manchester-agency-completes-rebrand-for-former-st-annes-hospice",
+        "original_html": "• Креативное агентство Truth Creative завершило ребрендинг для бывшего хосписа Святой Анны, который теперь называется хоспис Моя Коль. <a href=\"https://prolificnorth.co.uk/news/manchester-agency-completes-rebrand-for-former-st-annes-hospice\">Prolific North Manchester</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 29,
+        "section": "IT и бизнес",
+        "requested_action": "keep",
+        "reason": "Информация корректна и соответствует источнику.",
+        "risk": "factual",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "tech_business-02",
+        "candidate_fingerprint": "url-oldham-gov-uk-news-article-2951-royton-library-temporarily-closed-for-essential-building-works-d9ffc867f140",
+        "original_url_identity": "oldham.gov.uk/news/article/2951/royton_library_temporarily_closed_for_essential_building_works",
+        "original_html": "• Библиотека Ройтона временно закрыта для проведения необходимых строительных работ; дата повторного открытия пока не установлена. <a href=\"https://oldham.gov.uk/news/article/2951/royton_library_temporarily_closed_for_essential_building_works\">Oldham Council</a>",
+        "keep_rejected": "known_factual_error",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 30,
+        "section": "IT и бизнес",
+        "requested_action": "keep",
+        "reason": "Информация корректна и соответствует источнику.",
+        "risk": "factual",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "tech_business-03",
+        "candidate_fingerprint": "url-prolificnorth-co-uk-news-local-agency-launches-new-corporate-website-for-imperial-leather-and-carex-maker-08b56cc9f9e4",
+        "original_url_identity": "prolificnorth.co.uk/news/local-agency-launches-new-corporate-website-for-imperial-leather-and-carex-maker",
+        "original_html": "• Цифровое агентство First Internet из Манчестера запустило новый корпоративный сайт для компании PZ Cussons, производителя Imperial Leather и Carex в августе 2026 года. <a href=\"https://prolificnorth.co.uk/news/local-agency-launches-new-corporate-website-for-imperial-leather-and-carex-maker\">Prolific North Manchester</a>",
+        "keep_rejected": "known_factual_error",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 32,
+        "section": "Business/tech события для тебя",
+        "requested_action": "patch",
+        "reason": "Добавлено место проведения для большей ясности.",
+        "risk": "product",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "professional_events-02",
+        "candidate_fingerprint": "event-event-networking-networking-south-stockport-september-tuesday-8-sep-8-30am-10-30am-2026-09-08-stockport-82cc4e9b0071",
+        "original_url_identity": "gmchamber.co.uk/events/networking-south-stockport-september",
+        "original_html": "• Сетевое мероприятие в Стокпорте пройдет 8 сентября 2026 года с 8:30 до 10:30; бесплатно для членов, £22 для не членов. <a href=\"https://gmchamber.co.uk/events/networking-south-stockport-september\">GM Chamber Events</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 33,
+        "section": "Дальние анонсы",
+        "requested_action": "strip",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие не в Greater Manchester.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "future_announcements-01",
+        "candidate_fingerprint": "event-event-what-s-love-got-to-do-with-it-the-ultimate-tribute-to-tina-turner-2026-09-19-the-auditorium-liverpool-d56e45d5c511",
+        "original_url_identity": "ticketmaster.co.uk/whats-love-got-to-do-with-liverpool-19-09-2026/event/3700631DA0A0117B",
+        "original_html": "• <b>What's Love Got to do With it?</b> — 19 сентября, The Auditorium, Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/whats-love-got-to-do-with-liverpool-19-09-2026/event/3700631DA0A0117B\">Ticketmaster</a>",
+        "backup_outcome": "backup_chain_exhausted",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 42,
+        "section": "Дальние анонсы",
+        "requested_action": "strip",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие не в Greater Manchester.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "future_announcements-10",
+        "candidate_fingerprint": "event-event-marillion-haunt-the-woods-2026-09-27-liverpool-philharmonic-hall-ec9c6d4ccd8b",
+        "original_url_identity": "ticketmaster.co.uk/marillion-haunt-the-woods-liverpool-27-09-2026/event/1F00636E97B06323",
+        "original_html": "• <b>Marillion + Haunt the Woods</b> — 27 сентября, Liverpool Philharmonic Hall. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/marillion-haunt-the-woods-liverpool-27-09-2026/event/1F00636E97B06323\">Ticketmaster</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 43,
+        "section": "Дальние анонсы",
+        "requested_action": "strip",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие не в Greater Manchester.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "future_announcements-11",
+        "candidate_fingerprint": "event-event-joe-jackson-hope-and-fury-tour-2026-2026-10-05-liverpool-philharmonic-hall-5280ea00a3f3",
+        "original_url_identity": "ticketmaster.co.uk/joe-jackson-hope-and-fury-tour-liverpool-05-10-2026/event/1F006366C6FC74E5",
+        "original_html": "• <b>JOE JACKSON</b> — 5 октября, Liverpool Philharmonic Hall. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/joe-jackson-hope-and-fury-tour-liverpool-05-10-2026/event/1F006366C6FC74E5\">Ticketmaster</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 44,
+        "section": "Дальние анонсы",
+        "requested_action": "strip",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие не в Greater Manchester.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "future_announcements-12",
+        "candidate_fingerprint": "event-event-jane-mcdonald-living-the-dream-2026-09-11-m-s-bank-arena-liverpool-13917f0cffaf",
+        "original_url_identity": "ticketmaster.co.uk/jane-mcdonald-living-the-dream-liverpool-11-09-2026/event/3700635F93A783BD",
+        "original_html": "• <b>Jane McDonald</b> — 11 сентября, M&S Bank Arena Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/jane-mcdonald-living-the-dream-liverpool-11-09-2026/event/3700635F93A783BD\">Ticketmaster</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 45,
+        "section": "Дальние анонсы",
+        "requested_action": "strip",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "future_announcements-13",
+        "candidate_fingerprint": "event-event-the-beat-dance-crazed-too-uk-tour-2026-10-07-o2-academy-liverpool-310c6499e802",
+        "original_url_identity": "ticketmaster.co.uk/the-beat-dance-crazed-too-uk-liverpool-07-10-2026/event/3E006371365DDF22",
+        "original_html": "• <b>The Beat</b> — 7 октября, O2 Academy Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-beat-dance-crazed-too-uk-liverpool-07-10-2026/event/3E006371365DDF22\">Ticketmaster</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 49,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "patch",
+        "reason": "Исправление опечатки в названии тура.",
+        "risk": "format",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "deterministic_rewrite",
+        "plan_slot_id": "ticket_radar-04",
+        "candidate_fingerprint": "event-event-the-neighbourhood-the-wourld-tour-plus-special-guests-nessa-barrett-noise-dept-tue-1-sep-2-2026-09-01-co-op-live-d28cf065b216",
+        "original_url_identity": "cooplive.com/events/the-neighbourhood-4dd3",
+        "original_html": "• <b>The Neighbourhood THE WOURLD TOUR</b> — 1 сентября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/the-neighbourhood-4dd3\">Co-op Live</a>",
+        "model_replacement_rejected": "fact_lock: the neighbourhood the world tour",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 10,
+        "section": "Свежие новости",
         "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'murder' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
+        "reason": "critical source fact dropped in translation: 'shooting' (weapon_violence/who/what) has no Russian rendering in the shipped line",
         "risk": "translation",
         "critical_error": true,
         "critical_problem": "",
-        "completeness_concept": "homicide",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-missing-murder-three-days-no-34476281-492114239a41",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/missing-murder-three-days-no-34476281",
-        "original_html": "• Спустя десять лет после исчезновения 25-летнего Майкла Мартина в Salford его отец и детективы GMP объявили о беспрецедентной награде в £50 000 за информацию. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/missing-murder-three-days-no-34476281\">MEN</a>",
-        "backup_outcome": "backup_chain_exhausted",
-        "removal_reason": "fact_lock_failed",
+        "completeness_concept": "weapon_violence",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-08",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c07le9ylrrko-d658b8ef74cf",
+        "original_url_identity": "bbc.com/news/articles/c07le9ylrrko",
+        "original_html": "• Мать Люси Харрисон, убитой в Техасе в январе 2025 года, собирается поехать в США, чтобы призвать прокуроров возобновить расследование после того, как большое жюри отказалось предъявить обвинения её отцу. <a href=\"https://bbc.co.uk/news/articles/c07le9ylrrko\">BBC Manchester</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-flower-arranging-class-descends-chaos-34506307-a16ce85f319c",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::critical source fact dropped in translation: 'murder' (homicide/charge/verdict/victim) has no russian rendering in the shipped line",
+        "group_key": "свежие новости::энди бернэм является мэром большого манчестера, а не премьер-министром.",
         "actions": [
           {
             "line_index": 3,
             "section": "Свежие новости",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'murder' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
-            "risk": "translation",
+            "requested_action": "patch",
+            "reason": "Энди Бернэм является мэром Большого Манчестера, а не премьер-министром.",
+            "risk": "factual",
             "critical_error": true,
+            "critical_problem": "Энди Бернэм не является премьер-министром.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-prime-minister-andy-burnham-says-34511682-f7675afef004",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/prime-minister-andy-burnham-says-34511682",
+            "original_html": "• Премьер-министр Энди Бернэм заявил, что в сентябре планирует поездку в США для лоббирования у президента Трампа увеличения поддержки Украины. Это будет его первый визит в Америку с момента вступления в должность в июле, и он надеется, что поездка совпадет с заседанием Генеральной Ассамблеи ООН в Нью-Йорке. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/prime-minister-andy-burnham-says-34511682\">MEN</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 3,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::гарначо играет за манчестер юнайтед, а не за астон виллу.",
+        "actions": [
+          {
+            "line_index": 20,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Гарначо играет за Манчестер Юнайтед, а не за Астон Виллу.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неверная информация о клубе, за который играет Алехандро Гарначо.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-alejandro-garnacho-villa-man-utd-34511507-b36af7153572",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/alejandro-garnacho-villa-man-utd-34511507",
+            "original_html": "• Алехандро Гарначо провёл всего четыре минуты на поле за Астон Виллу в их поражении 0-4 от Брайтона, что вызывает беспокойство у экспертов. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/alejandro-garnacho-villa-man-utd-34511507\">MEN Manchester United</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 20,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::исправление названия нового хосписа на правильное.",
+        "actions": [
+          {
+            "line_index": 26,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Исправление названия нового хосписа на правильное.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильное название нового хосписа.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "city_watch-07",
+            "candidate_fingerprint": "url-prolificnorth-co-uk-news-manchester-agency-completes-rebrand-for-former-st-annes-hospice-ddfe9d6fb1a2",
+            "original_url_identity": "prolificnorth.co.uk/news/manchester-agency-completes-rebrand-for-former-st-annes-hospice",
+            "original_html": "• Креативное агентство Truth Creative завершило ребрендинг для бывшего хосписа Святой Анны, который теперь называется хоспис Моя Коль. <a href=\"https://prolificnorth.co.uk/news/manchester-agency-completes-rebrand-for-former-st-annes-hospice\">Prolific North Manchester</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 26,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "it и бизнес::информация корректна и соответствует источнику.",
+        "actions": [
+          {
+            "line_index": 29,
+            "section": "IT и бизнес",
+            "requested_action": "keep",
+            "reason": "Информация корректна и соответствует источнику.",
+            "risk": "factual",
+            "critical_error": false,
             "critical_problem": "",
-            "completeness_concept": "homicide",
+            "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-missing-murder-three-days-no-34476281-492114239a41",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/missing-murder-three-days-no-34476281",
-            "original_html": "• Спустя десять лет после исчезновения 25-летнего Майкла Мартина в Salford его отец и детективы GMP объявили о беспрецедентной награде в £50 000 за информацию. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/missing-murder-three-days-no-34476281\">MEN</a>",
-            "backup_outcome": "backup_chain_exhausted",
+            "plan_slot_id": "tech_business-02",
+            "candidate_fingerprint": "url-oldham-gov-uk-news-article-2951-royton-library-temporarily-closed-for-essential-building-works-d9ffc867f140",
+            "original_url_identity": "oldham.gov.uk/news/article/2951/royton_library_temporarily_closed_for_essential_building_works",
+            "original_html": "• Библиотека Ройтона временно закрыта для проведения необходимых строительных работ; дата повторного открытия пока не установлена. <a href=\"https://oldham.gov.uk/news/article/2951/royton_library_temporarily_closed_for_essential_building_works\">Oldham Council</a>",
+            "keep_rejected": "known_factual_error",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 30,
+            "section": "IT и бизнес",
+            "requested_action": "keep",
+            "reason": "Информация корректна и соответствует источнику.",
+            "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "tech_business-03",
+            "candidate_fingerprint": "url-prolificnorth-co-uk-news-local-agency-launches-new-corporate-website-for-imperial-leather-and-carex-maker-08b56cc9f9e4",
+            "original_url_identity": "prolificnorth.co.uk/news/local-agency-launches-new-corporate-website-for-imperial-leather-and-carex-maker",
+            "original_html": "• Цифровое агентство First Internet из Манчестера запустило новый корпоративный сайт для компании PZ Cussons, производителя Imperial Leather и Carex в августе 2026 года. <a href=\"https://prolificnorth.co.uk/news/local-agency-launches-new-corporate-website-for-imperial-leather-and-carex-maker\">Prolific North Manchester</a>",
+            "keep_rejected": "known_factual_error",
+            "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
           }
@@ -198,9 +715,247 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 3,
+            "line_index": 29,
             "passed": true,
             "detail": "slot removed and source absent"
+          },
+          {
+            "line_index": 30,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "business/tech события для тебя::добавлено место проведения для большей ясности.",
+        "actions": [
+          {
+            "line_index": 32,
+            "section": "Business/tech события для тебя",
+            "requested_action": "patch",
+            "reason": "Добавлено место проведения для большей ясности.",
+            "risk": "product",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "professional_events-02",
+            "candidate_fingerprint": "event-event-networking-networking-south-stockport-september-tuesday-8-sep-8-30am-10-30am-2026-09-08-stockport-82cc4e9b0071",
+            "original_url_identity": "gmchamber.co.uk/events/networking-south-stockport-september",
+            "original_html": "• Сетевое мероприятие в Стокпорте пройдет 8 сентября 2026 года с 8:30 до 10:30; бесплатно для членов, £22 для не членов. <a href=\"https://gmchamber.co.uk/events/networking-south-stockport-september\">GM Chamber Events</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 32,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "дальние анонсы::событие проходит в ливерпуле, что не соответствует geo_scope gm.",
+        "actions": [
+          {
+            "line_index": 33,
+            "section": "Дальние анонсы",
+            "requested_action": "strip",
+            "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие не в Greater Manchester.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "future_announcements-01",
+            "candidate_fingerprint": "event-event-what-s-love-got-to-do-with-it-the-ultimate-tribute-to-tina-turner-2026-09-19-the-auditorium-liverpool-d56e45d5c511",
+            "original_url_identity": "ticketmaster.co.uk/whats-love-got-to-do-with-liverpool-19-09-2026/event/3700631DA0A0117B",
+            "original_html": "• <b>What's Love Got to do With it?</b> — 19 сентября, The Auditorium, Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/whats-love-got-to-do-with-liverpool-19-09-2026/event/3700631DA0A0117B\">Ticketmaster</a>",
+            "backup_outcome": "backup_chain_exhausted",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 42,
+            "section": "Дальние анонсы",
+            "requested_action": "strip",
+            "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие не в Greater Manchester.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "future_announcements-10",
+            "candidate_fingerprint": "event-event-marillion-haunt-the-woods-2026-09-27-liverpool-philharmonic-hall-ec9c6d4ccd8b",
+            "original_url_identity": "ticketmaster.co.uk/marillion-haunt-the-woods-liverpool-27-09-2026/event/1F00636E97B06323",
+            "original_html": "• <b>Marillion + Haunt the Woods</b> — 27 сентября, Liverpool Philharmonic Hall. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/marillion-haunt-the-woods-liverpool-27-09-2026/event/1F00636E97B06323\">Ticketmaster</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 43,
+            "section": "Дальние анонсы",
+            "requested_action": "strip",
+            "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие не в Greater Manchester.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "future_announcements-11",
+            "candidate_fingerprint": "event-event-joe-jackson-hope-and-fury-tour-2026-2026-10-05-liverpool-philharmonic-hall-5280ea00a3f3",
+            "original_url_identity": "ticketmaster.co.uk/joe-jackson-hope-and-fury-tour-liverpool-05-10-2026/event/1F006366C6FC74E5",
+            "original_html": "• <b>JOE JACKSON</b> — 5 октября, Liverpool Philharmonic Hall. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/joe-jackson-hope-and-fury-tour-liverpool-05-10-2026/event/1F006366C6FC74E5\">Ticketmaster</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 44,
+            "section": "Дальние анонсы",
+            "requested_action": "strip",
+            "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие не в Greater Manchester.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "future_announcements-12",
+            "candidate_fingerprint": "event-event-jane-mcdonald-living-the-dream-2026-09-11-m-s-bank-arena-liverpool-13917f0cffaf",
+            "original_url_identity": "ticketmaster.co.uk/jane-mcdonald-living-the-dream-liverpool-11-09-2026/event/3700635F93A783BD",
+            "original_html": "• <b>Jane McDonald</b> — 11 сентября, M&S Bank Arena Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/jane-mcdonald-living-the-dream-liverpool-11-09-2026/event/3700635F93A783BD\">Ticketmaster</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 33,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "line_index": 42,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "line_index": 43,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "line_index": 44,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "дальние анонсы::событие проходит в ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+        "actions": [
+          {
+            "line_index": 45,
+            "section": "Дальние анонсы",
+            "requested_action": "strip",
+            "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "future_announcements-13",
+            "candidate_fingerprint": "event-event-the-beat-dance-crazed-too-uk-tour-2026-10-07-o2-academy-liverpool-310c6499e802",
+            "original_url_identity": "ticketmaster.co.uk/the-beat-dance-crazed-too-uk-liverpool-07-10-2026/event/3E006371365DDF22",
+            "original_html": "• <b>The Beat</b> — 7 октября, O2 Academy Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-beat-dance-crazed-too-uk-liverpool-07-10-2026/event/3E006371365DDF22\">Ticketmaster</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 45,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::исправление опечатки в названии тура.",
+        "actions": [
+          {
+            "line_index": 49,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Исправление опечатки в названии тура.",
+            "risk": "format",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "deterministic_rewrite",
+            "plan_slot_id": "ticket_radar-04",
+            "candidate_fingerprint": "event-event-the-neighbourhood-the-wourld-tour-plus-special-guests-nessa-barrett-noise-dept-tue-1-sep-2-2026-09-01-co-op-live-d28cf065b216",
+            "original_url_identity": "cooplive.com/events/the-neighbourhood-4dd3",
+            "original_html": "• <b>The Neighbourhood THE WOURLD TOUR</b> — 1 сентября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/the-neighbourhood-4dd3\">Co-op Live</a>",
+            "model_replacement_rejected": "fact_lock: the neighbourhood the world tour",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 49,
+            "passed": false,
+            "detail": "line did not change"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "свежие новости::critical source fact dropped in translation: 'shooting' (weapon_violence/who/what) has no russian rendering in the shipped line",
+        "actions": [
+          {
+            "line_index": 10,
+            "section": "Свежие новости",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'shooting' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
+            "critical_error": true,
+            "critical_problem": "",
+            "completeness_concept": "weapon_violence",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-08",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c07le9ylrrko-d658b8ef74cf",
+            "original_url_identity": "bbc.com/news/articles/c07le9ylrrko",
+            "original_html": "• Мать Люси Харрисон, убитой в Техасе в январе 2025 года, собирается поехать в США, чтобы призвать прокуроров возобновить расследование после того, как большое жюри отказалось предъявить обвинения её отцу. <a href=\"https://bbc.co.uk/news/articles/c07le9ylrrko\">BBC Manchester</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-flower-arranging-class-descends-chaos-34506307-a16ce85f319c",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 10,
+            "passed": true,
+            "detail": "post-check passed"
           }
         ],
         "known_factual_error": true
@@ -211,16 +966,69 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 0
+      "skipped": 6,
+      "reports": [
+        {
+          "fingerprint": "event-event-what-s-love-got-to-do-with-it-the-ultimate-tribute-to-tina-turner-2026-09-19-the-auditorium-liverpool-d56e45d5c511",
+          "title": "What's Love Got to do With it? - The Ultimate Tribute to Tina Turner — event 2026-09-19 — public sale 2025-09-05 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/whats-love-got-to-do-with-liverpool-19-09-2026/event/3700631DA0A0117B",
+          "candidate_evidence_chars": 363
+        },
+        {
+          "fingerprint": "event-event-marillion-haunt-the-woods-2026-09-27-liverpool-philharmonic-hall-ec9c6d4ccd8b",
+          "title": "Marillion + Haunt the Woods — event 2026-09-27 — public sale 2025-11-20 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/marillion-haunt-the-woods-liverpool-27-09-2026/event/1F00636E97B06323",
+          "candidate_evidence_chars": 357
+        },
+        {
+          "fingerprint": "event-event-joe-jackson-hope-and-fury-tour-2026-2026-10-05-liverpool-philharmonic-hall-5280ea00a3f3",
+          "title": "JOE JACKSON - HOPE AND FURY TOUR 2026 — event 2026-10-05 — public sale 2025-11-14 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/joe-jackson-hope-and-fury-tour-liverpool-05-10-2026/event/1F006366C6FC74E5",
+          "candidate_evidence_chars": 357
+        },
+        {
+          "fingerprint": "event-event-jane-mcdonald-living-the-dream-2026-09-11-m-s-bank-arena-liverpool-13917f0cffaf",
+          "title": "Jane McDonald - Living The Dream — event 2026-09-11 — public sale 2025-11-28 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/jane-mcdonald-living-the-dream-liverpool-11-09-2026/event/3700635F93A783BD",
+          "candidate_evidence_chars": 351
+        },
+        {
+          "fingerprint": "event-event-the-beat-dance-crazed-too-uk-tour-2026-10-07-o2-academy-liverpool-310c6499e802",
+          "title": "The Beat - Dance Crazed Too UK Tour — event 2026-10-07 — public sale 2025-11-28 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/the-beat-dance-crazed-too-uk-liverpool-07-10-2026/event/3E006371365DDF22",
+          "candidate_evidence_chars": 343
+        },
+        {
+          "fingerprint": "event-event-the-neighbourhood-the-wourld-tour-plus-special-guests-nessa-barrett-noise-dept-tue-1-sep-2-2026-09-01-co-op-live-d28cf065b216",
+          "title": "The Neighbourhood THE WOURLD TOUR, plus special guests Nessa Barrett & Noise Dept Tue 1 Sep 2026 Multiple times",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://cooplive.com/events/the-neighbourhood-4dd3",
+          "candidate_evidence_chars": 0
+        }
+      ]
     },
-    "enrich_improved": 1,
-    "deterministic_rewrite_rejected": 1,
+    "enrich_improved": 10,
+    "false_positive_existing_fact": 2,
+    "deterministic_rewrite_rejected": 3,
+    "no_eligible_backup": 6,
     "backup_chain_exhausted": 1,
+    "deterministic_rewrite_built": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 39,
-      "matched_lines": 39,
-      "applicable_lines": 1,
+      "checked_lines": 48,
+      "matched_lines": 48,
+      "applicable_lines": 0,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -232,28 +1040,199 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 39,
-      "resolved_in_place": 39,
+      "checked_lines": 48,
+      "resolved_in_place": 48,
       "unresolved": 0,
       "findings": []
     },
-    "status": "resolved"
+    "status": "unresolved"
   },
-  "notes": "pre-send judge failed before producing usable verdicts",
+  "notes": "Строка соответствует требованиям: событие в GM, информация точная и актуальная.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Ошибка в титуле Энди Бернэма требует исправления для точности информации.; Информация о транспортных изменениях актуальна, но стоит уточнить влияние на текущие поездки.; Обе с",
   "raw": {
-    "decision": "block",
-    "confidence": 0.0,
-    "critical_errors": [],
-    "actions": [],
-    "warnings": [
-      "all judge calls failed: 12 failure(s)"
+    "decision": "repair_required",
+    "confidence": 0.85,
+    "critical_errors": [
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "problem": "Энди Бернэм не является премьер-министром.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 20,
+        "section": "Футбол",
+        "problem": "Неверная информация о клубе, за который играет Алехандро Гарначо.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 26,
+        "section": "Городской радар",
+        "problem": "Неправильное название нового хосписа.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 28,
+        "section": "IT и бизнес",
+        "problem": "Название города указано неверно.",
+        "risk": "geo",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 33,
+        "section": "Дальние анонсы",
+        "problem": "Событие не в Greater Manchester.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 42,
+        "section": "Дальние анонсы",
+        "problem": "Событие не в Greater Manchester.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 43,
+        "section": "Дальние анонсы",
+        "problem": "Событие не в Greater Manchester.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 44,
+        "section": "Дальние анонсы",
+        "problem": "Событие не в Greater Manchester.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 45,
+        "section": "Дальние анонсы",
+        "problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      }
     ],
-    "notes": "pre-send judge failed before producing usable verdicts",
+    "actions": [
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "action": "patch",
+        "replacement_text": "• Мэр Большого Манчестера Энди Бернэм заявил, что в сентябре планирует поездку в США для лоббирования у президента Трампа увеличения поддержки Украины. Это будет его первый визит в Америку с момента вступления в должность в июле, и он надеется, что поездка совпадет с заседанием Генеральной Ассамблеи ООН в Нью-Йорке.",
+        "reason": "Энди Бернэм является мэром Большого Манчестера, а не премьер-министром.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 20,
+        "section": "Футбол",
+        "action": "patch",
+        "replacement_text": "• Алехандро Гарначо провёл всего четыре минуты на поле за Манчестер Юнайтед в их поражении 0-4 от Брайтона, что вызывает беспокойство у экспертов.",
+        "reason": "Гарначо играет за Манчестер Юнайтед, а не за Астон Виллу.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 26,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Креативное агентство Truth Creative завершило ребрендинг для бывшего хосписа Святой Анны, который теперь называется хоспис Моя Коул.",
+        "reason": "Исправление названия нового хосписа на правильное.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 28,
+        "section": "IT и бизнес",
+        "action": "patch",
+        "replacement_text": "• Библиотека Ройтона в Олдхэме временно закрыта с 24 августа 2026 года для ремонта пола, дата повторного открытия не указана.",
+        "reason": "Название города указано неверно.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 29,
+        "section": "IT и бизнес",
+        "action": "keep",
+        "reason": "Информация корректна и соответствует источнику.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 30,
+        "section": "IT и бизнес",
+        "action": "keep",
+        "reason": "Информация корректна и соответствует источнику.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 32,
+        "section": "Business/tech события для тебя",
+        "action": "patch",
+        "replacement_text": "• Сетевое мероприятие в Стокпорте пройдет 8 сентября 2026 года с 8:30 до 10:30; бесплатно для членов, £22 для не членов. Место проведения: Edgeley Park, Stockport County FC.",
+        "reason": "Добавлено место проведения для большей ясности.",
+        "risk": "product"
+      },
+      {
+        "line_index": 33,
+        "section": "Дальние анонсы",
+        "action": "strip",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 42,
+        "section": "Дальние анонсы",
+        "action": "strip",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 43,
+        "section": "Дальние анонсы",
+        "action": "strip",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 44,
+        "section": "Дальние анонсы",
+        "action": "strip",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 45,
+        "section": "Дальние анонсы",
+        "action": "strip",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 49,
+        "section": "Билеты / Ticket Radar",
+        "action": "patch",
+        "replacement_text": "• The Neighbourhood THE WORLD TOUR — 1 сентября, Co-op Live. Билеты и время указаны на официальной странице.",
+        "reason": "Исправление опечатки в названии тура.",
+        "risk": "format"
+      }
+    ],
+    "warnings": [
+      "В разделе 'Общественный транспорт сегодня' много информации о транспортных изменениях, но нет явного указания на то, как это может повлиять на поездки сегодня. Возможно, стоит добавить более явные указания на влияние на текущие поездки.",
+      "В строке 32 не указано место проведения мероприятия, что может затруднить понимание для читателей.",
+      "Опечатка в названии тура The Neighbourhood: 'THE WOURLD TOUR' вместо 'THE WORLD TOUR'.",
+      "Секция 'Что важно сегодня' не достигла минимального порога в 3 элемента.",
+      "Секция 'Русскоязычные концерты и стендап UK' отсутствует, не достигнув минимального порога в 1 элемент.",
+      "Секция 'Еда, открытия и рынки' содержит только 1 элемент, что ниже минимального порога в 3 элемента."
+    ],
+    "notes": "Строка соответствует требованиям: событие в GM, информация точная и актуальная.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Ошибка в титуле Энди Бернэма требует исправления для точности информации.; Информация о транспортных изменениях актуальна, но стоит уточнить влияние на текущие поездки.; Обе с",
     "map_reduce": {
+      "mode": "map_reduce",
+      "status": "ok",
+      "chunk_count": 14,
+      "failed_chunk_count": 0,
       "chunks": [
         {
           "chunk_id": "chunk-01",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
             1,
             1
@@ -261,17 +1240,17 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "",
+          "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 2746,
-          "duration_seconds": 0.79
+          "error": "",
+          "estimated_tokens": 2671,
+          "duration_seconds": 1.638
         },
         {
           "chunk_id": "chunk-02",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
             2,
             2
@@ -279,17 +1258,17 @@
           "sections": [
             "Погода"
           ],
-          "decision": "",
+          "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 2430,
-          "duration_seconds": 0.921
+          "error": "",
+          "estimated_tokens": 2440,
+          "duration_seconds": 1.589
         },
         {
           "chunk_id": "chunk-03",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
             3,
             11
@@ -297,171 +1276,225 @@
           "sections": [
             "Свежие новости"
           ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 7134,
-          "duration_seconds": 0.865
+          "error": "",
+          "estimated_tokens": 7180,
+          "duration_seconds": 4.275
         },
         {
           "chunk_id": "chunk-04",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
             12,
-            20
+            16
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "",
+          "decision": "warn",
           "critical_error_count": 0,
           "action_count": 0,
-          "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 6390,
-          "duration_seconds": 0.517
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 4222,
+          "duration_seconds": 2.176
         },
         {
           "chunk_id": "chunk-05",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
-            21,
-            22
+            17,
+            18
           ],
           "sections": [
             "Что важно сегодня"
           ],
-          "decision": "",
+          "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 3274,
-          "duration_seconds": 0.506
+          "error": "",
+          "estimated_tokens": 3273,
+          "duration_seconds": 1.159
         },
         {
           "chunk_id": "chunk-06",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
-            23,
-            25
+            19,
+            21
           ],
           "sections": [
             "Футбол"
           ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 3630,
-          "duration_seconds": 0.673
+          "error": "",
+          "estimated_tokens": 3636,
+          "duration_seconds": 4.14
         },
         {
           "chunk_id": "chunk-07",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
-            26,
-            30
+            22,
+            26
           ],
           "sections": [
             "Городской радар"
           ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 4930,
-          "duration_seconds": 38.864
+          "error": "",
+          "estimated_tokens": 4811,
+          "duration_seconds": 3.589
         },
         {
           "chunk_id": "chunk-08",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
-            31,
-            33
+            27,
+            27
+          ],
+          "sections": [
+            "Еда, открытия и рынки"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2674,
+          "duration_seconds": 5.598
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            28,
+            30
           ],
           "sections": [
             "IT и бизнес"
           ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 3,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 3798,
-          "duration_seconds": 11.8
+          "error": "",
+          "estimated_tokens": 3709,
+          "duration_seconds": 27.112
         },
         {
-          "chunk_id": "chunk-09",
-          "status": "failed",
+          "chunk_id": "chunk-10",
+          "status": "ok",
           "line_range": [
-            34,
-            35
+            31,
+            32
+          ],
+          "sections": [
+            "Business/tech события для тебя"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 1,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 3476,
+          "duration_seconds": 12.745
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            33,
+            44
           ],
           "sections": [
             "Дальние анонсы"
           ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 4,
+          "action_count": 4,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 3228,
-          "duration_seconds": 2.99
+          "error": "",
+          "estimated_tokens": 8814,
+          "duration_seconds": 66.853
         },
         {
-          "chunk_id": "chunk-10",
-          "status": "failed",
+          "chunk_id": "chunk-12",
+          "status": "ok",
           "line_range": [
-            36,
-            38
+            45,
+            45
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2693,
+          "duration_seconds": 5.073
+        },
+        {
+          "chunk_id": "chunk-13",
+          "status": "ok",
+          "line_range": [
+            46,
+            50
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 1,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 4942,
+          "duration_seconds": 18.71
+        },
+        {
+          "chunk_id": "chunk-14",
+          "status": "ok",
+          "line_range": [
+            51,
+            55
           ],
           "sections": [
             "Крупные концерты вне GM"
           ],
-          "decision": "",
+          "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 3885,
-          "duration_seconds": 24.569
-        },
-        {
-          "chunk_id": "chunk-11",
-          "status": "failed",
-          "line_range": [
-            39,
-            40
-          ],
-          "sections": [
-            "Русскоязычные концерты и стендап UK"
-          ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-          "estimated_tokens": 3354,
-          "duration_seconds": 7.453
+          "error": "",
+          "estimated_tokens": 5002,
+          "duration_seconds": 19.887
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
+        "decision": "warn",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 0,
-        "error": "RateLimitError: Error code: 429 - {'error': {'message': 'You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.', 'type': 'insufficient_quota', 'param': None, 'code': 'credit_balance_exhausted'}}",
-        "estimated_tokens": 11576,
-        "duration_seconds": 25.795
+        "warning_count": 3,
+        "error": "",
+        "estimated_tokens": 11265,
+        "duration_seconds": 23.073
       },
       "max_workers": 3,
       "chunk_line_target": 12,
