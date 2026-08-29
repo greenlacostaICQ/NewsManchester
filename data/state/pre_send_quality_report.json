@@ -1,204 +1,200 @@
 {
-  "status": "partial",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 7 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-08-28",
-  "pipeline_run_id": "20260828T080141+0100",
-  "digest_sha256": "4c2f8f99749c81b8add0108eaedd304e3abba25b54485ee8df1ee0b2bcce0821",
-  "duration_seconds": 173.58,
-  "confidence": 0.9,
+  "run_date_london": "2026-08-29",
+  "pipeline_run_id": "20260829T080137+0100",
+  "digest_sha256": "1365cc81a1c7c60d35f578ace14a521c9920c9c63770065882c65908977c0c9a",
+  "duration_seconds": 92.417,
+  "confidence": 0.85,
   "critical_errors": [
     {
-      "line_index": 4,
-      "section": "Свежие новости",
-      "problem": "Не указаны имена обвиняемых, что может быть важно для контекста дела.",
-      "risk": "sensitive",
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Дата события указана неверно. 28 августа 2026 года — это пятница, а не суббота.",
+      "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 14,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Строка не содержит конкретной информации о том, что произошло и почему это важно.",
+      "line_index": 11,
+      "section": "Свежие новости",
+      "problem": "Неверное указание субъекта: Шабир Ахмед не является лидером банды в Рочдейле, он был осуждён за участие в преступлениях.",
       "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 13,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Marsden находится в Западном Йоркшире, а не в Greater Manchester.",
+      "risk": "geo",
       "suggested_action": "strip"
     },
     {
-      "line_index": 26,
+      "line_index": 23,
       "section": "Выходные в GM",
-      "problem": "Некорректная информация о цене входа.",
+      "problem": "Событие находится в Лидсе, что не соответствует geo_scope 'gm'.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 28,
+      "section": "Выходные в GM",
+      "problem": "Дата мероприятия указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 37,
+      "section": "Городской радар",
+      "problem": "Неверное расстояние до назначения.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 40,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
+      "line_index": 44,
+      "section": "Еда, открытия и рынки",
+      "problem": "Событие происходит в Лондоне, а не в Greater Manchester.",
+      "risk": "geo",
+      "suggested_action": "strip"
     },
     {
       "line_index": 46,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 47,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
+      "section": "IT и бизнес",
+      "problem": "Atom Bank находится в Ньюкасле, что не соответствует geo_scope GM.",
+      "risk": "geo",
+      "suggested_action": "strip"
     },
     {
       "line_index": 50,
-      "section": "Городской радар",
-      "problem": "Текст не уточняет, что речь идет о медицинских трибуналах, что может ввести в заблуждение.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 57,
-      "section": "IT и бизнес",
-      "problem": "Указано, что данные клиентов аэропортов Лондона Стэнстеда и Восточного Мидленда также были скомпрометированы, что выходит за пределы geo_scope.",
-      "risk": "geo",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 61,
-      "section": "Business/tech события для тебя",
-      "problem": "Дата события указана неверно.",
+      "section": "Билеты / Ticket Radar",
+      "problem": "Дата события указана как 1 мая, что противоречит текущей дате выпуска.",
       "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 64,
-      "section": "Дальние анонсы",
-      "problem": "Событие не в Greater Manchester.",
-      "risk": "geo",
       "suggested_action": "strip"
     },
     {
-      "line_index": 65,
-      "section": "Дальние анонсы",
-      "problem": "Событие не в Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
+      "line_index": 9,
+      "section": "Свежие новости",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'shot' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "weapon_violence"
     },
     {
-      "line_index": 66,
-      "section": "Дальние анонсы",
-      "problem": "Событие не в Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
+      "line_index": 11,
+      "section": "Свежие новости",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'grooming' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "sexual_offence"
+    },
+    {
+      "line_index": 39,
+      "section": "Городской радар",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'dead' (death/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "death"
     }
   ],
   "actions": [
     {
-      "line_index": 4,
+      "line_index": 1,
+      "section": "Главная история дня",
+      "action": "patch",
+      "replacement_text": "• Полиция применяла электрошокер к мужчине на парковке Toby Carvery в Чаддертоне, Oldham, в пятницу вечером, 28 августа 2026 года, после того как он, по сообщениям, пытался войти в ресторан.",
+      "reason": "Дата события указана неверно. 28 августа 2026 года — это пятница, а не суббота.",
+      "risk": "date"
+    },
+    {
+      "line_index": 11,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• Шесть мужчин, включая Тахира Рашида, 55 лет, и Мохаммеда Салима, 47 лет, предстают перед судом в Minshull Street Crown Court по обвинениям в исторических сексуальных преступлениях против трёх девушек в Рочдейле.",
-      "reason": "Добавление имен обвиняемых для полноты и контекста.",
-      "risk": "sensitive"
+      "replacement_text": "• Пакистан сообщил министру иностранных дел Эду Милбанду, что не примет обратно Шабира Ахмеда, осуждённого за участие в преступлениях в Рочдейле, ссылаясь на отсутствие юридического механизма для передачи.",
+      "reason": "Уточнение роли Шабира Ахмеда в преступлениях.",
+      "risk": "factual"
     },
     {
-      "line_index": 14,
+      "line_index": 13,
       "section": "Общественный транспорт сегодня",
       "action": "strip",
-      "reason": "Строка не предоставляет полезной информации о текущем состоянии транспорта.",
-      "risk": "factual",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 26,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 28 августа — Makers Market in Great Northern Square - Great Northern, Manchester. На площадке: рынок, вход £10, ремесленные товары, еда.",
-      "reason": "Цена входа указана как свободная, но в источнике указано £10.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 40,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• В воскресенье 30 августа — Grub on the Docks в Gardens. Вход £7.50.",
-      "reason": "Дата события указана неверно, так как 30 августа 2026 года — это суббота.",
-      "risk": "date"
-    },
-    {
-      "line_index": 46,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 23 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка, вход свободный.",
-      "reason": "Дата события должна быть 23 августа, согласно источнику.",
-      "risk": "date"
-    },
-    {
-      "line_index": 47,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 22 августа — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой.",
-      "reason": "Дата события должна быть 22 августа, согласно источнику.",
-      "risk": "date"
-    },
-    {
-      "line_index": 50,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Новые данные показывают, что более трети обвинений в сексуальном misconduct, рассматриваемых медицинскими трибуналами в прошлом году, касались коллег по здравоохранению. Председатель MPTS назвала эти цифры 'глубоко тревожными'.",
-      "reason": "Уточнение, что речь идет о медицинских трибуналах, важно для точности информации.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 57,
-      "section": "IT и бизнес",
-      "action": "patch",
-      "replacement_text": "• Хакеры получили доступ к данным около 8.7 миллионов клиентов аэропорта Манчестера; Manchester Airports Group отказалась платить выкуп и призывает к бдительности против фишинга.",
-      "reason": "Указание на другие аэропорты выходит за пределы geo_scope.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 61,
-      "section": "Business/tech события для тебя",
-      "action": "patch",
-      "replacement_text": "• The Future of Cyber Security Manchester: Exclusive Chamber Member Places Thursday 10 Sep 8:30am - 5:10pm — 10 сентября, Old Trafford. Уровень: большая конференция/экспо; Доступ: бесплатно для членов палаты, £225 для остальных. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь.",
-      "reason": "Уточнение стоимости участия для не-членов палаты.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 63,
-      "section": "Дальние анонсы",
-      "action": "keep",
-      "reason": "Событие в Greater Manchester.",
+      "reason": "Событие произошло за пределами Greater Manchester, что нарушает географический контракт раздела.",
       "risk": "geo",
       "replacement_text": ""
     },
     {
-      "line_index": 71,
-      "section": "Билеты / Ticket Radar",
+      "line_index": 23,
+      "section": "Выходные в GM",
       "action": "strip",
-      "reason": "Концерт отменён, информация о покупке билетов неактуальна.",
-      "risk": "factual",
+      "reason": "Событие Leeds Heritage Pub & Brewery Tour проходит в Лидсе, что не соответствует требованию geo_scope 'gm'.",
+      "risk": "geo",
       "replacement_text": ""
     },
     {
-      "line_index": 78,
-      "section": "Крупные концерты вне GM",
+      "line_index": 28,
+      "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• Ariana Grande — тур: 28 августа, 31 августа и 1 сентября, The O2. Концерт проходит сегодня, 28 августа.",
-      "reason": "Уточнение даты для ясности.",
+      "replacement_text": "• В воскресенье, 30 августа, в Gardens пройдет мероприятие Grub on the Docks. Вход £7.50.",
+      "reason": "Дата мероприятия указана неверно. Должно быть 30 августа, а не 30 мая.",
       "risk": "date"
+    },
+    {
+      "line_index": 37,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Рейс easyJet из Манчестера в Анталию был отменен на взлетной полосе 28 августа 2026 года, а замена была перенаправлена в Милан из-за превышения времени работы экипажа, оставив сотни пассажиров в 1,290 милях от назначения.",
+      "reason": "Исправление фактической ошибки в расстоянии.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 44,
+      "section": "Еда, открытия и рынки",
+      "action": "strip",
+      "reason": "Событие открытия бара происходит в Лондоне, что нарушает географический контракт блока.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 45,
+      "section": "IT и бизнес",
+      "action": "keep",
+      "reason": "Событие связано с Манчестером и соответствует geo_scope.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 46,
+      "section": "IT и бизнес",
+      "action": "strip",
+      "reason": "Atom Bank находится в Ньюкасле, что не соответствует geo_scope GM.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 47,
+      "section": "IT и бизнес",
+      "action": "keep",
+      "reason": "Событие связано с Манчестером и соответствует geo_scope.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 50,
+      "section": "Билеты / Ticket Radar",
+      "action": "strip",
+      "reason": "Дата события 1 мая 2027 года не соответствует текущей дате выпуска.",
+      "risk": "date",
+      "replacement_text": ""
     }
   ],
   "warnings": [
-    "Уточнена дата концерта Ariana Grande для ясности.",
-    "judge reduce failed: parse_failed no parseable JSON"
+    "Отсутствует блок 'Что важно сегодня', что может снизить информативность выпуска.",
+    "Секция 'Еда, открытия и рынки' содержит только один элемент, что ниже минимального порога.",
+    "Секция 'Русскоязычные концерты и стендап UK' полностью отсутствует, что может разочаровать аудиторию, ожидающую этот контент."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -207,420 +203,437 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 7,
-      "Что важно сегодня": 1,
+      "Общественный транспорт сегодня": 2,
       "Футбол": 2,
-      "Выходные в GM": 22,
-      "Городской радар": 8,
+      "Выходные в GM": 17,
+      "Городской радар": 7,
       "Еда, открытия и рынки": 1,
-      "IT и бизнес": 4,
-      "Business/tech события для тебя": 2,
-      "Дальние анонсы": 8,
-      "Билеты / Ticket Radar": 7,
-      "Крупные концерты вне GM": 2,
-      "Русскоязычные концерты и стендап UK": 1
+      "IT и бизнес": 3,
+      "Билеты / Ticket Radar": 5,
+      "Крупные концерты вне GM": 2
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 1,
+      "Что важно сегодня": 0,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 8,
-      "Выходные в GM": 22,
-      "Билеты / Ticket Radar": 7,
-      "Русскоязычные концерты и стендап UK": 1,
+      "Городской радар": 7,
+      "Выходные в GM": 17,
+      "Билеты / Ticket Radar": 5,
+      "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 1,
-      "Business/tech события для тебя": 2,
+      "Business/tech события для тебя": 0,
       "Футбол": 2
     },
-    "ticket_items": 10,
-    "core_items": 47,
+    "ticket_items": 7,
+    "core_items": 38,
     "writer_quality_counts": {
-      "included_candidates": 79,
-      "rendered_candidates": 76,
+      "included_candidates": 53,
+      "rendered_candidates": 50,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 3,
-      "replaced_from_plan_backup": 0,
-      "removed_with_reason": 3
+      "dropped_low_quality": 2,
+      "replaced_from_plan_backup": 1,
+      "removed_with_reason": 2
     },
     "source_health_counts": {
-      "ok": 107,
-      "partial": 1,
-      "stale": 8,
-      "empty": 11,
+      "ok": 105,
+      "partial": 0,
+      "stale": 7,
+      "empty": 15,
       "failed": 4,
-      "zero_yield": 68,
+      "zero_yield": 61,
       "no_contribution_breakdown": {
         "fetch_failed": 4,
-        "all_rejected": 68,
-        "idle_no_items": 20
+        "all_rejected": 61,
+        "idle_no_items": 38
       },
       "zero_contribution_by_stage": {
-        "written": 30,
-        "parsed": 20,
-        "selected": 38,
-        "fetched": 4
+        "written": 28,
+        "parsed": 38,
+        "fetched": 4,
+        "selected": 33
       },
       "weekend_source_coverage_incidents": 48
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 1 item(s), emergency floor 3",
+      "Что важно сегодня: 0 item(s), emergency floor 3",
+      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 1 item(s), emergency floor 3",
+      "Business/tech события для тебя: 0 item(s), emergency floor 1",
       "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 40 has unchecked number/date token(s): 7.50",
-      "patch for line 47 has unchecked number/date token(s): 22, 9:00"
+      "patch for line 28 has unchecked number/date token(s): 7.50"
     ],
     "can_apply_actions": true,
-    "action_count": 12
+    "action_count": 11
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 76,
-    "matched_lines": 76,
-    "applicable_lines": 4,
+    "checked_lines": 50,
+    "matched_lines": 50,
+    "applicable_lines": 5,
     "unmatched_lines": 4,
-    "critical_omission_count": 0,
-    "critical_omissions": [],
+    "critical_omission_count": 3,
+    "critical_omissions": [
+      {
+        "line_index": 9,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/the-flashy-drug-dealer-shot-34531974",
+        "concept": "weapon_violence",
+        "obligation": "who/what",
+        "source_hit": "shot"
+      },
+      {
+        "line_index": 11,
+        "source_url_key": "aboutmanchester.co.uk/pakistan-tells-ed-miliband-it-will-not-take-back-rochdale-grooming-gang-leader",
+        "concept": "sexual_offence",
+        "obligation": "charge/verdict/victim",
+        "source_hit": "grooming"
+      },
+      {
+        "line_index": 39,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/kids-left-twisted-ankle-serious-34526110",
+        "concept": "death",
+        "obligation": "who/what",
+        "source_hit": "dead"
+      }
+    ],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 0,
-    "still_missing": 0
+    "pulled_for_rework": 2,
+    "still_missing": 1
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 13,
-    "attempted": 8,
+    "requested": 11,
+    "attempted": 7,
     "applied": 7,
-    "model_patch_applied": 1,
+    "model_patch_applied": 0,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 3,
-    "stripped": 3,
+    "stripped": 4,
     "unresolved": 0,
-    "blocking_unresolved": 0,
+    "blocking_unresolved": 1,
     "resolved": 11,
-    "resolved_in_place": 7,
+    "resolved_in_place": 4,
     "resolved_by_replacement": 3,
-    "resolved_by_removal": 1,
-    "fact_lock_rejected": 1,
-    "enrich_attempted": 13,
+    "resolved_by_removal": 4,
+    "fact_lock_rejected": 0,
+    "enrich_attempted": 11,
     "post_check_errors": [],
     "geo_contract_rejected": [
       {
-        "line_index": 57,
+        "line_index": 45,
         "section": "IT и бизнес",
         "geo_scope": "gm",
-        "reason": "Указание на другие аэропорты выходит за пределы geo_scope.",
+        "reason": "Событие связано с Манчестером и соответствует geo_scope.",
         "gm_anchor_present": true
       },
       {
-        "line_index": 63,
-        "section": "Дальние анонсы",
+        "line_index": 47,
+        "section": "IT и бизнес",
         "geo_scope": "gm",
-        "reason": "Событие в Greater Manchester.",
+        "reason": "Событие связано с Манчестером и соответствует geo_scope.",
         "gm_anchor_present": true
       }
     ],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 4,
-        "section": "Свежие новости",
+        "line_index": 1,
+        "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Добавление имен обвиняемых для полноты и контекста.",
-        "risk": "sensitive",
+        "reason": "Дата события указана неверно. 28 августа 2026 года — это пятница, а не суббота.",
+        "risk": "date",
         "critical_error": true,
-        "critical_problem": "Не указаны имена обвиняемых, что может быть важно для контекста дела.",
+        "critical_problem": "Дата события указана неверно. 28 августа 2026 года — это пятница, а не суббота.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "last_24h-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-groomed-rochdale-girls-abused-most-34528794-93b7a6da7170",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/groomed-rochdale-girls-abused-most-34528794",
-        "original_html": "• Шесть мужчин предстают перед судом в Minshull Street Crown Court по обвинениям в исторических сексуальных преступлениях против трёх девушек в Рочдейле. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/groomed-rochdale-girls-abused-most-34528794\">MEN</a>",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-descend-toby-carvery-chadderton-34537428-9474116f60ae",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-descend-toby-carvery-chadderton-34537428",
+        "original_html": "<b>Полиция применяла электрошокер к мужчине на парковке Toby Carvery в Чаддертоне, Oldham, в пятницу вечером, 28 августа 2026 года, после того как он, по сообщениям, пытался войти в ресторан.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-descend-toby-carvery-chadderton-34537428\">MEN</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 14,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Строка не предоставляет полезной информации о текущем состоянии транспорта.",
+        "line_index": 11,
+        "section": "Свежие новости",
+        "requested_action": "patch",
+        "reason": "Уточнение роли Шабира Ахмеда в преступлениях.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Строка не содержит конкретной информации о том, что произошло и почему это важно.",
+        "critical_problem": "Неверное указание субъекта: Шабир Ахмед не является лидером банды в Рочдейле, он был осуждён за участие в преступлениях.",
+        "completeness_concept": "sexual_offence",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "last_24h-09",
+        "candidate_fingerprint": "url-aboutmanchester-co-uk-pakistan-tells-ed-miliband-it-will-not-take-back-rochdale-grooming-gang-leader-416a89806e57",
+        "original_url_identity": "aboutmanchester.co.uk/pakistan-tells-ed-miliband-it-will-not-take-back-rochdale-grooming-gang-leader",
+        "original_html": "• Пакистан сообщил министру иностранных дел Эду Милбанду, что не примет обратно лидера банды в Рочдейле Шабира Ахмеда, ссылаясь на отсутствие юридического механизма для передачи. <a href=\"https://aboutmanchester.co.uk/pakistan-tells-ed-miliband-it-will-not-take-back-rochdale-grooming-gang-leader\">About Manchester News</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 13,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "strip",
+        "reason": "Событие произошло за пределами Greater Manchester, что нарушает географический контракт раздела.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Marsden находится в Западном Йоркшире, а не в Greater Manchester.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "transport-03",
-        "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-issue-resolved-disruption-between-manchester-piccadilly-and-manchester-airport-e-79c3b436e064",
-        "original_url_identity": "tfgm.com/travel-updates/travel-alerts/issue-resolved-disruption-between-manchester-piccadilly-and-manchester-airport-e",
-        "original_html": "• Транспорт: работы в районе Issue Resolved — подробности в источнике <a href=\"https://tfgm.com/travel-updates/travel-alerts/issue-resolved-disruption-between-manchester-piccadilly-and-manchester-airport-e\">TfGM</a>",
+        "plan_slot_id": "transport-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-investigation-launched-after-person-dies-34532172-d5ca903cf550",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/investigation-launched-after-person-dies-34532172",
+        "original_html": "• В результате инцидента на станции Марсден, произошедшего 28 августа 2026 года, погиб человек. Полиция по делам транспорта Великобритании проводит расследование. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/investigation-launched-after-person-dies-34532172\">MEN</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 26,
+        "line_index": 23,
         "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Цена входа указана как свободная, но в источнике указано £10.",
-        "risk": "factual",
+        "requested_action": "strip",
+        "reason": "Событие Leeds Heritage Pub & Brewery Tour проходит в Лидсе, что не соответствует требованию geo_scope 'gm'.",
+        "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Некорректная информация о цене входа.",
+        "critical_problem": "Событие находится в Лидсе, что не соответствует geo_scope 'gm'.",
         "completeness_concept": "",
         "outcome": "resolved_by_replacement",
         "method": "reserve_replacement",
-        "plan_slot_id": "weekend_activities-04",
-        "candidate_fingerprint": "event-event-makers-market-in-great-northern-square-great-northern-manchester-2026-08-27-great-northern-square-0f2fb75f71f6",
-        "original_url_identity": "thegreatnorthern.com/event/makers-market-in-great-northern-square",
-        "original_html": "• 28 августа — Makers Market in Great Northern Square - Great Northern, Manchester. На площадке: рынок, вход свободный, ремесленные товары, еда. <a href=\"https://thegreatnorthern.com/event/makers-market-in-great-northern-square\">Great Northern Makers Market</a>",
-        "model_replacement_rejected": "fact_lock: 28 августа",
-        "replacement_fingerprint": "event-event-bobby-seagull-s-escape-from-ancient-egypt-2026-08-28-lowry-188d1706ee39",
+        "plan_slot_id": "weekend_activities-07",
+        "candidate_fingerprint": "event-event-leeds-heritage-pub-brewery-tour-2024-02-09-the-tetley-30c76d72a05b",
+        "original_url_identity": "creativetourist.com/event/leeds-heritage-pub-brewery-tour",
+        "original_html": "• 29 августа в The Tetley — Leeds Heritage Pub & Brewery Tour. На площадке: экскурсия, вход £35.00, ремесленные товары. <a href=\"https://creativetourist.com/event/leeds-heritage-pub-brewery-tour\">Creative Tourist Manchester</a>",
+        "replacement_fingerprint": "event-event-amongst-the-trees-day-retreat-2026-08-30-over-alderley-046eadb6480b",
         "post_check_passed": true
       },
       {
-        "line_index": 40,
+        "line_index": 28,
         "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Дата события указана неверно, так как 30 августа 2026 года — это суббота.",
+        "reason": "Дата мероприятия указана неверно. Должно быть 30 августа, а не 30 мая.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
+        "critical_problem": "Дата мероприятия указана неверно.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-16",
+        "plan_slot_id": "weekend_activities-09",
         "candidate_fingerprint": "event-id-mediacity-event-page-0ca3d429bc24-7f8ba80d7268",
         "original_url_identity": "mediacityuk.co.uk/events/grub-on-the-docks",
-        "original_html": "• В воскресенье 30 августа — Grub on the Docks в Gardens. Вход £7.50. <a href=\"https://mediacityuk.co.uk/events/grub-on-the-docks\">MediaCity What's On</a>",
+        "original_html": "• В воскресенье, 30 августа, в Gardens пройдет мероприятие Grub on the Docks. Вход £7.50. <a href=\"https://mediacityuk.co.uk/events/grub-on-the-docks\">MediaCity What's On</a>",
         "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 37,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Исправление фактической ошибки в расстоянии.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неверное расстояние до назначения.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "city_watch-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-easyjet-nightmare-pilot-manchester-airport-34536501-362296bec72e",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/easyjet-nightmare-pilot-manchester-airport-34536501",
+        "original_html": "• Рейс easyJet из Манчестера в Анталию был отменен на взлетной полосе 28 августа 2026 года, а замена была перенаправлена в Милан из-за превышения времени работы экипажа, оставив сотни пассажиров в 1,200 милях от назначения. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/easyjet-nightmare-pilot-manchester-airport-34536501\">MEN</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 44,
+        "section": "Еда, открытия и рынки",
+        "requested_action": "strip",
+        "reason": "Событие открытия бара происходит в Лондоне, что нарушает географический контракт блока.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие происходит в Лондоне, а не в Greater Manchester.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "openings-01",
+        "candidate_fingerprint": "url-manchestersfinest-com-eating-and-drinking-schofields-bar-to-open-second-site-in-covent-garden-this-november-e7d3c090df32",
+        "original_url_identity": "manchestersfinest.com/eating-and-drinking/schofields-bar-to-open-second-site-in-covent-garden-this-november",
+        "original_html": "• Коктейльный бар Schofield's, признанный лучшим в Великобритании, откроет вторую площадку в Ковент-Гардене в начале ноября 2026 года. <a href=\"https://manchestersfinest.com/eating-and-drinking/schofields-bar-to-open-second-site-in-covent-garden-this-november\">Manchester's Finest</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
         "line_index": 46,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события должна быть 23 августа, согласно источнику.",
-        "risk": "date",
+        "section": "IT и бизнес",
+        "requested_action": "strip",
+        "reason": "Atom Bank находится в Ньюкасле, что не соответствует geo_scope GM.",
+        "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
+        "critical_problem": "Atom Bank находится в Ньюкасле, что не соответствует geo_scope GM.",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-21",
-        "candidate_fingerprint": "event-id-jsonld-event-1fc113bbb73c-ffbe912a8245",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
-        "original_html": "• 30 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 47,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события должна быть 22 августа, согласно источнику.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-22",
-        "candidate_fingerprint": "event-id-jsonld-event-409609c542a5-e40584ae81f4",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
-        "original_html": "• 29 августа — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
-        "verification": "structured fact already rendered correctly",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "tech_business-02",
+        "candidate_fingerprint": "url-businesscloud-co-uk-news-atom-bank-ceo-expected-to-step-down-after-failed-sale-ca730fc4efaa",
+        "original_url_identity": "businesscloud.co.uk/news/atom-bank-ceo-expected-to-step-down-after-failed-sale",
+        "original_html": "• Ожидается, что CEO Atom Bank Марк Маллен уйдет в отставку в ближайшие недели, после того как процесс продажи банка не увенчался успехом. <a href=\"https://businesscloud.co.uk/news/atom-bank-ceo-expected-to-step-down-after-failed-sale\">BusinessCloud</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
         "line_index": 50,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Уточнение, что речь идет о медицинских трибуналах, важно для точности информации.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Текст не уточняет, что речь идет о медицинских трибуналах, что может ввести в заблуждение.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-04",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-deeply-concerning-data-reveals-sexual-34528417-389b333584cf",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/deeply-concerning-data-reveals-sexual-34528417",
-        "original_html": "• Новые данные показывают, что более трети обвинений в сексуальном misconduct, рассматриваемых медицинскими трибуналами в прошлом году, касались коллег по здравоохранению. Председатель MPTS назвала эти цифры 'глубоко тревожными'. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/deeply-concerning-data-reveals-sexual-34528417\">MEN</a>",
-        "verification": "judge correction matches the existing visible facts",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 61,
-        "section": "Business/tech события для тебя",
-        "requested_action": "patch",
-        "reason": "Уточнение стоимости участия для не-членов палаты.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "professional_events-01",
-        "candidate_fingerprint": "event-event-the-future-of-cyber-security-manchester-exclusive-chamber-member-places-thursday-10-sep-8-2026-09-10-old-trafford-f34013ae8b3a",
-        "original_url_identity": "gmchamber.co.uk/events/the-future-of-cyber-security-manchester-exclusive-chamber-member-places",
-        "original_html": "• The Future of Cyber Security Manchester: Exclusive Chamber Member Places Thursday 10 Sep 8:30am - 5:10pm — 10 сентября, Old Trafford. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь. <a href=\"https://gmchamber.co.uk/events/the-future-of-cyber-security-manchester-exclusive-chamber-member-places\">GM Chamber Events</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 71,
         "section": "Билеты / Ticket Radar",
         "requested_action": "strip",
-        "reason": "Концерт отменён, информация о покупке билетов неактуальна.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "ticket_radar-01",
-        "candidate_fingerprint": "event-event-buy-tickets-for-prose-at-manchester-academy-3-on-saturday-29th-august-2026-prose-cancelled-2026-08-29-manchester-academy-4375d52d415e",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13380303/prose-manchester-academy-3-2026-08-29-19-30-00",
-        "original_html": "• <b>Prose</b> — 29 августа, Manchester Academy; цена £20.00. Концерт отменён. <a href=\"https://manchesteracademy.net/order/gateway/13380303/prose-manchester-academy-3-2026-08-29-19-30-00\">Manchester Academy</a>",
-        "replacement_fingerprint": "event-event-casper-walsh-casper-walsh-five-star-youngfella-tour-sat-17th-oct-19-30-buy-2026-10-17-manchester-academy-8f80d42b6fc1",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 78,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Уточнение даты для ясности.",
+        "reason": "Дата события 1 мая 2027 года не соответствует текущей дате выпуска.",
         "risk": "date",
-        "critical_error": false,
-        "critical_problem": "",
+        "critical_error": true,
+        "critical_problem": "Дата события указана как 1 мая, что противоречит текущей дате выпуска.",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "outside_gm_tickets-01",
-        "candidate_fingerprint": "event-event-ariana-grande-the-eternal-sunshine-tour-2026-08-28-the-o2-db94c6bbd279",
-        "original_url_identity": "ticketmaster.co.uk/ariana-grande-the-eternal-sunshine-tour-london-28-08-2026/event/35006324F5075024",
-        "original_html": "• <b>Ariana Grande</b> — тур: 28 августа, 31 августа и 1 сентября, The O2. Концерт проходит сегодня. <a href=\"https://ticketmaster.co.uk/ariana-grande-the-eternal-sunshine-tour-london-28-08-2026/event/35006324F5075024\">Ticketmaster</a>",
-        "verification": "structured fact already rendered correctly",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "ticket_radar-03",
+        "candidate_fingerprint": "event-event-supergrass-1st-may-2027-2027-05-01-manchester-academy-b0e8d7d08ddb",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13381546/supergrass-manchester-academy-2027-05-01-19-00-00",
+        "original_html": "• <b>Supergrass</b> — 1 мая, Manchester Academy; цена £38.25. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381546/supergrass-manchester-academy-2027-05-01-19-00-00\">Manchester Academy</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 64,
-        "section": "Дальние анонсы",
-        "requested_action": "strip",
-        "reason": "Событие не в Greater Manchester.",
-        "risk": "geo",
+        "line_index": 9,
+        "section": "Свежие новости",
+        "requested_action": "replace",
+        "reason": "critical source fact dropped in translation: 'shot' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+        "risk": "translation",
         "critical_error": true,
         "critical_problem": "",
-        "completeness_concept": "",
+        "completeness_concept": "weapon_violence",
         "outcome": "resolved_by_replacement",
         "method": "reserve_replacement",
-        "plan_slot_id": "future_announcements-02",
-        "candidate_fingerprint": "event-event-marillion-haunt-the-woods-2026-09-27-liverpool-philharmonic-hall-ec9c6d4ccd8b",
-        "original_url_identity": "ticketmaster.co.uk/marillion-haunt-the-woods-liverpool-27-09-2026/event/1F00636E97B06323",
-        "original_html": "• <b>Marillion + Haunt the Woods</b> — 27 сентября, Liverpool Philharmonic Hall. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/marillion-haunt-the-woods-liverpool-27-09-2026/event/1F00636E97B06323\">Ticketmaster</a>",
-        "replacement_fingerprint": "event-id-skiddle-com-c8d883c16706-63eabd865ff7",
+        "plan_slot_id": "last_24h-07",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-the-flashy-drug-dealer-shot-34531974-7cc8f75d111b",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/the-flashy-drug-dealer-shot-34531974",
+        "original_html": "• Льюис Хэнсон, 20 лет, был ранен в локоть полицейскими во время ареста в Уайтфилде, Bury; полицейские не находятся под следствием за свои действия. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/the-flashy-drug-dealer-shot-34531974\">MEN</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bee-network-statement-after-two-34531636-2db6c0f3ceb0",
         "post_check_passed": true
       },
       {
-        "line_index": 65,
-        "section": "Дальние анонсы",
-        "requested_action": "strip",
-        "reason": "Событие не в Greater Manchester.",
-        "risk": "geo",
+        "line_index": 39,
+        "section": "Городской радар",
+        "requested_action": "replace",
+        "reason": "critical source fact dropped in translation: 'dead' (death/who/what) has no Russian rendering in the shipped line",
+        "risk": "translation",
         "critical_error": true,
         "critical_problem": "",
-        "completeness_concept": "",
+        "completeness_concept": "death",
         "outcome": "resolved_by_replacement",
-        "method": "removed",
-        "plan_slot_id": "future_announcements-03",
-        "candidate_fingerprint": "event-event-cabaret-voltaire-s-final-uk-tour-2026-10-11-arts-club-liverpool-theatre-44f6c18d9769",
-        "original_url_identity": "ticketmaster.co.uk/cabaret-voltaires-final-uk-tour-liverpool-11-10-2026/event/1F00635BDBD78373",
-        "original_html": "• <b>Cabaret Voltaire's Final UK Tour</b> — 11 октября, Arts Club Liverpool - Theatre. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/cabaret-voltaires-final-uk-tour-liverpool-11-10-2026/event/1F00635BDBD78373\">Ticketmaster</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 66,
-        "section": "Дальние анонсы",
-        "requested_action": "strip",
-        "reason": "Событие не в Greater Manchester.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "removed",
-        "plan_slot_id": "future_announcements-04",
-        "candidate_fingerprint": "event-event-joe-jackson-hope-and-fury-tour-2026-2026-10-05-liverpool-philharmonic-hall-5280ea00a3f3",
-        "original_url_identity": "ticketmaster.co.uk/joe-jackson-hope-and-fury-tour-liverpool-05-10-2026/event/1F006366C6FC74E5",
-        "original_html": "• <b>JOE JACKSON</b> — 5 октября, Liverpool Philharmonic Hall. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/joe-jackson-hope-and-fury-tour-liverpool-05-10-2026/event/1F006366C6FC74E5\">Ticketmaster</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
+        "method": "reserve_replacement",
+        "plan_slot_id": "city_watch-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-kids-left-twisted-ankle-serious-34526110-6dd090582a7c",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/kids-left-twisted-ankle-serious-34526110",
+        "original_html": "• В Royal Manchester Children's Hospital сообщили о росте числа травм у детей, использующих электросамокаты. Среди серьезных травм — черепно-мозговые травмы и переломы ног. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/kids-left-twisted-ankle-serious-34526110\">MEN</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-mayor-bev-craig-34537039-e70e3c909050",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::добавление имен обвиняемых для полноты и контекста.",
+        "group_key": "главная история дня::дата события указана неверно. 28 августа 2026 года — это пятница, а не суббота.",
         "actions": [
           {
-            "line_index": 4,
-            "section": "Свежие новости",
+            "line_index": 1,
+            "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Добавление имен обвиняемых для полноты и контекста.",
-            "risk": "sensitive",
+            "reason": "Дата события указана неверно. 28 августа 2026 года — это пятница, а не суббота.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Не указаны имена обвиняемых, что может быть важно для контекста дела.",
+            "critical_problem": "Дата события указана неверно. 28 августа 2026 года — это пятница, а не суббота.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "last_24h-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-groomed-rochdale-girls-abused-most-34528794-93b7a6da7170",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/groomed-rochdale-girls-abused-most-34528794",
-            "original_html": "• Шесть мужчин предстают перед судом в Minshull Street Crown Court по обвинениям в исторических сексуальных преступлениях против трёх девушек в Рочдейле. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/groomed-rochdale-girls-abused-most-34528794\">MEN</a>",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-descend-toby-carvery-chadderton-34537428-9474116f60ae",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-descend-toby-carvery-chadderton-34537428",
+            "original_html": "<b>Полиция применяла электрошокер к мужчине на парковке Toby Carvery в Чаддертоне, Oldham, в пятницу вечером, 28 августа 2026 года, после того как он, по сообщениям, пытался войти в ресторан.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-descend-toby-carvery-chadderton-34537428\">MEN</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 4,
+            "line_index": 1,
             "passed": true,
-            "detail": "post-check passed"
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::строка не предоставляет полезной информации о текущем состоянии транспорта.",
+        "group_key": "свежие новости::уточнение роли шабира ахмеда в преступлениях.",
         "actions": [
           {
-            "line_index": 14,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Строка не предоставляет полезной информации о текущем состоянии транспорта.",
+            "line_index": 11,
+            "section": "Свежие новости",
+            "requested_action": "patch",
+            "reason": "Уточнение роли Шабира Ахмеда в преступлениях.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Строка не содержит конкретной информации о том, что произошло и почему это важно.",
+            "critical_problem": "Неверное указание субъекта: Шабир Ахмед не является лидером банды в Рочдейле, он был осуждён за участие в преступлениях.",
+            "completeness_concept": "sexual_offence",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "last_24h-09",
+            "candidate_fingerprint": "url-aboutmanchester-co-uk-pakistan-tells-ed-miliband-it-will-not-take-back-rochdale-grooming-gang-leader-416a89806e57",
+            "original_url_identity": "aboutmanchester.co.uk/pakistan-tells-ed-miliband-it-will-not-take-back-rochdale-grooming-gang-leader",
+            "original_html": "• Пакистан сообщил министру иностранных дел Эду Милбанду, что не примет обратно лидера банды в Рочдейле Шабира Ахмеда, ссылаясь на отсутствие юридического механизма для передачи. <a href=\"https://aboutmanchester.co.uk/pakistan-tells-ed-miliband-it-will-not-take-back-rochdale-grooming-gang-leader\">About Manchester News</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 11,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "общественный транспорт сегодня::событие произошло за пределами greater manchester, что нарушает географический контракт раздела.",
+        "actions": [
+          {
+            "line_index": 13,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "strip",
+            "reason": "Событие произошло за пределами Greater Manchester, что нарушает географический контракт раздела.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Marsden находится в Западном Йоркшире, а не в Greater Manchester.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "transport-03",
-            "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-issue-resolved-disruption-between-manchester-piccadilly-and-manchester-airport-e-79c3b436e064",
-            "original_url_identity": "tfgm.com/travel-updates/travel-alerts/issue-resolved-disruption-between-manchester-piccadilly-and-manchester-airport-e",
-            "original_html": "• Транспорт: работы в районе Issue Resolved — подробности в источнике <a href=\"https://tfgm.com/travel-updates/travel-alerts/issue-resolved-disruption-between-manchester-piccadilly-and-manchester-airport-e\">TfGM</a>",
+            "plan_slot_id": "transport-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-investigation-launched-after-person-dies-34532172-d5ca903cf550",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/investigation-launched-after-person-dies-34532172",
+            "original_html": "• В результате инцидента на станции Марсден, произошедшего 28 августа 2026 года, погиб человек. Полиция по делам транспорта Великобритании проводит расследование. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/investigation-launched-after-person-dies-34532172\">MEN</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -629,7 +642,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 14,
+            "line_index": 13,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -637,32 +650,31 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::цена входа указана как свободная, но в источнике указано £10.",
+        "group_key": "выходные в gm::событие leeds heritage pub & brewery tour проходит в лидсе, что не соответствует требованию geo_scope 'gm'.",
         "actions": [
           {
-            "line_index": 26,
+            "line_index": 23,
             "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Цена входа указана как свободная, но в источнике указано £10.",
-            "risk": "factual",
+            "requested_action": "strip",
+            "reason": "Событие Leeds Heritage Pub & Brewery Tour проходит в Лидсе, что не соответствует требованию geo_scope 'gm'.",
+            "risk": "geo",
             "critical_error": true,
-            "critical_problem": "Некорректная информация о цене входа.",
+            "critical_problem": "Событие находится в Лидсе, что не соответствует geo_scope 'gm'.",
             "completeness_concept": "",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "weekend_activities-04",
-            "candidate_fingerprint": "event-event-makers-market-in-great-northern-square-great-northern-manchester-2026-08-27-great-northern-square-0f2fb75f71f6",
-            "original_url_identity": "thegreatnorthern.com/event/makers-market-in-great-northern-square",
-            "original_html": "• 28 августа — Makers Market in Great Northern Square - Great Northern, Manchester. На площадке: рынок, вход свободный, ремесленные товары, еда. <a href=\"https://thegreatnorthern.com/event/makers-market-in-great-northern-square\">Great Northern Makers Market</a>",
-            "model_replacement_rejected": "fact_lock: 28 августа",
-            "replacement_fingerprint": "event-event-bobby-seagull-s-escape-from-ancient-egypt-2026-08-28-lowry-188d1706ee39",
+            "plan_slot_id": "weekend_activities-07",
+            "candidate_fingerprint": "event-event-leeds-heritage-pub-brewery-tour-2024-02-09-the-tetley-30c76d72a05b",
+            "original_url_identity": "creativetourist.com/event/leeds-heritage-pub-brewery-tour",
+            "original_html": "• 29 августа в The Tetley — Leeds Heritage Pub & Brewery Tour. На площадке: экскурсия, вход £35.00, ремесленные товары. <a href=\"https://creativetourist.com/event/leeds-heritage-pub-brewery-tour\">Creative Tourist Manchester</a>",
+            "replacement_fingerprint": "event-event-amongst-the-trees-day-retreat-2026-08-30-over-alderley-046eadb6480b",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 26,
+            "line_index": 23,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -670,23 +682,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::дата события указана неверно, так как 30 августа 2026 года — это суббота.",
+        "group_key": "выходные в gm::дата мероприятия указана неверно. должно быть 30 августа, а не 30 мая.",
         "actions": [
           {
-            "line_index": 40,
+            "line_index": 28,
             "section": "Выходные в GM",
             "requested_action": "patch",
-            "reason": "Дата события указана неверно, так как 30 августа 2026 года — это суббота.",
+            "reason": "Дата мероприятия указана неверно. Должно быть 30 августа, а не 30 мая.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
+            "critical_problem": "Дата мероприятия указана неверно.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-16",
+            "plan_slot_id": "weekend_activities-09",
             "candidate_fingerprint": "event-id-mediacity-event-page-0ca3d429bc24-7f8ba80d7268",
             "original_url_identity": "mediacityuk.co.uk/events/grub-on-the-docks",
-            "original_html": "• В воскресенье 30 августа — Grub on the Docks в Gardens. Вход £7.50. <a href=\"https://mediacityuk.co.uk/events/grub-on-the-docks\">MediaCity What's On</a>",
+            "original_html": "• В воскресенье, 30 августа, в Gardens пройдет мероприятие Grub on the Docks. Вход £7.50. <a href=\"https://mediacityuk.co.uk/events/grub-on-the-docks\">MediaCity What's On</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -694,7 +706,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 40,
+            "line_index": 28,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -702,159 +714,162 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::дата события должна быть 23 августа, согласно источнику.",
+        "group_key": "городской радар::исправление фактической ошибки в расстоянии.",
         "actions": [
           {
-            "line_index": 46,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события должна быть 23 августа, согласно источнику.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-21",
-            "candidate_fingerprint": "event-id-jsonld-event-1fc113bbb73c-ffbe912a8245",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
-            "original_html": "• 30 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 46,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дата события должна быть 22 августа, согласно источнику.",
-        "actions": [
-          {
-            "line_index": 47,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события должна быть 22 августа, согласно источнику.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-22",
-            "candidate_fingerprint": "event-id-jsonld-event-409609c542a5-e40584ae81f4",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
-            "original_html": "• 29 августа — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 47,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::уточнение, что речь идет о медицинских трибуналах, важно для точности информации.",
-        "actions": [
-          {
-            "line_index": 50,
+            "line_index": 37,
             "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Уточнение, что речь идет о медицинских трибуналах, важно для точности информации.",
+            "reason": "Исправление фактической ошибки в расстоянии.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Текст не уточняет, что речь идет о медицинских трибуналах, что может ввести в заблуждение.",
+            "critical_problem": "Неверное расстояние до назначения.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-04",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-deeply-concerning-data-reveals-sexual-34528417-389b333584cf",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/deeply-concerning-data-reveals-sexual-34528417",
-            "original_html": "• Новые данные показывают, что более трети обвинений в сексуальном misconduct, рассматриваемых медицинскими трибуналами в прошлом году, касались коллег по здравоохранению. Председатель MPTS назвала эти цифры 'глубоко тревожными'. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/deeply-concerning-data-reveals-sexual-34528417\">MEN</a>",
-            "verification": "judge correction matches the existing visible facts",
+            "plan_slot_id": "city_watch-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-easyjet-nightmare-pilot-manchester-airport-34536501-362296bec72e",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/easyjet-nightmare-pilot-manchester-airport-34536501",
+            "original_html": "• Рейс easyJet из Манчестера в Анталию был отменен на взлетной полосе 28 августа 2026 года, а замена была перенаправлена в Милан из-за превышения времени работы экипажа, оставив сотни пассажиров в 1,200 милях от назначения. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/easyjet-nightmare-pilot-manchester-airport-34536501\">MEN</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 37,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "еда, открытия и рынки::событие открытия бара происходит в лондоне, что нарушает географический контракт блока.",
+        "actions": [
+          {
+            "line_index": 44,
+            "section": "Еда, открытия и рынки",
+            "requested_action": "strip",
+            "reason": "Событие открытия бара происходит в Лондоне, что нарушает географический контракт блока.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие происходит в Лондоне, а не в Greater Manchester.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "openings-01",
+            "candidate_fingerprint": "url-manchestersfinest-com-eating-and-drinking-schofields-bar-to-open-second-site-in-covent-garden-this-november-e7d3c090df32",
+            "original_url_identity": "manchestersfinest.com/eating-and-drinking/schofields-bar-to-open-second-site-in-covent-garden-this-november",
+            "original_html": "• Коктейльный бар Schofield's, признанный лучшим в Великобритании, откроет вторую площадку в Ковент-Гардене в начале ноября 2026 года. <a href=\"https://manchestersfinest.com/eating-and-drinking/schofields-bar-to-open-second-site-in-covent-garden-this-november\">Manchester's Finest</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 44,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "it и бизнес::atom bank находится в ньюкасле, что не соответствует geo_scope gm.",
+        "actions": [
+          {
+            "line_index": 46,
+            "section": "IT и бизнес",
+            "requested_action": "strip",
+            "reason": "Atom Bank находится в Ньюкасле, что не соответствует geo_scope GM.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Atom Bank находится в Ньюкасле, что не соответствует geo_scope GM.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "tech_business-02",
+            "candidate_fingerprint": "url-businesscloud-co-uk-news-atom-bank-ceo-expected-to-step-down-after-failed-sale-ca730fc4efaa",
+            "original_url_identity": "businesscloud.co.uk/news/atom-bank-ceo-expected-to-step-down-after-failed-sale",
+            "original_html": "• Ожидается, что CEO Atom Bank Марк Маллен уйдет в отставку в ближайшие недели, после того как процесс продажи банка не увенчался успехом. <a href=\"https://businesscloud.co.uk/news/atom-bank-ceo-expected-to-step-down-after-failed-sale\">BusinessCloud</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 46,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::дата события 1 мая 2027 года не соответствует текущей дате выпуска.",
+        "actions": [
+          {
+            "line_index": 50,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "strip",
+            "reason": "Дата события 1 мая 2027 года не соответствует текущей дате выпуска.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана как 1 мая, что противоречит текущей дате выпуска.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "ticket_radar-03",
+            "candidate_fingerprint": "event-event-supergrass-1st-may-2027-2027-05-01-manchester-academy-b0e8d7d08ddb",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13381546/supergrass-manchester-academy-2027-05-01-19-00-00",
+            "original_html": "• <b>Supergrass</b> — 1 мая, Manchester Academy; цена £38.25. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381546/supergrass-manchester-academy-2027-05-01-19-00-00\">Manchester Academy</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
         "post_checks": [
           {
             "line_index": 50,
             "passed": true,
-            "detail": "existing fact verified"
+            "detail": "slot removed and source absent"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "business/tech события для тебя::уточнение стоимости участия для не-членов палаты.",
+        "group_key": "свежие новости::critical source fact dropped in translation: 'shot' (weapon_violence/who/what) has no russian rendering in the shipped line",
         "actions": [
           {
-            "line_index": 61,
-            "section": "Business/tech события для тебя",
-            "requested_action": "patch",
-            "reason": "Уточнение стоимости участия для не-членов палаты.",
-            "risk": "factual",
+            "line_index": 9,
+            "section": "Свежие новости",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'shot' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "professional_events-01",
-            "candidate_fingerprint": "event-event-the-future-of-cyber-security-manchester-exclusive-chamber-member-places-thursday-10-sep-8-2026-09-10-old-trafford-f34013ae8b3a",
-            "original_url_identity": "gmchamber.co.uk/events/the-future-of-cyber-security-manchester-exclusive-chamber-member-places",
-            "original_html": "• The Future of Cyber Security Manchester: Exclusive Chamber Member Places Thursday 10 Sep 8:30am - 5:10pm — 10 сентября, Old Trafford. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь. <a href=\"https://gmchamber.co.uk/events/the-future-of-cyber-security-manchester-exclusive-chamber-member-places\">GM Chamber Events</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 61,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::концерт отменён, информация о покупке билетов неактуальна.",
-        "actions": [
-          {
-            "line_index": 71,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "strip",
-            "reason": "Концерт отменён, информация о покупке билетов неактуальна.",
-            "risk": "factual",
-            "critical_error": false,
             "critical_problem": "",
-            "completeness_concept": "",
+            "completeness_concept": "weapon_violence",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "event-event-buy-tickets-for-prose-at-manchester-academy-3-on-saturday-29th-august-2026-prose-cancelled-2026-08-29-manchester-academy-4375d52d415e",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13380303/prose-manchester-academy-3-2026-08-29-19-30-00",
-            "original_html": "• <b>Prose</b> — 29 августа, Manchester Academy; цена £20.00. Концерт отменён. <a href=\"https://manchesteracademy.net/order/gateway/13380303/prose-manchester-academy-3-2026-08-29-19-30-00\">Manchester Academy</a>",
-            "replacement_fingerprint": "event-event-casper-walsh-casper-walsh-five-star-youngfella-tour-sat-17th-oct-19-30-buy-2026-10-17-manchester-academy-8f80d42b6fc1",
+            "plan_slot_id": "last_24h-07",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-the-flashy-drug-dealer-shot-34531974-7cc8f75d111b",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/the-flashy-drug-dealer-shot-34531974",
+            "original_html": "• Льюис Хэнсон, 20 лет, был ранен в локоть полицейскими во время ареста в Уайтфилде, Bury; полицейские не находятся под следствием за свои действия. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/the-flashy-drug-dealer-shot-34531974\">MEN</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bee-network-statement-after-two-34531636-2db6c0f3ceb0",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 71,
+            "line_index": 9,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -862,113 +877,33 @@
         "known_factual_error": true
       },
       {
-        "group_key": "крупные концерты вне gm::уточнение даты для ясности.",
+        "group_key": "городской радар::critical source fact dropped in translation: 'dead' (death/who/what) has no russian rendering in the shipped line",
         "actions": [
           {
-            "line_index": 78,
-            "section": "Крупные концерты вне GM",
-            "requested_action": "patch",
-            "reason": "Уточнение даты для ясности.",
-            "risk": "date",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "outside_gm_tickets-01",
-            "candidate_fingerprint": "event-event-ariana-grande-the-eternal-sunshine-tour-2026-08-28-the-o2-db94c6bbd279",
-            "original_url_identity": "ticketmaster.co.uk/ariana-grande-the-eternal-sunshine-tour-london-28-08-2026/event/35006324F5075024",
-            "original_html": "• <b>Ariana Grande</b> — тур: 28 августа, 31 августа и 1 сентября, The O2. Концерт проходит сегодня. <a href=\"https://ticketmaster.co.uk/ariana-grande-the-eternal-sunshine-tour-london-28-08-2026/event/35006324F5075024\">Ticketmaster</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 78,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "дальние анонсы::событие не в greater manchester.",
-        "actions": [
-          {
-            "line_index": 64,
-            "section": "Дальние анонсы",
-            "requested_action": "strip",
-            "reason": "Событие не в Greater Manchester.",
-            "risk": "geo",
+            "line_index": 39,
+            "section": "Городской радар",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'dead' (death/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
             "critical_error": true,
             "critical_problem": "",
-            "completeness_concept": "",
+            "completeness_concept": "death",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "future_announcements-02",
-            "candidate_fingerprint": "event-event-marillion-haunt-the-woods-2026-09-27-liverpool-philharmonic-hall-ec9c6d4ccd8b",
-            "original_url_identity": "ticketmaster.co.uk/marillion-haunt-the-woods-liverpool-27-09-2026/event/1F00636E97B06323",
-            "original_html": "• <b>Marillion + Haunt the Woods</b> — 27 сентября, Liverpool Philharmonic Hall. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/marillion-haunt-the-woods-liverpool-27-09-2026/event/1F00636E97B06323\">Ticketmaster</a>",
-            "replacement_fingerprint": "event-id-skiddle-com-c8d883c16706-63eabd865ff7",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 65,
-            "section": "Дальние анонсы",
-            "requested_action": "strip",
-            "reason": "Событие не в Greater Manchester.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "removed",
-            "plan_slot_id": "future_announcements-03",
-            "candidate_fingerprint": "event-event-cabaret-voltaire-s-final-uk-tour-2026-10-11-arts-club-liverpool-theatre-44f6c18d9769",
-            "original_url_identity": "ticketmaster.co.uk/cabaret-voltaires-final-uk-tour-liverpool-11-10-2026/event/1F00635BDBD78373",
-            "original_html": "• <b>Cabaret Voltaire's Final UK Tour</b> — 11 октября, Arts Club Liverpool - Theatre. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/cabaret-voltaires-final-uk-tour-liverpool-11-10-2026/event/1F00635BDBD78373\">Ticketmaster</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 66,
-            "section": "Дальние анонсы",
-            "requested_action": "strip",
-            "reason": "Событие не в Greater Manchester.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "removed",
-            "plan_slot_id": "future_announcements-04",
-            "candidate_fingerprint": "event-event-joe-jackson-hope-and-fury-tour-2026-2026-10-05-liverpool-philharmonic-hall-5280ea00a3f3",
-            "original_url_identity": "ticketmaster.co.uk/joe-jackson-hope-and-fury-tour-liverpool-05-10-2026/event/1F006366C6FC74E5",
-            "original_html": "• <b>JOE JACKSON</b> — 5 октября, Liverpool Philharmonic Hall. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/joe-jackson-hope-and-fury-tour-liverpool-05-10-2026/event/1F006366C6FC74E5\">Ticketmaster</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
+            "plan_slot_id": "city_watch-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-kids-left-twisted-ankle-serious-34526110-6dd090582a7c",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/kids-left-twisted-ankle-serious-34526110",
+            "original_html": "• В Royal Manchester Children's Hospital сообщили о росте числа травм у детей, использующих электросамокаты. Среди серьезных травм — черепно-мозговые травмы и переломы ног. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/kids-left-twisted-ankle-serious-34526110\">MEN</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-mayor-bev-craig-34537039-e70e3c909050",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 64,
+            "line_index": 39,
             "passed": true,
             "detail": "post-check passed"
-          },
-          {
-            "line_index": 65,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "line_index": 66,
-            "passed": true,
-            "detail": "slot removed and source absent"
           }
         ],
         "known_factual_error": true
@@ -979,314 +914,214 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 6,
-      "reports": [
-        {
-          "fingerprint": "url-tfgm-com-travel-updates-travel-alerts-issue-resolved-disruption-between-manchester-piccadilly-and-manchester-airport-e-79c3b436e064",
-          "title": "Issue resolved: disruption between Manchester Piccadilly and Manchester Airport expected until 09:00",
-          "status": "skipped",
-          "reason": "tfgm_ephemeral_alert",
-          "url": "https://tfgm.com/travel-updates/travel-alerts/issue-resolved-disruption-between-manchester-piccadilly-and-manchester-airport-e",
-          "candidate_evidence_chars": 37
-        },
-        {
-          "fingerprint": "event-event-buy-tickets-for-prose-at-manchester-academy-3-on-saturday-29th-august-2026-prose-cancelled-2026-08-29-manchester-academy-4375d52d415e",
-          "title": "Buy tickets for Prose at Manchester Academy 3 on Saturday 29th August 2026 Prose Cancelled Sat 29th August",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://manchesteracademy.net/order/gateway/13380303/prose-manchester-academy-3-2026-08-29-19-30-00",
-          "candidate_evidence_chars": 703
-        },
-        {
-          "fingerprint": "event-event-ariana-grande-the-eternal-sunshine-tour-2026-08-28-the-o2-db94c6bbd279",
-          "title": "Ariana Grande - The Eternal Sunshine Tour — event 2026-08-28 — public sale 2025-09-18 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/ariana-grande-the-eternal-sunshine-tour-london-28-08-2026/event/35006324F5075024",
-          "candidate_evidence_chars": 307
-        },
-        {
-          "fingerprint": "event-event-marillion-haunt-the-woods-2026-09-27-liverpool-philharmonic-hall-ec9c6d4ccd8b",
-          "title": "Marillion + Haunt the Woods — event 2026-09-27 — public sale 2025-11-20 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/marillion-haunt-the-woods-liverpool-27-09-2026/event/1F00636E97B06323",
-          "candidate_evidence_chars": 357
-        },
-        {
-          "fingerprint": "event-event-cabaret-voltaire-s-final-uk-tour-2026-10-11-arts-club-liverpool-theatre-44f6c18d9769",
-          "title": "Cabaret Voltaire's Final UK Tour — event 2026-10-11 — public sale 2025-10-31 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/cabaret-voltaires-final-uk-tour-liverpool-11-10-2026/event/1F00635BDBD78373",
-          "candidate_evidence_chars": 361
-        },
-        {
-          "fingerprint": "event-event-joe-jackson-hope-and-fury-tour-2026-2026-10-05-liverpool-philharmonic-hall-5280ea00a3f3",
-          "title": "JOE JACKSON - HOPE AND FURY TOUR 2026 — event 2026-10-05 — public sale 2025-11-14 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/joe-jackson-hope-and-fury-tour-liverpool-05-10-2026/event/1F006366C6FC74E5",
-          "candidate_evidence_chars": 357
-        }
-      ]
+      "skipped": 0
     },
-    "enrich_improved": 13,
-    "no_eligible_backup": 3,
-    "deterministic_fact_lock_rejected": 1,
-    "false_positive_existing_fact": 6,
+    "enrich_improved": 11,
+    "false_positive_existing_fact": 4,
+    "no_eligible_backup": 4,
+    "deterministic_rewrite_rejected": 2,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 73,
-      "matched_lines": 73,
-      "applicable_lines": 4,
+      "checked_lines": 46,
+      "matched_lines": 46,
+      "applicable_lines": 2,
       "unmatched_lines": 4,
-      "critical_omission_count": 0,
-      "critical_omissions": [],
+      "critical_omission_count": 1,
+      "critical_omissions": [
+        {
+          "line_index": 11,
+          "source_url_key": "aboutmanchester.co.uk/pakistan-tells-ed-miliband-it-will-not-take-back-rochdale-grooming-gang-leader",
+          "concept": "sexual_offence",
+          "obligation": "charge/verdict/victim",
+          "source_hit": "grooming"
+        }
+      ],
       "noncritical_omissions": [],
-      "critical_errors": [],
+      "critical_errors": [
+        {
+          "line_index": 11,
+          "section": "Свежие новости",
+          "risk": "translation",
+          "problem": "critical source fact dropped in translation: 'grooming' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
+          "suggested_action": "repair",
+          "completeness_concept": "sexual_offence"
+        }
+      ],
       "warnings": [],
       "recovered": 0,
       "pulled_for_rework": 0,
-      "still_missing": 0
+      "still_missing": 1
     },
     "final_prose_policy": {
-      "checked_lines": 77,
-      "resolved_in_place": 77,
+      "checked_lines": 50,
+      "resolved_in_place": 50,
       "unresolved": 0,
       "findings": []
     },
-    "status": "resolved"
+    "status": "unresolved"
   },
-  "notes": "Строка соответствует всем требованиям: география, факты и юридический статус корректны.; Прогноз погоды соответствует данным Met Office и контракту раздела.; Требуется уточнение деталей в строке 4 для соответствия источнику и контекста дела.; Строка 14 не содержит конкретной информации и должна быть удалена.; Строка со",
+  "notes": "Исправьте дату на пятницу, чтобы избежать путаницы.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление роли Шабира Ахмеда необходимо для точности информации.; Инцидент на станции Марсден не соответствует географическому контракту GM.; Обе строки соответствуют требованиям и не содержат критичес",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.9,
+    "confidence": 0.85,
     "critical_errors": [
       {
-        "line_index": 4,
-        "section": "Свежие новости",
-        "problem": "Не указаны имена обвиняемых, что может быть важно для контекста дела.",
-        "risk": "sensitive",
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Дата события указана неверно. 28 августа 2026 года — это пятница, а не суббота.",
+        "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 14,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Строка не содержит конкретной информации о том, что произошло и почему это важно.",
+        "line_index": 11,
+        "section": "Свежие новости",
+        "problem": "Неверное указание субъекта: Шабир Ахмед не является лидером банды в Рочдейле, он был осуждён за участие в преступлениях.",
         "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 13,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Marsden находится в Западном Йоркшире, а не в Greater Manchester.",
+        "risk": "geo",
         "suggested_action": "strip"
       },
       {
-        "line_index": 26,
+        "line_index": 23,
         "section": "Выходные в GM",
-        "problem": "Некорректная информация о цене входа.",
+        "problem": "Событие находится в Лидсе, что не соответствует geo_scope 'gm'.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 28,
+        "section": "Выходные в GM",
+        "problem": "Дата мероприятия указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 37,
+        "section": "Городской радар",
+        "problem": "Неверное расстояние до назначения.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 40,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
+        "line_index": 44,
+        "section": "Еда, открытия и рынки",
+        "problem": "Событие происходит в Лондоне, а не в Greater Manchester.",
+        "risk": "geo",
+        "suggested_action": "strip"
       },
       {
         "line_index": 46,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 47,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
+        "section": "IT и бизнес",
+        "problem": "Atom Bank находится в Ньюкасле, что не соответствует geo_scope GM.",
+        "risk": "geo",
+        "suggested_action": "strip"
       },
       {
         "line_index": 50,
-        "section": "Городской радар",
-        "problem": "Текст не уточняет, что речь идет о медицинских трибуналах, что может ввести в заблуждение.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 57,
-        "section": "IT и бизнес",
-        "problem": "Указано, что данные клиентов аэропортов Лондона Стэнстеда и Восточного Мидленда также были скомпрометированы, что выходит за пределы geo_scope.",
-        "risk": "geo",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 61,
-        "section": "Business/tech события для тебя",
-        "problem": "Дата события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 64,
-        "section": "Дальние анонсы",
-        "problem": "Событие не в Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 65,
-        "section": "Дальние анонсы",
-        "problem": "Событие не в Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 66,
-        "section": "Дальние анонсы",
-        "problem": "Событие не в Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 67,
-        "section": "Дальние анонсы",
-        "problem": "Событие не в Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 68,
-        "section": "Дальние анонсы",
-        "problem": "Событие не в Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 69,
-        "section": "Дальние анонсы",
-        "problem": "Событие не в Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 70,
-        "section": "Дальние анонсы",
-        "problem": "Событие не в Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 71,
         "section": "Билеты / Ticket Radar",
-        "problem": "Концерт отменён, но информация о покупке билетов всё ещё присутствует.",
-        "risk": "factual",
+        "problem": "Дата события указана как 1 мая, что противоречит текущей дате выпуска.",
+        "risk": "date",
         "suggested_action": "strip"
       }
     ],
     "actions": [
       {
-        "line_index": 4,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "action": "patch",
+        "replacement_text": "• Полиция применяла электрошокер к мужчине на парковке Toby Carvery в Чаддертоне, Oldham, в пятницу вечером, 28 августа 2026 года, после того как он, по сообщениям, пытался войти в ресторан.",
+        "reason": "Дата события указана неверно. 28 августа 2026 года — это пятница, а не суббота.",
+        "risk": "date"
+      },
+      {
+        "line_index": 11,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• Шесть мужчин, включая Тахира Рашида, 55 лет, и Мохаммеда Салима, 47 лет, предстают перед судом в Minshull Street Crown Court по обвинениям в исторических сексуальных преступлениях против трёх девушек в Рочдейле.",
-        "reason": "Добавление имен обвиняемых для полноты и контекста.",
-        "risk": "sensitive"
+        "replacement_text": "• Пакистан сообщил министру иностранных дел Эду Милбанду, что не примет обратно Шабира Ахмеда, осуждённого за участие в преступлениях в Рочдейле, ссылаясь на отсутствие юридического механизма для передачи.",
+        "reason": "Уточнение роли Шабира Ахмеда в преступлениях.",
+        "risk": "factual"
       },
       {
-        "line_index": 14,
+        "line_index": 13,
         "section": "Общественный транспорт сегодня",
         "action": "strip",
-        "reason": "Строка не предоставляет полезной информации о текущем состоянии транспорта.",
-        "risk": "factual"
+        "reason": "Событие произошло за пределами Greater Manchester, что нарушает географический контракт раздела.",
+        "risk": "geo"
       },
       {
-        "line_index": 26,
+        "line_index": 23,
         "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 28 августа — Makers Market in Great Northern Square - Great Northern, Manchester. На площадке: рынок, вход £10, ремесленные товары, еда.",
-        "reason": "Цена входа указана как свободная, но в источнике указано £10.",
-        "risk": "factual"
+        "action": "strip",
+        "reason": "Событие Leeds Heritage Pub & Brewery Tour проходит в Лидсе, что не соответствует требованию geo_scope 'gm'.",
+        "risk": "geo"
       },
       {
-        "line_index": 40,
+        "line_index": 28,
         "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• В воскресенье 30 августа — Grub on the Docks в Gardens. Вход £7.50.",
-        "reason": "Дата события указана неверно, так как 30 августа 2026 года — это суббота.",
+        "replacement_text": "• В воскресенье, 30 августа, в Gardens пройдет мероприятие Grub on the Docks. Вход £7.50.",
+        "reason": "Дата мероприятия указана неверно. Должно быть 30 августа, а не 30 мая.",
         "risk": "date"
+      },
+      {
+        "line_index": 37,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Рейс easyJet из Манчестера в Анталию был отменен на взлетной полосе 28 августа 2026 года, а замена была перенаправлена в Милан из-за превышения времени работы экипажа, оставив сотни пассажиров в 1,290 милях от назначения.",
+        "reason": "Исправление фактической ошибки в расстоянии.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 44,
+        "section": "Еда, открытия и рынки",
+        "action": "strip",
+        "reason": "Событие открытия бара происходит в Лондоне, что нарушает географический контракт блока.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 45,
+        "section": "IT и бизнес",
+        "action": "keep",
+        "reason": "Событие связано с Манчестером и соответствует geo_scope.",
+        "risk": "geo"
       },
       {
         "line_index": 46,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 23 августа в Bowlee Community Park, Middleton, Manchester — Bowlee car boot sale. На площадке: автомобильная барахолка, вход свободный.",
-        "reason": "Дата события должна быть 23 августа, согласно источнику.",
-        "risk": "date"
+        "section": "IT и бизнес",
+        "action": "strip",
+        "reason": "Atom Bank находится в Ньюкасле, что не соответствует geo_scope GM.",
+        "risk": "geo"
       },
       {
         "line_index": 47,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 22 августа — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой.",
-        "reason": "Дата события должна быть 22 августа, согласно источнику.",
-        "risk": "date"
+        "section": "IT и бизнес",
+        "action": "keep",
+        "reason": "Событие связано с Манчестером и соответствует geo_scope.",
+        "risk": "geo"
       },
       {
         "line_index": 50,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Новые данные показывают, что более трети обвинений в сексуальном misconduct, рассматриваемых медицинскими трибуналами в прошлом году, касались коллег по здравоохранению. Председатель MPTS назвала эти цифры 'глубоко тревожными'.",
-        "reason": "Уточнение, что речь идет о медицинских трибуналах, важно для точности информации.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 57,
-        "section": "IT и бизнес",
-        "action": "patch",
-        "replacement_text": "• Хакеры получили доступ к данным около 8.7 миллионов клиентов аэропорта Манчестера; Manchester Airports Group отказалась платить выкуп и призывает к бдительности против фишинга.",
-        "reason": "Указание на другие аэропорты выходит за пределы geo_scope.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 61,
-        "section": "Business/tech события для тебя",
-        "action": "patch",
-        "replacement_text": "• The Future of Cyber Security Manchester: Exclusive Chamber Member Places Thursday 10 Sep 8:30am - 5:10pm — 10 сентября, Old Trafford. Уровень: большая конференция/экспо; Доступ: бесплатно для членов палаты, £225 для остальных. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь.",
-        "reason": "Уточнение стоимости участия для не-членов палаты.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 63,
-        "section": "Дальние анонсы",
-        "action": "keep",
-        "reason": "Событие в Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 71,
         "section": "Билеты / Ticket Radar",
         "action": "strip",
-        "reason": "Концерт отменён, информация о покупке билетов неактуальна.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 78,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• Ariana Grande — тур: 28 августа, 31 августа и 1 сентября, The O2. Концерт проходит сегодня, 28 августа.",
-        "reason": "Уточнение даты для ясности.",
+        "reason": "Дата события 1 мая 2027 года не соответствует текущей дате выпуска.",
         "risk": "date"
       }
     ],
     "warnings": [
-      "Уточнена дата концерта Ariana Grande для ясности.",
-      "judge reduce failed: parse_failed no parseable JSON"
+      "Отсутствует блок 'Что важно сегодня', что может снизить информативность выпуска.",
+      "Секция 'Еда, открытия и рынки' содержит только один элемент, что ниже минимального порога.",
+      "Секция 'Русскоязычные концерты и стендап UK' полностью отсутствует, что может разочаровать аудиторию, ожидающую этот контент."
     ],
-    "notes": "Строка соответствует всем требованиям: география, факты и юридический статус корректны.; Прогноз погоды соответствует данным Met Office и контракту раздела.; Требуется уточнение деталей в строке 4 для соответствия источнику и контекста дела.; Строка 14 не содержит конкретной информации и должна быть удалена.; Строка со",
+    "notes": "Исправьте дату на пятницу, чтобы избежать путаницы.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление роли Шабира Ахмеда необходимо для точности информации.; Инцидент на станции Марсден не соответствует географическому контракту GM.; Обе строки соответствуют требованиям и не содержат критичес",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "partial",
-      "chunk_count": 17,
+      "status": "ok",
+      "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -1299,13 +1134,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2686,
-          "duration_seconds": 1.905
+          "estimated_tokens": 2703,
+          "duration_seconds": 2.963
         },
         {
           "chunk_id": "chunk-02",
@@ -1322,8 +1157,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2463,
-          "duration_seconds": 1.902
+          "estimated_tokens": 2483,
+          "duration_seconds": 1.53
         },
         {
           "chunk_id": "chunk-03",
@@ -1340,15 +1175,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7061,
-          "duration_seconds": 3.615
+          "estimated_tokens": 7440,
+          "duration_seconds": 3.094
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            18
+            13
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -1358,33 +1193,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5114,
-          "duration_seconds": 2.601
+          "estimated_tokens": 3173,
+          "duration_seconds": 1.887
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            19,
-            19
-          ],
-          "sections": [
-            "Что важно сегодня"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2690,
-          "duration_seconds": 1.544
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "ok",
-          "line_range": [
-            20,
-            21
+            14,
+            15
           ],
           "sections": [
             "Футбол"
@@ -1394,15 +1211,33 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3128,
-          "duration_seconds": 1.428
+          "estimated_tokens": 3140,
+          "duration_seconds": 1.643
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "ok",
+          "line_range": [
+            16,
+            27
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 8058,
+          "duration_seconds": 1.887
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            22,
-            33
+            28,
+            36
           ],
           "sections": [
             "Выходные в GM"
@@ -1412,51 +1247,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 9141,
-          "duration_seconds": 116.562
+          "estimated_tokens": 7226,
+          "duration_seconds": 61.112
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            34,
-            45
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 8061,
-          "duration_seconds": 100.611
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            46,
-            47
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3435,
-          "duration_seconds": 3.915
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            48,
-            55
+            37,
+            43
           ],
           "sections": [
             "Городской радар"
@@ -1466,87 +1265,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6296,
-          "duration_seconds": 7.578
+          "estimated_tokens": 5810,
+          "duration_seconds": 44.024
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            56,
-            56
+            44,
+            44
           ],
           "sections": [
             "Еда, открытия и рынки"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2724,
-          "duration_seconds": 4.039
+          "estimated_tokens": 2764,
+          "duration_seconds": 2.973
         },
         {
-          "chunk_id": "chunk-12",
+          "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            57,
-            60
+            45,
+            47
           ],
           "sections": [
             "IT и бизнес"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
-          "action_count": 1,
+          "action_count": 3,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4200,
-          "duration_seconds": 11.543
+          "estimated_tokens": 3696,
+          "duration_seconds": 9.143
         },
         {
-          "chunk_id": "chunk-13",
+          "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            61,
-            62
-          ],
-          "sections": [
-            "Business/tech события для тебя"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3589,
-          "duration_seconds": 8.811
-        },
-        {
-          "chunk_id": "chunk-14",
-          "status": "ok",
-          "line_range": [
-            63,
-            70
-          ],
-          "sections": [
-            "Дальние анонсы"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 7,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 6708,
-          "duration_seconds": 17.151
-        },
-        {
-          "chunk_id": "chunk-15",
-          "status": "ok",
-          "line_range": [
-            71,
-            77
+            48,
+            52
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -1556,58 +1319,40 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6236,
-          "duration_seconds": 12.494
+          "estimated_tokens": 5323,
+          "duration_seconds": 10.824
         },
         {
-          "chunk_id": "chunk-16",
+          "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
-            78,
-            79
+            53,
+            54
           ],
           "sections": [
             "Крупные концерты вне GM"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 1,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 3258,
-          "duration_seconds": 4.416
-        },
-        {
-          "chunk_id": "chunk-17",
-          "status": "ok",
-          "line_range": [
-            80,
-            80
-          ],
-          "sections": [
-            "Русскоязычные концерты и стендап UK"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2764,
-          "duration_seconds": 4.835
+          "estimated_tokens": 3307,
+          "duration_seconds": 6.421
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
+        "decision": "warn",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 12708,
-        "duration_seconds": 48.584
+        "warning_count": 3,
+        "error": "",
+        "estimated_tokens": 11241,
+        "duration_seconds": 24.843
       },
       "max_workers": 3,
       "chunk_line_target": 12,
