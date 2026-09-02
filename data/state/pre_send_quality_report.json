@@ -2,153 +2,100 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
+  "reason": "pre-send repair executor applied 3 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-09-01",
-  "pipeline_run_id": "20260901T080135+0100",
-  "digest_sha256": "d249b2fecf665a8e03e8bf7fb5b5e5e096c41a9b2c5e424d26110031454bfd58",
-  "duration_seconds": 48.892,
+  "run_date_london": "2026-09-02",
+  "pipeline_run_id": "20260902T080138+0100",
+  "digest_sha256": "a0a986fb67be65225781da824d46c2315b80a41a060ca40f2bf768da3cd0bed4",
+  "duration_seconds": 48.295,
   "confidence": 0.85,
   "critical_errors": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Ошибка в дате атаки: указана 2 октября 2025 года, но это будущее относительно даты выпуска.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 4,
+      "line_index": 3,
       "section": "Свежие новости",
-      "problem": "Неправильное указание даты нападения.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 12,
-      "section": "Футбол",
-      "problem": "Текст утверждает, что Манчестер Сити сосредоточился на переходе Энцо Фернандеса, но это не подтверждается источником.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 18,
-      "section": "Городской радар",
-      "problem": "Неправильный источник информации. Текст не соответствует фактам из источника.",
-      "risk": "factual",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 23,
-      "section": "IT и бизнес",
-      "problem": "Неправильная географическая привязка: Экслис не находится в Salford.",
+      "problem": "География суда не соответствует geo_scope.",
       "risk": "geo",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 15,
+      "section": "Футбол",
+      "problem": "Неверное утверждение о подписании Энцо Фернандеса и Илимана Ндиайе.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 22,
+      "section": "IT и бизнес",
+      "problem": "Некорректное использование термина 'терроризм'.",
+      "risk": "sensitive",
       "suggested_action": "repair"
     },
     {
       "line_index": 25,
       "section": "Билеты / Ticket Radar",
-      "problem": "Дата события указана неверно. В тексте указано 2 сентября, но событие отложено.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 27,
-      "section": "Крупные концерты вне GM",
-      "problem": "Указано два места проведения для одного события.",
+      "problem": "Событие Shakey Graves отложено, но указано как проходящее сегодня.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 4,
+      "line_index": 11,
       "section": "Свежие новости",
       "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'shot' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+      "problem": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
       "suggested_action": "repair",
       "completeness_concept": "weapon_violence"
     }
   ],
   "actions": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• Участники почтили память жертв атаки, произошедшей 2 октября 2024 года, когда были убиты Мелвин Кравиц и Адриан Долби, а трое других получили ранения, пытаясь защитить свою общину.",
-      "reason": "Дата атаки должна быть в прошлом относительно даты выпуска.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 4,
+      "line_index": 3,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• Почти год спустя после нападения на синагогу в Хитон Парке, пострадавший Юни Финлей сообщил, что его сын сталкивается с угрозами смерти и что \"всё не кажется безопаснее\". Нападение произошло 2 сентября прошлого года, когда Джихад аль-Шами наехал на пешеходов и начал нападение на прихожан, что привело к серьезным травмам и смерти 66-летнего Мелвина Кравица.",
-      "reason": "Исправление даты нападения на синагогу.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 12,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Манчестер Сити рассматривает возможность подписания Энцо Фернандеса после того, как Ливерпуль отклонил предложение о покупке Коді Гакпо за 75 миллионов фунтов плюс 5 миллионов фунтов в виде бонусов.",
-      "reason": "Уточнение формулировки для соответствия источнику.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 18,
-      "section": "Городской радар",
-      "action": "strip",
-      "reason": "Текст не соответствует фактам из источника, что может ввести в заблуждение.",
-      "risk": "factual",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 23,
-      "section": "IT и бизнес",
-      "action": "patch",
-      "replacement_text": "• Жители Экслис, Wigan, жалуются на шум, пыль и вибрации от подготовительных работ для семи складов на Ланкро Уэй; работы начались около двух недель назад и продлятся 12 недель.",
-      "reason": "Экслис находится в Wigan, а не в Salford.",
+      "replacement_text": "• Психиатрическая медсестра Лоренс Чапонг была осуждена за умышленное пренебрежение к пациенту, что привело к её смерти. Суд в Ливерпуле приговорил её к четырем годам тюремного заключения за то, что она не проводила необходимые проверки и подделывала записи. В результате её действий 22-летняя Эми Барбер была найдена без сознания и не смогла быть спасена, несмотря на её сложную историю психического здоровья. Хотя суд проходил в Ливерпуле, инцидент произошел в Greater Manchester.",
+      "reason": "Уточнение географии инцидента для соответствия geo_scope.",
       "risk": "geo"
     },
     {
-      "line_index": 24,
-      "section": "IT и бизнес",
+      "line_index": 15,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• Реконструкция состава \"Манчестер Сити\" обошлась в 80 миллионов фунтов стерлингов, несмотря на два рекорда по трансферам и подписания в последний день трансферного окна.",
+      "reason": "Энцо Фернандес и Илиман Ндиайе не были подписаны \"Манчестер Сити\".",
+      "risk": "factual"
+    },
+    {
+      "line_index": 16,
+      "section": "Футбол",
       "action": "keep",
-      "reason": "Информация о новой форме Manchester City и PUMA корректна и соответствует источнику.",
+      "reason": "Текст соответствует фактам и не требует изменений.",
       "risk": "factual",
       "replacement_text": ""
+    },
+    {
+      "line_index": 22,
+      "section": "IT и бизнес",
+      "action": "patch",
+      "replacement_text": "• Мохаммед Халил Надир, 19 лет, был приговорён к тюремному заключению за создание угрозы общественной безопасности после того, как снял себя, активирующего фальшивый пояс с бомбой, вдохновлённый атакой на синагогу в Манчестере.",
+      "reason": "Термин 'терроризм' может быть юридически некорректным в данном контексте.",
+      "risk": "sensitive"
     },
     {
       "line_index": 25,
       "section": "Билеты / Ticket Radar",
       "action": "patch",
-      "replacement_text": "• Shakey Graves — мероприятие отложено, новая дата будет объявлена позже. Цена билета £24.",
-      "reason": "Указана неверная дата события, так как оно отложено.",
-      "risk": "date"
-    },
-    {
-      "line_index": 26,
-      "section": "Билеты / Ticket Radar",
-      "action": "keep",
-      "reason": "Информация о событии актуальна и соответствует данным.",
-      "risk": "none",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 27,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• The Black Keys — 1 сентября, O2 Academy Brixton. Событие проходит сегодня.",
-      "reason": "Указано два места проведения для одного события, исправлено на одно.",
+      "replacement_text": "• Shakey Graves — 2 сентября, Manchester Academy; цена £24. Событие отложено, новая дата будет объявлена позже.",
+      "reason": "Событие отложено, информация о его проведении сегодня неверна.",
       "risk": "factual"
     }
   ],
   "warnings": [
-    "Отсутствие блока 'Что важно сегодня' и 'Еда, открытия и рынки' снижает полноту выпуска.",
-    "Некоторые секции, такие как 'Свежие новости' и 'Городской радар', содержат много элементов, что может перегрузить читателя.",
-    "line 5 drops source number/date fact(s): 13"
+    "Недостаток в блоке 'Что важно сегодня': только 1 элемент при минимуме 3.",
+    "Недостаток в блоке 'Городской радар': только 4 элемента при минимуме 5.",
+    "Отсутствие блока 'Еда, открытия и рынки'."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -156,63 +103,65 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 8,
-      "Общественный транспорт сегодня": 1,
-      "Футбол": 3,
-      "Городской радар": 8,
-      "IT и бизнес": 2,
+      "Свежие новости": 9,
+      "Общественный транспорт сегодня": 2,
+      "Что важно сегодня": 1,
+      "Футбол": 2,
+      "Городской радар": 4,
+      "IT и бизнес": 3,
       "Билеты / Ticket Radar": 2,
-      "Крупные концерты вне GM": 3,
+      "Крупные концерты вне GM": 1,
       "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
-      "Свежие новости": 8,
+      "Что важно сегодня": 1,
+      "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 8,
+      "Городской радар": 4,
       "Билеты / Ticket Radar": 2,
       "Русскоязычные концерты и стендап UK": 1,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
-      "Футбол": 3
+      "Футбол": 2
     },
-    "ticket_items": 6,
-    "core_items": 21,
+    "ticket_items": 4,
+    "core_items": 18,
     "writer_quality_counts": {
-      "included_candidates": 34,
-      "rendered_candidates": 30,
+      "included_candidates": 29,
+      "rendered_candidates": 27,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
       "dropped_low_quality": 2,
-      "replaced_from_plan_backup": 2,
+      "replaced_from_plan_backup": 0,
       "removed_with_reason": 2
     },
     "source_health_counts": {
-      "ok": 106,
+      "ok": 108,
       "partial": 0,
-      "stale": 10,
-      "empty": 10,
+      "stale": 5,
+      "empty": 12,
       "failed": 5,
       "zero_yield": 77,
       "no_contribution_breakdown": {
         "fetch_failed": 5,
         "all_rejected": 77,
-        "idle_no_items": 34
+        "idle_no_items": 33
       },
       "zero_contribution_by_stage": {
-        "selected": 39,
-        "written": 38,
-        "parsed": 34,
-        "fetched": 5
+        "selected": 40,
+        "written": 37,
+        "fetched": 5,
+        "parsed": 33
       },
       "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
+      "Что важно сегодня: 1 item(s), emergency floor 3",
+      "Городской радар: 4 item(s), emergency floor 5",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "Business/tech события для тебя: 0 item(s), emergency floor 1",
       "source failures: 5"
@@ -221,247 +170,256 @@
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 1 has unchecked number/date token(s): 2024",
-      "patch for line 4 has unchecked number/date token(s): 66",
-      "patch for line 12 has unchecked number/date token(s): 5, 75",
-      "patch for line 23 has unchecked number/date token(s): 12"
+      "patch for line 15 has unchecked number/date token(s): 80"
     ],
     "can_apply_actions": true,
-    "action_count": 9
+    "action_count": 5
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 30,
-    "matched_lines": 30,
-    "applicable_lines": 5,
+    "checked_lines": 27,
+    "matched_lines": 27,
+    "applicable_lines": 4,
     "unmatched_lines": 0,
     "critical_omission_count": 1,
     "critical_omissions": [
       {
-        "line_index": 4,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/dad-shot-manchester-synagogue-attack-34544920",
+        "line_index": 11,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/four-teen-suspects-held-after-34551954",
         "concept": "weapon_violence",
         "obligation": "who/what",
-        "source_hit": "shot"
+        "source_hit": "stabbed"
       }
     ],
-    "noncritical_omissions": [
-      {
-        "line_index": 5,
-        "dropped": [
-          "13"
-        ]
-      }
-    ],
+    "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 0,
-    "still_missing": 1
+    "pulled_for_rework": 1,
+    "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 8,
-    "attempted": 4,
-    "applied": 4,
+    "requested": 6,
+    "attempted": 3,
+    "applied": 3,
     "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 2,
-    "stripped": 1,
-    "unresolved": 1,
-    "blocking_unresolved": 1,
-    "resolved": 7,
-    "resolved_in_place": 5,
-    "resolved_by_replacement": 1,
-    "resolved_by_removal": 1,
-    "fact_lock_rejected": 1,
-    "enrich_attempted": 6,
+    "stripped": 0,
+    "unresolved": 0,
+    "blocking_unresolved": 0,
+    "resolved": 6,
+    "resolved_in_place": 4,
+    "resolved_by_replacement": 2,
+    "resolved_by_removal": 0,
+    "fact_lock_rejected": 0,
+    "enrich_attempted": 5,
     "post_check_errors": [],
-    "geo_contract_rejected": [
-      {
-        "line_index": 23,
-        "section": "IT и бизнес",
-        "geo_scope": "gm",
-        "reason": "Экслис находится в Wigan, а не в Salford.",
-        "gm_anchor_present": true
-      }
-    ],
+    "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "requested_action": "patch",
-        "reason": "Дата атаки должна быть в прошлом относительно даты выпуска.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Ошибка в дате атаки: указана 2 октября 2025 года, но это будущее относительно даты выпуска.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cx2z4wlxj04o-4eb176932d5e",
-        "original_url_identity": "bbc.com/news/articles/cx2z4wlxj04o",
-        "original_html": "<b>В понедельник, 31 августа 2026 года, в синагоге Хитон Парка в Манчестере прошла мемориальная служба, на которой собрались около 800 человек, включая главного раввина Эфраима Мирвиса и секретаря по делам общин Анджелу Рейнер.</b> Участники почтили память жертв атаки, произошедшей 2 октября 2025 года, когда были убиты Мелвин Кравиц и Адриан Долби, а трое других получили ранения, пытаясь защитить свою общину. <a href=\"https://bbc.co.uk/news/articles/cx2z4wlxj04o\">BBC Manchester</a>",
-        "model_replacement_rejected": "fact_lock: 2 октября 2024",
-        "replacement_fingerprint": "url-manchester-gov-uk-news-stories-2026-council-email-system-not-working-alternative-phone-number-in-place-to-report-a-vulnerable-child-or-adult-5871f73d1e3b",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 4,
+        "line_index": 3,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Исправление даты нападения на синагогу.",
-        "risk": "factual",
+        "reason": "Уточнение географии инцидента для соответствия geo_scope.",
+        "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Неправильное указание даты нападения.",
-        "completeness_concept": "weapon_violence",
+        "critical_problem": "География суда не соответствует geo_scope.",
+        "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "last_24h-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-dad-shot-manchester-synagogue-attack-34544920-31c3aa0b8ec6",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/dad-shot-manchester-synagogue-attack-34544920",
-        "original_html": "• Почти год спустя после нападения на синагогу в Хитон Парке, пострадавший Юни Финлей сообщил, что его сын сталкивается с угрозами смерти и что \"всё не кажется безопаснее\". Нападение произошло 2 октября прошлого года, когда Джихад аль-Шами наехал на пешеходов и начал нападение на прихожан, что привело к серьезным травмам и смерти 66-летнего Мелвина Кравица. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/dad-shot-manchester-synagogue-attack-34544920\">MEN</a>",
+        "plan_slot_id": "last_24h-01",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cr4v20v4wwdo-69229dd8e9fe",
+        "original_url_identity": "bbc.com/news/articles/cr4v20v4wwdo",
+        "original_html": "• Психиатрическая медсестра Лоренс Чапонг была осуждена за умышленное пренебрежение к пациенту, что привело к её смерти. Суд в Ливерпуле приговорил её к четырем годам тюремного заключения за то, что она не проводила необходимые проверки и подделывала записи. В результате её действий 22-летняя Эми Барбер была найдена без сознания и не смогла быть спасена, несмотря на её сложную историю психического здоровья. <a href=\"https://bbc.co.uk/news/articles/cr4v20v4wwdo\">BBC Manchester</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 12,
+        "line_index": 15,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Уточнение формулировки для соответствия источнику.",
+        "reason": "Энцо Фернандес и Илиман Ндиайе не были подписаны \"Манчестер Сити\".",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Текст утверждает, что Манчестер Сити сосредоточился на переходе Энцо Фернандеса, но это не подтверждается источником.",
+        "critical_problem": "Неверное утверждение о подписании Энцо Фернандеса и Илимана Ндиайе.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
         "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-city-gakpo-transfer-news-34547271-9e63d56ad34a",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/man-city-gakpo-transfer-news-34547271",
-        "original_html": "• Манчестер Сити сосредоточился на переходе Энцо Фернандеса после того, как Ливерпуль отклонил предложение о покупке Коді Гакпо за 75 миллионов фунтов плюс 5 миллионов фунтов в виде бонусов. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/man-city-gakpo-transfer-news-34547271\">MEN Manchester City</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-citys-staggering-superpower-means-34552369-87dc4ffc1753",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/man-citys-staggering-superpower-means-34552369",
+        "original_html": "• Реконструкция состава \"Манчестер Сити\" обошлась в 80 миллионов фунтов стерлингов, несмотря на два рекорда по трансферам и подписания Энцо Фернандеса и Илимана Ндиайе в последний день трансферного окна. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/man-citys-staggering-superpower-means-34552369\">MEN Manchester City</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 18,
-        "section": "Городской радар",
-        "requested_action": "strip",
-        "reason": "Текст не соответствует фактам из источника, что может ввести в заблуждение.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильный источник информации. Текст не соответствует фактам из источника.",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "reserve_replacement",
-        "plan_slot_id": "city_watch-04",
-        "candidate_fingerprint": "url-bbc-com-news-articles-c3d7vr721x0o-60d0ff5f136e",
-        "original_url_identity": "bbc.com/news/articles/c3d7vr721x0o",
-        "original_html": "• Четыре человека были арестованы после того, как подросток был ранен ножом в центре Rochdale; жертва остается в больнице с серьезными, но не угрожающими жизни травмами. <a href=\"https://bbc.co.uk/news/articles/c3d7vr721x0o\">BBC Manchester</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bomb-disposal-incident-live-homes-34547031-a35f1565fcad",
-        "post_check_passed": false
-      },
-      {
-        "line_index": 24,
-        "section": "IT и бизнес",
+        "line_index": 16,
+        "section": "Футбол",
         "requested_action": "keep",
-        "reason": "Информация о новой форме Manchester City и PUMA корректна и соответствует источнику.",
+        "reason": "Текст соответствует фактам и не требует изменений.",
         "risk": "factual",
         "critical_error": false,
         "critical_problem": "",
         "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "tech_business-02",
-        "candidate_fingerprint": "url-businesscloud-co-uk-news-manchester-city-puma-break-ground-with-ai-first-a8f258be23a8",
-        "original_url_identity": "businesscloud.co.uk/news/manchester-city-puma-break-ground-with-ai-first",
-        "original_html": "• Manchester City и PUMA представили третью форму клуба на сезон 2026/27, впервые в профессиональном футболе разработанную фанатом с использованием AI инструментов. Объявление состоялось 28 августа 2026 года. <a href=\"https://businesscloud.co.uk/news/manchester-city-puma-break-ground-with-ai-first\">BusinessCloud</a>",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "football-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-marcus-rashford-carrick-34549145-a6f3bc396dce",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-marcus-rashford-carrick-34549145",
+        "original_html": "• Майкл Каррик согласен с прогнозом Нуссайра Мазрауи о том, что Маркус Рашфорд станет как \"новое приобретение\" для \"Манчестер Юнайтед\" в этом сезоне. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-marcus-rashford-carrick-34549145\">MEN Manchester United</a>",
         "keep_rejected": "known_factual_error",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
+        "replacement_fingerprint": "url-theguardian-com-football-2026-aug-30-michael-carrick-manchester-united-ipswich-premier-league-2d3edec2f9fd",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 22,
+        "section": "IT и бизнес",
+        "requested_action": "patch",
+        "reason": "Термин 'терроризм' может быть юридически некорректным в данном контексте.",
+        "risk": "sensitive",
+        "critical_error": true,
+        "critical_problem": "Некорректное использование термина 'терроризм'.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "tech_business-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-twisted-teenage-inspired-manchester-synagogue-34550500-d65d40590cc6",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/twisted-teenage-inspired-manchester-synagogue-34550500",
+        "original_html": "• Мохаммед Халил Надир, 19 лет, был приговорён к тюремному заключению за терроризм после того, как снял себя, активирующего фальшивый пояс с бомбой, вдохновлённый атакой на синагогу в Манчестере. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/twisted-teenage-inspired-manchester-synagogue-34550500\">MEN Latest News</a>",
         "post_check_passed": true
       },
       {
         "line_index": 25,
         "section": "Билеты / Ticket Radar",
         "requested_action": "patch",
-        "reason": "Указана неверная дата события, так как оно отложено.",
-        "risk": "date",
+        "reason": "Событие отложено, информация о его проведении сегодня неверна.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дата события указана неверно. В тексте указано 2 сентября, но событие отложено.",
+        "critical_problem": "Событие Shakey Graves отложено, но указано как проходящее сегодня.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "ticket_radar-01",
+        "plan_slot_id": "ticket_radar-02",
         "candidate_fingerprint": "event-event-shakey-graves-2nd-september-2026-2026-09-02-manchester-academy-875b8378d161",
         "original_url_identity": "manchesteracademy.net/order/gateway/13379848/shakey-graves-manchester-club-academy-2026-09-02-19-30-00",
-        "original_html": "• <b>Shakey Graves</b> — 2 сентября, Manchester Academy; цена £24. Обратите внимание, что мероприятие отложено, новая дата будет объявлена позже. <a href=\"https://manchesteracademy.net/order/gateway/13379848/shakey-graves-manchester-club-academy-2026-09-02-19-30-00\">Manchester Academy</a>",
+        "original_html": "• <b>Shakey Graves</b> — 2 сентября, Manchester Academy; цена £24. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13379848/shakey-graves-manchester-club-academy-2026-09-02-19-30-00\">Manchester Academy</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 26,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "keep",
-        "reason": "Информация о событии актуальна и соответствует данным.",
-        "risk": "none",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "keep",
-        "plan_slot_id": "ticket_radar-02",
-        "candidate_fingerprint": "event-event-the-neighbourhood-the-wourld-tour-plus-special-guests-nessa-barrett-noise-dept-tue-1-sep-2-2026-09-01-co-op-live-d28cf065b216",
-        "original_url_identity": "cooplive.com/events/the-neighbourhood-4dd3",
-        "original_html": "• <b>The Neighbourhood THE WOURLD TOUR</b> — 1 сентября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/the-neighbourhood-4dd3\">Co-op Live</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 27,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Указано два места проведения для одного события, исправлено на одно.",
-        "risk": "factual",
+        "line_index": 11,
+        "section": "Свежие новости",
+        "requested_action": "replace",
+        "reason": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+        "risk": "translation",
         "critical_error": true,
-        "critical_problem": "Указано два места проведения для одного события.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "outside_gm_tickets-01",
-        "candidate_fingerprint": "event-event-the-black-keys-2026-09-01-o2-academy-brixton-dd5055981ecc",
-        "original_url_identity": "ticketmaster.co.uk/the-black-keys-london-01-09-2026/event/3E006444BB434FD7",
-        "original_html": "• <b>The Black Keys</b> — тур: 1 сентября, O2 Academy Brixton; 2 сентября, British Airways ARC. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/the-black-keys-london-01-09-2026/event/3E006444BB434FD7\">Ticketmaster</a>",
+        "critical_problem": "",
+        "completeness_concept": "weapon_violence",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-09",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-four-teen-suspects-held-after-34551954-0301992521c2",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/four-teen-suspects-held-after-34551954",
+        "original_html": "• Четыре подростка, арестованные после того, как 13-летний мальчик был ранен в Taco Bell в Rochdale, были освобождены под залог. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/four-teen-suspects-held-after-34551954\">MEN Latest News</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-urgent-appeal-concern-grows-missing-34553846-2cf62006fb3c",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::дата атаки должна быть в прошлом относительно даты выпуска.",
+        "group_key": "свежие новости::уточнение географии инцидента для соответствия geo_scope.",
         "actions": [
           {
-            "line_index": 1,
-            "section": "Главная история дня",
+            "line_index": 3,
+            "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Дата атаки должна быть в прошлом относительно даты выпуска.",
+            "reason": "Уточнение географии инцидента для соответствия geo_scope.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "География суда не соответствует geo_scope.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cr4v20v4wwdo-69229dd8e9fe",
+            "original_url_identity": "bbc.com/news/articles/cr4v20v4wwdo",
+            "original_html": "• Психиатрическая медсестра Лоренс Чапонг была осуждена за умышленное пренебрежение к пациенту, что привело к её смерти. Суд в Ливерпуле приговорил её к четырем годам тюремного заключения за то, что она не проводила необходимые проверки и подделывала записи. В результате её действий 22-летняя Эми Барбер была найдена без сознания и не смогла быть спасена, несмотря на её сложную историю психического здоровья. <a href=\"https://bbc.co.uk/news/articles/cr4v20v4wwdo\">BBC Manchester</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 3,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::энцо фернандес и илиман ндиайе не были подписаны \"манчестер сити\".",
+        "actions": [
+          {
+            "line_index": 15,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Энцо Фернандес и Илиман Ндиайе не были подписаны \"Манчестер Сити\".",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Ошибка в дате атаки: указана 2 октября 2025 года, но это будущее относительно даты выпуска.",
+            "critical_problem": "Неверное утверждение о подписании Энцо Фернандеса и Илимана Ндиайе.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-citys-staggering-superpower-means-34552369-87dc4ffc1753",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/man-citys-staggering-superpower-means-34552369",
+            "original_html": "• Реконструкция состава \"Манчестер Сити\" обошлась в 80 миллионов фунтов стерлингов, несмотря на два рекорда по трансферам и подписания Энцо Фернандеса и Илимана Ндиайе в последний день трансферного окна. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/man-citys-staggering-superpower-means-34552369\">MEN Manchester City</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 15,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::текст соответствует фактам и не требует изменений.",
+        "actions": [
+          {
+            "line_index": 16,
+            "section": "Футбол",
+            "requested_action": "keep",
+            "reason": "Текст соответствует фактам и не требует изменений.",
+            "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
             "completeness_concept": "",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cx2z4wlxj04o-4eb176932d5e",
-            "original_url_identity": "bbc.com/news/articles/cx2z4wlxj04o",
-            "original_html": "<b>В понедельник, 31 августа 2026 года, в синагоге Хитон Парка в Манчестере прошла мемориальная служба, на которой собрались около 800 человек, включая главного раввина Эфраима Мирвиса и секретаря по делам общин Анджелу Рейнер.</b> Участники почтили память жертв атаки, произошедшей 2 октября 2025 года, когда были убиты Мелвин Кравиц и Адриан Долби, а трое других получили ранения, пытаясь защитить свою общину. <a href=\"https://bbc.co.uk/news/articles/cx2z4wlxj04o\">BBC Manchester</a>",
-            "model_replacement_rejected": "fact_lock: 2 октября 2024",
-            "replacement_fingerprint": "url-manchester-gov-uk-news-stories-2026-council-email-system-not-working-alternative-phone-number-in-place-to-report-a-vulnerable-child-or-adult-5871f73d1e3b",
+            "plan_slot_id": "football-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-marcus-rashford-carrick-34549145-a6f3bc396dce",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-marcus-rashford-carrick-34549145",
+            "original_html": "• Майкл Каррик согласен с прогнозом Нуссайра Мазрауи о том, что Маркус Рашфорд станет как \"новое приобретение\" для \"Манчестер Юнайтед\" в этом сезоне. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-marcus-rashford-carrick-34549145\">MEN Manchester United</a>",
+            "keep_rejected": "known_factual_error",
+            "replacement_fingerprint": "url-theguardian-com-football-2026-aug-30-michael-carrick-manchester-united-ipswich-premier-league-2d3edec2f9fd",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 1,
+            "line_index": 16,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -469,223 +427,94 @@
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::исправление даты нападения на синагогу.",
+        "group_key": "it и бизнес::термин 'терроризм' может быть юридически некорректным в данном контексте.",
         "actions": [
           {
-            "line_index": 4,
-            "section": "Свежие новости",
-            "requested_action": "patch",
-            "reason": "Исправление даты нападения на синагогу.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неправильное указание даты нападения.",
-            "completeness_concept": "weapon_violence",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-dad-shot-manchester-synagogue-attack-34544920-31c3aa0b8ec6",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/dad-shot-manchester-synagogue-attack-34544920",
-            "original_html": "• Почти год спустя после нападения на синагогу в Хитон Парке, пострадавший Юни Финлей сообщил, что его сын сталкивается с угрозами смерти и что \"всё не кажется безопаснее\". Нападение произошло 2 октября прошлого года, когда Джихад аль-Шами наехал на пешеходов и начал нападение на прихожан, что привело к серьезным травмам и смерти 66-летнего Мелвина Кравица. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/dad-shot-manchester-synagogue-attack-34544920\">MEN</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 4,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::уточнение формулировки для соответствия источнику.",
-        "actions": [
-          {
-            "line_index": 12,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Уточнение формулировки для соответствия источнику.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Текст утверждает, что Манчестер Сити сосредоточился на переходе Энцо Фернандеса, но это не подтверждается источником.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-city-gakpo-transfer-news-34547271-9e63d56ad34a",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/man-city-gakpo-transfer-news-34547271",
-            "original_html": "• Манчестер Сити сосредоточился на переходе Энцо Фернандеса после того, как Ливерпуль отклонил предложение о покупке Коді Гакпо за 75 миллионов фунтов плюс 5 миллионов фунтов в виде бонусов. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/man-city-gakpo-transfer-news-34547271\">MEN Manchester City</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 12,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::текст не соответствует фактам из источника, что может ввести в заблуждение.",
-        "actions": [
-          {
-            "line_index": 18,
-            "section": "Городской радар",
-            "requested_action": "strip",
-            "reason": "Текст не соответствует фактам из источника, что может ввести в заблуждение.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неправильный источник информации. Текст не соответствует фактам из источника.",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "reserve_replacement",
-            "plan_slot_id": "city_watch-04",
-            "candidate_fingerprint": "url-bbc-com-news-articles-c3d7vr721x0o-60d0ff5f136e",
-            "original_url_identity": "bbc.com/news/articles/c3d7vr721x0o",
-            "original_html": "• Четыре человека были арестованы после того, как подросток был ранен ножом в центре Rochdale; жертва остается в больнице с серьезными, но не угрожающими жизни травмами. <a href=\"https://bbc.co.uk/news/articles/c3d7vr721x0o\">BBC Manchester</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bomb-disposal-incident-live-homes-34547031-a35f1565fcad",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 18,
-            "passed": false,
-            "detail": "shared prose policy still fails"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "it и бизнес::информация о новой форме manchester city и puma корректна и соответствует источнику.",
-        "actions": [
-          {
-            "line_index": 24,
+            "line_index": 22,
             "section": "IT и бизнес",
-            "requested_action": "keep",
-            "reason": "Информация о новой форме Manchester City и PUMA корректна и соответствует источнику.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "tech_business-02",
-            "candidate_fingerprint": "url-businesscloud-co-uk-news-manchester-city-puma-break-ground-with-ai-first-a8f258be23a8",
-            "original_url_identity": "businesscloud.co.uk/news/manchester-city-puma-break-ground-with-ai-first",
-            "original_html": "• Manchester City и PUMA представили третью форму клуба на сезон 2026/27, впервые в профессиональном футболе разработанную фанатом с использованием AI инструментов. Объявление состоялось 28 августа 2026 года. <a href=\"https://businesscloud.co.uk/news/manchester-city-puma-break-ground-with-ai-first\">BusinessCloud</a>",
-            "keep_rejected": "known_factual_error",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 24,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::указана неверная дата события, так как оно отложено.",
-        "actions": [
-          {
-            "line_index": 25,
-            "section": "Билеты / Ticket Radar",
             "requested_action": "patch",
-            "reason": "Указана неверная дата события, так как оно отложено.",
-            "risk": "date",
+            "reason": "Термин 'терроризм' может быть юридически некорректным в данном контексте.",
+            "risk": "sensitive",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно. В тексте указано 2 сентября, но событие отложено.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "event-event-shakey-graves-2nd-september-2026-2026-09-02-manchester-academy-875b8378d161",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13379848/shakey-graves-manchester-club-academy-2026-09-02-19-30-00",
-            "original_html": "• <b>Shakey Graves</b> — 2 сентября, Manchester Academy; цена £24. Обратите внимание, что мероприятие отложено, новая дата будет объявлена позже. <a href=\"https://manchesteracademy.net/order/gateway/13379848/shakey-graves-manchester-club-academy-2026-09-02-19-30-00\">Manchester Academy</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 25,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::информация о событии актуальна и соответствует данным.",
-        "actions": [
-          {
-            "line_index": 26,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "keep",
-            "reason": "Информация о событии актуальна и соответствует данным.",
-            "risk": "none",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "keep",
-            "plan_slot_id": "ticket_radar-02",
-            "candidate_fingerprint": "event-event-the-neighbourhood-the-wourld-tour-plus-special-guests-nessa-barrett-noise-dept-tue-1-sep-2-2026-09-01-co-op-live-d28cf065b216",
-            "original_url_identity": "cooplive.com/events/the-neighbourhood-4dd3",
-            "original_html": "• <b>The Neighbourhood THE WOURLD TOUR</b> — 1 сентября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/the-neighbourhood-4dd3\">Co-op Live</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 26,
-            "passed": true,
-            "detail": "no repair requested"
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "крупные концерты вне gm::указано два места проведения для одного события, исправлено на одно.",
-        "actions": [
-          {
-            "line_index": 27,
-            "section": "Крупные концерты вне GM",
-            "requested_action": "patch",
-            "reason": "Указано два места проведения для одного события, исправлено на одно.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Указано два места проведения для одного события.",
+            "critical_problem": "Некорректное использование термина 'терроризм'.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "outside_gm_tickets-01",
-            "candidate_fingerprint": "event-event-the-black-keys-2026-09-01-o2-academy-brixton-dd5055981ecc",
-            "original_url_identity": "ticketmaster.co.uk/the-black-keys-london-01-09-2026/event/3E006444BB434FD7",
-            "original_html": "• <b>The Black Keys</b> — тур: 1 сентября, O2 Academy Brixton; 2 сентября, British Airways ARC. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/the-black-keys-london-01-09-2026/event/3E006444BB434FD7\">Ticketmaster</a>",
+            "plan_slot_id": "tech_business-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-twisted-teenage-inspired-manchester-synagogue-34550500-d65d40590cc6",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/twisted-teenage-inspired-manchester-synagogue-34550500",
+            "original_html": "• Мохаммед Халил Надир, 19 лет, был приговорён к тюремному заключению за терроризм после того, как снял себя, активирующего фальшивый пояс с бомбой, вдохновлённый атакой на синагогу в Манчестере. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/twisted-teenage-inspired-manchester-synagogue-34550500\">MEN Latest News</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 27,
+            "line_index": 22,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::событие отложено, информация о его проведении сегодня неверна.",
+        "actions": [
+          {
+            "line_index": 25,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Событие отложено, информация о его проведении сегодня неверна.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Событие Shakey Graves отложено, но указано как проходящее сегодня.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "ticket_radar-02",
+            "candidate_fingerprint": "event-event-shakey-graves-2nd-september-2026-2026-09-02-manchester-academy-875b8378d161",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13379848/shakey-graves-manchester-club-academy-2026-09-02-19-30-00",
+            "original_html": "• <b>Shakey Graves</b> — 2 сентября, Manchester Academy; цена £24. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13379848/shakey-graves-manchester-club-academy-2026-09-02-19-30-00\">Manchester Academy</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 25,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no russian rendering in the shipped line",
+        "actions": [
+          {
+            "line_index": 11,
+            "section": "Свежие новости",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
+            "critical_error": true,
+            "critical_problem": "",
+            "completeness_concept": "weapon_violence",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-09",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-four-teen-suspects-held-after-34551954-0301992521c2",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/four-teen-suspects-held-after-34551954",
+            "original_html": "• Четыре подростка, арестованные после того, как 13-летний мальчик был ранен в Taco Bell в Rochdale, были освобождены под залог. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/four-teen-suspects-held-after-34551954\">MEN Latest News</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-urgent-appeal-concern-grows-missing-34553846-2cf62006fb3c",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 11,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -698,214 +527,119 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 1,
-      "reports": [
-        {
-          "fingerprint": "event-event-the-black-keys-2026-09-01-o2-academy-brixton-dd5055981ecc",
-          "title": "The Black Keys — event 2026-09-01 — public sale 2026-02-13 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/the-black-keys-london-01-09-2026/event/3E006444BB434FD7",
-          "candidate_evidence_chars": 353
-        }
-      ]
+      "skipped": 0
     },
-    "enrich_improved": 6,
-    "deterministic_rewrite_rejected": 2,
+    "enrich_improved": 5,
     "false_positive_existing_fact": 3,
-    "no_eligible_backup": 1,
+    "deterministic_rewrite_rejected": 2,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 29,
-      "matched_lines": 29,
-      "applicable_lines": 5,
+      "checked_lines": 27,
+      "matched_lines": 27,
+      "applicable_lines": 3,
       "unmatched_lines": 0,
-      "critical_omission_count": 1,
-      "critical_omissions": [
-        {
-          "line_index": 4,
-          "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/dad-shot-manchester-synagogue-attack-34544920",
-          "concept": "weapon_violence",
-          "obligation": "who/what",
-          "source_hit": "shot"
-        }
-      ],
-      "noncritical_omissions": [
-        {
-          "line_index": 5,
-          "dropped": [
-            "13"
-          ]
-        }
-      ],
-      "critical_errors": [
-        {
-          "line_index": 4,
-          "section": "Свежие новости",
-          "risk": "translation",
-          "problem": "critical source fact dropped in translation: 'shot' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-          "suggested_action": "repair",
-          "completeness_concept": "weapon_violence"
-        }
-      ],
-      "warnings": [
-        "line 5 drops source number/date fact(s): 13"
-      ],
+      "critical_omission_count": 0,
+      "critical_omissions": [],
+      "noncritical_omissions": [],
+      "critical_errors": [],
+      "warnings": [],
       "recovered": 0,
       "pulled_for_rework": 0,
-      "still_missing": 1
+      "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 29,
-      "resolved_in_place": 28,
-      "unresolved": 1,
-      "findings": [
-        {
-          "line_index": 18,
-          "section": "Городской радар",
-          "outcome": "unresolved",
-          "code": "language_policy_defect",
-          "severity": "warning"
-        }
-      ]
+      "checked_lines": 27,
+      "resolved_in_place": 27,
+      "unresolved": 0,
+      "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved"
   },
-  "notes": "Дата атаки должна быть исправлена на 2024 год, чтобы соответствовать контексту.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена дата нападения на синагогу в строке 4.; Строка корректно сообщает об изменениях в расписании поездов Northern в Манчестере.; Проблема с фактической точностью в стро",
+  "notes": "Строка соответствует всем требованиям: география GM, актуальность, поддержка мэра, планы развития.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Уточнена география инцидента в строке 3 для соответствия geo_scope.; Обе строки соответствуют требованиям географии и содержат актуальную информацию о транс",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.85,
     "critical_errors": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Ошибка в дате атаки: указана 2 октября 2025 года, но это будущее относительно даты выпуска.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 4,
+        "line_index": 3,
         "section": "Свежие новости",
-        "problem": "Неправильное указание даты нападения.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 12,
-        "section": "Футбол",
-        "problem": "Текст утверждает, что Манчестер Сити сосредоточился на переходе Энцо Фернандеса, но это не подтверждается источником.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 18,
-        "section": "Городской радар",
-        "problem": "Неправильный источник информации. Текст не соответствует фактам из источника.",
-        "risk": "factual",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 23,
-        "section": "IT и бизнес",
-        "problem": "Неправильная географическая привязка: Экслис не находится в Salford.",
+        "problem": "География суда не соответствует geo_scope.",
         "risk": "geo",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 15,
+        "section": "Футбол",
+        "problem": "Неверное утверждение о подписании Энцо Фернандеса и Илимана Ндиайе.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 22,
+        "section": "IT и бизнес",
+        "problem": "Некорректное использование термина 'терроризм'.",
+        "risk": "sensitive",
         "suggested_action": "repair"
       },
       {
         "line_index": 25,
         "section": "Билеты / Ticket Radar",
-        "problem": "Дата события указана неверно. В тексте указано 2 сентября, но событие отложено.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 27,
-        "section": "Крупные концерты вне GM",
-        "problem": "Указано два места проведения для одного события.",
+        "problem": "Событие Shakey Graves отложено, но указано как проходящее сегодня.",
         "risk": "factual",
         "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• Участники почтили память жертв атаки, произошедшей 2 октября 2024 года, когда были убиты Мелвин Кравиц и Адриан Долби, а трое других получили ранения, пытаясь защитить свою общину.",
-        "reason": "Дата атаки должна быть в прошлом относительно даты выпуска.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 4,
+        "line_index": 3,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• Почти год спустя после нападения на синагогу в Хитон Парке, пострадавший Юни Финлей сообщил, что его сын сталкивается с угрозами смерти и что \"всё не кажется безопаснее\". Нападение произошло 2 сентября прошлого года, когда Джихад аль-Шами наехал на пешеходов и начал нападение на прихожан, что привело к серьезным травмам и смерти 66-летнего Мелвина Кравица.",
-        "reason": "Исправление даты нападения на синагогу.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 12,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Манчестер Сити рассматривает возможность подписания Энцо Фернандеса после того, как Ливерпуль отклонил предложение о покупке Коді Гакпо за 75 миллионов фунтов плюс 5 миллионов фунтов в виде бонусов.",
-        "reason": "Уточнение формулировки для соответствия источнику.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 18,
-        "section": "Городской радар",
-        "action": "strip",
-        "reason": "Текст не соответствует фактам из источника, что может ввести в заблуждение.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 23,
-        "section": "IT и бизнес",
-        "action": "patch",
-        "replacement_text": "• Жители Экслис, Wigan, жалуются на шум, пыль и вибрации от подготовительных работ для семи складов на Ланкро Уэй; работы начались около двух недель назад и продлятся 12 недель.",
-        "reason": "Экслис находится в Wigan, а не в Salford.",
+        "replacement_text": "• Психиатрическая медсестра Лоренс Чапонг была осуждена за умышленное пренебрежение к пациенту, что привело к её смерти. Суд в Ливерпуле приговорил её к четырем годам тюремного заключения за то, что она не проводила необходимые проверки и подделывала записи. В результате её действий 22-летняя Эми Барбер была найдена без сознания и не смогла быть спасена, несмотря на её сложную историю психического здоровья. Хотя суд проходил в Ливерпуле, инцидент произошел в Greater Manchester.",
+        "reason": "Уточнение географии инцидента для соответствия geo_scope.",
         "risk": "geo"
       },
       {
-        "line_index": 24,
-        "section": "IT и бизнес",
-        "action": "keep",
-        "reason": "Информация о новой форме Manchester City и PUMA корректна и соответствует источнику.",
+        "line_index": 15,
+        "section": "Футбол",
+        "action": "patch",
+        "replacement_text": "• Реконструкция состава \"Манчестер Сити\" обошлась в 80 миллионов фунтов стерлингов, несмотря на два рекорда по трансферам и подписания в последний день трансферного окна.",
+        "reason": "Энцо Фернандес и Илиман Ндиайе не были подписаны \"Манчестер Сити\".",
         "risk": "factual"
+      },
+      {
+        "line_index": 16,
+        "section": "Футбол",
+        "action": "keep",
+        "reason": "Текст соответствует фактам и не требует изменений.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 22,
+        "section": "IT и бизнес",
+        "action": "patch",
+        "replacement_text": "• Мохаммед Халил Надир, 19 лет, был приговорён к тюремному заключению за создание угрозы общественной безопасности после того, как снял себя, активирующего фальшивый пояс с бомбой, вдохновлённый атакой на синагогу в Манчестере.",
+        "reason": "Термин 'терроризм' может быть юридически некорректным в данном контексте.",
+        "risk": "sensitive"
       },
       {
         "line_index": 25,
         "section": "Билеты / Ticket Radar",
         "action": "patch",
-        "replacement_text": "• Shakey Graves — мероприятие отложено, новая дата будет объявлена позже. Цена билета £24.",
-        "reason": "Указана неверная дата события, так как оно отложено.",
-        "risk": "date"
-      },
-      {
-        "line_index": 26,
-        "section": "Билеты / Ticket Radar",
-        "action": "keep",
-        "reason": "Информация о событии актуальна и соответствует данным.",
-        "risk": "none"
-      },
-      {
-        "line_index": 27,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• The Black Keys — 1 сентября, O2 Academy Brixton. Событие проходит сегодня.",
-        "reason": "Указано два места проведения для одного события, исправлено на одно.",
+        "replacement_text": "• Shakey Graves — 2 сентября, Manchester Academy; цена £24. Событие отложено, новая дата будет объявлена позже.",
+        "reason": "Событие отложено, информация о его проведении сегодня неверна.",
         "risk": "factual"
       }
     ],
     "warnings": [
-      "Отсутствие блока 'Что важно сегодня' и 'Еда, открытия и рынки' снижает полноту выпуска.",
-      "Некоторые секции, такие как 'Свежие новости' и 'Городской радар', содержат много элементов, что может перегрузить читателя."
+      "Недостаток в блоке 'Что важно сегодня': только 1 элемент при минимуме 3.",
+      "Недостаток в блоке 'Городской радар': только 4 элемента при минимуме 5.",
+      "Отсутствие блока 'Еда, открытия и рынки'."
     ],
-    "notes": "Дата атаки должна быть исправлена на 2024 год, чтобы соответствовать контексту.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена дата нападения на синагогу в строке 4.; Строка корректно сообщает об изменениях в расписании поездов Northern в Манчестере.; Проблема с фактической точностью в стро",
+    "notes": "Строка соответствует всем требованиям: география GM, актуальность, поддержка мэра, планы развития.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Уточнена география инцидента в строке 3 для соответствия geo_scope.; Обе строки соответствуют требованиям географии и содержат актуальную информацию о транс",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 10,
+      "chunk_count": 11,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -918,13 +652,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2660,
-          "duration_seconds": 3.552
+          "estimated_tokens": 2750,
+          "duration_seconds": 1.435
         },
         {
           "chunk_id": "chunk-02",
@@ -941,15 +675,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2447,
-          "duration_seconds": 1.658
+          "estimated_tokens": 2483,
+          "duration_seconds": 1.488
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            10
+            11
           ],
           "sections": [
             "Свежие новости"
@@ -959,15 +693,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6544,
-          "duration_seconds": 4.378
+          "estimated_tokens": 6954,
+          "duration_seconds": 3.189
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            11,
-            11
+            12,
+            13
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -977,105 +711,123 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2648,
-          "duration_seconds": 1.334
+          "estimated_tokens": 3202,
+          "duration_seconds": 0.842
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            12,
+            14,
             14
           ],
           "sections": [
-            "Футбол"
+            "Что важно сегодня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3635,
-          "duration_seconds": 4.551
+          "estimated_tokens": 2700,
+          "duration_seconds": 0.851
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
             15,
-            22
+            16
           ],
           "sections": [
-            "Городской радар"
+            "Футбол"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
-          "action_count": 1,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6254,
-          "duration_seconds": 3.939
+          "estimated_tokens": 3178,
+          "duration_seconds": 3.076
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            23,
-            24
+            17,
+            20
+          ],
+          "sections": [
+            "Городской радар"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 4170,
+          "duration_seconds": 0.948
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            21,
+            23
           ],
           "sections": [
             "IT и бизнес"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
-          "action_count": 2,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3202,
-          "duration_seconds": 6.291
+          "estimated_tokens": 3656,
+          "duration_seconds": 23.87
         },
         {
-          "chunk_id": "chunk-08",
+          "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            25,
-            26
+            24,
+            25
           ],
           "sections": [
             "Билеты / Ticket Radar"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
-          "action_count": 2,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3361,
-          "duration_seconds": 5.754
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            27,
-            29
-          ],
-          "sections": [
-            "Крупные концерты вне GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3833,
-          "duration_seconds": 18.332
+          "estimated_tokens": 3447,
+          "duration_seconds": 3.34
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            30,
-            30
+            26,
+            26
+          ],
+          "sections": [
+            "Крупные концерты вне GM"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2657,
+          "duration_seconds": 5.98
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            27,
+            27
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
@@ -1085,8 +837,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2782,
-          "duration_seconds": 5.099
+          "estimated_tokens": 2807,
+          "duration_seconds": 11.134
         }
       ],
       "reduce": {
@@ -1097,10 +849,10 @@
         "decision": "warn",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 2,
+        "warning_count": 3,
         "error": "",
-        "estimated_tokens": 9546,
-        "duration_seconds": 20.624
+        "estimated_tokens": 9309,
+        "duration_seconds": 19.615
       },
       "max_workers": 3,
       "chunk_line_target": 12,
