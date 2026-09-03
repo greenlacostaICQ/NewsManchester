@@ -2,100 +2,228 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 3 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-09-02",
-  "pipeline_run_id": "20260902T080138+0100",
-  "digest_sha256": "a0a986fb67be65225781da824d46c2315b80a41a060ca40f2bf768da3cd0bed4",
-  "duration_seconds": 48.295,
-  "confidence": 0.85,
+  "run_date_london": "2026-09-03",
+  "pipeline_run_id": "20260903T080135+0100",
+  "digest_sha256": "32d3586d3d372346a24ba35ff7fb3bff2afbe1ca7f6dd946473ef55bb5c3b415",
+  "duration_seconds": 106.266,
+  "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 3,
+      "line_index": 11,
       "section": "Свежие новости",
-      "problem": "География суда не соответствует geo_scope.",
+      "problem": "Текст утверждает, что Виктор Куца был освобождён, несмотря на предыдущие обвинения в хранении ножа, но это не соответствует фактам из источника.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 16,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Ротенсталь находится за пределами Greater Manchester.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 17,
+      "section": "Что важно сегодня",
+      "problem": "Дата события указана неверно. 2 сентября 2026 года — это среда, а не четверг.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 21,
+      "section": "Выходные в GM",
+      "problem": "Неправильное указание главной площадки фестиваля.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 25,
+      "section": "Выходные в GM",
+      "problem": "Неправильное указание географического расположения.",
       "risk": "geo",
       "suggested_action": "repair"
     },
     {
-      "line_index": 15,
-      "section": "Футбол",
-      "problem": "Неверное утверждение о подписании Энцо Фернандеса и Илимана Ндиайе.",
+      "line_index": 32,
+      "section": "Выходные в GM",
+      "problem": "Неправильная дата события.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 40,
+      "section": "Выходные в GM",
+      "problem": "Неправильная дата события.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 41,
+      "section": "Выходные в GM",
+      "problem": "Неправильная дата события.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 42,
+      "section": "Выходные в GM",
+      "problem": "Неправильная дата события.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 43,
+      "section": "Выходные в GM",
+      "problem": "Неправильная дата события.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 45,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно. В карточке указано 5 сентября, но в данных события дата начала 29 августа.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 53,
+      "section": "Business/tech события для тебя",
+      "problem": "Некорректное указание бесплатных мест для членов Палаты.",
       "risk": "factual",
       "suggested_action": "repair"
-    },
-    {
-      "line_index": 22,
-      "section": "IT и бизнес",
-      "problem": "Некорректное использование термина 'терроризм'.",
-      "risk": "sensitive",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 25,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Событие Shakey Graves отложено, но указано как проходящее сегодня.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 11,
-      "section": "Свежие новости",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "weapon_violence"
     }
   ],
   "actions": [
     {
-      "line_index": 3,
+      "line_index": 11,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• Психиатрическая медсестра Лоренс Чапонг была осуждена за умышленное пренебрежение к пациенту, что привело к её смерти. Суд в Ливерпуле приговорил её к четырем годам тюремного заключения за то, что она не проводила необходимые проверки и подделывала записи. В результате её действий 22-летняя Эми Барбер была найдена без сознания и не смогла быть спасена, несмотря на её сложную историю психического здоровья. Хотя суд проходил в Ливерпуле, инцидент произошел в Greater Manchester.",
-      "reason": "Уточнение географии инцидента для соответствия geo_scope.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 15,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Реконструкция состава \"Манчестер Сити\" обошлась в 80 миллионов фунтов стерлингов, несмотря на два рекорда по трансферам и подписания в последний день трансферного окна.",
-      "reason": "Энцо Фернандес и Илиман Ндиайе не были подписаны \"Манчестер Сити\".",
+      "replacement_text": "• 21-летний Виктор Куца ударил охранника в баре Walkabout в Манчестере после того, как ему запретили выходить с бутылкой алкоголя. Суд рассмотрел его дело, несмотря на предыдущие обвинения в хранении ножа.",
+      "reason": "Уточнение статуса судебного решения, чтобы избежать неверного представления о его освобождении.",
       "risk": "factual"
     },
     {
       "line_index": 16,
-      "section": "Футбол",
-      "action": "keep",
-      "reason": "Текст соответствует фактам и не требует изменений.",
-      "risk": "factual",
+      "section": "Общественный транспорт сегодня",
+      "action": "strip",
+      "reason": "Ротенсталь не входит в Greater Manchester, что нарушает географический контракт раздела.",
+      "risk": "geo",
       "replacement_text": ""
     },
     {
-      "line_index": 22,
-      "section": "IT и бизнес",
+      "line_index": 17,
+      "section": "Что важно сегодня",
       "action": "patch",
-      "replacement_text": "• Мохаммед Халил Надир, 19 лет, был приговорён к тюремному заключению за создание угрозы общественной безопасности после того, как снял себя, активирующего фальшивый пояс с бомбой, вдохновлённый атакой на синагогу в Манчестере.",
-      "reason": "Термин 'терроризм' может быть юридически некорректным в данном контексте.",
-      "risk": "sensitive"
+      "replacement_text": "• Пожар в чипсах на Church Street в Дукифилде закрыл улицу на два часа в среду, 2 сентября 2026 года; пожарные потушили огонь.",
+      "reason": "Дата события указана неверно. 2 сентября 2026 года — это среда, а не четверг.",
+      "risk": "date"
+    },
+    {
+      "line_index": 21,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• Manchester Psych Fest 2026 пройдет в субботу 5 сентября на различных площадках Манчестера, включая Albert Hall и O2 Apollo, с более 30 новыми участниками.",
+      "reason": "Уточнение информации о площадках фестиваля.",
+      "risk": "factual"
     },
     {
       "line_index": 25,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• Фестиваль All Back To Ours - Into the Woods пройдет 5 сентября 2026 года в The Strines Nightingale, Стокпорт, начиная с 14:00.",
+      "reason": "Уточнение географического расположения.",
+      "risk": "geo"
+    },
+    {
+      "line_index": 32,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 4 сентября 2026 года с 18:30 до 21:00 в The Fusilier Museum, Bury, пройдет программа BBC Radio 4 \"Any Questions?\" с возможностью задать вопросы участникам.",
+      "reason": "Дата события должна быть 4 сентября 2026 года.",
+      "risk": "date"
+    },
+    {
+      "line_index": 40,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 6 сентября в Waterside Farm, Otterspool Road, Romiley, Stockport пройдет The BIG Stockport Car Boot. На площадке: автомобильная барахолка, вход свободный.",
+      "reason": "Дата события должна быть 6 сентября 2026 года.",
+      "risk": "date"
+    },
+    {
+      "line_index": 41,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 6 сентября в Bowlee Community Park, Middleton, Manchester пройдет Bowlee car boot sale. На площадке: автомобильная барахолка, вход свободный.",
+      "reason": "Дата события должна быть 6 сентября 2026 года.",
+      "risk": "date"
+    },
+    {
+      "line_index": 42,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 6 сентября в New Smithfield Market, Openshaw, Manchester пройдет New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный.",
+      "reason": "Дата события должна быть 6 сентября 2026 года.",
+      "risk": "date"
+    },
+    {
+      "line_index": 43,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 6 сентября в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — автомобильная барахолка Burnage RFC. Вход свободный.",
+      "reason": "Дата события должна быть 6 сентября 2026 года.",
+      "risk": "date"
+    },
+    {
+      "line_index": 45,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 29 августа — автомобильная барахолка на аэродроме Бартон. Для покупателей с 9:00, вход свободный, можно с собакой.",
+      "reason": "Исправление даты события на 29 августа, как указано в данных события.",
+      "risk": "date"
+    },
+    {
+      "line_index": 53,
+      "section": "Business/tech события для тебя",
+      "action": "patch",
+      "replacement_text": "• Конференция \"Будущее кибербезопасности в Манчестере\" пройдет 10 сентября 2026 года в Old Trafford. Бесплатные места доступны только для членов Палаты, стоимость для не членов составляет 225 фунтов.",
+      "reason": "Уточнение условий бесплатного участия для членов Палаты.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 54,
       "section": "Билеты / Ticket Radar",
       "action": "patch",
-      "replacement_text": "• Shakey Graves — 2 сентября, Manchester Academy; цена £24. Событие отложено, новая дата будет объявлена позже.",
-      "reason": "Событие отложено, информация о его проведении сегодня неверна.",
+      "replacement_text": "• Evanescence с участием Poppy и K. Flay — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице.",
+      "reason": "Уточнение состава участников события для большей информативности.",
       "risk": "factual"
+    },
+    {
+      "line_index": 21,
+      "section": "Выходные в GM",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации о Manchester Psych Fest 2026.",
+      "risk": "format"
+    },
+    {
+      "line_index": 22,
+      "section": "Выходные в GM",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации о Manchester Psych Fest 2026.",
+      "risk": "format"
     }
   ],
   "warnings": [
-    "Недостаток в блоке 'Что важно сегодня': только 1 элемент при минимуме 3.",
-    "Недостаток в блоке 'Городской радар': только 4 элемента при минимуме 5.",
-    "Отсутствие блока 'Еда, открытия и рынки'."
+    "Уточнён состав участников события Evanescence для большей информативности.",
+    "Секция 'Что важно сегодня' содержит только один элемент, что ниже минимального порога.",
+    "Секция 'Русскоязычные концерты и стендап UK' отсутствует, что ниже минимального порога."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -104,281 +232,407 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 2,
+      "Общественный транспорт сегодня": 5,
       "Что важно сегодня": 1,
       "Футбол": 2,
-      "Городской радар": 4,
-      "IT и бизнес": 3,
-      "Билеты / Ticket Radar": 2,
-      "Крупные концерты вне GM": 1,
-      "Русскоязычные концерты и стендап UK": 1
+      "Выходные в GM": 22,
+      "Городской радар": 5,
+      "Еда, открытия и рынки": 1,
+      "IT и бизнес": 1,
+      "Business/tech события для тебя": 1,
+      "Билеты / Ticket Radar": 4
     },
     "core_counts": {
       "Погода": 1,
       "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 4,
-      "Билеты / Ticket Radar": 2,
-      "Русскоязычные концерты и стендап UK": 1,
-      "Еда, открытия и рынки": 0,
-      "Business/tech события для тебя": 0,
+      "Городской радар": 5,
+      "Выходные в GM": 22,
+      "Билеты / Ticket Radar": 4,
+      "Русскоязычные концерты и стендап UK": 0,
+      "Еда, открытия и рынки": 1,
+      "Business/tech события для тебя": 1,
       "Футбол": 2
     },
     "ticket_items": 4,
-    "core_items": 18,
+    "core_items": 43,
     "writer_quality_counts": {
-      "included_candidates": 29,
-      "rendered_candidates": 27,
+      "included_candidates": 56,
+      "rendered_candidates": 53,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
       "dropped_low_quality": 2,
-      "replaced_from_plan_backup": 0,
+      "replaced_from_plan_backup": 1,
       "removed_with_reason": 2
     },
     "source_health_counts": {
-      "ok": 108,
+      "ok": 111,
       "partial": 0,
       "stale": 5,
       "empty": 12,
-      "failed": 5,
-      "zero_yield": 77,
+      "failed": 3,
+      "zero_yield": 65,
       "no_contribution_breakdown": {
-        "fetch_failed": 5,
-        "all_rejected": 77,
-        "idle_no_items": 33
+        "fetch_failed": 3,
+        "all_rejected": 65,
+        "idle_no_items": 34
       },
       "zero_contribution_by_stage": {
-        "selected": 40,
-        "written": 37,
-        "fetched": 5,
-        "parsed": 33
+        "written": 31,
+        "selected": 34,
+        "parsed": 34,
+        "fetched": 3
       },
-      "weekend_source_coverage_incidents": 61
+      "weekend_source_coverage_incidents": 48
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 1 item(s), emergency floor 3",
-      "Городской радар: 4 item(s), emergency floor 5",
-      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "Business/tech события для тебя: 0 item(s), emergency floor 1",
-      "source failures: 5"
+      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
+      "Еда, открытия и рынки: 1 item(s), emergency floor 3",
+      "source failures: 3"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 15 has unchecked number/date token(s): 80"
+      "patch for line 11 has unchecked number/date token(s): 21",
+      "patch for line 32 has unchecked number/date token(s): 18:30, 21:00",
+      "patch for line 45 has unchecked number/date token(s): 29, 9:00",
+      "multiple actions target line 21"
     ],
     "can_apply_actions": true,
-    "action_count": 5
+    "action_count": 15
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 27,
-    "matched_lines": 27,
-    "applicable_lines": 4,
-    "unmatched_lines": 0,
-    "critical_omission_count": 1,
-    "critical_omissions": [
-      {
-        "line_index": 11,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/four-teen-suspects-held-after-34551954",
-        "concept": "weapon_violence",
-        "obligation": "who/what",
-        "source_hit": "stabbed"
-      }
-    ],
+    "checked_lines": 53,
+    "matched_lines": 53,
+    "applicable_lines": 1,
+    "unmatched_lines": 4,
+    "critical_omission_count": 0,
+    "critical_omissions": [],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 1,
+    "pulled_for_rework": 0,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 6,
-    "attempted": 3,
-    "applied": 3,
+    "requested": 15,
+    "attempted": 5,
+    "applied": 5,
     "model_patch_applied": 1,
-    "deterministic_rewrite_used": 0,
+    "deterministic_rewrite_used": 1,
     "reserve_replacement_used": 2,
-    "stripped": 0,
-    "unresolved": 0,
-    "blocking_unresolved": 0,
-    "resolved": 6,
-    "resolved_in_place": 4,
-    "resolved_by_replacement": 2,
-    "resolved_by_removal": 0,
-    "fact_lock_rejected": 0,
-    "enrich_attempted": 5,
+    "stripped": 1,
+    "unresolved": 1,
+    "blocking_unresolved": 1,
+    "resolved": 10,
+    "resolved_in_place": 8,
+    "resolved_by_replacement": 1,
+    "resolved_by_removal": 1,
+    "fact_lock_rejected": 1,
+    "enrich_attempted": 15,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 3,
+        "line_index": 11,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Уточнение географии инцидента для соответствия geo_scope.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "География суда не соответствует geo_scope.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cr4v20v4wwdo-69229dd8e9fe",
-        "original_url_identity": "bbc.com/news/articles/cr4v20v4wwdo",
-        "original_html": "• Психиатрическая медсестра Лоренс Чапонг была осуждена за умышленное пренебрежение к пациенту, что привело к её смерти. Суд в Ливерпуле приговорил её к четырем годам тюремного заключения за то, что она не проводила необходимые проверки и подделывала записи. В результате её действий 22-летняя Эми Барбер была найдена без сознания и не смогла быть спасена, несмотря на её сложную историю психического здоровья. <a href=\"https://bbc.co.uk/news/articles/cr4v20v4wwdo\">BBC Manchester</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 15,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Энцо Фернандес и Илиман Ндиайе не были подписаны \"Манчестер Сити\".",
+        "reason": "Уточнение статуса судебного решения, чтобы избежать неверного представления о его освобождении.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неверное утверждение о подписании Энцо Фернандеса и Илимана Ндиайе.",
+        "critical_problem": "Текст утверждает, что Виктор Куца был освобождён, несмотря на предыдущие обвинения в хранении ножа, но это не соответствует фактам из источника.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-citys-staggering-superpower-means-34552369-87dc4ffc1753",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/man-citys-staggering-superpower-means-34552369",
-        "original_html": "• Реконструкция состава \"Манчестер Сити\" обошлась в 80 миллионов фунтов стерлингов, несмотря на два рекорда по трансферам и подписания Энцо Фернандеса и Илимана Ндиайе в последний день трансферного окна. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/man-citys-staggering-superpower-means-34552369\">MEN Manchester City</a>",
+        "plan_slot_id": "last_24h-09",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-wkd-thug-erupts-fury-manchester-34555520-ea306a536217",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/wkd-thug-erupts-fury-manchester-34555520",
+        "original_html": "• 21-летний Виктор Куца ударил охранника в баре Walkabout в Манчестере после того, как ему запретили выходить с бутылкой алкоголя. Суд освободил его, несмотря на предыдущие обвинения в хранении ножа. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/wkd-thug-erupts-fury-manchester-34555520\">MEN</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
         "line_index": 16,
-        "section": "Футбол",
-        "requested_action": "keep",
-        "reason": "Текст соответствует фактам и не требует изменений.",
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "strip",
+        "reason": "Ротенсталь не входит в Greater Manchester, что нарушает географический контракт раздела.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Ротенсталь находится за пределами Greater Manchester.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "transport-05",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c9804pel100o-c58dd3f83a0f",
+        "original_url_identity": "bbc.com/news/articles/c9804pel100o",
+        "original_html": "• National Rail: планы по восстановлению пассажирских поездов в Ротенстале продвинулись после уверенности, что связь City Valley Rail будет включена в транспортный план Ланкашира. <a href=\"https://bbc.co.uk/news/articles/c9804pel100o\">BBC Manchester</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 17,
+        "section": "Что важно сегодня",
+        "requested_action": "patch",
+        "reason": "Дата события указана неверно. 2 сентября 2026 года — это среда, а не четверг.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно. 2 сентября 2026 года — это среда, а не четверг.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "today_focus-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-dukinfield-chippy-fire-sees-road-34557344-4705d95ff91b",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/dukinfield-chippy-fire-sees-road-34557344",
+        "original_html": "• Пожар в чипсах на Church Street в Дукифилде закрыл улицу на два часа в среду, 2 сентября 2026 года; пожарные потушили огонь. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/dukinfield-chippy-fire-sees-road-34557344\">MEN Latest News</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 21,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Уточнение информации о площадках фестиваля.",
         "risk": "factual",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-01",
+        "candidate_fingerprint": "event-event-manchester-psych-fest-2026-2026-09-05-albert-hall-8b0fdce2a333",
+        "original_url_identity": "creativetourist.com/event/manchester-psych-fest",
+        "original_html": "• Manchester Psych Fest 2026 пройдет в субботу 5 сентября в Albert Hall, с O2 Apollo в качестве главной площадки впервые и более 30 новыми участниками. <a href=\"https://creativetourist.com/event/manchester-psych-fest\">Creative Tourist Manchester</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 25,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Уточнение географического расположения.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Неправильное указание географического расположения.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-05",
+        "candidate_fingerprint": "event-id-skiddle-com-2cc912b315db-db9bd68211ea",
+        "original_url_identity": "skiddle.com/whats-on/Stockport/The-Strines-Nightingale/All-Back-To-Ours----Into-the-Woods---1-day-festival/42477177",
+        "original_html": "• Фестиваль All Back To Ours - Into the Woods пройдет 5 сентября 2026 года в The Strines Nightingale, Страйнс, начиная с 14:00. <a href=\"https://skiddle.com/whats-on/Stockport/The-Strines-Nightingale/All-Back-To-Ours----Into-the-Woods---1-day-festival/42477177\">Skiddle Manchester Festivals</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 32,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 4 сентября 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Неправильная дата события.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-11",
+        "candidate_fingerprint": "event-event-bbc-radio-4-any-questions-2026-09-04-the-fusilier-museum-551592d8120c",
+        "original_url_identity": "manchestersfinest.com/events/bbc-radio-4-any-questions",
+        "original_html": "• 4 сентября 2026 года с 18:30 до 21:00 в The Fusilier Museum, Bury, пройдет программа BBC Radio 4 \"Any Questions?\" с возможностью задать вопросы участникам. <a href=\"https://manchestersfinest.com/events/bbc-radio-4-any-questions\">Manchester's Finest Events</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 40,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 6 сентября 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Неправильная дата события.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-17",
+        "candidate_fingerprint": "event-id-jsonld-event-a47e82ecd06a-319b5e35d460",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
+        "original_html": "• 6 сентября в Waterside Farm, Otterspool Road, Romiley, Stockport пройдет The BIG Stockport Car Boot. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 41,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 6 сентября 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Неправильная дата события.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-18",
+        "candidate_fingerprint": "event-id-jsonld-event-e622e1cb5dfe-eb9005276f18",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
+        "original_html": "• 6 сентября в Bowlee Community Park, Middleton, Manchester пройдет Bowlee car boot sale. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 42,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 6 сентября 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Неправильная дата события.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-19",
+        "candidate_fingerprint": "event-id-jsonld-event-2d4fa246559e-07abd350dc64",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot",
+        "original_html": "• 6 сентября в New Smithfield Market, Openshaw, Manchester пройдет New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot\">New Smithfield Sunday Market</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 43,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 6 сентября 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Неправильная дата события.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-20",
+        "candidate_fingerprint": "event-id-jsonld-event-4bf8570f57eb-ebc50b9b2ba8",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+        "original_html": "• 6 сентября в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — автомобильная барахолка Burnage RFC. Вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 45,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Исправление даты события на 29 августа, как указано в данных события.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно. В карточке указано 5 сентября, но в данных события дата начала 29 августа.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-22",
+        "candidate_fingerprint": "event-id-jsonld-event-a2ca6f52f036-3176b2b9b256",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+        "original_html": "• 5 сентября — автомобильная барахолка на аэродроме Бартон. Для покупателей с 9:00, вход свободный, можно с собакой. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 53,
+        "section": "Business/tech события для тебя",
+        "requested_action": "patch",
+        "reason": "Уточнение условий бесплатного участия для членов Палаты.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Некорректное указание бесплатных мест для членов Палаты.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "professional_events-01",
+        "candidate_fingerprint": "event-event-the-future-of-cyber-security-manchester-exclusive-chamber-member-places-thursday-10-sep-8-2026-09-10-old-trafford-f34013ae8b3a",
+        "original_url_identity": "gmchamber.co.uk/events/the-future-of-cyber-security-manchester-exclusive-chamber-member-places",
+        "original_html": "• Конференция \"Будущее кибербезопасности в Манчестере\" пройдет 10 сентября 2026 года в Old Trafford, бесплатные места для членов Палаты, 225 фунтов для не членов. <a href=\"https://gmchamber.co.uk/events/the-future-of-cyber-security-manchester-exclusive-chamber-member-places\">GM Chamber Events</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 54,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "patch",
+        "reason": "Уточнение состава участников события для большей информативности.",
+        "risk": "factual",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "deterministic_rewrite",
+        "plan_slot_id": "ticket_radar-01",
+        "candidate_fingerprint": "event-event-evanescence-special-guest-poppy-and-k-flay-thu-10-sep-2026-multiple-times-2026-09-10-co-op-live-a95ae5600fee",
+        "original_url_identity": "cooplive.com/events/evanescence-7z58",
+        "original_html": "• <b>Evanescence</b> — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/evanescence-7z58\">Co-op Live</a>",
+        "model_replacement_rejected": "fact_lock: k. flay, poppy",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 21,
+        "section": "Выходные в GM",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о Manchester Psych Fest 2026.",
+        "risk": "format",
+        "critical_error": true,
+        "critical_problem": "Неправильное указание главной площадки фестиваля.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "weekend_activities-01",
+        "candidate_fingerprint": "event-event-manchester-psych-fest-2026-2026-09-05-albert-hall-8b0fdce2a333",
+        "original_url_identity": "creativetourist.com/event/manchester-psych-fest",
+        "original_html": "• Manchester Psych Fest 2026 пройдет в субботу 5 сентября в Albert Hall, с O2 Apollo в качестве главной площадки впервые и более 30 новыми участниками. <a href=\"https://creativetourist.com/event/manchester-psych-fest\">Creative Tourist Manchester</a>",
+        "replacement_fingerprint": "event-event-manchester-open-2026-the-biggest-celebration-of-greater-manchester-s-creative-talent-2026-09-03-home-8280db5b0b5c",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 22,
+        "section": "Выходные в GM",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о Manchester Psych Fest 2026.",
+        "risk": "format",
         "critical_error": false,
         "critical_problem": "",
         "completeness_concept": "",
         "outcome": "resolved_by_replacement",
         "method": "reserve_replacement",
-        "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-marcus-rashford-carrick-34549145-a6f3bc396dce",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-marcus-rashford-carrick-34549145",
-        "original_html": "• Майкл Каррик согласен с прогнозом Нуссайра Мазрауи о том, что Маркус Рашфорд станет как \"новое приобретение\" для \"Манчестер Юнайтед\" в этом сезоне. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-marcus-rashford-carrick-34549145\">MEN Manchester United</a>",
-        "keep_rejected": "known_factual_error",
-        "replacement_fingerprint": "url-theguardian-com-football-2026-aug-30-michael-carrick-manchester-united-ipswich-premier-league-2d3edec2f9fd",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 22,
-        "section": "IT и бизнес",
-        "requested_action": "patch",
-        "reason": "Термин 'терроризм' может быть юридически некорректным в данном контексте.",
-        "risk": "sensitive",
-        "critical_error": true,
-        "critical_problem": "Некорректное использование термина 'терроризм'.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "tech_business-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-twisted-teenage-inspired-manchester-synagogue-34550500-d65d40590cc6",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/twisted-teenage-inspired-manchester-synagogue-34550500",
-        "original_html": "• Мохаммед Халил Надир, 19 лет, был приговорён к тюремному заключению за терроризм после того, как снял себя, активирующего фальшивый пояс с бомбой, вдохновлённый атакой на синагогу в Манчестере. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/twisted-teenage-inspired-manchester-synagogue-34550500\">MEN Latest News</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 25,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Событие отложено, информация о его проведении сегодня неверна.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Событие Shakey Graves отложено, но указано как проходящее сегодня.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "ticket_radar-02",
-        "candidate_fingerprint": "event-event-shakey-graves-2nd-september-2026-2026-09-02-manchester-academy-875b8378d161",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13379848/shakey-graves-manchester-club-academy-2026-09-02-19-30-00",
-        "original_html": "• <b>Shakey Graves</b> — 2 сентября, Manchester Academy; цена £24. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13379848/shakey-graves-manchester-club-academy-2026-09-02-19-30-00\">Manchester Academy</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 11,
-        "section": "Свежие новости",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-        "risk": "translation",
-        "critical_error": true,
-        "critical_problem": "",
-        "completeness_concept": "weapon_violence",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-09",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-four-teen-suspects-held-after-34551954-0301992521c2",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/four-teen-suspects-held-after-34551954",
-        "original_html": "• Четыре подростка, арестованные после того, как 13-летний мальчик был ранен в Taco Bell в Rochdale, были освобождены под залог. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/four-teen-suspects-held-after-34551954\">MEN Latest News</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-urgent-appeal-concern-grows-missing-34553846-2cf62006fb3c",
+        "plan_slot_id": "weekend_activities-02",
+        "candidate_fingerprint": "event-id-skiddle-com-b489a2ba3597-22b8739f1a62",
+        "original_url_identity": "skiddle.com/festivals/manchester-psych-fest",
+        "original_html": "• Фестиваль психоделической музыки Manchester Psych Festival пройдет 5 сентября 2026 года на различных площадках Манчестера, начиная с 12:00. <a href=\"https://skiddle.com/festivals/manchester-psych-fest\">Skiddle Manchester Festivals</a>",
+        "replacement_fingerprint": "event-event-high-school-musical-2026-09-03-lowry-7e95f683d564",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::уточнение географии инцидента для соответствия geo_scope.",
+        "group_key": "свежие новости::уточнение статуса судебного решения, чтобы избежать неверного представления о его освобождении.",
         "actions": [
           {
-            "line_index": 3,
+            "line_index": 11,
             "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Уточнение географии инцидента для соответствия geo_scope.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "География суда не соответствует geo_scope.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cr4v20v4wwdo-69229dd8e9fe",
-            "original_url_identity": "bbc.com/news/articles/cr4v20v4wwdo",
-            "original_html": "• Психиатрическая медсестра Лоренс Чапонг была осуждена за умышленное пренебрежение к пациенту, что привело к её смерти. Суд в Ливерпуле приговорил её к четырем годам тюремного заключения за то, что она не проводила необходимые проверки и подделывала записи. В результате её действий 22-летняя Эми Барбер была найдена без сознания и не смогла быть спасена, несмотря на её сложную историю психического здоровья. <a href=\"https://bbc.co.uk/news/articles/cr4v20v4wwdo\">BBC Manchester</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 3,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::энцо фернандес и илиман ндиайе не были подписаны \"манчестер сити\".",
-        "actions": [
-          {
-            "line_index": 15,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Энцо Фернандес и Илиман Ндиайе не были подписаны \"Манчестер Сити\".",
+            "reason": "Уточнение статуса судебного решения, чтобы избежать неверного представления о его освобождении.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неверное утверждение о подписании Энцо Фернандеса и Илимана Ндиайе.",
+            "critical_problem": "Текст утверждает, что Виктор Куца был освобождён, несмотря на предыдущие обвинения в хранении ножа, но это не соответствует фактам из источника.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-citys-staggering-superpower-means-34552369-87dc4ffc1753",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/man-citys-staggering-superpower-means-34552369",
-            "original_html": "• Реконструкция состава \"Манчестер Сити\" обошлась в 80 миллионов фунтов стерлингов, несмотря на два рекорда по трансферам и подписания Энцо Фернандеса и Илимана Ндиайе в последний день трансферного окна. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/man-citys-staggering-superpower-means-34552369\">MEN Manchester City</a>",
+            "plan_slot_id": "last_24h-09",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-wkd-thug-erupts-fury-manchester-34555520-ea306a536217",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/wkd-thug-erupts-fury-manchester-34555520",
+            "original_html": "• 21-летний Виктор Куца ударил охранника в баре Walkabout в Манчестере после того, как ему запретили выходить с бутылкой алкоголя. Суд освободил его, несмотря на предыдущие обвинения в хранении ножа. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/wkd-thug-erupts-fury-manchester-34555520\">MEN</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -386,7 +640,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 15,
+            "line_index": 11,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -394,150 +648,471 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::текст соответствует фактам и не требует изменений.",
+        "group_key": "общественный транспорт сегодня::ротенсталь не входит в greater manchester, что нарушает географический контракт раздела.",
         "actions": [
           {
             "line_index": 16,
-            "section": "Футбол",
-            "requested_action": "keep",
-            "reason": "Текст соответствует фактам и не требует изменений.",
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "strip",
+            "reason": "Ротенсталь не входит в Greater Manchester, что нарушает географический контракт раздела.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Ротенсталь находится за пределами Greater Manchester.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "transport-05",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c9804pel100o-c58dd3f83a0f",
+            "original_url_identity": "bbc.com/news/articles/c9804pel100o",
+            "original_html": "• National Rail: планы по восстановлению пассажирских поездов в Ротенстале продвинулись после уверенности, что связь City Valley Rail будет включена в транспортный план Ланкашира. <a href=\"https://bbc.co.uk/news/articles/c9804pel100o\">BBC Manchester</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 16,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "что важно сегодня::дата события указана неверно. 2 сентября 2026 года — это среда, а не четверг.",
+        "actions": [
+          {
+            "line_index": 17,
+            "section": "Что важно сегодня",
+            "requested_action": "patch",
+            "reason": "Дата события указана неверно. 2 сентября 2026 года — это среда, а не четверг.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно. 2 сентября 2026 года — это среда, а не четверг.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "today_focus-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-dukinfield-chippy-fire-sees-road-34557344-4705d95ff91b",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/dukinfield-chippy-fire-sees-road-34557344",
+            "original_html": "• Пожар в чипсах на Church Street в Дукифилде закрыл улицу на два часа в среду, 2 сентября 2026 года; пожарные потушили огонь. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/dukinfield-chippy-fire-sees-road-34557344\">MEN Latest News</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 17,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::уточнение информации о площадках фестиваля.",
+        "actions": [
+          {
+            "line_index": 21,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Уточнение информации о площадках фестиваля.",
             "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-01",
+            "candidate_fingerprint": "event-event-manchester-psych-fest-2026-2026-09-05-albert-hall-8b0fdce2a333",
+            "original_url_identity": "creativetourist.com/event/manchester-psych-fest",
+            "original_html": "• Manchester Psych Fest 2026 пройдет в субботу 5 сентября в Albert Hall, с O2 Apollo в качестве главной площадки впервые и более 30 новыми участниками. <a href=\"https://creativetourist.com/event/manchester-psych-fest\">Creative Tourist Manchester</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 21,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::уточнение географического расположения.",
+        "actions": [
+          {
+            "line_index": 25,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Уточнение географического расположения.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Неправильное указание географического расположения.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-05",
+            "candidate_fingerprint": "event-id-skiddle-com-2cc912b315db-db9bd68211ea",
+            "original_url_identity": "skiddle.com/whats-on/Stockport/The-Strines-Nightingale/All-Back-To-Ours----Into-the-Woods---1-day-festival/42477177",
+            "original_html": "• Фестиваль All Back To Ours - Into the Woods пройдет 5 сентября 2026 года в The Strines Nightingale, Страйнс, начиная с 14:00. <a href=\"https://skiddle.com/whats-on/Stockport/The-Strines-Nightingale/All-Back-To-Ours----Into-the-Woods---1-day-festival/42477177\">Skiddle Manchester Festivals</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 25,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата события должна быть 4 сентября 2026 года.",
+        "actions": [
+          {
+            "line_index": 32,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 4 сентября 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Неправильная дата события.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-11",
+            "candidate_fingerprint": "event-event-bbc-radio-4-any-questions-2026-09-04-the-fusilier-museum-551592d8120c",
+            "original_url_identity": "manchestersfinest.com/events/bbc-radio-4-any-questions",
+            "original_html": "• 4 сентября 2026 года с 18:30 до 21:00 в The Fusilier Museum, Bury, пройдет программа BBC Radio 4 \"Any Questions?\" с возможностью задать вопросы участникам. <a href=\"https://manchestersfinest.com/events/bbc-radio-4-any-questions\">Manchester's Finest Events</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 32,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата события должна быть 6 сентября 2026 года.",
+        "actions": [
+          {
+            "line_index": 40,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 6 сентября 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Неправильная дата события.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-17",
+            "candidate_fingerprint": "event-id-jsonld-event-a47e82ecd06a-319b5e35d460",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
+            "original_html": "• 6 сентября в Waterside Farm, Otterspool Road, Romiley, Stockport пройдет The BIG Stockport Car Boot. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 41,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 6 сентября 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Неправильная дата события.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-18",
+            "candidate_fingerprint": "event-id-jsonld-event-e622e1cb5dfe-eb9005276f18",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
+            "original_html": "• 6 сентября в Bowlee Community Park, Middleton, Manchester пройдет Bowlee car boot sale. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 42,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 6 сентября 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Неправильная дата события.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-19",
+            "candidate_fingerprint": "event-id-jsonld-event-2d4fa246559e-07abd350dc64",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot",
+            "original_html": "• 6 сентября в New Smithfield Market, Openshaw, Manchester пройдет New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot\">New Smithfield Sunday Market</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 43,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 6 сентября 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Неправильная дата события.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-20",
+            "candidate_fingerprint": "event-id-jsonld-event-4bf8570f57eb-ebc50b9b2ba8",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+            "original_html": "• 6 сентября в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — автомобильная барахолка Burnage RFC. Вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 40,
+            "passed": true,
+            "detail": "existing fact verified"
+          },
+          {
+            "line_index": 41,
+            "passed": true,
+            "detail": "existing fact verified"
+          },
+          {
+            "line_index": 42,
+            "passed": true,
+            "detail": "existing fact verified"
+          },
+          {
+            "line_index": 43,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::исправление даты события на 29 августа, как указано в данных события.",
+        "actions": [
+          {
+            "line_index": 45,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Исправление даты события на 29 августа, как указано в данных события.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно. В карточке указано 5 сентября, но в данных события дата начала 29 августа.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-22",
+            "candidate_fingerprint": "event-id-jsonld-event-a2ca6f52f036-3176b2b9b256",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+            "original_html": "• 5 сентября — автомобильная барахолка на аэродроме Бартон. Для покупателей с 9:00, вход свободный, можно с собакой. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 45,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "business/tech события для тебя::уточнение условий бесплатного участия для членов палаты.",
+        "actions": [
+          {
+            "line_index": 53,
+            "section": "Business/tech события для тебя",
+            "requested_action": "patch",
+            "reason": "Уточнение условий бесплатного участия для членов Палаты.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Некорректное указание бесплатных мест для членов Палаты.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "professional_events-01",
+            "candidate_fingerprint": "event-event-the-future-of-cyber-security-manchester-exclusive-chamber-member-places-thursday-10-sep-8-2026-09-10-old-trafford-f34013ae8b3a",
+            "original_url_identity": "gmchamber.co.uk/events/the-future-of-cyber-security-manchester-exclusive-chamber-member-places",
+            "original_html": "• Конференция \"Будущее кибербезопасности в Манчестере\" пройдет 10 сентября 2026 года в Old Trafford, бесплатные места для членов Палаты, 225 фунтов для не членов. <a href=\"https://gmchamber.co.uk/events/the-future-of-cyber-security-manchester-exclusive-chamber-member-places\">GM Chamber Events</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 53,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::уточнение состава участников события для большей информативности.",
+        "actions": [
+          {
+            "line_index": 54,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Уточнение состава участников события для большей информативности.",
+            "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "deterministic_rewrite",
+            "plan_slot_id": "ticket_radar-01",
+            "candidate_fingerprint": "event-event-evanescence-special-guest-poppy-and-k-flay-thu-10-sep-2026-multiple-times-2026-09-10-co-op-live-a95ae5600fee",
+            "original_url_identity": "cooplive.com/events/evanescence-7z58",
+            "original_html": "• <b>Evanescence</b> — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/evanescence-7z58\">Co-op Live</a>",
+            "model_replacement_rejected": "fact_lock: k. flay, poppy",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 54,
+            "passed": false,
+            "detail": "line did not change"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дублирование информации о manchester psych fest #",
+        "actions": [
+          {
+            "line_index": 21,
+            "section": "Выходные в GM",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о Manchester Psych Fest 2026.",
+            "risk": "format",
+            "critical_error": true,
+            "critical_problem": "Неправильное указание главной площадки фестиваля.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "weekend_activities-01",
+            "candidate_fingerprint": "event-event-manchester-psych-fest-2026-2026-09-05-albert-hall-8b0fdce2a333",
+            "original_url_identity": "creativetourist.com/event/manchester-psych-fest",
+            "original_html": "• Manchester Psych Fest 2026 пройдет в субботу 5 сентября в Albert Hall, с O2 Apollo в качестве главной площадки впервые и более 30 новыми участниками. <a href=\"https://creativetourist.com/event/manchester-psych-fest\">Creative Tourist Manchester</a>",
+            "replacement_fingerprint": "event-event-manchester-open-2026-the-biggest-celebration-of-greater-manchester-s-creative-talent-2026-09-03-home-8280db5b0b5c",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 22,
+            "section": "Выходные в GM",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о Manchester Psych Fest 2026.",
+            "risk": "format",
             "critical_error": false,
             "critical_problem": "",
             "completeness_concept": "",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-marcus-rashford-carrick-34549145-a6f3bc396dce",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-marcus-rashford-carrick-34549145",
-            "original_html": "• Майкл Каррик согласен с прогнозом Нуссайра Мазрауи о том, что Маркус Рашфорд станет как \"новое приобретение\" для \"Манчестер Юнайтед\" в этом сезоне. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-marcus-rashford-carrick-34549145\">MEN Manchester United</a>",
-            "keep_rejected": "known_factual_error",
-            "replacement_fingerprint": "url-theguardian-com-football-2026-aug-30-michael-carrick-manchester-united-ipswich-premier-league-2d3edec2f9fd",
+            "plan_slot_id": "weekend_activities-02",
+            "candidate_fingerprint": "event-id-skiddle-com-b489a2ba3597-22b8739f1a62",
+            "original_url_identity": "skiddle.com/festivals/manchester-psych-fest",
+            "original_html": "• Фестиваль психоделической музыки Manchester Psych Festival пройдет 5 сентября 2026 года на различных площадках Манчестера, начиная с 12:00. <a href=\"https://skiddle.com/festivals/manchester-psych-fest\">Skiddle Manchester Festivals</a>",
+            "replacement_fingerprint": "event-event-high-school-musical-2026-09-03-lowry-7e95f683d564",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 16,
+            "line_index": 21,
             "passed": true,
             "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "it и бизнес::термин 'терроризм' может быть юридически некорректным в данном контексте.",
-        "actions": [
-          {
-            "line_index": 22,
-            "section": "IT и бизнес",
-            "requested_action": "patch",
-            "reason": "Термин 'терроризм' может быть юридически некорректным в данном контексте.",
-            "risk": "sensitive",
-            "critical_error": true,
-            "critical_problem": "Некорректное использование термина 'терроризм'.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "tech_business-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-twisted-teenage-inspired-manchester-synagogue-34550500-d65d40590cc6",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/twisted-teenage-inspired-manchester-synagogue-34550500",
-            "original_html": "• Мохаммед Халил Надир, 19 лет, был приговорён к тюремному заключению за терроризм после того, как снял себя, активирующего фальшивый пояс с бомбой, вдохновлённый атакой на синагогу в Манчестере. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/twisted-teenage-inspired-manchester-synagogue-34550500\">MEN Latest News</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
+          },
           {
             "line_index": 22,
             "passed": true,
             "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::событие отложено, информация о его проведении сегодня неверна.",
-        "actions": [
+          },
           {
-            "line_index": 25,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "patch",
-            "reason": "Событие отложено, информация о его проведении сегодня неверна.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Событие Shakey Graves отложено, но указано как проходящее сегодня.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "ticket_radar-02",
-            "candidate_fingerprint": "event-event-shakey-graves-2nd-september-2026-2026-09-02-manchester-academy-875b8378d161",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13379848/shakey-graves-manchester-club-academy-2026-09-02-19-30-00",
-            "original_html": "• <b>Shakey Graves</b> — 2 сентября, Manchester Academy; цена £24. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13379848/shakey-graves-manchester-club-academy-2026-09-02-19-30-00\">Manchester Academy</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
+            "check": "duplicate_identity",
+            "identity": "ticket:manchester psych festival|2026-09-05|various venues around manchester",
+            "visible_count": 0,
+            "passed": true
+          },
           {
-            "line_index": 25,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no russian rendering in the shipped line",
-        "actions": [
-          {
-            "line_index": 11,
-            "section": "Свежие новости",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-            "risk": "translation",
-            "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "weapon_violence",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-09",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-four-teen-suspects-held-after-34551954-0301992521c2",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/four-teen-suspects-held-after-34551954",
-            "original_html": "• Четыре подростка, арестованные после того, как 13-летний мальчик был ранен в Taco Bell в Rochdale, были освобождены под залог. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/four-teen-suspects-held-after-34551954\">MEN Latest News</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-urgent-appeal-concern-grows-missing-34553846-2cf62006fb3c",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 11,
-            "passed": true,
-            "detail": "post-check passed"
+            "check": "duplicate_identity",
+            "identity": "ticket:manchester psych fest 2026|2026-09-05|albert hall",
+            "visible_count": 0,
+            "passed": true
           }
         ],
         "known_factual_error": true
       }
     ],
     "refetch": {
-      "attempted": 0,
+      "attempted": 2,
       "improved": 0,
       "failed": 0,
-      "empty_or_not_better": 0,
-      "skipped": 0
+      "empty_or_not_better": 2,
+      "skipped": 1,
+      "reports": [
+        {
+          "fingerprint": "event-id-skiddle-com-2cc912b315db-db9bd68211ea",
+          "title": "All Back To Ours - Into the Woods - 1 day festival",
+          "status": "empty",
+          "url": "https://skiddle.com/whats-on/Stockport/The-Strines-Nightingale/All-Back-To-Ours----Into-the-Woods---1-day-festival/42477177",
+          "chars": 0
+        },
+        {
+          "fingerprint": "event-event-evanescence-special-guest-poppy-and-k-flay-thu-10-sep-2026-multiple-times-2026-09-10-co-op-live-a95ae5600fee",
+          "title": "Evanescence Special Guest Poppy and K. Flay Thu 10 Sep 2026 Multiple times",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://cooplive.com/events/evanescence-7z58",
+          "candidate_evidence_chars": 0
+        },
+        {
+          "fingerprint": "event-id-skiddle-com-b489a2ba3597-22b8739f1a62",
+          "title": "Manchester Psych Festival",
+          "status": "empty",
+          "url": "https://skiddle.com/festivals/manchester-psych-fest",
+          "chars": 0
+        }
+      ]
     },
-    "enrich_improved": 5,
-    "false_positive_existing_fact": 3,
-    "deterministic_rewrite_rejected": 2,
+    "enrich_improved": 14,
+    "false_positive_existing_fact": 10,
+    "no_eligible_backup": 1,
+    "deterministic_rewrite_built": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 27,
-      "matched_lines": 27,
-      "applicable_lines": 3,
-      "unmatched_lines": 0,
+      "checked_lines": 52,
+      "matched_lines": 52,
+      "applicable_lines": 1,
+      "unmatched_lines": 4,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -548,98 +1123,248 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 27,
-      "resolved_in_place": 27,
+      "checked_lines": 56,
+      "resolved_in_place": 56,
       "unresolved": 0,
       "findings": []
     },
-    "status": "resolved"
+    "status": "unresolved"
   },
-  "notes": "Строка соответствует всем требованиям: география GM, актуальность, поддержка мэра, планы развития.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Уточнена география инцидента в строке 3 для соответствия geo_scope.; Обе строки соответствуют требованиям географии и содержат актуальную информацию о транс",
+  "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Проблема с фактической точностью в строке о Викторе Куце требует исправления.; Строка о Ротенстале нарушает географический контракт и должна быть удалена.; Дата события указана неве",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.85,
+    "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 3,
+        "line_index": 11,
         "section": "Свежие новости",
-        "problem": "География суда не соответствует geo_scope.",
+        "problem": "Текст утверждает, что Виктор Куца был освобождён, несмотря на предыдущие обвинения в хранении ножа, но это не соответствует фактам из источника.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 16,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Ротенсталь находится за пределами Greater Manchester.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 17,
+        "section": "Что важно сегодня",
+        "problem": "Дата события указана неверно. 2 сентября 2026 года — это среда, а не четверг.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 21,
+        "section": "Выходные в GM",
+        "problem": "Неправильное указание главной площадки фестиваля.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 25,
+        "section": "Выходные в GM",
+        "problem": "Неправильное указание географического расположения.",
         "risk": "geo",
         "suggested_action": "repair"
       },
       {
-        "line_index": 15,
-        "section": "Футбол",
-        "problem": "Неверное утверждение о подписании Энцо Фернандеса и Илимана Ндиайе.",
+        "line_index": 32,
+        "section": "Выходные в GM",
+        "problem": "Неправильная дата события.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 40,
+        "section": "Выходные в GM",
+        "problem": "Неправильная дата события.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 41,
+        "section": "Выходные в GM",
+        "problem": "Неправильная дата события.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 42,
+        "section": "Выходные в GM",
+        "problem": "Неправильная дата события.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 43,
+        "section": "Выходные в GM",
+        "problem": "Неправильная дата события.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 45,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно. В карточке указано 5 сентября, но в данных события дата начала 29 августа.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 53,
+        "section": "Business/tech события для тебя",
+        "problem": "Некорректное указание бесплатных мест для членов Палаты.",
         "risk": "factual",
         "suggested_action": "repair"
+      },
+      {
+        "line_index": 21,
+        "section": "Выходные в GM",
+        "problem": "Дублирование информации о Manchester Psych Fest 2026.",
+        "risk": "format",
+        "suggested_action": "strip"
       },
       {
         "line_index": 22,
-        "section": "IT и бизнес",
-        "problem": "Некорректное использование термина 'терроризм'.",
-        "risk": "sensitive",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 25,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Событие Shakey Graves отложено, но указано как проходящее сегодня.",
-        "risk": "factual",
-        "suggested_action": "repair"
+        "section": "Выходные в GM",
+        "problem": "Дублирование информации о Manchester Psych Fest 2026.",
+        "risk": "format",
+        "suggested_action": "strip"
       }
     ],
     "actions": [
       {
-        "line_index": 3,
+        "line_index": 11,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• Психиатрическая медсестра Лоренс Чапонг была осуждена за умышленное пренебрежение к пациенту, что привело к её смерти. Суд в Ливерпуле приговорил её к четырем годам тюремного заключения за то, что она не проводила необходимые проверки и подделывала записи. В результате её действий 22-летняя Эми Барбер была найдена без сознания и не смогла быть спасена, несмотря на её сложную историю психического здоровья. Хотя суд проходил в Ливерпуле, инцидент произошел в Greater Manchester.",
-        "reason": "Уточнение географии инцидента для соответствия geo_scope.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 15,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Реконструкция состава \"Манчестер Сити\" обошлась в 80 миллионов фунтов стерлингов, несмотря на два рекорда по трансферам и подписания в последний день трансферного окна.",
-        "reason": "Энцо Фернандес и Илиман Ндиайе не были подписаны \"Манчестер Сити\".",
+        "replacement_text": "• 21-летний Виктор Куца ударил охранника в баре Walkabout в Манчестере после того, как ему запретили выходить с бутылкой алкоголя. Суд рассмотрел его дело, несмотря на предыдущие обвинения в хранении ножа.",
+        "reason": "Уточнение статуса судебного решения, чтобы избежать неверного представления о его освобождении.",
         "risk": "factual"
       },
       {
         "line_index": 16,
-        "section": "Футбол",
-        "action": "keep",
-        "reason": "Текст соответствует фактам и не требует изменений.",
-        "risk": "factual"
+        "section": "Общественный транспорт сегодня",
+        "action": "strip",
+        "reason": "Ротенсталь не входит в Greater Manchester, что нарушает географический контракт раздела.",
+        "risk": "geo"
       },
       {
-        "line_index": 22,
-        "section": "IT и бизнес",
+        "line_index": 17,
+        "section": "Что важно сегодня",
         "action": "patch",
-        "replacement_text": "• Мохаммед Халил Надир, 19 лет, был приговорён к тюремному заключению за создание угрозы общественной безопасности после того, как снял себя, активирующего фальшивый пояс с бомбой, вдохновлённый атакой на синагогу в Манчестере.",
-        "reason": "Термин 'терроризм' может быть юридически некорректным в данном контексте.",
-        "risk": "sensitive"
+        "replacement_text": "• Пожар в чипсах на Church Street в Дукифилде закрыл улицу на два часа в среду, 2 сентября 2026 года; пожарные потушили огонь.",
+        "reason": "Дата события указана неверно. 2 сентября 2026 года — это среда, а не четверг.",
+        "risk": "date"
+      },
+      {
+        "line_index": 21,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• Manchester Psych Fest 2026 пройдет в субботу 5 сентября на различных площадках Манчестера, включая Albert Hall и O2 Apollo, с более 30 новыми участниками.",
+        "reason": "Уточнение информации о площадках фестиваля.",
+        "risk": "factual"
       },
       {
         "line_index": 25,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• Фестиваль All Back To Ours - Into the Woods пройдет 5 сентября 2026 года в The Strines Nightingale, Стокпорт, начиная с 14:00.",
+        "reason": "Уточнение географического расположения.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 32,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 4 сентября 2026 года с 18:30 до 21:00 в The Fusilier Museum, Bury, пройдет программа BBC Radio 4 \"Any Questions?\" с возможностью задать вопросы участникам.",
+        "reason": "Дата события должна быть 4 сентября 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 40,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 6 сентября в Waterside Farm, Otterspool Road, Romiley, Stockport пройдет The BIG Stockport Car Boot. На площадке: автомобильная барахолка, вход свободный.",
+        "reason": "Дата события должна быть 6 сентября 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 41,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 6 сентября в Bowlee Community Park, Middleton, Manchester пройдет Bowlee car boot sale. На площадке: автомобильная барахолка, вход свободный.",
+        "reason": "Дата события должна быть 6 сентября 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 42,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 6 сентября в New Smithfield Market, Openshaw, Manchester пройдет New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный.",
+        "reason": "Дата события должна быть 6 сентября 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 43,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 6 сентября в Burnage RFC, Varley Park, Battersea Road, Стокпорт, SK4 3EA — автомобильная барахолка Burnage RFC. Вход свободный.",
+        "reason": "Дата события должна быть 6 сентября 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 45,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 29 августа — автомобильная барахолка на аэродроме Бартон. Для покупателей с 9:00, вход свободный, можно с собакой.",
+        "reason": "Исправление даты события на 29 августа, как указано в данных события.",
+        "risk": "date"
+      },
+      {
+        "line_index": 53,
+        "section": "Business/tech события для тебя",
+        "action": "patch",
+        "replacement_text": "• Конференция \"Будущее кибербезопасности в Манчестере\" пройдет 10 сентября 2026 года в Old Trafford. Бесплатные места доступны только для членов Палаты, стоимость для не членов составляет 225 фунтов.",
+        "reason": "Уточнение условий бесплатного участия для членов Палаты.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 54,
         "section": "Билеты / Ticket Radar",
         "action": "patch",
-        "replacement_text": "• Shakey Graves — 2 сентября, Manchester Academy; цена £24. Событие отложено, новая дата будет объявлена позже.",
-        "reason": "Событие отложено, информация о его проведении сегодня неверна.",
+        "replacement_text": "• Evanescence с участием Poppy и K. Flay — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице.",
+        "reason": "Уточнение состава участников события для большей информативности.",
         "risk": "factual"
+      },
+      {
+        "line_index": 21,
+        "section": "Выходные в GM",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации о Manchester Psych Fest 2026.",
+        "risk": "format"
+      },
+      {
+        "line_index": 22,
+        "section": "Выходные в GM",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации о Manchester Psych Fest 2026.",
+        "risk": "format"
       }
     ],
     "warnings": [
-      "Недостаток в блоке 'Что важно сегодня': только 1 элемент при минимуме 3.",
-      "Недостаток в блоке 'Городской радар': только 4 элемента при минимуме 5.",
-      "Отсутствие блока 'Еда, открытия и рынки'."
+      "Уточнён состав участников события Evanescence для большей информативности.",
+      "Секция 'Что важно сегодня' содержит только один элемент, что ниже минимального порога.",
+      "Секция 'Русскоязычные концерты и стендап UK' отсутствует, что ниже минимального порога."
     ],
-    "notes": "Строка соответствует всем требованиям: география GM, актуальность, поддержка мэра, планы развития.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Уточнена география инцидента в строке 3 для соответствия geo_scope.; Обе строки соответствуют требованиям географии и содержат актуальную информацию о транс",
+    "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Проблема с фактической точностью в строке о Викторе Куце требует исправления.; Строка о Ротенстале нарушает географический контракт и должна быть удалена.; Дата события указана неве",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 11,
+      "chunk_count": 14,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -657,8 +1382,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2750,
-          "duration_seconds": 1.435
+          "estimated_tokens": 2652,
+          "duration_seconds": 1.745
         },
         {
           "chunk_id": "chunk-02",
@@ -676,7 +1401,7 @@
           "warning_count": 0,
           "error": "",
           "estimated_tokens": 2483,
-          "duration_seconds": 1.488
+          "duration_seconds": 1.958
         },
         {
           "chunk_id": "chunk-03",
@@ -693,69 +1418,123 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6954,
-          "duration_seconds": 3.189
+          "estimated_tokens": 7149,
+          "duration_seconds": 3.944
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            13
+            16
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3202,
-          "duration_seconds": 0.842
+          "estimated_tokens": 4572,
+          "duration_seconds": 2.323
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            14,
-            14
+            17,
+            17
           ],
           "sections": [
             "Что важно сегодня"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2694,
+          "duration_seconds": 2.654
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "ok",
+          "line_range": [
+            18,
+            19
+          ],
+          "sections": [
+            "Футбол"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2700,
-          "duration_seconds": 0.851
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "ok",
-          "line_range": [
-            15,
-            16
-          ],
-          "sections": [
-            "Футбол"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 2,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3178,
-          "duration_seconds": 3.076
+          "estimated_tokens": 3087,
+          "duration_seconds": 1.295
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            17,
-            20
+            20,
+            31
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 8435,
+          "duration_seconds": 55.184
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            32,
+            43
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 5,
+          "action_count": 5,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 8466,
+          "duration_seconds": 77.06
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            44,
+            45
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3401,
+          "duration_seconds": 2.321
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            46,
+            50
           ],
           "sections": [
             "Городской радар"
@@ -765,80 +1544,80 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4170,
-          "duration_seconds": 0.948
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            21,
-            23
-          ],
-          "sections": [
-            "IT и бизнес"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3656,
-          "duration_seconds": 23.87
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            24,
-            25
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3447,
-          "duration_seconds": 3.34
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            26,
-            26
-          ],
-          "sections": [
-            "Крупные концерты вне GM"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2657,
-          "duration_seconds": 5.98
+          "estimated_tokens": 4753,
+          "duration_seconds": 1.934
         },
         {
           "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            27,
-            27
+            51,
+            51
           ],
           "sections": [
-            "Русскоязычные концерты и стендап UK"
+            "Еда, открытия и рынки"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2807,
-          "duration_seconds": 11.134
+          "estimated_tokens": 2815,
+          "duration_seconds": 6.579
+        },
+        {
+          "chunk_id": "chunk-12",
+          "status": "ok",
+          "line_range": [
+            52,
+            52
+          ],
+          "sections": [
+            "IT и бизнес"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2652,
+          "duration_seconds": 5.654
+        },
+        {
+          "chunk_id": "chunk-13",
+          "status": "ok",
+          "line_range": [
+            53,
+            53
+          ],
+          "sections": [
+            "Business/tech события для тебя"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2860,
+          "duration_seconds": 8.069
+        },
+        {
+          "chunk_id": "chunk-14",
+          "status": "ok",
+          "line_range": [
+            54,
+            57
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 1,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 4584,
+          "duration_seconds": 9.475
         }
       ],
       "reduce": {
@@ -846,13 +1625,13 @@
         "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "warn",
-        "critical_error_count": 0,
-        "action_count": 0,
-        "warning_count": 3,
+        "decision": "repair_required",
+        "critical_error_count": 2,
+        "action_count": 2,
+        "warning_count": 2,
         "error": "",
-        "estimated_tokens": 9309,
-        "duration_seconds": 19.615
+        "estimated_tokens": 11367,
+        "duration_seconds": 22.105
       },
       "max_workers": 3,
       "chunk_line_target": 12,
