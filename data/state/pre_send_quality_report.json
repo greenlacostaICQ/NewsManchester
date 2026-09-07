@@ -1,129 +1,122 @@
 {
-  "status": "ok",
+  "status": "partial",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 1 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair executor applied 3 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-09-06",
-  "pipeline_run_id": "20260906T080132+0100",
-  "digest_sha256": "8689e34cc9641bddc6f1d187de96811577002fe88fab9ff4100e84e783c8492e",
-  "duration_seconds": 53.221,
-  "confidence": 0.85,
+  "run_date_london": "2026-09-07",
+  "pipeline_run_id": "20260907T080136+0100",
+  "digest_sha256": "53a9034b331b666347704622eec8f2ff6fc93e237dc102e9d56aa58c40b4bd7a",
+  "duration_seconds": 58.064,
+  "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 7,
+      "line_index": 4,
       "section": "Свежие новости",
-      "problem": "Дата события указана неверно. Драка произошла 4 сентября, а не в пятницу.",
+      "problem": "Дата события указана неверно. 6 сентября 2026 года - это воскресенье, а не суббота.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 16,
+      "line_index": 15,
       "section": "Футбол",
-      "problem": "Неправильное указание главного тренера Манчестер Юнайтед.",
+      "problem": "Неверная информация о тренере Эвертона.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 18,
-      "section": "Выходные в GM",
-      "problem": "Неправильное указание места проведения события.",
-      "risk": "factual",
+      "line_index": 20,
+      "section": "Городской радар",
+      "problem": "Некорректное использование термина 'травмированными'.",
+      "risk": "sensitive",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 23,
+      "section": "Дальние анонсы",
+      "problem": "Событие не соответствует географическому контракту.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 24,
+      "section": "Билеты / Ticket Radar",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
       "suggested_action": "repair"
     },
     {
       "line_index": 27,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 29,
-      "section": "Городской радар",
-      "problem": "Географическая ошибка: Лейленд находится вне Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 30,
-      "section": "Дальние анонсы",
-      "problem": "Дата события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 31,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дата события указана неверно.",
+      "section": "Крупные концерты вне GM",
+      "problem": "Неправильная дата события",
       "risk": "date",
       "suggested_action": "repair"
     }
   ],
   "actions": [
     {
-      "line_index": 7,
+      "line_index": 4,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• Полиция провела операцию на улице Нортерн-Куотер в Манчестере, где 4 сентября произошла драка у паба Unicorn. На место прибыли около пяти автомобилей полиции и две скорые помощи. Три мужчины, 29, 33 и 37 лет, были арестованы по подозрению в хулиганстве, их травмы не угрожают жизни. Свидетели слышали крики и призывы о помощи, после чего полиция вмешалась в ситуацию.",
-      "reason": "Исправление даты события на правильную.",
+      "replacement_text": "• В воскресенье, 6 сентября, группа фанатов Coventry City напала на магазин Go Local Manor Convenience в Дройлсдене, похитив алкоголь на сумму более £250 после поражения от Манчестер Сити. По словам владельца, около 15 фанатов, вероятно, находясь в состоянии алкогольного опьянения, оскорбляли персонал и применили физическую силу, когда их пытались остановить.",
+      "reason": "Исправление даты на правильный день недели.",
       "risk": "date"
     },
     {
-      "line_index": 16,
+      "line_index": 12,
+      "section": "Общественный транспорт сегодня",
+      "action": "strip",
+      "reason": "Информация о транспортной доступности Хейвуда не является новостью или актуальным обновлением, а скорее общим фактом, который не соответствует требованиям блока о текущих транспортных изменениях.",
+      "risk": "product",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 15,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Кобби Мэйну впечатлил главного тренера Манчестер Юнайтед Эрика тен Хага своей игрой против Ипсвича, продемонстрировав желание продолжать развиваться.",
-      "reason": "Майкл Каррик не является главным тренером Манчестер Юнайтед.",
+      "replacement_text": "• Джек Грилиш прокомментировал свой переход в Эвертон на правах аренды, отметив хорошие отношения с тренером команды.",
+      "reason": "Дэвид Мойес не является тренером Эвертона.",
       "risk": "factual"
     },
     {
-      "line_index": 18,
-      "section": "Выходные в GM",
+      "line_index": 20,
+      "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• 6 сентября в Lyric Theatre — мюзикл \"High School Musical\". Вход свободный.",
-      "reason": "Указано неверное место проведения события.",
-      "risk": "factual"
+      "replacement_text": "• Стивен и Конор Бонилла-Грэм-Дарби из Ли, Wigan, сообщили, что после публикации свадебных фотографий в интернете они получили сотни гомофобных сообщений, оставивших их \"потрясёнными\".",
+      "reason": "Термин 'травмированными' может быть воспринят как преувеличение в данном контексте.",
+      "risk": "sensitive"
+    },
+    {
+      "line_index": 23,
+      "section": "Дальние анонсы",
+      "action": "strip",
+      "reason": "Событие проходит в Манчестере, но раздел 'Дальние анонсы' требует события вне Greater Manchester.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 24,
+      "section": "Билеты / Ticket Radar",
+      "action": "patch",
+      "replacement_text": "• Evanescence — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице.",
+      "reason": "Дата события указана неверно. Должно быть 10 сентября.",
+      "risk": "date"
     },
     {
       "line_index": 27,
-      "section": "Выходные в GM",
-      "action": "strip",
-      "replacement_text": "",
-      "reason": "Дата события указана неверно, событие не актуально.",
-      "risk": "date"
-    },
-    {
-      "line_index": 29,
-      "section": "Городской радар",
-      "action": "replace",
-      "replacement_text": "• В этом месяце был подписан контракт на строительство новой тюрьмы на 1700 мест в Лейленде, что может повлиять на будущее тюрьмы Стрэнджуэйс в центре Манчестера; депутат совета Нэим Хассан поддерживает это решение.",
-      "reason": "Лейленд находится вне Greater Manchester, но влияние на Стрэнджуэйс делает новость релевантной для GM.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 30,
-      "section": "Дальние анонсы",
+      "section": "Крупные концерты вне GM",
       "action": "patch",
-      "replacement_text": "• One Pound Comedy пройдет в Creatures Comedy Club во вторник, 6 октября 2026 года, билеты по £1.",
-      "reason": "Дата события указана неверно. Должно быть 6 октября 2026 года.",
-      "risk": "date"
-    },
-    {
-      "line_index": 31,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Soulfly + Nailbomb — 7 сентября, Manchester Academy; цена £35.00. Билеты и время указаны на официальной странице.",
-      "reason": "Дата события должна быть 7 сентября 2026 года.",
+      "replacement_text": "• Evanescence — 8 сентября, Leeds First Direct Bank Arena. Билеты и время указаны на официальной странице.",
+      "reason": "Дата события указана неверно. Должно быть 8 сентября.",
       "risk": "date"
     }
   ],
   "warnings": [
-    "Отсутствует блок 'Что важно сегодня', что нарушает продуктовую полноту.",
-    "Недостаточное количество элементов в 'Городской радар', что может снизить информативность выпуска."
+    "Строка о Хейвуде не соответствует требованиям блока 'Общественный транспорт сегодня', так как не содержит актуальной информации о транспортных изменениях.",
+    "judge reduce failed: parse_failed no parseable JSON"
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -131,85 +124,83 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 9,
-      "Общественный транспорт сегодня": 2,
+      "Свежие новости": 7,
+      "Общественный транспорт сегодня": 3,
+      "Что важно сегодня": 2,
       "Футбол": 3,
-      "Выходные в GM": 8,
-      "Городской радар": 2,
+      "Городской радар": 4,
+      "IT и бизнес": 1,
       "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 2,
-      "Крупные концерты вне GM": 2
+      "Билеты / Ticket Radar": 3,
+      "Крупные концерты вне GM": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
-      "Свежие новости": 9,
+      "Что важно сегодня": 2,
+      "Свежие новости": 7,
       "Главная история дня": 1,
-      "Городской радар": 2,
-      "Выходные в GM": 8,
-      "Билеты / Ticket Radar": 2,
+      "Городской радар": 4,
+      "Билеты / Ticket Radar": 3,
       "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
       "Футбол": 3
     },
     "ticket_items": 4,
-    "core_items": 24,
+    "core_items": 18,
     "writer_quality_counts": {
-      "included_candidates": 33,
-      "rendered_candidates": 31,
+      "included_candidates": 31,
+      "rendered_candidates": 27,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 2,
+      "dropped_low_quality": 4,
       "replaced_from_plan_backup": 0,
-      "removed_with_reason": 2
+      "removed_with_reason": 4
     },
     "source_health_counts": {
-      "ok": 105,
+      "ok": 98,
       "partial": 0,
-      "stale": 11,
-      "empty": 13,
-      "failed": 2,
-      "zero_yield": 69,
+      "stale": 10,
+      "empty": 18,
+      "failed": 5,
+      "zero_yield": 68,
       "no_contribution_breakdown": {
-        "fetch_failed": 2,
-        "all_rejected": 69,
-        "idle_no_items": 43
+        "fetch_failed": 5,
+        "all_rejected": 68,
+        "idle_no_items": 46
       },
       "zero_contribution_by_stage": {
-        "written": 33,
-        "selected": 36,
-        "parsed": 43,
-        "fetched": 2
+        "selected": 31,
+        "written": 37,
+        "fetched": 5,
+        "parsed": 46
       },
-      "weekend_source_coverage_incidents": 53
+      "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
-      "Городской радар: 2 item(s), emergency floor 5",
+      "Что важно сегодня: 2 item(s), emergency floor 3",
+      "Городской радар: 4 item(s), emergency floor 5",
       "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "Business/tech события для тебя: 0 item(s), emergency floor 1"
+      "Business/tech события для тебя: 0 item(s), emergency floor 1",
+      "source failures: 5"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [
-      "patch for line 7 has unchecked number/date token(s): 29, 33, 37",
-      "replace for line 29 has unchecked number/date token(s): 1700"
-    ],
+    "warnings": [],
     "can_apply_actions": true,
     "action_count": 7
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 31,
-    "matched_lines": 31,
-    "applicable_lines": 2,
-    "unmatched_lines": 3,
+    "checked_lines": 27,
+    "matched_lines": 27,
+    "applicable_lines": 1,
+    "unmatched_lines": 0,
     "critical_omission_count": 0,
     "critical_omissions": [],
     "noncritical_omissions": [],
@@ -221,137 +212,121 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 6,
-    "attempted": 1,
-    "applied": 1,
-    "model_patch_applied": 0,
+    "requested": 7,
+    "attempted": 3,
+    "applied": 3,
+    "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 0,
-    "stripped": 1,
+    "stripped": 2,
     "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 6,
+    "resolved": 7,
     "resolved_in_place": 5,
     "resolved_by_replacement": 0,
-    "resolved_by_removal": 1,
+    "resolved_by_removal": 2,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 6,
+    "enrich_attempted": 7,
     "post_check_errors": [],
-    "geo_contract_rejected": [
-      {
-        "line_index": 29,
-        "section": "Городской радар",
-        "geo_scope": "gm",
-        "reason": "Лейленд находится вне Greater Manchester, но влияние на Стрэнджуэйс делает новость релевантной для GM.",
-        "gm_anchor_present": true
-      }
-    ],
+    "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 7,
+        "line_index": 4,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Исправление даты события на правильную.",
+        "reason": "Исправление даты на правильный день недели.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события указана неверно. Драка произошла 4 сентября, а не в пятницу.",
+        "critical_problem": "Дата события указана неверно. 6 сентября 2026 года - это воскресенье, а не суббота.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "last_24h-05",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-storm-northern-quarter-street-34572310-ded9f529c801",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-storm-northern-quarter-street-34572310",
-        "original_html": "• Полиция провела операцию на улице Нортерн-Куотер в Манчестере, где в пятницу, 4 сентября, произошла драка у паба Unicorn. На место прибыли около пяти автомобилей полиции и две скорые помощи. Три мужчины, 29, 33 и 37 лет, были арестованы по подозрению в хулиганстве, их травмы не угрожают жизни. Свидетели слышали крики и призывы о помощи, после чего полиция вмешалась в ситуацию. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-storm-northern-quarter-street-34572310\">MEN</a>",
+        "plan_slot_id": "last_24h-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-coventry-fc-fans-entered-droylsden-34576528-ce7ad950e20c",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/coventry-fc-fans-entered-droylsden-34576528",
+        "original_html": "• В субботу, 6 сентября, группа фанатов Coventry City напала на магазин Go Local Manor Convenience в Дройлсдене, похитив алкоголь на сумму более £250 после поражения от Манчестер Сити. По словам владельца, около 15 фанатов, вероятно, находясь в состоянии алкогольного опьянения, оскорбляли персонал и применили физическую силу, когда их пытались остановить. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/coventry-fc-fans-entered-droylsden-34576528\">MEN</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 16,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Майкл Каррик не является главным тренером Манчестер Юнайтед.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильное указание главного тренера Манчестер Юнайтед.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "football-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-what-kobbie-mainoo-done-impress-34567099-bff3b0475218",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/what-kobbie-mainoo-done-impress-34567099",
-        "original_html": "• Кобби Мэйну впечатлил главного тренера Манчестер Юнайтед Майкла Каррика своей игрой против Ипсвича, продемонстрировав желание продолжать развиваться. <a href=\"https://manchestereveningnews.co.uk/sport/football/what-kobbie-mainoo-done-impress-34567099\">MEN Manchester United</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 18,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Указано неверное место проведения события.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильное указание места проведения события.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-07",
-        "candidate_fingerprint": "event-event-high-school-musical-2026-09-06-lowry-e9a1a338c8c5",
-        "original_url_identity": "thelowry.com/whats-on/high-school-musical-nk2f",
-        "original_html": "• 6 сентября в The Lowry — мюзикл \"High School Musical\". Вход свободный. <a href=\"https://thelowry.com/whats-on/high-school-musical-nk2f\">The Lowry</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 27,
-        "section": "Выходные в GM",
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
         "requested_action": "strip",
-        "reason": "Дата события указана неверно, событие не актуально.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
+        "reason": "Информация о транспортной доступности Хейвуда не является новостью или актуальным обновлением, а скорее общим фактом, который не соответствует требованиям блока о текущих транспортных изменениях.",
+        "risk": "product",
+        "critical_error": false,
+        "critical_problem": "",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "weekend_activities-06",
-        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-        "original_html": "• 6 сентября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-        "reserve_rejections": [
-          {
-            "fingerprint": "event-event-yotam-ottolenghi-simple-too-live-2026-09-06-aviva-studios-home-of-factory-international-8501878d699f",
-            "errors": [
-              "structured event date is not rendered correctly"
-            ]
-          }
-        ],
-        "backup_outcome": "backup_chain_exhausted",
+        "plan_slot_id": "transport-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-heywood-one-greater-manchesters-biggest-34570097-bad81fecac86",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/heywood-one-greater-manchesters-biggest-34570097",
+        "original_html": "• Хейвуд, один из крупнейших городов Большого Манчестера, в настоящее время не имеет трамвайного или железнодорожного сообщения, а автобусное сообщение до Манчестера занимает около часа. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/heywood-one-greater-manchesters-biggest-34570097\">MEN Latest News</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "unrenderable_line",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 15,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Дэвид Мойес не является тренером Эвертона.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неверная информация о тренере Эвертона.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-jack-grealish-makes-nightmare-joke-34575126-061447f6c8d0",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/jack-grealish-makes-nightmare-joke-34575126",
+        "original_html": "• Джек Грилиш прокомментировал свой переход в Эвертон на правах аренды, отметив хорошие отношения с Дэвидом Мойесом. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/jack-grealish-makes-nightmare-joke-34575126\">MEN Manchester City</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 20,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Термин 'травмированными' может быть воспринят как преувеличение в данном контексте.",
+        "risk": "sensitive",
+        "critical_error": true,
+        "critical_problem": "Некорректное использование термина 'травмированными'.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "city_watch-03",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c9dwe6xp22wo-8b3c9c82cd54",
+        "original_url_identity": "bbc.com/news/articles/c9dwe6xp22wo",
+        "original_html": "• Стивен и Конор Бонилла-Грэм-Дарби из Ли, Wigan, сообщили, что после публикации свадебных фотографий в интернете они получили сотни гомофобных сообщений, оставивших их \"травмированными\". <a href=\"https://bbc.co.uk/news/articles/c9dwe6xp22wo\">BBC Manchester</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 23,
+        "section": "Дальние анонсы",
+        "requested_action": "strip",
+        "reason": "Событие проходит в Манчестере, но раздел 'Дальние анонсы' требует события вне Greater Manchester.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие не соответствует географическому контракту.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "future_announcements-01",
+        "candidate_fingerprint": "event-id-skiddle-com-59d25d1ca2f4-7af413de270a",
+        "original_url_identity": "skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Off-The-Page--Creatures-Comedy-Club/42498697",
+        "original_html": "• Комедийный вечер Off The Page пройдёт в Creatures Comedy Club 21 сентября в 20:30 — топ-комики со всей Великобритании представят новый материал. <a href=\"https://skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Off-The-Page--Creatures-Comedy-Club/42498697\">Skiddle Manchester Comedy</a>",
+        "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 30,
-        "section": "Дальние анонсы",
-        "requested_action": "patch",
-        "reason": "Дата события указана неверно. Должно быть 6 октября 2026 года.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "future_announcements-01",
-        "candidate_fingerprint": "event-id-skiddle-com-f5b770fc0f70-407367e0bbb9",
-        "original_url_identity": "skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/One-Pound-Comedy-Tuesday-Creatures-Comedy-Club/42501132",
-        "original_html": "• One Pound Comedy пройдет в Creatures Comedy Club во вторник, 6 октября 2026 года, билеты по £1. <a href=\"https://skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/One-Pound-Comedy-Tuesday-Creatures-Comedy-Club/42501132\">Skiddle Manchester Comedy</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 31,
+        "line_index": 24,
         "section": "Билеты / Ticket Radar",
         "requested_action": "patch",
-        "reason": "Дата события должна быть 7 сентября 2026 года.",
+        "reason": "Дата события указана неверно. Должно быть 10 сентября.",
         "risk": "date",
         "critical_error": true,
         "critical_problem": "Дата события указана неверно.",
@@ -359,32 +334,50 @@
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
         "plan_slot_id": "ticket_radar-01",
-        "candidate_fingerprint": "event-event-soulfly-nailbomb-7th-september-2026-2026-09-07-manchester-academy-4be4a07f4ebe",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13380704/soulfly-and-nailbomb-manchester-academy-2-2026-09-07-19-00-00",
-        "original_html": "• <b>Soulfly + Nailbomb</b> — 7 сентября, Manchester Academy; цена £35.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13380704/soulfly-and-nailbomb-manchester-academy-2-2026-09-07-19-00-00\">Manchester Academy</a>",
+        "candidate_fingerprint": "event-event-evanescence-special-guest-poppy-and-k-flay-thu-10-sep-2026-multiple-times-2026-09-10-co-op-live-a95ae5600fee",
+        "original_url_identity": "cooplive.com/events/evanescence-7z58",
+        "original_html": "• <b>Evanescence</b> — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/evanescence-7z58\">Co-op Live</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 27,
+        "section": "Крупные концерты вне GM",
+        "requested_action": "patch",
+        "reason": "Дата события указана неверно. Должно быть 8 сентября.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Неправильная дата события",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "outside_gm_tickets-01",
+        "candidate_fingerprint": "event-event-evanescence-2026-world-tour-2026-09-08-leeds-first-direct-bank-arena-9d8955d3ac49",
+        "original_url_identity": "ticketmaster.co.uk/evanescence-2026-world-tour-leeds-08-09-2026/event/1F00637CAE0C6D30",
+        "original_html": "• <b>Evanescence</b> — 8 сентября, Leeds First Direct Bank Arena. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/evanescence-2026-world-tour-leeds-08-09-2026/event/1F00637CAE0C6D30\">Ticketmaster</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::исправление даты события на правильную.",
+        "group_key": "свежие новости::исправление даты на правильный день недели.",
         "actions": [
           {
-            "line_index": 7,
+            "line_index": 4,
             "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Исправление даты события на правильную.",
+            "reason": "Исправление даты на правильный день недели.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно. Драка произошла 4 сентября, а не в пятницу.",
+            "critical_problem": "Дата события указана неверно. 6 сентября 2026 года - это воскресенье, а не суббота.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-05",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-storm-northern-quarter-street-34572310-ded9f529c801",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-storm-northern-quarter-street-34572310",
-            "original_html": "• Полиция провела операцию на улице Нортерн-Куотер в Манчестере, где в пятницу, 4 сентября, произошла драка у паба Unicorn. На место прибыли около пяти автомобилей полиции и две скорые помощи. Три мужчины, 29, 33 и 37 лет, были арестованы по подозрению в хулиганстве, их травмы не угрожают жизни. Свидетели слышали крики и призывы о помощи, после чего полиция вмешалась в ситуацию. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-storm-northern-quarter-street-34572310\">MEN</a>",
+            "plan_slot_id": "last_24h-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-coventry-fc-fans-entered-droylsden-34576528-ce7ad950e20c",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/coventry-fc-fans-entered-droylsden-34576528",
+            "original_html": "• В субботу, 6 сентября, группа фанатов Coventry City напала на магазин Go Local Manor Convenience в Дройлсдене, похитив алкоголь на сумму более £250 после поражения от Манчестер Сити. По словам владельца, около 15 фанатов, вероятно, находясь в состоянии алкогольного опьянения, оскорбляли персонал и применили физическую силу, когда их пытались остановить. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/coventry-fc-fans-entered-droylsden-34576528\">MEN</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -392,7 +385,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 7,
+            "line_index": 4,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -400,96 +393,120 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::майкл каррик не является главным тренером манчестер юнайтед.",
+        "group_key": "общественный транспорт сегодня::информация о транспортной доступности хейвуда не является новостью или актуальным обновлением, а скорее общим фактом, который не соответствует требованиям блока о текущих транспортных изменениях.",
         "actions": [
           {
-            "line_index": 16,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Майкл Каррик не является главным тренером Манчестер Юнайтед.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неправильное указание главного тренера Манчестер Юнайтед.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-what-kobbie-mainoo-done-impress-34567099-bff3b0475218",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/what-kobbie-mainoo-done-impress-34567099",
-            "original_html": "• Кобби Мэйну впечатлил главного тренера Манчестер Юнайтед Майкла Каррика своей игрой против Ипсвича, продемонстрировав желание продолжать развиваться. <a href=\"https://manchestereveningnews.co.uk/sport/football/what-kobbie-mainoo-done-impress-34567099\">MEN Manchester United</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 16,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::указано неверное место проведения события.",
-        "actions": [
-          {
-            "line_index": 18,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Указано неверное место проведения события.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неправильное указание места проведения события.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-07",
-            "candidate_fingerprint": "event-event-high-school-musical-2026-09-06-lowry-e9a1a338c8c5",
-            "original_url_identity": "thelowry.com/whats-on/high-school-musical-nk2f",
-            "original_html": "• 6 сентября в The Lowry — мюзикл \"High School Musical\". Вход свободный. <a href=\"https://thelowry.com/whats-on/high-school-musical-nk2f\">The Lowry</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 18,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дата события указана неверно, событие не актуально.",
-        "actions": [
-          {
-            "line_index": 27,
-            "section": "Выходные в GM",
+            "line_index": 12,
+            "section": "Общественный транспорт сегодня",
             "requested_action": "strip",
-            "reason": "Дата события указана неверно, событие не актуально.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
+            "reason": "Информация о транспортной доступности Хейвуда не является новостью или актуальным обновлением, а скорее общим фактом, который не соответствует требованиям блока о текущих транспортных изменениях.",
+            "risk": "product",
+            "critical_error": false,
+            "critical_problem": "",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "weekend_activities-06",
-            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-            "original_html": "• 6 сентября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-            "reserve_rejections": [
-              {
-                "fingerprint": "event-event-yotam-ottolenghi-simple-too-live-2026-09-06-aviva-studios-home-of-factory-international-8501878d699f",
-                "errors": [
-                  "structured event date is not rendered correctly"
-                ]
-              }
-            ],
-            "backup_outcome": "backup_chain_exhausted",
+            "plan_slot_id": "transport-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-heywood-one-greater-manchesters-biggest-34570097-bad81fecac86",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/heywood-one-greater-manchesters-biggest-34570097",
+            "original_html": "• Хейвуд, один из крупнейших городов Большого Манчестера, в настоящее время не имеет трамвайного или железнодорожного сообщения, а автобусное сообщение до Манчестера занимает около часа. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/heywood-one-greater-manchesters-biggest-34570097\">MEN Latest News</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "unrenderable_line",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 12,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "футбол::дэвид мойес не является тренером эвертона.",
+        "actions": [
+          {
+            "line_index": 15,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Дэвид Мойес не является тренером Эвертона.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неверная информация о тренере Эвертона.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-jack-grealish-makes-nightmare-joke-34575126-061447f6c8d0",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/jack-grealish-makes-nightmare-joke-34575126",
+            "original_html": "• Джек Грилиш прокомментировал свой переход в Эвертон на правах аренды, отметив хорошие отношения с Дэвидом Мойесом. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/jack-grealish-makes-nightmare-joke-34575126\">MEN Manchester City</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 15,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::термин 'травмированными' может быть воспринят как преувеличение в данном контексте.",
+        "actions": [
+          {
+            "line_index": 20,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Термин 'травмированными' может быть воспринят как преувеличение в данном контексте.",
+            "risk": "sensitive",
+            "critical_error": true,
+            "critical_problem": "Некорректное использование термина 'травмированными'.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "city_watch-03",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c9dwe6xp22wo-8b3c9c82cd54",
+            "original_url_identity": "bbc.com/news/articles/c9dwe6xp22wo",
+            "original_html": "• Стивен и Конор Бонилла-Грэм-Дарби из Ли, Wigan, сообщили, что после публикации свадебных фотографий в интернете они получили сотни гомофобных сообщений, оставивших их \"травмированными\". <a href=\"https://bbc.co.uk/news/articles/c9dwe6xp22wo\">BBC Manchester</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 20,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "дальние анонсы::событие проходит в манчестере, но раздел 'дальние анонсы' требует события вне greater manchester.",
+        "actions": [
+          {
+            "line_index": 23,
+            "section": "Дальние анонсы",
+            "requested_action": "strip",
+            "reason": "Событие проходит в Манчестере, но раздел 'Дальние анонсы' требует события вне Greater Manchester.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие не соответствует географическому контракту.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "future_announcements-01",
+            "candidate_fingerprint": "event-id-skiddle-com-59d25d1ca2f4-7af413de270a",
+            "original_url_identity": "skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Off-The-Page--Creatures-Comedy-Club/42498697",
+            "original_html": "• Комедийный вечер Off The Page пройдёт в Creatures Comedy Club 21 сентября в 20:30 — топ-комики со всей Великобритании представят новый материал. <a href=\"https://skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Off-The-Page--Creatures-Comedy-Club/42498697\">Skiddle Manchester Comedy</a>",
+            "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
           }
@@ -497,7 +514,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 27,
+            "line_index": 23,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -505,45 +522,13 @@
         "known_factual_error": true
       },
       {
-        "group_key": "дальние анонсы::дата события указана неверно. должно быть 6 октября 2026 года.",
+        "group_key": "билеты / ticket radar::дата события указана неверно. должно быть 10 сентября.",
         "actions": [
           {
-            "line_index": 30,
-            "section": "Дальние анонсы",
-            "requested_action": "patch",
-            "reason": "Дата события указана неверно. Должно быть 6 октября 2026 года.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "future_announcements-01",
-            "candidate_fingerprint": "event-id-skiddle-com-f5b770fc0f70-407367e0bbb9",
-            "original_url_identity": "skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/One-Pound-Comedy-Tuesday-Creatures-Comedy-Club/42501132",
-            "original_html": "• One Pound Comedy пройдет в Creatures Comedy Club во вторник, 6 октября 2026 года, билеты по £1. <a href=\"https://skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/One-Pound-Comedy-Tuesday-Creatures-Comedy-Club/42501132\">Skiddle Manchester Comedy</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 30,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::дата события должна быть 7 сентября 2026 года.",
-        "actions": [
-          {
-            "line_index": 31,
+            "line_index": 24,
             "section": "Билеты / Ticket Radar",
             "requested_action": "patch",
-            "reason": "Дата события должна быть 7 сентября 2026 года.",
+            "reason": "Дата события указана неверно. Должно быть 10 сентября.",
             "risk": "date",
             "critical_error": true,
             "critical_problem": "Дата события указана неверно.",
@@ -551,9 +536,9 @@
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
             "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "event-event-soulfly-nailbomb-7th-september-2026-2026-09-07-manchester-academy-4be4a07f4ebe",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13380704/soulfly-and-nailbomb-manchester-academy-2-2026-09-07-19-00-00",
-            "original_html": "• <b>Soulfly + Nailbomb</b> — 7 сентября, Manchester Academy; цена £35.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13380704/soulfly-and-nailbomb-manchester-academy-2-2026-09-07-19-00-00\">Manchester Academy</a>",
+            "candidate_fingerprint": "event-event-evanescence-special-guest-poppy-and-k-flay-thu-10-sep-2026-multiple-times-2026-09-10-co-op-live-a95ae5600fee",
+            "original_url_identity": "cooplive.com/events/evanescence-7z58",
+            "original_html": "• <b>Evanescence</b> — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/evanescence-7z58\">Co-op Live</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -561,7 +546,39 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 31,
+            "line_index": 24,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "крупные концерты вне gm::дата события указана неверно. должно быть 8 сентября.",
+        "actions": [
+          {
+            "line_index": 27,
+            "section": "Крупные концерты вне GM",
+            "requested_action": "patch",
+            "reason": "Дата события указана неверно. Должно быть 8 сентября.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Неправильная дата события",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "outside_gm_tickets-01",
+            "candidate_fingerprint": "event-event-evanescence-2026-world-tour-2026-09-08-leeds-first-direct-bank-arena-9d8955d3ac49",
+            "original_url_identity": "ticketmaster.co.uk/evanescence-2026-world-tour-leeds-08-09-2026/event/1F00637CAE0C6D30",
+            "original_html": "• <b>Evanescence</b> — 8 сентября, Leeds First Direct Bank Arena. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/evanescence-2026-world-tour-leeds-08-09-2026/event/1F00637CAE0C6D30\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 27,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -574,35 +591,42 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 1,
-      "skipped": 1,
+      "skipped": 2,
       "reports": [
         {
-          "fingerprint": "event-id-skiddle-com-f5b770fc0f70-407367e0bbb9",
-          "title": "One Pound Comedy: Tuesday | Creatures Comedy Club",
+          "fingerprint": "event-id-skiddle-com-59d25d1ca2f4-7af413de270a",
+          "title": "Off The Page | Creatures Comedy Club",
           "status": "empty",
-          "url": "https://skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/One-Pound-Comedy-Tuesday-Creatures-Comedy-Club/42501132",
+          "url": "https://skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Off-The-Page--Creatures-Comedy-Club/42498697",
           "chars": 0
         },
         {
-          "fingerprint": "event-event-soulfly-nailbomb-7th-september-2026-2026-09-07-manchester-academy-4be4a07f4ebe",
-          "title": "Soulfly + Nailbomb - 7th September 2026",
+          "fingerprint": "event-event-evanescence-special-guest-poppy-and-k-flay-thu-10-sep-2026-multiple-times-2026-09-10-co-op-live-a95ae5600fee",
+          "title": "Evanescence Special Guest Poppy and K. Flay Thu 10 Sep 2026 Multiple times",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
-          "url": "https://manchesteracademy.net/order/gateway/13380704/soulfly-and-nailbomb-manchester-academy-2-2026-09-07-19-00-00",
-          "candidate_evidence_chars": 1171
+          "url": "https://cooplive.com/events/evanescence-7z58",
+          "candidate_evidence_chars": 0
+        },
+        {
+          "fingerprint": "event-event-evanescence-2026-world-tour-2026-09-08-leeds-first-direct-bank-arena-9d8955d3ac49",
+          "title": "Evanescence 2026 World Tour — event 2026-09-08 — public sale 2025-12-05 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/evanescence-2026-world-tour-leeds-08-09-2026/event/1F00637CAE0C6D30",
+          "candidate_evidence_chars": 379
         }
       ]
     },
     "enrich_improved": 6,
-    "false_positive_existing_fact": 5,
-    "reserve_post_check_rejected": 1,
-    "backup_chain_exhausted": 1,
+    "false_positive_existing_fact": 4,
+    "no_eligible_backup": 2,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 30,
-      "matched_lines": 30,
-      "applicable_lines": 2,
-      "unmatched_lines": 3,
+      "checked_lines": 25,
+      "matched_lines": 25,
+      "applicable_lines": 1,
+      "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -613,135 +637,126 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 33,
-      "resolved_in_place": 33,
+      "checked_lines": 25,
+      "resolved_in_place": 25,
       "unresolved": 0,
       "findings": []
     },
     "status": "resolved"
   },
-  "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует источнику и географическому охвату.; Исправлена дата события в строке 7. Остальные строки безопасны.; Обе строки корректно описывают транспортные изменения в GM и соответствуют источникам.; Ошибка в указании главного",
+  "notes": "Строка соответствует всем требованиям: география GM, актуальность события, корректное изложение фактов.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в дате события на строке 4. Остальные строки безопасны.; Строка о Хейвуде не является актуальной новостью и не соответствует требован",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.85,
+    "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 7,
+        "line_index": 4,
         "section": "Свежие новости",
-        "problem": "Дата события указана неверно. Драка произошла 4 сентября, а не в пятницу.",
+        "problem": "Дата события указана неверно. 6 сентября 2026 года - это воскресенье, а не суббота.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 16,
+        "line_index": 15,
         "section": "Футбол",
-        "problem": "Неправильное указание главного тренера Манчестер Юнайтед.",
+        "problem": "Неверная информация о тренере Эвертона.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 18,
-        "section": "Выходные в GM",
-        "problem": "Неправильное указание места проведения события.",
-        "risk": "factual",
+        "line_index": 20,
+        "section": "Городской радар",
+        "problem": "Некорректное использование термина 'травмированными'.",
+        "risk": "sensitive",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 23,
+        "section": "Дальние анонсы",
+        "problem": "Событие не соответствует географическому контракту.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 24,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
         "suggested_action": "repair"
       },
       {
         "line_index": 27,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 29,
-        "section": "Городской радар",
-        "problem": "Географическая ошибка: Лейленд находится вне Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 30,
-        "section": "Дальние анонсы",
-        "problem": "Дата события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 31,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дата события указана неверно.",
+        "section": "Крупные концерты вне GM",
+        "problem": "Неправильная дата события",
         "risk": "date",
         "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 7,
+        "line_index": 4,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• Полиция провела операцию на улице Нортерн-Куотер в Манчестере, где 4 сентября произошла драка у паба Unicorn. На место прибыли около пяти автомобилей полиции и две скорые помощи. Три мужчины, 29, 33 и 37 лет, были арестованы по подозрению в хулиганстве, их травмы не угрожают жизни. Свидетели слышали крики и призывы о помощи, после чего полиция вмешалась в ситуацию.",
-        "reason": "Исправление даты события на правильную.",
+        "replacement_text": "• В воскресенье, 6 сентября, группа фанатов Coventry City напала на магазин Go Local Manor Convenience в Дройлсдене, похитив алкоголь на сумму более £250 после поражения от Манчестер Сити. По словам владельца, около 15 фанатов, вероятно, находясь в состоянии алкогольного опьянения, оскорбляли персонал и применили физическую силу, когда их пытались остановить.",
+        "reason": "Исправление даты на правильный день недели.",
         "risk": "date"
       },
       {
-        "line_index": 16,
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
+        "action": "strip",
+        "reason": "Информация о транспортной доступности Хейвуда не является новостью или актуальным обновлением, а скорее общим фактом, который не соответствует требованиям блока о текущих транспортных изменениях.",
+        "risk": "product"
+      },
+      {
+        "line_index": 15,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Кобби Мэйну впечатлил главного тренера Манчестер Юнайтед Эрика тен Хага своей игрой против Ипсвича, продемонстрировав желание продолжать развиваться.",
-        "reason": "Майкл Каррик не является главным тренером Манчестер Юнайтед.",
+        "replacement_text": "• Джек Грилиш прокомментировал свой переход в Эвертон на правах аренды, отметив хорошие отношения с тренером команды.",
+        "reason": "Дэвид Мойес не является тренером Эвертона.",
         "risk": "factual"
       },
       {
-        "line_index": 18,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 6 сентября в Lyric Theatre — мюзикл \"High School Musical\". Вход свободный.",
-        "reason": "Указано неверное место проведения события.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 27,
-        "section": "Выходные в GM",
-        "action": "strip",
-        "replacement_text": "",
-        "reason": "Дата события указана неверно, событие не актуально.",
-        "risk": "date"
-      },
-      {
-        "line_index": 29,
+        "line_index": 20,
         "section": "Городской радар",
-        "action": "replace",
-        "replacement_text": "• В этом месяце был подписан контракт на строительство новой тюрьмы на 1700 мест в Лейленде, что может повлиять на будущее тюрьмы Стрэнджуэйс в центре Манчестера; депутат совета Нэим Хассан поддерживает это решение.",
-        "reason": "Лейленд находится вне Greater Manchester, но влияние на Стрэнджуэйс делает новость релевантной для GM.",
+        "action": "patch",
+        "replacement_text": "• Стивен и Конор Бонилла-Грэм-Дарби из Ли, Wigan, сообщили, что после публикации свадебных фотографий в интернете они получили сотни гомофобных сообщений, оставивших их \"потрясёнными\".",
+        "reason": "Термин 'травмированными' может быть воспринят как преувеличение в данном контексте.",
+        "risk": "sensitive"
+      },
+      {
+        "line_index": 23,
+        "section": "Дальние анонсы",
+        "action": "strip",
+        "reason": "Событие проходит в Манчестере, но раздел 'Дальние анонсы' требует события вне Greater Manchester.",
         "risk": "geo"
       },
       {
-        "line_index": 30,
-        "section": "Дальние анонсы",
+        "line_index": 24,
+        "section": "Билеты / Ticket Radar",
         "action": "patch",
-        "replacement_text": "• One Pound Comedy пройдет в Creatures Comedy Club во вторник, 6 октября 2026 года, билеты по £1.",
-        "reason": "Дата события указана неверно. Должно быть 6 октября 2026 года.",
+        "replacement_text": "• Evanescence — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице.",
+        "reason": "Дата события указана неверно. Должно быть 10 сентября.",
         "risk": "date"
       },
       {
-        "line_index": 31,
-        "section": "Билеты / Ticket Radar",
+        "line_index": 27,
+        "section": "Крупные концерты вне GM",
         "action": "patch",
-        "replacement_text": "• Soulfly + Nailbomb — 7 сентября, Manchester Academy; цена £35.00. Билеты и время указаны на официальной странице.",
-        "reason": "Дата события должна быть 7 сентября 2026 года.",
+        "replacement_text": "• Evanescence — 8 сентября, Leeds First Direct Bank Arena. Билеты и время указаны на официальной странице.",
+        "reason": "Дата события указана неверно. Должно быть 8 сентября.",
         "risk": "date"
       }
     ],
     "warnings": [
-      "Отсутствует блок 'Что важно сегодня', что нарушает продуктовую полноту.",
-      "Недостаточное количество элементов в 'Городской радар', что может снизить информативность выпуска."
+      "Строка о Хейвуде не соответствует требованиям блока 'Общественный транспорт сегодня', так как не содержит актуальной информации о транспортных изменениях.",
+      "judge reduce failed: parse_failed no parseable JSON"
     ],
-    "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует источнику и географическому охвату.; Исправлена дата события в строке 7. Остальные строки безопасны.; Обе строки корректно описывают транспортные изменения в GM и соответствуют источникам.; Ошибка в указании главного",
+    "notes": "Строка соответствует всем требованиям: география GM, актуальность события, корректное изложение фактов.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в дате события на строке 4. Остальные строки безопасны.; Строка о Хейвуде не является актуальной новостью и не соответствует требован",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "ok",
-      "chunk_count": 10,
+      "status": "partial",
+      "chunk_count": 11,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -759,8 +774,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2754,
-          "duration_seconds": 1.572
+          "estimated_tokens": 2748,
+          "duration_seconds": 1.982
         },
         {
           "chunk_id": "chunk-02",
@@ -777,15 +792,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2464,
-          "duration_seconds": 1.581
+          "estimated_tokens": 2479,
+          "duration_seconds": 5.001
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            11
+            9
           ],
           "sections": [
             "Свежие новости"
@@ -795,33 +810,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7238,
-          "duration_seconds": 3.745
+          "estimated_tokens": 6359,
+          "duration_seconds": 3.58
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            12,
-            13
+            10,
+            12
           ],
           "sections": [
             "Общественный транспорт сегодня"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 1,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 3680,
+          "duration_seconds": 2.429
+        },
+        {
+          "chunk_id": "chunk-05",
+          "status": "ok",
+          "line_range": [
+            13,
+            14
+          ],
+          "sections": [
+            "Что важно сегодня"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3272,
-          "duration_seconds": 1.041
+          "estimated_tokens": 3262,
+          "duration_seconds": 1.201
         },
         {
-          "chunk_id": "chunk-05",
+          "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            14,
-            16
+            15,
+            17
           ],
           "sections": [
             "Футбол"
@@ -831,33 +864,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3646,
-          "duration_seconds": 2.558
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "ok",
-          "line_range": [
-            17,
-            27
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 7504,
-          "duration_seconds": 3.143
+          "estimated_tokens": 3658,
+          "duration_seconds": 2.963
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            28,
-            29
+            18,
+            21
           ],
           "sections": [
             "Городской радар"
@@ -867,15 +882,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3230,
-          "duration_seconds": 19.06
+          "estimated_tokens": 4204,
+          "duration_seconds": 3.06
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            30,
-            30
+            22,
+            22
+          ],
+          "sections": [
+            "IT и бизнес"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2692,
+          "duration_seconds": 1.167
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            23,
+            23
           ],
           "sections": [
             "Дальние анонсы"
@@ -885,15 +918,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2727,
-          "duration_seconds": 3.599
+          "estimated_tokens": 2715,
+          "duration_seconds": 6.467
         },
         {
-          "chunk_id": "chunk-09",
+          "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            31,
-            32
+            24,
+            26
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -903,40 +936,40 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3460,
-          "duration_seconds": 24.258
+          "estimated_tokens": 3927,
+          "duration_seconds": 20.211
         },
         {
-          "chunk_id": "chunk-10",
+          "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            33,
-            34
+            27,
+            27
           ],
           "sections": [
             "Крупные концерты вне GM"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3226,
-          "duration_seconds": 6.364
+          "estimated_tokens": 2724,
+          "duration_seconds": 11.247
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "ok",
+        "status": "parse_failed",
         "line_range": [],
         "sections": [],
-        "decision": "warn",
+        "decision": "",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 2,
-        "error": "",
-        "estimated_tokens": 9868,
-        "duration_seconds": 21.325
+        "warning_count": 0,
+        "error": "no parseable JSON",
+        "estimated_tokens": 9850,
+        "duration_seconds": 28.784
       },
       "max_workers": 3,
       "chunk_line_target": 12,
