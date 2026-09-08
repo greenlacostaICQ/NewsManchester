@@ -1,122 +1,101 @@
 {
-  "status": "partial",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 3 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-09-07",
-  "pipeline_run_id": "20260907T080136+0100",
-  "digest_sha256": "53a9034b331b666347704622eec8f2ff6fc93e237dc102e9d56aa58c40b4bd7a",
-  "duration_seconds": 58.064,
-  "confidence": 0.9,
+  "run_date_london": "2026-09-08",
+  "pipeline_run_id": "20260908T080140+0100",
+  "digest_sha256": "cceeac195495fe2dce0cf2ba0865570bef7130d2bf40a4663270637068bcdaac",
+  "duration_seconds": 61.215,
+  "confidence": 0.85,
   "critical_errors": [
     {
-      "line_index": 4,
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Текст не упоминает, что обвинения связаны с антитеррористической деятельностью.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 7,
       "section": "Свежие новости",
-      "problem": "Дата события указана неверно. 6 сентября 2026 года - это воскресенье, а не суббота.",
+      "problem": "Дата суда указана как 7 сентября 2026 года, но это понедельник, а 7 сентября 2026 года — это вторник.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 15,
+      "line_index": 18,
       "section": "Футбол",
-      "problem": "Неверная информация о тренере Эвертона.",
-      "risk": "factual",
+      "problem": "Неверное представление роли Серджио Агуэро в расследовании.",
+      "risk": "sensitive",
       "suggested_action": "repair"
     },
     {
       "line_index": 20,
       "section": "Городской радар",
-      "problem": "Некорректное использование термина 'травмированными'.",
-      "risk": "sensitive",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 23,
-      "section": "Дальние анонсы",
-      "problem": "Событие не соответствует географическому контракту.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 24,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дата события указана неверно.",
+      "problem": "Неправильное указание даты забастовки.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 27,
+      "line_index": 32,
       "section": "Крупные концерты вне GM",
-      "problem": "Неправильная дата события",
-      "risk": "date",
+      "problem": "Неправильное название арены в Лидсе.",
+      "risk": "factual",
       "suggested_action": "repair"
     }
   ],
   "actions": [
     {
-      "line_index": 4,
+      "line_index": 1,
+      "section": "Главная история дня",
+      "action": "patch",
+      "replacement_text": "• Два мужчины, Харли Эллиот, 20 лет, и Макинзи Смит, 19 лет, были задержаны и преданы суду по обвинениям в подготовке к причинению уголовного ущерба и хранении орудия преступления в рамках антитеррористического расследования. Они появились в Манчестерском магистратском суде 7 сентября 2026 года, где их дело было отложено до 14 сентября для дальнейшего рассмотрения. Судья Джон МакГарва оставил их под стражей.",
+      "reason": "Уточнение, что обвинения связаны с антитеррористической деятельностью.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 7,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• В воскресенье, 6 сентября, группа фанатов Coventry City напала на магазин Go Local Manor Convenience в Дройлсдене, похитив алкоголь на сумму более £250 после поражения от Манчестер Сити. По словам владельца, около 15 фанатов, вероятно, находясь в состоянии алкогольного опьянения, оскорбляли персонал и применили физическую силу, когда их пытались остановить.",
-      "reason": "Исправление даты на правильный день недели.",
+      "replacement_text": "• В результате инцидента в Salford, произошедшего в ранние часы воскресенья, контртеррористическая полиция предъявила обвинения двум мужчинам. 20-летний Харли Эллиот и 19-летний Маккензи Смит обвиняются в подготовке к причинению уголовного ущерба и хранении орудия преступления. Оба мужчины должны предстать перед судом во вторник, 8 сентября 2026 года.",
+      "reason": "Исправление даты суда на правильную.",
       "risk": "date"
     },
     {
-      "line_index": 12,
-      "section": "Общественный транспорт сегодня",
-      "action": "strip",
-      "reason": "Информация о транспортной доступности Хейвуда не является новостью или актуальным обновлением, а скорее общим фактом, который не соответствует требованиям блока о текущих транспортных изменениях.",
-      "risk": "product",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 15,
+      "line_index": 18,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Джек Грилиш прокомментировал свой переход в Эвертон на правах аренды, отметив хорошие отношения с тренером команды.",
-      "reason": "Дэвид Мойес не является тренером Эвертона.",
-      "risk": "factual"
+      "replacement_text": "• Имя Серджио Агуэро появилось в аргентинском расследовании по делу о наркотиках, где предполагается, что его пытались завербовать для участия в деятельности наркокартеля.",
+      "reason": "Уточнение формулировки, чтобы избежать неверного представления о роли Агуэро.",
+      "risk": "sensitive"
     },
     {
       "line_index": 20,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Стивен и Конор Бонилла-Грэм-Дарби из Ли, Wigan, сообщили, что после публикации свадебных фотографий в интернете они получили сотни гомофобных сообщений, оставивших их \"потрясёнными\".",
-      "reason": "Термин 'травмированными' может быть воспринят как преувеличение в данном контексте.",
-      "risk": "sensitive"
-    },
-    {
-      "line_index": 23,
-      "section": "Дальние анонсы",
-      "action": "strip",
-      "reason": "Событие проходит в Манчестере, но раздел 'Дальние анонсы' требует события вне Greater Manchester.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 24,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Evanescence — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице.",
-      "reason": "Дата события указана неверно. Должно быть 10 сентября.",
+      "replacement_text": "• Более 350 сотрудников четырех больниц в Greater Manchester снова выйдут на забастовку 14, 15 и 18 сентября из-за выплат за сверхурочную работу.",
+      "reason": "Дата забастовки 17 сентября была указана неверно, правильная дата - 18 сентября.",
       "risk": "date"
     },
     {
-      "line_index": 27,
+      "line_index": 32,
       "section": "Крупные концерты вне GM",
       "action": "patch",
-      "replacement_text": "• Evanescence — 8 сентября, Leeds First Direct Bank Arena. Билеты и время указаны на официальной странице.",
-      "reason": "Дата события указана неверно. Должно быть 8 сентября.",
-      "risk": "date"
+      "replacement_text": "• Evanescence — тур: 8 сентября, Leeds First Direct Arena; 11 сентября, Utilita Arena Birmingham. Событие проходит сегодня.",
+      "reason": "Исправлено название арены в Лидсе на правильное.",
+      "risk": "factual"
     }
   ],
   "warnings": [
-    "Строка о Хейвуде не соответствует требованиям блока 'Общественный транспорт сегодня', так как не содержит актуальной информации о транспортных изменениях.",
-    "judge reduce failed: parse_failed no parseable JSON"
+    "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога.",
+    "Секция 'Билеты / Ticket Radar' содержит только 1 элемент, что ниже минимального порога.",
+    "Секция 'Еда, открытия и рынки' содержит только 1 элемент, что ниже минимального порога.",
+    "Секция 'Business/tech события для тебя' отсутствует, что ниже минимального порога."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -124,82 +103,85 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 7,
+      "Свежие новости": 9,
       "Общественный транспорт сегодня": 3,
-      "Что важно сегодня": 2,
+      "Что важно сегодня": 1,
       "Футбол": 3,
-      "Городской радар": 4,
+      "Городской радар": 10,
+      "Еда, открытия и рынки": 1,
       "IT и бизнес": 1,
-      "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 3,
-      "Крупные концерты вне GM": 1
+      "Билеты / Ticket Radar": 1,
+      "Крупные концерты вне GM": 1,
+      "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 2,
-      "Свежие новости": 7,
+      "Что важно сегодня": 1,
+      "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 4,
-      "Билеты / Ticket Radar": 3,
-      "Русскоязычные концерты и стендап UK": 0,
-      "Еда, открытия и рынки": 0,
+      "Городской радар": 10,
+      "Билеты / Ticket Radar": 1,
+      "Русскоязычные концерты и стендап UK": 1,
+      "Еда, открытия и рынки": 1,
       "Business/tech события для тебя": 0,
       "Футбол": 3
     },
-    "ticket_items": 4,
-    "core_items": 18,
+    "ticket_items": 3,
+    "core_items": 26,
     "writer_quality_counts": {
-      "included_candidates": 31,
-      "rendered_candidates": 27,
+      "included_candidates": 35,
+      "rendered_candidates": 33,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 4,
+      "dropped_low_quality": 2,
       "replaced_from_plan_backup": 0,
-      "removed_with_reason": 4
+      "removed_with_reason": 2
     },
     "source_health_counts": {
-      "ok": 98,
+      "ok": 108,
       "partial": 0,
-      "stale": 10,
+      "stale": 4,
       "empty": 18,
-      "failed": 5,
-      "zero_yield": 68,
+      "failed": 2,
+      "zero_yield": 70,
       "no_contribution_breakdown": {
-        "fetch_failed": 5,
-        "all_rejected": 68,
+        "fetch_failed": 2,
+        "all_rejected": 70,
         "idle_no_items": 46
       },
       "zero_contribution_by_stage": {
-        "selected": 31,
-        "written": 37,
-        "fetched": 5,
-        "parsed": 46
+        "selected": 32,
+        "written": 38,
+        "parsed": 46,
+        "fetched": 2
       },
       "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 2 item(s), emergency floor 3",
-      "Городской радар: 4 item(s), emergency floor 5",
-      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
-      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "Business/tech события для тебя: 0 item(s), emergency floor 1",
-      "source failures: 5"
+      "Что важно сегодня: 1 item(s), emergency floor 3",
+      "Билеты / Ticket Radar: 1 item(s), emergency floor 2",
+      "Еда, открытия и рынки: 1 item(s), emergency floor 3",
+      "Business/tech события для тебя: 0 item(s), emergency floor 1"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [],
+    "warnings": [
+      "patch for line 1 has unchecked number/date token(s): 20",
+      "patch for line 7 has unchecked number/date token(s): 20",
+      "patch for line 20 has unchecked number/date token(s): 15"
+    ],
     "can_apply_actions": true,
-    "action_count": 7
+    "action_count": 5
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 27,
-    "matched_lines": 27,
-    "applicable_lines": 1,
+    "checked_lines": 33,
+    "matched_lines": 33,
+    "applicable_lines": 2,
     "unmatched_lines": 0,
     "critical_omission_count": 0,
     "critical_omissions": [],
@@ -212,77 +194,76 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 7,
-    "attempted": 3,
-    "applied": 3,
+    "requested": 5,
+    "attempted": 2,
+    "applied": 2,
     "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 0,
-    "stripped": 2,
-    "unresolved": 0,
-    "blocking_unresolved": 0,
-    "resolved": 7,
-    "resolved_in_place": 5,
+    "reserve_replacement_used": 1,
+    "stripped": 0,
+    "unresolved": 1,
+    "blocking_unresolved": 1,
+    "resolved": 4,
+    "resolved_in_place": 4,
     "resolved_by_replacement": 0,
-    "resolved_by_removal": 2,
-    "fact_lock_rejected": 0,
-    "enrich_attempted": 7,
+    "resolved_by_removal": 0,
+    "fact_lock_rejected": 1,
+    "enrich_attempted": 5,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 4,
-        "section": "Свежие новости",
+        "line_index": 1,
+        "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Исправление даты на правильный день недели.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно. 6 сентября 2026 года - это воскресенье, а не суббота.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "last_24h-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-coventry-fc-fans-entered-droylsden-34576528-ce7ad950e20c",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/coventry-fc-fans-entered-droylsden-34576528",
-        "original_html": "• В субботу, 6 сентября, группа фанатов Coventry City напала на магазин Go Local Manor Convenience в Дройлсдене, похитив алкоголь на сумму более £250 после поражения от Манчестер Сити. По словам владельца, около 15 фанатов, вероятно, находясь в состоянии алкогольного опьянения, оскорбляли персонал и применили физическую силу, когда их пытались остановить. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/coventry-fc-fans-entered-droylsden-34576528\">MEN</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Информация о транспортной доступности Хейвуда не является новостью или актуальным обновлением, а скорее общим фактом, который не соответствует требованиям блока о текущих транспортных изменениях.",
-        "risk": "product",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-heywood-one-greater-manchesters-biggest-34570097-bad81fecac86",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/heywood-one-greater-manchesters-biggest-34570097",
-        "original_html": "• Хейвуд, один из крупнейших городов Большого Манчестера, в настоящее время не имеет трамвайного или железнодорожного сообщения, а автобусное сообщение до Манчестера занимает около часа. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/heywood-one-greater-manchesters-biggest-34570097\">MEN Latest News</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "unrenderable_line",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 15,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Дэвид Мойес не является тренером Эвертона.",
+        "reason": "Уточнение, что обвинения связаны с антитеррористической деятельностью.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неверная информация о тренере Эвертона.",
+        "critical_problem": "Текст не упоминает, что обвинения связаны с антитеррористической деятельностью.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-two-men-remanded-custody-after-34580711-dd244c848313",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/two-men-remanded-custody-after-34580711",
+        "original_html": "<b>Два мужчины, Харли Эллиот, 20 лет, и Макинзи Смит, 19 лет, были задержаны и преданы суду по обвинениям в подготовке к причинению уголовного ущерба и хранении орудия преступления.</b> Они появились в Манчестерском магистратском суде 7 сентября 2026 года, где их дело было отложено до 14 сентября для дальнейшего рассмотрения. Судья Джон МакГарва оставил их под стражей. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/two-men-remanded-custody-after-34580711\">MEN</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 7,
+        "section": "Свежие новости",
+        "requested_action": "patch",
+        "reason": "Исправление даты суда на правильную.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата суда указана как 7 сентября 2026 года, но это понедельник, а 7 сентября 2026 года — это вторник.",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-05",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-counter-terror-police-charge-two-34579618-2d793b0b33a4",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/counter-terror-police-charge-two-34579618",
+        "original_html": "• В результате инцидента в Salford, произошедшего в ранние часы воскресенья, контртеррористическая полиция предъявила обвинения двум мужчинам. 20-летний Харли Эллиот и 19-летний Маккензи Смит обвиняются в подготовке к причинению уголовного ущерба и хранении орудия преступления. Оба мужчины должны предстать перед судом в понедельник, 7 сентября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/counter-terror-police-charge-two-34579618\">MEN</a>",
+        "model_replacement_rejected": "fact_lock: 8 сентября 2026",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-burglary-gang-who-brought-terror-34579757-c914545c4061",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 18,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Уточнение формулировки, чтобы избежать неверного представления о роли Агуэро.",
+        "risk": "sensitive",
+        "critical_error": true,
+        "critical_problem": "Неверное представление роли Серджио Агуэро в расследовании.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-jack-grealish-makes-nightmare-joke-34575126-061447f6c8d0",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/jack-grealish-makes-nightmare-joke-34575126",
-        "original_html": "• Джек Грилиш прокомментировал свой переход в Эвертон на правах аренды, отметив хорошие отношения с Дэвидом Мойесом. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/jack-grealish-makes-nightmare-joke-34575126\">MEN Manchester City</a>",
+        "plan_slot_id": "football-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-manchester-city-legend-sergio-aguero-34582353-bfaedfa78560",
+        "original_url_identity": "manchestereveningnews.co.uk/news/manchester-city-legend-sergio-aguero-34582353",
+        "original_html": "• Имя Серджио Агуэро появилось в аргентинском расследовании по делу о наркотиках, где предполагается, что его пытались завербовать для руководства наркокартелем. <a href=\"https://manchestereveningnews.co.uk/news/manchester-city-legend-sergio-aguero-34582353\">MEN Manchester City</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
@@ -290,198 +271,65 @@
         "line_index": 20,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Термин 'травмированными' может быть воспринят как преувеличение в данном контексте.",
-        "risk": "sensitive",
-        "critical_error": true,
-        "critical_problem": "Некорректное использование термина 'травмированными'.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "city_watch-03",
-        "candidate_fingerprint": "url-bbc-com-news-articles-c9dwe6xp22wo-8b3c9c82cd54",
-        "original_url_identity": "bbc.com/news/articles/c9dwe6xp22wo",
-        "original_html": "• Стивен и Конор Бонилла-Грэм-Дарби из Ли, Wigan, сообщили, что после публикации свадебных фотографий в интернете они получили сотни гомофобных сообщений, оставивших их \"травмированными\". <a href=\"https://bbc.co.uk/news/articles/c9dwe6xp22wo\">BBC Manchester</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 23,
-        "section": "Дальние анонсы",
-        "requested_action": "strip",
-        "reason": "Событие проходит в Манчестере, но раздел 'Дальние анонсы' требует события вне Greater Manchester.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Событие не соответствует географическому контракту.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "future_announcements-01",
-        "candidate_fingerprint": "event-id-skiddle-com-59d25d1ca2f4-7af413de270a",
-        "original_url_identity": "skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Off-The-Page--Creatures-Comedy-Club/42498697",
-        "original_html": "• Комедийный вечер Off The Page пройдёт в Creatures Comedy Club 21 сентября в 20:30 — топ-комики со всей Великобритании представят новый материал. <a href=\"https://skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Off-The-Page--Creatures-Comedy-Club/42498697\">Skiddle Manchester Comedy</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 24,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Дата события указана неверно. Должно быть 10 сентября.",
+        "reason": "Дата забастовки 17 сентября была указана неверно, правильная дата - 18 сентября.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
+        "critical_problem": "Неправильное указание даты забастовки.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "ticket_radar-01",
-        "candidate_fingerprint": "event-event-evanescence-special-guest-poppy-and-k-flay-thu-10-sep-2026-multiple-times-2026-09-10-co-op-live-a95ae5600fee",
-        "original_url_identity": "cooplive.com/events/evanescence-7z58",
-        "original_html": "• <b>Evanescence</b> — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/evanescence-7z58\">Co-op Live</a>",
+        "plan_slot_id": "city_watch-02",
+        "candidate_fingerprint": "url-bbc-com-news-articles-crl6025190go-c6bf60af3e45",
+        "original_url_identity": "bbc.com/news/articles/crl6025190go",
+        "original_html": "• Более 350 сотрудников четырех больниц в Greater Manchester снова выйдут на забастовку 14, 15 и 17 сентября из-за выплат за сверхурочную работу. <a href=\"https://bbc.co.uk/news/articles/crl6025190go\">BBC Manchester</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 27,
+        "line_index": 32,
         "section": "Крупные концерты вне GM",
         "requested_action": "patch",
-        "reason": "Дата события указана неверно. Должно быть 8 сентября.",
-        "risk": "date",
+        "reason": "Исправлено название арены в Лидсе на правильное.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неправильная дата события",
+        "critical_problem": "Неправильное название арены в Лидсе.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
         "plan_slot_id": "outside_gm_tickets-01",
         "candidate_fingerprint": "event-event-evanescence-2026-world-tour-2026-09-08-leeds-first-direct-bank-arena-9d8955d3ac49",
         "original_url_identity": "ticketmaster.co.uk/evanescence-2026-world-tour-leeds-08-09-2026/event/1F00637CAE0C6D30",
-        "original_html": "• <b>Evanescence</b> — 8 сентября, Leeds First Direct Bank Arena. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/evanescence-2026-world-tour-leeds-08-09-2026/event/1F00637CAE0C6D30\">Ticketmaster</a>",
+        "original_html": "• <b>Evanescence</b> — тур: 8 сентября, Leeds First Direct Bank Arena; 11 сентября, Utilita Arena Birmingham. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/evanescence-2026-world-tour-leeds-08-09-2026/event/1F00637CAE0C6D30\">Ticketmaster</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::исправление даты на правильный день недели.",
+        "group_key": "главная история дня::уточнение, что обвинения связаны с антитеррористической деятельностью.",
         "actions": [
           {
-            "line_index": 4,
-            "section": "Свежие новости",
+            "line_index": 1,
+            "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Исправление даты на правильный день недели.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно. 6 сентября 2026 года - это воскресенье, а не суббота.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-coventry-fc-fans-entered-droylsden-34576528-ce7ad950e20c",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/coventry-fc-fans-entered-droylsden-34576528",
-            "original_html": "• В субботу, 6 сентября, группа фанатов Coventry City напала на магазин Go Local Manor Convenience в Дройлсдене, похитив алкоголь на сумму более £250 после поражения от Манчестер Сити. По словам владельца, около 15 фанатов, вероятно, находясь в состоянии алкогольного опьянения, оскорбляли персонал и применили физическую силу, когда их пытались остановить. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/coventry-fc-fans-entered-droylsden-34576528\">MEN</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 4,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::информация о транспортной доступности хейвуда не является новостью или актуальным обновлением, а скорее общим фактом, который не соответствует требованиям блока о текущих транспортных изменениях.",
-        "actions": [
-          {
-            "line_index": 12,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Информация о транспортной доступности Хейвуда не является новостью или актуальным обновлением, а скорее общим фактом, который не соответствует требованиям блока о текущих транспортных изменениях.",
-            "risk": "product",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-heywood-one-greater-manchesters-biggest-34570097-bad81fecac86",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/heywood-one-greater-manchesters-biggest-34570097",
-            "original_html": "• Хейвуд, один из крупнейших городов Большого Манчестера, в настоящее время не имеет трамвайного или железнодорожного сообщения, а автобусное сообщение до Манчестера занимает около часа. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/heywood-one-greater-manchesters-biggest-34570097\">MEN Latest News</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "unrenderable_line",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 12,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "футбол::дэвид мойес не является тренером эвертона.",
-        "actions": [
-          {
-            "line_index": 15,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Дэвид Мойес не является тренером Эвертона.",
+            "reason": "Уточнение, что обвинения связаны с антитеррористической деятельностью.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неверная информация о тренере Эвертона.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-jack-grealish-makes-nightmare-joke-34575126-061447f6c8d0",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/jack-grealish-makes-nightmare-joke-34575126",
-            "original_html": "• Джек Грилиш прокомментировал свой переход в Эвертон на правах аренды, отметив хорошие отношения с Дэвидом Мойесом. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/jack-grealish-makes-nightmare-joke-34575126\">MEN Manchester City</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 15,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::термин 'травмированными' может быть воспринят как преувеличение в данном контексте.",
-        "actions": [
-          {
-            "line_index": 20,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Термин 'травмированными' может быть воспринят как преувеличение в данном контексте.",
-            "risk": "sensitive",
-            "critical_error": true,
-            "critical_problem": "Некорректное использование термина 'травмированными'.",
+            "critical_problem": "Текст не упоминает, что обвинения связаны с антитеррористической деятельностью.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "city_watch-03",
-            "candidate_fingerprint": "url-bbc-com-news-articles-c9dwe6xp22wo-8b3c9c82cd54",
-            "original_url_identity": "bbc.com/news/articles/c9dwe6xp22wo",
-            "original_html": "• Стивен и Конор Бонилла-Грэм-Дарби из Ли, Wigan, сообщили, что после публикации свадебных фотографий в интернете они получили сотни гомофобных сообщений, оставивших их \"травмированными\". <a href=\"https://bbc.co.uk/news/articles/c9dwe6xp22wo\">BBC Manchester</a>",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-two-men-remanded-custody-after-34580711-dd244c848313",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/two-men-remanded-custody-after-34580711",
+            "original_html": "<b>Два мужчины, Харли Эллиот, 20 лет, и Макинзи Смит, 19 лет, были задержаны и преданы суду по обвинениям в подготовке к причинению уголовного ущерба и хранении орудия преступления.</b> Они появились в Манчестерском магистратском суде 7 сентября 2026 года, где их дело было отложено до 14 сентября для дальнейшего рассмотрения. Судья Джон МакГарва оставил их под стражей. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/two-men-remanded-custody-after-34580711\">MEN</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 20,
+            "line_index": 1,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -489,56 +337,56 @@
         "known_factual_error": true
       },
       {
-        "group_key": "дальние анонсы::событие проходит в манчестере, но раздел 'дальние анонсы' требует события вне greater manchester.",
+        "group_key": "свежие новости::исправление даты суда на правильную.",
         "actions": [
           {
-            "line_index": 23,
-            "section": "Дальние анонсы",
-            "requested_action": "strip",
-            "reason": "Событие проходит в Манчестере, но раздел 'Дальние анонсы' требует события вне Greater Manchester.",
-            "risk": "geo",
+            "line_index": 7,
+            "section": "Свежие новости",
+            "requested_action": "patch",
+            "reason": "Исправление даты суда на правильную.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Событие не соответствует географическому контракту.",
+            "critical_problem": "Дата суда указана как 7 сентября 2026 года, но это понедельник, а 7 сентября 2026 года — это вторник.",
             "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "future_announcements-01",
-            "candidate_fingerprint": "event-id-skiddle-com-59d25d1ca2f4-7af413de270a",
-            "original_url_identity": "skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Off-The-Page--Creatures-Comedy-Club/42498697",
-            "original_html": "• Комедийный вечер Off The Page пройдёт в Creatures Comedy Club 21 сентября в 20:30 — топ-комики со всей Великобритании представят новый материал. <a href=\"https://skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Off-The-Page--Creatures-Comedy-Club/42498697\">Skiddle Manchester Comedy</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
+            "outcome": "unresolved",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-05",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-counter-terror-police-charge-two-34579618-2d793b0b33a4",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/counter-terror-police-charge-two-34579618",
+            "original_html": "• В результате инцидента в Salford, произошедшего в ранние часы воскресенья, контртеррористическая полиция предъявила обвинения двум мужчинам. 20-летний Харли Эллиот и 19-летний Маккензи Смит обвиняются в подготовке к причинению уголовного ущерба и хранении орудия преступления. Оба мужчины должны предстать перед судом в понедельник, 7 сентября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/counter-terror-police-charge-two-34579618\">MEN</a>",
+            "model_replacement_rejected": "fact_lock: 8 сентября 2026",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-burglary-gang-who-brought-terror-34579757-c914545c4061",
+            "post_check_passed": false
           }
         ],
-        "outcome": "resolved_by_removal",
+        "outcome": "unresolved",
         "post_checks": [
           {
-            "line_index": 23,
-            "passed": true,
-            "detail": "slot removed and source absent"
+            "line_index": 7,
+            "passed": false,
+            "detail": "shared prose policy still fails"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "билеты / ticket radar::дата события указана неверно. должно быть 10 сентября.",
+        "group_key": "футбол::уточнение формулировки, чтобы избежать неверного представления о роли агуэро.",
         "actions": [
           {
-            "line_index": 24,
-            "section": "Билеты / Ticket Radar",
+            "line_index": 18,
+            "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Дата события указана неверно. Должно быть 10 сентября.",
-            "risk": "date",
+            "reason": "Уточнение формулировки, чтобы избежать неверного представления о роли Агуэро.",
+            "risk": "sensitive",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
+            "critical_problem": "Неверное представление роли Серджио Агуэро в расследовании.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "event-event-evanescence-special-guest-poppy-and-k-flay-thu-10-sep-2026-multiple-times-2026-09-10-co-op-live-a95ae5600fee",
-            "original_url_identity": "cooplive.com/events/evanescence-7z58",
-            "original_html": "• <b>Evanescence</b> — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/evanescence-7z58\">Co-op Live</a>",
+            "plan_slot_id": "football-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-manchester-city-legend-sergio-aguero-34582353-bfaedfa78560",
+            "original_url_identity": "manchestereveningnews.co.uk/news/manchester-city-legend-sergio-aguero-34582353",
+            "original_html": "• Имя Серджио Агуэро появилось в аргентинском расследовании по делу о наркотиках, где предполагается, что его пытались завербовать для руководства наркокартелем. <a href=\"https://manchestereveningnews.co.uk/news/manchester-city-legend-sergio-aguero-34582353\">MEN Manchester City</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -546,7 +394,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 24,
+            "line_index": 18,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -554,23 +402,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "крупные концерты вне gm::дата события указана неверно. должно быть 8 сентября.",
+        "group_key": "городской радар::дата забастовки 17 сентября была указана неверно, правильная дата - 18 сентября.",
         "actions": [
           {
-            "line_index": 27,
-            "section": "Крупные концерты вне GM",
+            "line_index": 20,
+            "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Дата события указана неверно. Должно быть 8 сентября.",
+            "reason": "Дата забастовки 17 сентября была указана неверно, правильная дата - 18 сентября.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Неправильная дата события",
+            "critical_problem": "Неправильное указание даты забастовки.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "outside_gm_tickets-01",
-            "candidate_fingerprint": "event-event-evanescence-2026-world-tour-2026-09-08-leeds-first-direct-bank-arena-9d8955d3ac49",
-            "original_url_identity": "ticketmaster.co.uk/evanescence-2026-world-tour-leeds-08-09-2026/event/1F00637CAE0C6D30",
-            "original_html": "• <b>Evanescence</b> — 8 сентября, Leeds First Direct Bank Arena. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/evanescence-2026-world-tour-leeds-08-09-2026/event/1F00637CAE0C6D30\">Ticketmaster</a>",
+            "plan_slot_id": "city_watch-02",
+            "candidate_fingerprint": "url-bbc-com-news-articles-crl6025190go-c6bf60af3e45",
+            "original_url_identity": "bbc.com/news/articles/crl6025190go",
+            "original_html": "• Более 350 сотрудников четырех больниц в Greater Manchester снова выйдут на забастовку 14, 15 и 17 сентября из-за выплат за сверхурочную работу. <a href=\"https://bbc.co.uk/news/articles/crl6025190go\">BBC Manchester</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -578,7 +426,39 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 27,
+            "line_index": 20,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "крупные концерты вне gm::исправлено название арены в лидсе на правильное.",
+        "actions": [
+          {
+            "line_index": 32,
+            "section": "Крупные концерты вне GM",
+            "requested_action": "patch",
+            "reason": "Исправлено название арены в Лидсе на правильное.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильное название арены в Лидсе.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "outside_gm_tickets-01",
+            "candidate_fingerprint": "event-event-evanescence-2026-world-tour-2026-09-08-leeds-first-direct-bank-arena-9d8955d3ac49",
+            "original_url_identity": "ticketmaster.co.uk/evanescence-2026-world-tour-leeds-08-09-2026/event/1F00637CAE0C6D30",
+            "original_html": "• <b>Evanescence</b> — тур: 8 сентября, Leeds First Direct Bank Arena; 11 сентября, Utilita Arena Birmingham. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/evanescence-2026-world-tour-leeds-08-09-2026/event/1F00637CAE0C6D30\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 32,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -587,27 +467,12 @@
       }
     ],
     "refetch": {
-      "attempted": 1,
+      "attempted": 0,
       "improved": 0,
       "failed": 0,
-      "empty_or_not_better": 1,
-      "skipped": 2,
+      "empty_or_not_better": 0,
+      "skipped": 1,
       "reports": [
-        {
-          "fingerprint": "event-id-skiddle-com-59d25d1ca2f4-7af413de270a",
-          "title": "Off The Page | Creatures Comedy Club",
-          "status": "empty",
-          "url": "https://skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Off-The-Page--Creatures-Comedy-Club/42498697",
-          "chars": 0
-        },
-        {
-          "fingerprint": "event-event-evanescence-special-guest-poppy-and-k-flay-thu-10-sep-2026-multiple-times-2026-09-10-co-op-live-a95ae5600fee",
-          "title": "Evanescence Special Guest Poppy and K. Flay Thu 10 Sep 2026 Multiple times",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://cooplive.com/events/evanescence-7z58",
-          "candidate_evidence_chars": 0
-        },
         {
           "fingerprint": "event-event-evanescence-2026-world-tour-2026-09-08-leeds-first-direct-bank-arena-9d8955d3ac49",
           "title": "Evanescence 2026 World Tour — event 2026-09-08 — public sale 2025-12-05 10:00",
@@ -618,14 +483,14 @@
         }
       ]
     },
-    "enrich_improved": 6,
-    "false_positive_existing_fact": 4,
-    "no_eligible_backup": 2,
+    "enrich_improved": 5,
+    "deterministic_rewrite_rejected": 1,
+    "false_positive_existing_fact": 3,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 25,
-      "matched_lines": 25,
-      "applicable_lines": 1,
+      "checked_lines": 33,
+      "matched_lines": 33,
+      "applicable_lines": 2,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -637,126 +502,115 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 25,
-      "resolved_in_place": 25,
-      "unresolved": 0,
-      "findings": []
+      "checked_lines": 33,
+      "resolved_in_place": 32,
+      "unresolved": 1,
+      "findings": [
+        {
+          "line_index": 7,
+          "section": "Свежие новости",
+          "outcome": "unresolved",
+          "code": "language_policy_defect",
+          "severity": "warning"
+        }
+      ]
     },
-    "status": "resolved"
+    "status": "unresolved"
   },
-  "notes": "Строка соответствует всем требованиям: география GM, актуальность события, корректное изложение фактов.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в дате события на строке 4. Остальные строки безопасны.; Строка о Хейвуде не является актуальной новостью и не соответствует требован",
+  "notes": "Уточнение контекста обвинений необходимо для точности информации.; Прогноз погоды соответствует данным Met Office и контракту блока.; Исправлена дата суда в строке 7 на правильную.; Все строки соответствуют требованиям и содержат актуальную информацию о закрытии автобусных остановок в GM.; Строка соответствует требован",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.9,
+    "confidence": 0.85,
     "critical_errors": [
       {
-        "line_index": 4,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Текст не упоминает, что обвинения связаны с антитеррористической деятельностью.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 7,
         "section": "Свежие новости",
-        "problem": "Дата события указана неверно. 6 сентября 2026 года - это воскресенье, а не суббота.",
+        "problem": "Дата суда указана как 7 сентября 2026 года, но это понедельник, а 7 сентября 2026 года — это вторник.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 15,
+        "line_index": 18,
         "section": "Футбол",
-        "problem": "Неверная информация о тренере Эвертона.",
-        "risk": "factual",
+        "problem": "Неверное представление роли Серджио Агуэро в расследовании.",
+        "risk": "sensitive",
         "suggested_action": "repair"
       },
       {
         "line_index": 20,
         "section": "Городской радар",
-        "problem": "Некорректное использование термина 'травмированными'.",
-        "risk": "sensitive",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 23,
-        "section": "Дальние анонсы",
-        "problem": "Событие не соответствует географическому контракту.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 24,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дата события указана неверно.",
+        "problem": "Неправильное указание даты забастовки.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 27,
+        "line_index": 32,
         "section": "Крупные концерты вне GM",
-        "problem": "Неправильная дата события",
-        "risk": "date",
+        "problem": "Неправильное название арены в Лидсе.",
+        "risk": "factual",
         "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 4,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "action": "patch",
+        "replacement_text": "• Два мужчины, Харли Эллиот, 20 лет, и Макинзи Смит, 19 лет, были задержаны и преданы суду по обвинениям в подготовке к причинению уголовного ущерба и хранении орудия преступления в рамках антитеррористического расследования. Они появились в Манчестерском магистратском суде 7 сентября 2026 года, где их дело было отложено до 14 сентября для дальнейшего рассмотрения. Судья Джон МакГарва оставил их под стражей.",
+        "reason": "Уточнение, что обвинения связаны с антитеррористической деятельностью.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 7,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• В воскресенье, 6 сентября, группа фанатов Coventry City напала на магазин Go Local Manor Convenience в Дройлсдене, похитив алкоголь на сумму более £250 после поражения от Манчестер Сити. По словам владельца, около 15 фанатов, вероятно, находясь в состоянии алкогольного опьянения, оскорбляли персонал и применили физическую силу, когда их пытались остановить.",
-        "reason": "Исправление даты на правильный день недели.",
+        "replacement_text": "• В результате инцидента в Salford, произошедшего в ранние часы воскресенья, контртеррористическая полиция предъявила обвинения двум мужчинам. 20-летний Харли Эллиот и 19-летний Маккензи Смит обвиняются в подготовке к причинению уголовного ущерба и хранении орудия преступления. Оба мужчины должны предстать перед судом во вторник, 8 сентября 2026 года.",
+        "reason": "Исправление даты суда на правильную.",
         "risk": "date"
       },
       {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
-        "action": "strip",
-        "reason": "Информация о транспортной доступности Хейвуда не является новостью или актуальным обновлением, а скорее общим фактом, который не соответствует требованиям блока о текущих транспортных изменениях.",
-        "risk": "product"
-      },
-      {
-        "line_index": 15,
+        "line_index": 18,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Джек Грилиш прокомментировал свой переход в Эвертон на правах аренды, отметив хорошие отношения с тренером команды.",
-        "reason": "Дэвид Мойес не является тренером Эвертона.",
-        "risk": "factual"
+        "replacement_text": "• Имя Серджио Агуэро появилось в аргентинском расследовании по делу о наркотиках, где предполагается, что его пытались завербовать для участия в деятельности наркокартеля.",
+        "reason": "Уточнение формулировки, чтобы избежать неверного представления о роли Агуэро.",
+        "risk": "sensitive"
       },
       {
         "line_index": 20,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Стивен и Конор Бонилла-Грэм-Дарби из Ли, Wigan, сообщили, что после публикации свадебных фотографий в интернете они получили сотни гомофобных сообщений, оставивших их \"потрясёнными\".",
-        "reason": "Термин 'травмированными' может быть воспринят как преувеличение в данном контексте.",
-        "risk": "sensitive"
-      },
-      {
-        "line_index": 23,
-        "section": "Дальние анонсы",
-        "action": "strip",
-        "reason": "Событие проходит в Манчестере, но раздел 'Дальние анонсы' требует события вне Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 24,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Evanescence — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице.",
-        "reason": "Дата события указана неверно. Должно быть 10 сентября.",
+        "replacement_text": "• Более 350 сотрудников четырех больниц в Greater Manchester снова выйдут на забастовку 14, 15 и 18 сентября из-за выплат за сверхурочную работу.",
+        "reason": "Дата забастовки 17 сентября была указана неверно, правильная дата - 18 сентября.",
         "risk": "date"
       },
       {
-        "line_index": 27,
+        "line_index": 32,
         "section": "Крупные концерты вне GM",
         "action": "patch",
-        "replacement_text": "• Evanescence — 8 сентября, Leeds First Direct Bank Arena. Билеты и время указаны на официальной странице.",
-        "reason": "Дата события указана неверно. Должно быть 8 сентября.",
-        "risk": "date"
+        "replacement_text": "• Evanescence — тур: 8 сентября, Leeds First Direct Arena; 11 сентября, Utilita Arena Birmingham. Событие проходит сегодня.",
+        "reason": "Исправлено название арены в Лидсе на правильное.",
+        "risk": "factual"
       }
     ],
     "warnings": [
-      "Строка о Хейвуде не соответствует требованиям блока 'Общественный транспорт сегодня', так как не содержит актуальной информации о транспортных изменениях.",
-      "judge reduce failed: parse_failed no parseable JSON"
+      "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога.",
+      "Секция 'Билеты / Ticket Radar' содержит только 1 элемент, что ниже минимального порога.",
+      "Секция 'Еда, открытия и рынки' содержит только 1 элемент, что ниже минимального порога.",
+      "Секция 'Business/tech события для тебя' отсутствует, что ниже минимального порога."
     ],
-    "notes": "Строка соответствует всем требованиям: география GM, актуальность события, корректное изложение фактов.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в дате события на строке 4. Остальные строки безопасны.; Строка о Хейвуде не является актуальной новостью и не соответствует требован",
+    "notes": "Уточнение контекста обвинений необходимо для точности информации.; Прогноз погоды соответствует данным Met Office и контракту блока.; Исправлена дата суда в строке 7 на правильную.; Все строки соответствуют требованиям и содержат актуальную информацию о закрытии автобусных остановок в GM.; Строка соответствует требован",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "partial",
-      "chunk_count": 11,
+      "status": "ok",
+      "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -769,13 +623,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2748,
-          "duration_seconds": 1.982
+          "estimated_tokens": 2736,
+          "duration_seconds": 4.329
         },
         {
           "chunk_id": "chunk-02",
@@ -792,15 +646,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2479,
-          "duration_seconds": 5.001
+          "estimated_tokens": 2465,
+          "duration_seconds": 1.704
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            9
+            11
           ],
           "sections": [
             "Свежие новости"
@@ -810,33 +664,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6359,
-          "duration_seconds": 3.58
+          "estimated_tokens": 7132,
+          "duration_seconds": 4.307
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            10,
-            12
+            12,
+            14
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "warn",
+          "decision": "pass",
           "critical_error_count": 0,
-          "action_count": 1,
-          "warning_count": 1,
+          "action_count": 0,
+          "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3680,
-          "duration_seconds": 2.429
+          "estimated_tokens": 3415,
+          "duration_seconds": 1.356
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            13,
-            14
+            15,
+            15
           ],
           "sections": [
             "Что важно сегодня"
@@ -846,15 +700,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3262,
-          "duration_seconds": 1.201
+          "estimated_tokens": 2698,
+          "duration_seconds": 1.219
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            15,
-            17
+            16,
+            18
           ],
           "sections": [
             "Футбол"
@@ -864,15 +718,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3658,
-          "duration_seconds": 2.963
+          "estimated_tokens": 3615,
+          "duration_seconds": 3.0
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            18,
-            21
+            19,
+            28
           ],
           "sections": [
             "Городской радар"
@@ -882,15 +736,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4204,
-          "duration_seconds": 3.06
+          "estimated_tokens": 7212,
+          "duration_seconds": 34.812
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            22,
-            22
+            29,
+            29
+          ],
+          "sections": [
+            "Еда, открытия и рынки"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2772,
+          "duration_seconds": 1.292
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            30,
+            30
           ],
           "sections": [
             "IT и бизнес"
@@ -900,51 +772,33 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2692,
-          "duration_seconds": 1.167
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            23,
-            23
-          ],
-          "sections": [
-            "Дальние анонсы"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2715,
-          "duration_seconds": 6.467
+          "estimated_tokens": 2597,
+          "duration_seconds": 1.263
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            24,
-            26
+            31,
+            31
           ],
           "sections": [
             "Билеты / Ticket Radar"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3927,
-          "duration_seconds": 20.211
+          "estimated_tokens": 2779,
+          "duration_seconds": 1.887
         },
         {
           "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            27,
-            27
+            32,
+            32
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -954,22 +808,40 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2724,
-          "duration_seconds": 11.247
+          "estimated_tokens": 2730,
+          "duration_seconds": 15.281
+        },
+        {
+          "chunk_id": "chunk-12",
+          "status": "ok",
+          "line_range": [
+            33,
+            33
+          ],
+          "sections": [
+            "Русскоязычные концерты и стендап UK"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2704,
+          "duration_seconds": 5.722
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
+        "decision": "warn",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 9850,
-        "duration_seconds": 28.784
+        "warning_count": 4,
+        "error": "",
+        "estimated_tokens": 9898,
+        "duration_seconds": 20.476
       },
       "max_workers": 3,
       "chunk_line_target": 12,
