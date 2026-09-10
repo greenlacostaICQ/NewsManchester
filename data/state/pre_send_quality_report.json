@@ -2,77 +2,70 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 2 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair completed with honest unresolved non-factual findings: operations=1, prose=0",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-09-09",
-  "pipeline_run_id": "20260909T080139+0100",
-  "digest_sha256": "6fbe8acc1b5c3efa4d8a32007a198e9633369bf76052d82b78a81ac77c1115ec",
-  "duration_seconds": 56.574,
-  "confidence": 0.8,
+  "run_date_london": "2026-09-10",
+  "pipeline_run_id": "20260910T080141+0100",
+  "digest_sha256": "5d66a91e667f7c43d3110a65e4805edd6ebf4fef2521f1aefa2e9fc37fc901a7",
+  "duration_seconds": 104.588,
+  "confidence": 0.85,
   "critical_errors": [
     {
       "line_index": 1,
       "section": "Главная история дня",
-      "problem": "Дата выборов указана неверно. 10 сентября 2026 года — это пятница, а не четверг.",
-      "risk": "date",
+      "problem": "Текст не соответствует фактам из источника.",
+      "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 3,
+      "line_index": 4,
       "section": "Свежие новости",
-      "problem": "Неправильное использование термина 'осуждён'.",
-      "risk": "legal",
+      "problem": "Указано, что семья стала жертвой поджога, но не уточняется, что это было ошибочное нападение.",
+      "risk": "factual",
       "suggested_action": "repair"
     },
     {
       "line_index": 15,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дата окончания дорожных работ указана как 9 сентября, что уже прошло на момент публикации.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 17,
       "section": "Футбол",
-      "problem": "Aston Villa не участвует в Лиге чемпионов, это ошибка.",
-      "risk": "factual",
+      "problem": "Дата дерби против Манчестер Сити не указана, что может ввести в заблуждение.",
+      "risk": "date",
       "suggested_action": "repair"
     },
     {
       "line_index": 20,
-      "section": "Городской радар",
-      "problem": "Неправильное использование термина 'банкротство'.",
+      "section": "Выходные в GM",
+      "problem": "Неправильная дата события.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 27,
+      "section": "Выходные в GM",
+      "problem": "Неправильная дата события.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 32,
+      "section": "Выходные в GM",
+      "problem": "Некорректное указание места проведения.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 28,
+      "line_index": 37,
+      "section": "Городской радар",
+      "problem": "Некорректное представление полномочий Эндрю Бернэма. Он не имеет полномочий вводить санкции.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 46,
       "section": "IT и бизнес",
-      "problem": "Неправильная дата события",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 29,
-      "section": "Business/tech события для тебя",
-      "problem": "Дата события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 30,
-      "section": "Дальние анонсы",
-      "problem": "Событие находится в Болтоне, который не входит в Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 32,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дата события указана неверно.",
+      "problem": "Неправильная дата события.",
       "risk": "date",
       "suggested_action": "repair"
     }
@@ -82,87 +75,79 @@
       "line_index": 1,
       "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• В пятницу, 10 сентября 2026 года, в районе Бернейдж пройдут выборы в совет, где экс-глава совета Бев Крейг оставила вакантное место после своего избрания мэром Большого Манчестера в июле. Зелёные партии выиграли выборы в этом районе в мае с отрывом в 811 голосов и могут сделать заявление, заняв место бывшего лидера Лейбористской партии.",
-      "reason": "Исправление даты на правильный день недели.",
-      "risk": "date"
+      "replacement_text": "• Сегодня, 10 сентября 2026 года, объявлены планы по созданию \"плавающей пешеходной дорожки\", соединяющей центр Манчестера с другими районами, включая кампус Этихад, в рамках проекта CyanLines стоимостью £100 миллионов.",
+      "reason": "Уточнение, что дорожка соединяет центр Манчестера с несколькими районами, включая кампус Этихад.",
+      "risk": "factual"
     },
     {
-      "line_index": 3,
+      "line_index": 4,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• В Stockport снова арестовали 60-летнего Джеймса Дэвидсона, который, несмотря на ограничения, продолжал общаться с молодыми девушками, выдавая себя за подростка. Он был приговорён к тюремному сроку после того, как полиция обнаружила у него незадекларированные электронные устройства, а также смогла расшифровать его пароли, которые он отказывался раскрывать.",
-      "reason": "Исправление термина 'осуждён' на 'арестовали' для корректного отражения статуса дела.",
-      "risk": "legal"
+      "replacement_text": "• Невинная семья в Bury стала жертвой ошибочного поджога, связанного с разборками банд, когда мужчины в балаклавах залили бензином их дом и подожгли его, пока семья спала. Поджог произошел 18 января 2026 года, а 9 сентября 2026 года Джоди Лайнам был приговорен к шести годам и девяти месяцам тюремного заключения.",
+      "reason": "Уточнение, что нападение было ошибочным, важно для точности информации.",
+      "risk": "factual"
     },
     {
       "line_index": 15,
-      "section": "Общественный транспорт сегодня",
-      "action": "patch",
-      "replacement_text": "• Автобусные маршруты в Болтоне изменены из-за дорожных работ на Blackburn Road/Waters Meeting Road. Проверьте актуальные изменения на сайте TfGM.",
-      "reason": "Дата окончания дорожных работ указана как 9 сентября, что уже прошло на момент публикации.",
-      "risk": "date"
-    },
-    {
-      "line_index": 17,
       "section": "Футбол",
-      "action": "replace",
-      "replacement_text": "• В матче Лиги Европы во вторник вечером Aston Villa одержала победу над Club Brugge со счётом 3-2, но Алехандро Гарначо остался на скамейке запасных, что вызывает беспокойство среди болельщиков. Бывший игрок Манчестер Юнайтед не получил ни одного старта с момента перехода в клуб, что сравнивают с ситуацией Харви Эллиотта, который также не смог проявить себя во время аренды.",
-      "reason": "Aston Villa участвует в Лиге Европы, а не в Лиге чемпионов.",
-      "risk": "factual"
+      "action": "patch",
+      "replacement_text": "• 10 сентября 2026 года группа болельщиков Манчестер Юнайтед планирует протест на Old Trafford перед дерби против Манчестер Сити, которое состоится 13 сентября, в то время как остаются вопросы о дебюте Джей Джей Габриэля.",
+      "reason": "Уточнение даты дерби против Манчестер Сити для ясности.",
+      "risk": "date"
     },
     {
       "line_index": 20,
-      "section": "Городской радар",
+      "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• Благотворительная организация Papyrus Prevention of Young Suicide перешла под внешнее управление после длительного финансового кризиса.",
-      "reason": "Термин 'банкротство' не соответствует фактическому состоянию организации, которая находится под внешним управлением.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 28,
-      "section": "IT и бизнес",
-      "action": "patch",
-      "replacement_text": "• Manchester United объявил SumUp своим официальным партнером по рукаву; логотип будет размещен на футболках с четверга на матче Лиги чемпионов, который состоится в этот день.",
-      "reason": "Уточнение даты матча для соответствия фактам.",
+      "replacement_text": "• Мастер-класс по изготовлению колец от Areesha X Stockroom пройдет в Stockroom, Merseyway, Stockport SK1 1PW в воскресенье, 13 сентября 2026 года с 11:00 до 15:00. Стоимость участия — £130. Участники смогут создать восковую форму для кольца, которое будет отлито из переработанного серебра.",
+      "reason": "Дата события указана неверно. 13 сентября 2026 года — это воскресенье.",
       "risk": "date"
     },
     {
-      "line_index": 29,
-      "section": "Business/tech события для тебя",
+      "line_index": 27,
+      "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• Конференция \"Будущее кибербезопасности в Манчестере\" пройдет 10 сентября в Old Trafford; бесплатные места для членов палаты, £225 для не членов.",
-      "reason": "Дата события указана неверно. Следует исправить на 10 сентября.",
+      "replacement_text": "• В пятницу, 11 сентября, в Gardens пройдет мероприятие Grub on the Docks. Вход £100.",
+      "reason": "Дата события указана неверно. 11 сентября 2026 года — это пятница.",
       "risk": "date"
-    },
-    {
-      "line_index": 30,
-      "section": "Дальние анонсы",
-      "action": "strip",
-      "reason": "Событие проходит в Болтоне, который не является частью Greater Manchester, что нарушает географический контракт раздела.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 31,
-      "section": "Дальние анонсы",
-      "action": "keep",
-      "reason": "Событие соответствует географическому контракту и содержит всю необходимую информацию.",
-      "risk": "geo",
-      "replacement_text": ""
     },
     {
       "line_index": 32,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 13 сентября в Macron Stadium, Horwich, Bolton — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, есть туалеты.",
+      "reason": "Уточнение местоположения для соответствия фактам.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 37,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Эндрю Бернэм выразил критику в адрес 'неприемлемых' политик израильского правительства и призвал к запрету на торговлю с незаконными поселениями, а также к увеличению гуманитарной помощи в Газу.",
+      "reason": "Эндрю Бернэм не может вводить санкции, но может выражать критику и призывать к действиям.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 46,
+      "section": "IT и бизнес",
+      "action": "patch",
+      "replacement_text": "• Ярмарка вакансий и навыков в Bolton пройдет в субботу, 12 сентября 2026 года, на Victoria Square.",
+      "reason": "Исправление даты на правильную.",
+      "risk": "date"
+    },
+    {
+      "line_index": 49,
       "section": "Билеты / Ticket Radar",
       "action": "patch",
-      "replacement_text": "• Evanescence — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице.",
-      "reason": "Дата события должна быть 10 сентября 2026 года.",
-      "risk": "date"
+      "replacement_text": "• Evanescence с участием Poppy и K. Flay — 10 сентября, Co-op Live. Событие проходит сегодня.",
+      "reason": "Уточнение состава участников события для полноты информации.",
+      "risk": "product"
     }
   ],
   "warnings": [
-    "Отсутствует блок 'Что важно сегодня', что нарушает продуктовую полноту.",
-    "Отсутствует блок 'Русскоязычные концерты и стендап UK', что нарушает продуктовую полноту.",
-    "Отсутствует блок 'Еда, открытия и рынки', что нарушает продуктовую полноту."
+    "Уточнён состав участников события Evanescence для большей информативности.",
+    "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога в 3 элемента.",
+    "Секция 'Еда, открытия и рынки' полностью отсутствует, что ниже минимального порога в 3 элемента."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -171,80 +156,86 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 4,
-      "Футбол": 3,
-      "Городской радар": 9,
-      "IT и бизнес": 1,
+      "Общественный транспорт сегодня": 1,
+      "Что важно сегодня": 1,
+      "Футбол": 2,
+      "Выходные в GM": 15,
+      "Городской радар": 10,
+      "IT и бизнес": 2,
       "Business/tech события для тебя": 1,
-      "Дальние анонсы": 2,
-      "Билеты / Ticket Radar": 5
+      "Дальние анонсы": 1,
+      "Билеты / Ticket Radar": 3,
+      "Крупные концерты вне GM": 1,
+      "Русскоязычные концерты и стендап UK": 2
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
+      "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 9,
-      "Билеты / Ticket Radar": 5,
-      "Русскоязычные концерты и стендап UK": 0,
+      "Городской радар": 10,
+      "Выходные в GM": 15,
+      "Билеты / Ticket Radar": 3,
+      "Русскоязычные концерты и стендап UK": 2,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 1,
-      "Футбол": 3
+      "Футбол": 2
     },
-    "ticket_items": 5,
-    "core_items": 24,
+    "ticket_items": 6,
+    "core_items": 40,
     "writer_quality_counts": {
-      "included_candidates": 37,
-      "rendered_candidates": 36,
+      "included_candidates": 51,
+      "rendered_candidates": 50,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 1,
-      "replaced_from_plan_backup": 0,
-      "removed_with_reason": 1
+      "dropped_low_quality": 0,
+      "replaced_from_plan_backup": 1,
+      "removed_with_reason": 0
     },
     "source_health_counts": {
-      "ok": 107,
+      "ok": 112,
       "partial": 0,
-      "stale": 5,
-      "empty": 18,
-      "failed": 2,
-      "zero_yield": 67,
+      "stale": 2,
+      "empty": 14,
+      "failed": 3,
+      "zero_yield": 63,
       "no_contribution_breakdown": {
-        "fetch_failed": 2,
-        "all_rejected": 67,
-        "idle_no_items": 47
+        "fetch_failed": 3,
+        "all_rejected": 63,
+        "idle_no_items": 34
       },
       "zero_contribution_by_stage": {
-        "selected": 31,
-        "written": 36,
-        "parsed": 47,
-        "fetched": 2
+        "written": 27,
+        "selected": 36,
+        "parsed": 34,
+        "fetched": 3
       },
-      "weekend_source_coverage_incidents": 61
+      "weekend_source_coverage_incidents": 49
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
-      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
-      "Еда, открытия и рынки: 0 item(s), emergency floor 3"
+      "Что важно сегодня: 1 item(s), emergency floor 3",
+      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
+      "source failures: 3"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 1 has unchecked number/date token(s): 811"
+      "patch for line 4 has unchecked number/date token(s): 9",
+      "patch for line 20 has unchecked number/date token(s): 11:00, 15:00"
     ],
     "can_apply_actions": true,
-    "action_count": 10
+    "action_count": 9
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 36,
-    "matched_lines": 36,
+    "checked_lines": 50,
+    "matched_lines": 50,
     "applicable_lines": 2,
-    "unmatched_lines": 0,
+    "unmatched_lines": 4,
     "critical_omission_count": 0,
     "critical_omissions": [],
     "noncritical_omissions": [],
@@ -256,203 +247,204 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 8,
-    "attempted": 2,
-    "applied": 2,
-    "model_patch_applied": 2,
-    "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 0,
+    "requested": 9,
+    "attempted": 6,
+    "applied": 6,
+    "model_patch_applied": 4,
+    "deterministic_rewrite_used": 1,
+    "reserve_replacement_used": 1,
     "stripped": 0,
-    "unresolved": 0,
+    "unresolved": 1,
     "blocking_unresolved": 0,
     "resolved": 8,
-    "resolved_in_place": 8,
-    "resolved_by_replacement": 0,
+    "resolved_in_place": 7,
+    "resolved_by_replacement": 1,
     "resolved_by_removal": 0,
-    "fact_lock_rejected": 0,
-    "enrich_attempted": 8,
+    "fact_lock_rejected": 2,
+    "enrich_attempted": 9,
     "post_check_errors": [],
-    "geo_contract_rejected": [
-      {
-        "line_index": 30,
-        "section": "Дальние анонсы",
-        "geo_scope": "gm",
-        "reason": "Событие проходит в Болтоне, который не является частью Greater Manchester, что нарушает географический контракт раздела.",
-        "gm_anchor_present": true
-      },
-      {
-        "line_index": 31,
-        "section": "Дальние анонсы",
-        "geo_scope": "gm",
-        "reason": "Событие соответствует географическому контракту и содержит всю необходимую информацию.",
-        "gm_anchor_present": true
-      }
-    ],
+    "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
         "line_index": 1,
         "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Исправление даты на правильный день недели.",
-        "risk": "date",
+        "reason": "Уточнение, что дорожка соединяет центр Манчестера с несколькими районами, включая кампус Этихад.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дата выборов указана неверно. 10 сентября 2026 года — это пятница, а не четверг.",
+        "critical_problem": "Текст не соответствует фактам из источника.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
+        "method": "model_patch",
         "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-if-wilmslow-would-done-because-34586599-df1bb0c0f3a4",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/if-wilmslow-would-done-because-34586599",
-        "original_html": "<b>В четверг, 10 сентября 2026 года, в районе Бернейдж пройдет выборы в совет, где экс-глава совета Бев Крейг оставила вакантное место после своего избрания мэром Большого Манчестера в июле.</b> Зелёные партии выиграли выборы в этом районе в мае с отрывом в 811 голосов и могут сделать заявление, заняв место бывшего лидера Лейбористской партии. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/if-wilmslow-would-done-because-34586599\">MEN</a>",
-        "verification": "structured fact already rendered correctly",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cd79y0pwe3po-2a3b93382df8",
+        "original_url_identity": "bbc.com/news/articles/cd79y0pwe3po",
+        "original_html": "<b>Сегодня, 10 сентября 2026 года, объявлены планы по созданию \"плавающей пешеходной дорожки\", соединяющей центр Манчестера с кампусом Этихад в рамках проекта CyanLines стоимостью £100 миллионов.</b> <a href=\"https://bbc.co.uk/news/articles/cd79y0pwe3po\">BBC Manchester</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 3,
+        "line_index": 4,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Исправление термина 'осуждён' на 'арестовали' для корректного отражения статуса дела.",
-        "risk": "legal",
+        "reason": "Уточнение, что нападение было ошибочным, важно для точности информации.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неправильное использование термина 'осуждён'.",
+        "critical_problem": "Указано, что семья стала жертвой поджога, но не уточняется, что это было ошибочное нападение.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-stockport-monster-who-said-didnt-34588281-1ff90852fe59",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/stockport-monster-who-said-didnt-34588281",
-        "original_html": "• В Stockport снова осудили 60-летнего Джеймса Дэвидсона, который, несмотря на ограничения, продолжал общаться с молодыми девушками, выдавая себя за подростка. Он был приговорён к тюремному сроку после того, как полиция обнаружила у него незадекларированные электронные устройства, а также смогла расшифровать его пароли, которые он отказывался раскрывать. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/stockport-monster-who-said-didnt-34588281\">MEN</a>",
-        "verification": "structured fact already rendered correctly",
+        "method": "model_patch",
+        "plan_slot_id": "last_24h-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-innocent-family-caught-up-gangland-34592456-2c3dea6240f4",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/innocent-family-caught-up-gangland-34592456",
+        "original_html": "• Невинная семья в Bury стала жертвой поджога, связанного с разборками банд, когда мужчины в балаклавах залили бензином их дом и подожгли его, пока семья спала. Поджог произошел 18 января 2026 года, а 9 сентября 2026 года Джоди Лайнам был приговорен к шести годам и девяти месяцам тюремного заключения. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/innocent-family-caught-up-gangland-34592456\">MEN</a>",
         "post_check_passed": true
       },
       {
         "line_index": 15,
-        "section": "Общественный транспорт сегодня",
+        "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Дата окончания дорожных работ указана как 9 сентября, что уже прошло на момент публикации.",
+        "reason": "Уточнение даты дерби против Манчестер Сити для ясности.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата окончания дорожных работ указана как 9 сентября, что уже прошло на момент публикации.",
+        "critical_problem": "Дата дерби против Манчестер Сити не указана, что может ввести в заблуждение.",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "transport-04",
-        "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-blackburn-road-waters-meeting-road-bolton-roadworks-c52022a4d7cd",
-        "original_url_identity": "tfgm.com/travel-updates/travel-alerts/blackburn-road-waters-meeting-road-bolton-roadworks",
-        "original_html": "• Автобусные маршруты в Болтоне изменены из-за дорожных работ на Blackburn Road/Waters Meeting Road до 9 сентября. <a href=\"https://tfgm.com/travel-updates/travel-alerts/blackburn-road-waters-meeting-road-bolton-roadworks\">TfGM</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "requested_action": "replace",
-        "reason": "Aston Villa участвует в Лиге Европы, а не в Лиге чемпионов.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Aston Villa не участвует в Лиге чемпионов, это ошибка.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
         "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-alejandro-garnacho-champions-league-villa-34587817-57cd523611aa",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/alejandro-garnacho-champions-league-villa-34587817",
-        "original_html": "• В матче Лиги чемпионов во вторник вечером Aston Villa одержала победу над Club Brugge со счётом 3-2, но Алехандро Гарначо остался на скамейке запасных, что вызывает беспокойство среди болельщиков. Бывший игрок Манчестер Юнайтед не получил ни одного старта с момента перехода в клуб, что сравнивают с ситуацией Харви Эллиотта, который также не смог проявить себя во время аренды. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/alejandro-garnacho-champions-league-villa-34587817\">MEN Manchester United</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-fan-protest-gabriel-34591839-017eb41358b3",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-fan-protest-gabriel-34591839",
+        "original_html": "• 10 сентября 2026 года группа болельщиков Манчестер Юнайтед планирует протест на Old Trafford перед дерби против Манчестер Сити, в то время как остаются вопросы о дебюте Джей Джей Габриэля. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-fan-protest-gabriel-34591839\">MEN Manchester United</a>",
+        "model_replacement_rejected": "fact_lock: 13 сентября",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-manchester-united-lineup-predicted-vs-34592563-cbd552c26e45",
         "post_check_passed": true
       },
       {
         "line_index": 20,
-        "section": "Городской радар",
+        "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Термин 'банкротство' не соответствует фактическому состоянию организации, которая находится под внешним управлением.",
-        "risk": "factual",
+        "reason": "Дата события указана неверно. 13 сентября 2026 года — это воскресенье.",
+        "risk": "date",
         "critical_error": true,
-        "critical_problem": "Неправильное использование термина 'банкротство'.",
+        "critical_problem": "Неправильная дата события.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-02",
-        "candidate_fingerprint": "url-bbc-com-news-articles-c20vr05mjrgo-57c1953ab6e9",
-        "original_url_identity": "bbc.com/news/articles/c20vr05mjrgo",
-        "original_html": "• Благотворительная организация Papyrus Prevention of Young Suicide объявила о банкротстве после длительного финансового кризиса. <a href=\"https://bbc.co.uk/news/articles/c20vr05mjrgo\">BBC Manchester</a>",
+        "plan_slot_id": "weekend_activities-04",
+        "candidate_fingerprint": "event-event-areesha-x-stockroom-ring-making-workshop-2026-09-13-stockroom-4538899f6e98",
+        "original_url_identity": "manchestersfinest.com/events/areesha-x-stockroom-ring-making-workshop",
+        "original_html": "• Мастер-класс по изготовлению колец от Areesha X Stockroom пройдет в Stockroom, Merseyway, Stockport SK1 1PW в воскресенье, 13 сентября 2026 года с 11:00 до 15:00. Стоимость участия — £130. Участники смогут создать восковую форму для кольца, которое будет отлито из переработанного серебра. <a href=\"https://manchestersfinest.com/events/areesha-x-stockroom-ring-making-workshop\">Manchester's Finest Events</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 28,
-        "section": "IT и бизнес",
+        "line_index": 27,
+        "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Уточнение даты матча для соответствия фактам.",
+        "reason": "Дата события указана неверно. 11 сентября 2026 года — это пятница.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Неправильная дата события",
+        "critical_problem": "Неправильная дата события.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "tech_business-01",
-        "candidate_fingerprint": "url-prolificnorth-co-uk-news-new-co-branded-payment-card-as-manchester-united-names-fintech-as-official-sleeve-partner-13cfb2cf7b22",
-        "original_url_identity": "prolificnorth.co.uk/news/new-co-branded-payment-card-as-manchester-united-names-fintech-as-official-sleeve-partner",
-        "original_html": "• Manchester United объявил SumUp своим официальным партнером по рукаву; логотип будет размещен на футболках с четверга на матче Лиги чемпионов. <a href=\"https://prolificnorth.co.uk/news/new-co-branded-payment-card-as-manchester-united-names-fintech-as-official-sleeve-partner\">Prolific North Manchester</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 29,
-        "section": "Business/tech события для тебя",
-        "requested_action": "patch",
-        "reason": "Дата события указана неверно. Следует исправить на 10 сентября.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "professional_events-01",
-        "candidate_fingerprint": "event-event-the-future-of-cyber-security-manchester-exclusive-chamber-member-places-thursday-10-sep-8-2026-09-10-old-trafford-f34013ae8b3a",
-        "original_url_identity": "gmchamber.co.uk/events/the-future-of-cyber-security-manchester-exclusive-chamber-member-places",
-        "original_html": "• Конференция \"Будущее кибербезопасности в Манчестере\" пройдет 10 сентября в Old Trafford; бесплатные места для членов палаты, £225 для не членов. <a href=\"https://gmchamber.co.uk/events/the-future-of-cyber-security-manchester-exclusive-chamber-member-places\">GM Chamber Events</a>",
+        "plan_slot_id": "weekend_activities-09",
+        "candidate_fingerprint": "event-id-mediacity-event-page-0ca3d429bc24-7f8ba80d7268",
+        "original_url_identity": "mediacityuk.co.uk/events/grub-on-the-docks",
+        "original_html": "• В пятницу, 11 сентября, в Gardens пройдет мероприятие Grub on the Docks. Вход £100. <a href=\"https://mediacityuk.co.uk/events/grub-on-the-docks\">MediaCity What's On</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
         "line_index": 32,
-        "section": "Билеты / Ticket Radar",
+        "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Дата события должна быть 10 сентября 2026 года.",
+        "reason": "Уточнение местоположения для соответствия фактам.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Некорректное указание места проведения.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "weekend_activities-13",
+        "candidate_fingerprint": "event-id-jsonld-event-ec2bf1409632-c0b30703e8a2",
+        "original_url_identity": "carbootdirectory.co.uk/listings/bolton-car-boot",
+        "original_html": "• 13 сентября в Macron Stadium — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, есть туалеты. <a href=\"https://carbootdirectory.co.uk/listings/bolton-car-boot\">Bolton Car Boot Sale</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 37,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Эндрю Бернэм не может вводить санкции, но может выражать критику и призывать к действиям.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Некорректное представление полномочий Эндрю Бернэма. Он не имеет полномочий вводить санкции.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "city_watch-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-andy-burnham-sets-out-sanctions-34588533-692b219cbb0e",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-sets-out-sanctions-34588533",
+        "original_html": "• Эндрю Бернэм объявил о санкциях против 'неприемлемых' политик израильского правительства, включая запрет на торговлю с незаконными поселениями и новую гуманитарную помощь в Газу. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-sets-out-sanctions-34588533\">MEN Latest News</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 46,
+        "section": "IT и бизнес",
+        "requested_action": "patch",
+        "reason": "Исправление даты на правильную.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
+        "critical_problem": "Неправильная дата события.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
+        "plan_slot_id": "tech_business-02",
+        "candidate_fingerprint": "url-bolton-gov-uk-news-article-2108-local-jobseekers-prospects-boosted-by-bolton-s-jobs-and-skills-fair-3846ef777c11",
+        "original_url_identity": "bolton.gov.uk/news/article/2108/local-jobseekers-prospects-boosted-by-bolton-s-jobs-and-skills-fair",
+        "original_html": "• Ярмарка вакансий и навыков в Bolton пройдет в субботу, 12 сентября 2026 года,на Victoria Square. <a href=\"https://bolton.gov.uk/news/article/2108/local-jobseekers-prospects-boosted-by-bolton-s-jobs-and-skills-fair\">Bolton Council</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 49,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "patch",
+        "reason": "Уточнение состава участников события для полноты информации.",
+        "risk": "product",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "deterministic_rewrite",
         "plan_slot_id": "ticket_radar-01",
         "candidate_fingerprint": "event-event-evanescence-special-guest-poppy-and-k-flay-thu-10-sept-2026-multiple-times-2026-09-10-co-op-live-178c616284e1",
         "original_url_identity": "cooplive.com/events/evanescence-7z58",
-        "original_html": "• <b>Evanescence</b> — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/evanescence-7z58\">Co-op Live</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
+        "original_html": "• <b>Evanescence</b> — 10 сентября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/evanescence-7z58\">Co-op Live</a>",
+        "model_replacement_rejected": "fact_lock: k. flay, poppy",
+        "post_check_passed": false
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::исправление даты на правильный день недели.",
+        "group_key": "главная история дня::уточнение, что дорожка соединяет центр манчестера с несколькими районами, включая кампус этихад.",
         "actions": [
           {
             "line_index": 1,
             "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Исправление даты на правильный день недели.",
-            "risk": "date",
+            "reason": "Уточнение, что дорожка соединяет центр Манчестера с несколькими районами, включая кампус Этихад.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Дата выборов указана неверно. 10 сентября 2026 года — это пятница, а не четверг.",
+            "critical_problem": "Текст не соответствует фактам из источника.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
+            "method": "model_patch",
             "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-if-wilmslow-would-done-because-34586599-df1bb0c0f3a4",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/if-wilmslow-would-done-because-34586599",
-            "original_html": "<b>В четверг, 10 сентября 2026 года, в районе Бернейдж пройдет выборы в совет, где экс-глава совета Бев Крейг оставила вакантное место после своего избрания мэром Большого Манчестера в июле.</b> Зелёные партии выиграли выборы в этом районе в мае с отрывом в 811 голосов и могут сделать заявление, заняв место бывшего лидера Лейбористской партии. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/if-wilmslow-would-done-because-34586599\">MEN</a>",
-            "verification": "structured fact already rendered correctly",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cd79y0pwe3po-2a3b93382df8",
+            "original_url_identity": "bbc.com/news/articles/cd79y0pwe3po",
+            "original_html": "<b>Сегодня, 10 сентября 2026 года, объявлены планы по созданию \"плавающей пешеходной дорожки\", соединяющей центр Манчестера с кампусом Этихад в рамках проекта CyanLines стоимостью £100 миллионов.</b> <a href=\"https://bbc.co.uk/news/articles/cd79y0pwe3po\">BBC Manchester</a>",
             "post_check_passed": true
           }
         ],
@@ -461,68 +453,36 @@
           {
             "line_index": 1,
             "passed": true,
-            "detail": "existing fact verified"
+            "detail": "post-check passed"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::исправление термина 'осуждён' на 'арестовали' для корректного отражения статуса дела.",
+        "group_key": "свежие новости::уточнение, что нападение было ошибочным, важно для точности информации.",
         "actions": [
           {
-            "line_index": 3,
+            "line_index": 4,
             "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Исправление термина 'осуждён' на 'арестовали' для корректного отражения статуса дела.",
-            "risk": "legal",
+            "reason": "Уточнение, что нападение было ошибочным, важно для точности информации.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неправильное использование термина 'осуждён'.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-stockport-monster-who-said-didnt-34588281-1ff90852fe59",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/stockport-monster-who-said-didnt-34588281",
-            "original_html": "• В Stockport снова осудили 60-летнего Джеймса Дэвидсона, который, несмотря на ограничения, продолжал общаться с молодыми девушками, выдавая себя за подростка. Он был приговорён к тюремному сроку после того, как полиция обнаружила у него незадекларированные электронные устройства, а также смогла расшифровать его пароли, которые он отказывался раскрывать. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/stockport-monster-who-said-didnt-34588281\">MEN</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 3,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::дата окончания дорожных работ указана как 9 сентября, что уже прошло на момент публикации.",
-        "actions": [
-          {
-            "line_index": 15,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "patch",
-            "reason": "Дата окончания дорожных работ указана как 9 сентября, что уже прошло на момент публикации.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата окончания дорожных работ указана как 9 сентября, что уже прошло на момент публикации.",
+            "critical_problem": "Указано, что семья стала жертвой поджога, но не уточняется, что это было ошибочное нападение.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "transport-04",
-            "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-blackburn-road-waters-meeting-road-bolton-roadworks-c52022a4d7cd",
-            "original_url_identity": "tfgm.com/travel-updates/travel-alerts/blackburn-road-waters-meeting-road-bolton-roadworks",
-            "original_html": "• Автобусные маршруты в Болтоне изменены из-за дорожных работ на Blackburn Road/Waters Meeting Road до 9 сентября. <a href=\"https://tfgm.com/travel-updates/travel-alerts/blackburn-road-waters-meeting-road-bolton-roadworks\">TfGM</a>",
+            "plan_slot_id": "last_24h-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-innocent-family-caught-up-gangland-34592456-2c3dea6240f4",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/innocent-family-caught-up-gangland-34592456",
+            "original_html": "• Невинная семья в Bury стала жертвой поджога, связанного с разборками банд, когда мужчины в балаклавах залили бензином их дом и подожгли его, пока семья спала. Поджог произошел 18 января 2026 года, а 9 сентября 2026 года Джоди Лайнам был приговорен к шести годам и девяти месяцам тюремного заключения. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/innocent-family-caught-up-gangland-34592456\">MEN</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 15,
+            "line_index": 4,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -530,30 +490,32 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::aston villa участвует в лиге европы, а не в лиге чемпионов.",
+        "group_key": "футбол::уточнение даты дерби против манчестер сити для ясности.",
         "actions": [
           {
-            "line_index": 17,
+            "line_index": 15,
             "section": "Футбол",
-            "requested_action": "replace",
-            "reason": "Aston Villa участвует в Лиге Европы, а не в Лиге чемпионов.",
-            "risk": "factual",
+            "requested_action": "patch",
+            "reason": "Уточнение даты дерби против Манчестер Сити для ясности.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Aston Villa не участвует в Лиге чемпионов, это ошибка.",
+            "critical_problem": "Дата дерби против Манчестер Сити не указана, что может ввести в заблуждение.",
             "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
             "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-alejandro-garnacho-champions-league-villa-34587817-57cd523611aa",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/alejandro-garnacho-champions-league-villa-34587817",
-            "original_html": "• В матче Лиги чемпионов во вторник вечером Aston Villa одержала победу над Club Brugge со счётом 3-2, но Алехандро Гарначо остался на скамейке запасных, что вызывает беспокойство среди болельщиков. Бывший игрок Манчестер Юнайтед не получил ни одного старта с момента перехода в клуб, что сравнивают с ситуацией Харви Эллиотта, который также не смог проявить себя во время аренды. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/alejandro-garnacho-champions-league-villa-34587817\">MEN Manchester United</a>",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-fan-protest-gabriel-34591839-017eb41358b3",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-fan-protest-gabriel-34591839",
+            "original_html": "• 10 сентября 2026 года группа болельщиков Манчестер Юнайтед планирует протест на Old Trafford перед дерби против Манчестер Сити, в то время как остаются вопросы о дебюте Джей Джей Габриэля. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-fan-protest-gabriel-34591839\">MEN Manchester United</a>",
+            "model_replacement_rejected": "fact_lock: 13 сентября",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-manchester-united-lineup-predicted-vs-34592563-cbd552c26e45",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 17,
+            "line_index": 15,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -561,23 +523,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::термин 'банкротство' не соответствует фактическому состоянию организации, которая находится под внешним управлением.",
+        "group_key": "выходные в gm::дата события указана неверно. 13 сентября 2026 года — это воскресенье.",
         "actions": [
           {
             "line_index": 20,
-            "section": "Городской радар",
+            "section": "Выходные в GM",
             "requested_action": "patch",
-            "reason": "Термин 'банкротство' не соответствует фактическому состоянию организации, которая находится под внешним управлением.",
-            "risk": "factual",
+            "reason": "Дата события указана неверно. 13 сентября 2026 года — это воскресенье.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Неправильное использование термина 'банкротство'.",
+            "critical_problem": "Неправильная дата события.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-02",
-            "candidate_fingerprint": "url-bbc-com-news-articles-c20vr05mjrgo-57c1953ab6e9",
-            "original_url_identity": "bbc.com/news/articles/c20vr05mjrgo",
-            "original_html": "• Благотворительная организация Papyrus Prevention of Young Suicide объявила о банкротстве после длительного финансового кризиса. <a href=\"https://bbc.co.uk/news/articles/c20vr05mjrgo\">BBC Manchester</a>",
+            "plan_slot_id": "weekend_activities-04",
+            "candidate_fingerprint": "event-event-areesha-x-stockroom-ring-making-workshop-2026-09-13-stockroom-4538899f6e98",
+            "original_url_identity": "manchestersfinest.com/events/areesha-x-stockroom-ring-making-workshop",
+            "original_html": "• Мастер-класс по изготовлению колец от Areesha X Stockroom пройдет в Stockroom, Merseyway, Stockport SK1 1PW в воскресенье, 13 сентября 2026 года с 11:00 до 15:00. Стоимость участия — £130. Участники смогут создать восковую форму для кольца, которое будет отлито из переработанного серебра. <a href=\"https://manchestersfinest.com/events/areesha-x-stockroom-ring-making-workshop\">Manchester's Finest Events</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -593,23 +555,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "it и бизнес::уточнение даты матча для соответствия фактам.",
+        "group_key": "выходные в gm::дата события указана неверно. 11 сентября 2026 года — это пятница.",
         "actions": [
           {
-            "line_index": 28,
-            "section": "IT и бизнес",
+            "line_index": 27,
+            "section": "Выходные в GM",
             "requested_action": "patch",
-            "reason": "Уточнение даты матча для соответствия фактам.",
+            "reason": "Дата события указана неверно. 11 сентября 2026 года — это пятница.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Неправильная дата события",
+            "critical_problem": "Неправильная дата события.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "tech_business-01",
-            "candidate_fingerprint": "url-prolificnorth-co-uk-news-new-co-branded-payment-card-as-manchester-united-names-fintech-as-official-sleeve-partner-13cfb2cf7b22",
-            "original_url_identity": "prolificnorth.co.uk/news/new-co-branded-payment-card-as-manchester-united-names-fintech-as-official-sleeve-partner",
-            "original_html": "• Manchester United объявил SumUp своим официальным партнером по рукаву; логотип будет размещен на футболках с четверга на матче Лиги чемпионов. <a href=\"https://prolificnorth.co.uk/news/new-co-branded-payment-card-as-manchester-united-names-fintech-as-official-sleeve-partner\">Prolific North Manchester</a>",
+            "plan_slot_id": "weekend_activities-09",
+            "candidate_fingerprint": "event-id-mediacity-event-page-0ca3d429bc24-7f8ba80d7268",
+            "original_url_identity": "mediacityuk.co.uk/events/grub-on-the-docks",
+            "original_html": "• В пятницу, 11 сентября, в Gardens пройдет мероприятие Grub on the Docks. Вход £100. <a href=\"https://mediacityuk.co.uk/events/grub-on-the-docks\">MediaCity What's On</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -617,7 +579,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 28,
+            "line_index": 27,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -625,84 +587,145 @@
         "known_factual_error": true
       },
       {
-        "group_key": "business/tech события для тебя::дата события указана неверно. следует исправить на 10 сентября.",
-        "actions": [
-          {
-            "line_index": 29,
-            "section": "Business/tech события для тебя",
-            "requested_action": "patch",
-            "reason": "Дата события указана неверно. Следует исправить на 10 сентября.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "professional_events-01",
-            "candidate_fingerprint": "event-event-the-future-of-cyber-security-manchester-exclusive-chamber-member-places-thursday-10-sep-8-2026-09-10-old-trafford-f34013ae8b3a",
-            "original_url_identity": "gmchamber.co.uk/events/the-future-of-cyber-security-manchester-exclusive-chamber-member-places",
-            "original_html": "• Конференция \"Будущее кибербезопасности в Манчестере\" пройдет 10 сентября в Old Trafford; бесплатные места для членов палаты, £225 для не членов. <a href=\"https://gmchamber.co.uk/events/the-future-of-cyber-security-manchester-exclusive-chamber-member-places\">GM Chamber Events</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 29,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::дата события должна быть 10 сентября 2026 года.",
+        "group_key": "выходные в gm::уточнение местоположения для соответствия фактам.",
         "actions": [
           {
             "line_index": 32,
-            "section": "Билеты / Ticket Radar",
+            "section": "Выходные в GM",
             "requested_action": "patch",
-            "reason": "Дата события должна быть 10 сентября 2026 года.",
+            "reason": "Уточнение местоположения для соответствия фактам.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Некорректное указание места проведения.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "weekend_activities-13",
+            "candidate_fingerprint": "event-id-jsonld-event-ec2bf1409632-c0b30703e8a2",
+            "original_url_identity": "carbootdirectory.co.uk/listings/bolton-car-boot",
+            "original_html": "• 13 сентября в Macron Stadium — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, есть туалеты. <a href=\"https://carbootdirectory.co.uk/listings/bolton-car-boot\">Bolton Car Boot Sale</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 32,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::эндрю бернэм не может вводить санкции, но может выражать критику и призывать к действиям.",
+        "actions": [
+          {
+            "line_index": 37,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Эндрю Бернэм не может вводить санкции, но может выражать критику и призывать к действиям.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Некорректное представление полномочий Эндрю Бернэма. Он не имеет полномочий вводить санкции.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "city_watch-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-andy-burnham-sets-out-sanctions-34588533-692b219cbb0e",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-sets-out-sanctions-34588533",
+            "original_html": "• Эндрю Бернэм объявил о санкциях против 'неприемлемых' политик израильского правительства, включая запрет на торговлю с незаконными поселениями и новую гуманитарную помощь в Газу. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-sets-out-sanctions-34588533\">MEN Latest News</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 37,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "it и бизнес::исправление даты на правильную.",
+        "actions": [
+          {
+            "line_index": 46,
+            "section": "IT и бизнес",
+            "requested_action": "patch",
+            "reason": "Исправление даты на правильную.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
+            "critical_problem": "Неправильная дата события.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
+            "plan_slot_id": "tech_business-02",
+            "candidate_fingerprint": "url-bolton-gov-uk-news-article-2108-local-jobseekers-prospects-boosted-by-bolton-s-jobs-and-skills-fair-3846ef777c11",
+            "original_url_identity": "bolton.gov.uk/news/article/2108/local-jobseekers-prospects-boosted-by-bolton-s-jobs-and-skills-fair",
+            "original_html": "• Ярмарка вакансий и навыков в Bolton пройдет в субботу, 12 сентября 2026 года,на Victoria Square. <a href=\"https://bolton.gov.uk/news/article/2108/local-jobseekers-prospects-boosted-by-bolton-s-jobs-and-skills-fair\">Bolton Council</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 46,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::уточнение состава участников события для полноты информации.",
+        "actions": [
+          {
+            "line_index": 49,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Уточнение состава участников события для полноты информации.",
+            "risk": "product",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "deterministic_rewrite",
             "plan_slot_id": "ticket_radar-01",
             "candidate_fingerprint": "event-event-evanescence-special-guest-poppy-and-k-flay-thu-10-sept-2026-multiple-times-2026-09-10-co-op-live-178c616284e1",
             "original_url_identity": "cooplive.com/events/evanescence-7z58",
-            "original_html": "• <b>Evanescence</b> — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/evanescence-7z58\">Co-op Live</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
+            "original_html": "• <b>Evanescence</b> — 10 сентября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/evanescence-7z58\">Co-op Live</a>",
+            "model_replacement_rejected": "fact_lock: k. flay, poppy",
+            "post_check_passed": false
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "unresolved",
         "post_checks": [
           {
-            "line_index": 32,
-            "passed": true,
-            "detail": "existing fact verified"
+            "line_index": 49,
+            "passed": false,
+            "detail": "line did not change"
           }
         ],
-        "known_factual_error": true
+        "known_factual_error": false
       }
     ],
     "refetch": {
-      "attempted": 0,
-      "improved": 0,
+      "attempted": 1,
+      "improved": 1,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 2,
+      "skipped": 1,
       "reports": [
         {
-          "fingerprint": "url-tfgm-com-travel-updates-travel-alerts-blackburn-road-waters-meeting-road-bolton-roadworks-c52022a4d7cd",
-          "title": "Blackburn Road/Waters Meeting Road, Bolton - Roadworks",
-          "status": "skipped",
-          "reason": "tfgm_ephemeral_alert",
-          "url": "https://tfgm.com/travel-updates/travel-alerts/blackburn-road-waters-meeting-road-bolton-roadworks",
-          "candidate_evidence_chars": 505
+          "fingerprint": "event-id-jsonld-event-ec2bf1409632-c0b30703e8a2",
+          "title": "Bolton Car Boot Sale",
+          "status": "ok",
+          "url": "https://carbootdirectory.co.uk/listings/bolton-car-boot",
+          "chars": 7064
         },
         {
           "fingerprint": "event-event-evanescence-special-guest-poppy-and-k-flay-thu-10-sept-2026-multiple-times-2026-09-10-co-op-live-178c616284e1",
@@ -714,14 +737,16 @@
         }
       ]
     },
-    "enrich_improved": 7,
-    "false_positive_existing_fact": 6,
+    "enrich_improved": 8,
+    "deterministic_rewrite_rejected": 1,
+    "false_positive_existing_fact": 3,
+    "deterministic_rewrite_built": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 36,
-      "matched_lines": 36,
+      "checked_lines": 50,
+      "matched_lines": 50,
       "applicable_lines": 2,
-      "unmatched_lines": 0,
+      "unmatched_lines": 4,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -732,78 +757,71 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 36,
-      "resolved_in_place": 36,
+      "checked_lines": 54,
+      "resolved_in_place": 54,
       "unresolved": 0,
       "findings": []
     },
-    "status": "resolved"
+    "status": "unresolved"
   },
-  "notes": "Дата выборов должна быть исправлена на правильный день недели.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного отражения статуса дела Джеймса Дэвидсона.; Проблема с датой окончания дорожных работ в Болтоне, требуется обновление информации.; Ошибка в строке 17 связ",
+  "notes": "Уточнена информация о соединении с несколькими районами, включая кампус Этихад.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Требуется уточнение в строке о поджоге, чтобы избежать недопонимания ситуации.; Информация о транспорте в порядке, нарушений нет.; Строка соответствует фактам и географическом",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.8,
+    "confidence": 0.85,
     "critical_errors": [
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "problem": "Дата выборов указана неверно. 10 сентября 2026 года — это пятница, а не четверг.",
-        "risk": "date",
+        "problem": "Текст не соответствует фактам из источника.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 3,
+        "line_index": 4,
         "section": "Свежие новости",
-        "problem": "Неправильное использование термина 'осуждён'.",
-        "risk": "legal",
+        "problem": "Указано, что семья стала жертвой поджога, но не уточняется, что это было ошибочное нападение.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
         "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дата окончания дорожных работ указана как 9 сентября, что уже прошло на момент публикации.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 17,
         "section": "Футбол",
-        "problem": "Aston Villa не участвует в Лиге чемпионов, это ошибка.",
-        "risk": "factual",
+        "problem": "Дата дерби против Манчестер Сити не указана, что может ввести в заблуждение.",
+        "risk": "date",
         "suggested_action": "repair"
       },
       {
         "line_index": 20,
-        "section": "Городской радар",
-        "problem": "Неправильное использование термина 'банкротство'.",
+        "section": "Выходные в GM",
+        "problem": "Неправильная дата события.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 27,
+        "section": "Выходные в GM",
+        "problem": "Неправильная дата события.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 32,
+        "section": "Выходные в GM",
+        "problem": "Некорректное указание места проведения.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 28,
+        "line_index": 37,
+        "section": "Городской радар",
+        "problem": "Некорректное представление полномочий Эндрю Бернэма. Он не имеет полномочий вводить санкции.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 46,
         "section": "IT и бизнес",
-        "problem": "Неправильная дата события",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 29,
-        "section": "Business/tech события для тебя",
-        "problem": "Дата события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 30,
-        "section": "Дальние анонсы",
-        "problem": "Событие находится в Болтоне, который не входит в Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 32,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дата события указана неверно.",
+        "problem": "Неправильная дата события.",
         "risk": "date",
         "suggested_action": "repair"
       }
@@ -813,91 +831,85 @@
         "line_index": 1,
         "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• В пятницу, 10 сентября 2026 года, в районе Бернейдж пройдут выборы в совет, где экс-глава совета Бев Крейг оставила вакантное место после своего избрания мэром Большого Манчестера в июле. Зелёные партии выиграли выборы в этом районе в мае с отрывом в 811 голосов и могут сделать заявление, заняв место бывшего лидера Лейбористской партии.",
-        "reason": "Исправление даты на правильный день недели.",
-        "risk": "date"
+        "replacement_text": "• Сегодня, 10 сентября 2026 года, объявлены планы по созданию \"плавающей пешеходной дорожки\", соединяющей центр Манчестера с другими районами, включая кампус Этихад, в рамках проекта CyanLines стоимостью £100 миллионов.",
+        "reason": "Уточнение, что дорожка соединяет центр Манчестера с несколькими районами, включая кампус Этихад.",
+        "risk": "factual"
       },
       {
-        "line_index": 3,
+        "line_index": 4,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• В Stockport снова арестовали 60-летнего Джеймса Дэвидсона, который, несмотря на ограничения, продолжал общаться с молодыми девушками, выдавая себя за подростка. Он был приговорён к тюремному сроку после того, как полиция обнаружила у него незадекларированные электронные устройства, а также смогла расшифровать его пароли, которые он отказывался раскрывать.",
-        "reason": "Исправление термина 'осуждён' на 'арестовали' для корректного отражения статуса дела.",
-        "risk": "legal"
+        "replacement_text": "• Невинная семья в Bury стала жертвой ошибочного поджога, связанного с разборками банд, когда мужчины в балаклавах залили бензином их дом и подожгли его, пока семья спала. Поджог произошел 18 января 2026 года, а 9 сентября 2026 года Джоди Лайнам был приговорен к шести годам и девяти месяцам тюремного заключения.",
+        "reason": "Уточнение, что нападение было ошибочным, важно для точности информации.",
+        "risk": "factual"
       },
       {
         "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "action": "patch",
-        "replacement_text": "• Автобусные маршруты в Болтоне изменены из-за дорожных работ на Blackburn Road/Waters Meeting Road. Проверьте актуальные изменения на сайте TfGM.",
-        "reason": "Дата окончания дорожных работ указана как 9 сентября, что уже прошло на момент публикации.",
-        "risk": "date"
-      },
-      {
-        "line_index": 17,
         "section": "Футбол",
-        "action": "replace",
-        "replacement_text": "• В матче Лиги Европы во вторник вечером Aston Villa одержала победу над Club Brugge со счётом 3-2, но Алехандро Гарначо остался на скамейке запасных, что вызывает беспокойство среди болельщиков. Бывший игрок Манчестер Юнайтед не получил ни одного старта с момента перехода в клуб, что сравнивают с ситуацией Харви Эллиотта, который также не смог проявить себя во время аренды.",
-        "reason": "Aston Villa участвует в Лиге Европы, а не в Лиге чемпионов.",
-        "risk": "factual"
+        "action": "patch",
+        "replacement_text": "• 10 сентября 2026 года группа болельщиков Манчестер Юнайтед планирует протест на Old Trafford перед дерби против Манчестер Сити, которое состоится 13 сентября, в то время как остаются вопросы о дебюте Джей Джей Габриэля.",
+        "reason": "Уточнение даты дерби против Манчестер Сити для ясности.",
+        "risk": "date"
       },
       {
         "line_index": 20,
-        "section": "Городской радар",
+        "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• Благотворительная организация Papyrus Prevention of Young Suicide перешла под внешнее управление после длительного финансового кризиса.",
-        "reason": "Термин 'банкротство' не соответствует фактическому состоянию организации, которая находится под внешним управлением.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 28,
-        "section": "IT и бизнес",
-        "action": "patch",
-        "replacement_text": "• Manchester United объявил SumUp своим официальным партнером по рукаву; логотип будет размещен на футболках с четверга на матче Лиги чемпионов, который состоится в этот день.",
-        "reason": "Уточнение даты матча для соответствия фактам.",
+        "replacement_text": "• Мастер-класс по изготовлению колец от Areesha X Stockroom пройдет в Stockroom, Merseyway, Stockport SK1 1PW в воскресенье, 13 сентября 2026 года с 11:00 до 15:00. Стоимость участия — £130. Участники смогут создать восковую форму для кольца, которое будет отлито из переработанного серебра.",
+        "reason": "Дата события указана неверно. 13 сентября 2026 года — это воскресенье.",
         "risk": "date"
       },
       {
-        "line_index": 29,
-        "section": "Business/tech события для тебя",
+        "line_index": 27,
+        "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• Конференция \"Будущее кибербезопасности в Манчестере\" пройдет 10 сентября в Old Trafford; бесплатные места для членов палаты, £225 для не членов.",
-        "reason": "Дата события указана неверно. Следует исправить на 10 сентября.",
+        "replacement_text": "• В пятницу, 11 сентября, в Gardens пройдет мероприятие Grub on the Docks. Вход £100.",
+        "reason": "Дата события указана неверно. 11 сентября 2026 года — это пятница.",
         "risk": "date"
-      },
-      {
-        "line_index": 30,
-        "section": "Дальние анонсы",
-        "action": "strip",
-        "reason": "Событие проходит в Болтоне, который не является частью Greater Manchester, что нарушает географический контракт раздела.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 31,
-        "section": "Дальние анонсы",
-        "action": "keep",
-        "reason": "Событие соответствует географическому контракту и содержит всю необходимую информацию.",
-        "risk": "geo"
       },
       {
         "line_index": 32,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 13 сентября в Macron Stadium, Horwich, Bolton — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, есть туалеты.",
+        "reason": "Уточнение местоположения для соответствия фактам.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 37,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Эндрю Бернэм выразил критику в адрес 'неприемлемых' политик израильского правительства и призвал к запрету на торговлю с незаконными поселениями, а также к увеличению гуманитарной помощи в Газу.",
+        "reason": "Эндрю Бернэм не может вводить санкции, но может выражать критику и призывать к действиям.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 46,
+        "section": "IT и бизнес",
+        "action": "patch",
+        "replacement_text": "• Ярмарка вакансий и навыков в Bolton пройдет в субботу, 12 сентября 2026 года, на Victoria Square.",
+        "reason": "Исправление даты на правильную.",
+        "risk": "date"
+      },
+      {
+        "line_index": 49,
         "section": "Билеты / Ticket Radar",
         "action": "patch",
-        "replacement_text": "• Evanescence — 10 сентября, Co-op Live. Билеты и время указаны на официальной странице.",
-        "reason": "Дата события должна быть 10 сентября 2026 года.",
-        "risk": "date"
+        "replacement_text": "• Evanescence с участием Poppy и K. Flay — 10 сентября, Co-op Live. Событие проходит сегодня.",
+        "reason": "Уточнение состава участников события для полноты информации.",
+        "risk": "product"
       }
     ],
     "warnings": [
-      "Отсутствует блок 'Что важно сегодня', что нарушает продуктовую полноту.",
-      "Отсутствует блок 'Русскоязычные концерты и стендап UK', что нарушает продуктовую полноту.",
-      "Отсутствует блок 'Еда, открытия и рынки', что нарушает продуктовую полноту."
+      "Уточнён состав участников события Evanescence для большей информативности.",
+      "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога в 3 элемента.",
+      "Секция 'Еда, открытия и рынки' полностью отсутствует, что ниже минимального порога в 3 элемента."
     ],
-    "notes": "Дата выборов должна быть исправлена на правильный день недели.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного отражения статуса дела Джеймса Дэвидсона.; Проблема с датой окончания дорожных работ в Болтоне, требуется обновление информации.; Ошибка в строке 17 связ",
+    "notes": "Уточнена информация о соединении с несколькими районами, включая кампус Этихад.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Требуется уточнение в строке о поджоге, чтобы избежать недопонимания ситуации.; Информация о транспорте в порядке, нарушений нет.; Строка соответствует фактам и географическом",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 10,
+      "chunk_count": 15,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -915,8 +927,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2740,
-          "duration_seconds": 5.664
+          "estimated_tokens": 2596,
+          "duration_seconds": 2.836
         },
         {
           "chunk_id": "chunk-02",
@@ -933,8 +945,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2451,
-          "duration_seconds": 1.332
+          "estimated_tokens": 2483,
+          "duration_seconds": 1.432
         },
         {
           "chunk_id": "chunk-03",
@@ -951,33 +963,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7096,
-          "duration_seconds": 7.152
+          "estimated_tokens": 7242,
+          "duration_seconds": 2.96
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            15
+            12
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3774,
-          "duration_seconds": 6.438
+          "estimated_tokens": 2420,
+          "duration_seconds": 0.96
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            16,
-            18
+            13,
+            13
+          ],
+          "sections": [
+            "Что важно сегодня"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2679,
+          "duration_seconds": 0.962
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "ok",
+          "line_range": [
+            14,
+            15
           ],
           "sections": [
             "Футбол"
@@ -987,15 +1017,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3778,
-          "duration_seconds": 2.895
+          "estimated_tokens": 3171,
+          "duration_seconds": 2.219
         },
         {
-          "chunk_id": "chunk-06",
+          "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            19,
+            16,
             27
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 7836,
+          "duration_seconds": 2.869
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            28,
+            34
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 6056,
+          "duration_seconds": 57.092
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            35,
+            44
           ],
           "sections": [
             "Городской радар"
@@ -1005,15 +1071,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6783,
-          "duration_seconds": 2.731
+          "estimated_tokens": 7361,
+          "duration_seconds": 72.287
         },
         {
-          "chunk_id": "chunk-07",
+          "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            28,
-            28
+            45,
+            46
           ],
           "sections": [
             "IT и бизнес"
@@ -1023,62 +1089,98 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2628,
-          "duration_seconds": 3.055
+          "estimated_tokens": 3155,
+          "duration_seconds": 7.117
         },
         {
-          "chunk_id": "chunk-08",
+          "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            29,
-            29
+            47,
+            47
           ],
           "sections": [
             "Business/tech события для тебя"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2856,
-          "duration_seconds": 5.998
+          "estimated_tokens": 2863,
+          "duration_seconds": 4.842
         },
         {
-          "chunk_id": "chunk-09",
+          "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
-            30,
-            31
+            48,
+            48
           ],
           "sections": [
             "Дальние анонсы"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 2,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3297,
-          "duration_seconds": 11.819
+          "estimated_tokens": 2720,
+          "duration_seconds": 5.99
         },
         {
-          "chunk_id": "chunk-10",
+          "chunk_id": "chunk-13",
           "status": "ok",
           "line_range": [
-            32,
-            36
+            49,
+            51
           ],
           "sections": [
             "Билеты / Ticket Radar"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
+          "decision": "warn",
+          "critical_error_count": 0,
           "action_count": 1,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 3985,
+          "duration_seconds": 9.822
+        },
+        {
+          "chunk_id": "chunk-14",
+          "status": "ok",
+          "line_range": [
+            52,
+            52
+          ],
+          "sections": [
+            "Крупные концерты вне GM"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5116,
-          "duration_seconds": 22.966
+          "estimated_tokens": 2729,
+          "duration_seconds": 4.976
+        },
+        {
+          "chunk_id": "chunk-15",
+          "status": "ok",
+          "line_range": [
+            53,
+            54
+          ],
+          "sections": [
+            "Русскоязычные концерты и стендап UK"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3318,
+          "duration_seconds": 8.398
         }
       ],
       "reduce": {
@@ -1089,10 +1191,10 @@
         "decision": "warn",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 3,
+        "warning_count": 2,
         "error": "",
-        "estimated_tokens": 10007,
-        "duration_seconds": 21.415
+        "estimated_tokens": 11246,
+        "duration_seconds": 25.146
       },
       "max_workers": 3,
       "chunk_line_target": 12,
