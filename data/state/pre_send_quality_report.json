@@ -2,152 +2,137 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 3 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-09-13",
-  "pipeline_run_id": "20260913T080129+0100",
-  "digest_sha256": "2bb1905c8e57cac423b5560234a4e4863f6850711101d646f16ebd2e9a593a8a",
-  "duration_seconds": 75.82,
+  "run_date_london": "2026-09-14",
+  "pipeline_run_id": "20260914T080145+0100",
+  "digest_sha256": "7595ebe14bdb5d38c7807507ba0787b15add3f6dcb6495e0c886dd45ab57369a",
+  "duration_seconds": 54.483,
   "confidence": 0.85,
   "critical_errors": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Не упомянут арест 19-летнего мужчины по подозрению в нападении.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 3,
+      "line_index": 6,
       "section": "Свежие новости",
-      "problem": "Неправильное использование титула 'премьер-министр' для Эндрю Бернхэма.",
+      "problem": "Энди Бернэм указан как премьер-министр, что неверно. Он мэр Большого Манчестера.",
       "risk": "factual",
       "suggested_action": "repair"
-    },
-    {
-      "line_index": 10,
-      "section": "Что важно сегодня",
-      "problem": "Дата события указана как 12 сентября 2026 года, но выпуск датирован 13 сентября 2026 года.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 11,
-      "section": "Футбол",
-      "problem": "Неверная география: Челси не из Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 13,
-      "section": "Футбол",
-      "problem": "Событие 2017 года не является актуальной новостью.",
-      "risk": "date",
-      "suggested_action": "strip"
     },
     {
       "line_index": 15,
-      "section": "Выходные в GM",
-      "problem": "Wigan находится за пределами Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
+      "section": "Что важно сегодня",
+      "problem": "Дата в тексте не соответствует текущей дате выпуска.",
+      "risk": "date",
+      "suggested_action": "repair"
     },
     {
-      "line_index": 29,
-      "section": "Городской радар",
-      "problem": "Неправильное описание преступления. Оружие и боеприпасы были найдены, но субъект был осужден как наркоторговец.",
+      "line_index": 17,
+      "section": "Футбол",
+      "problem": "Энцо Фернандес не является игроком Манчестер Сити, что может ввести в заблуждение.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 33,
+      "line_index": 22,
+      "section": "Городской радар",
+      "problem": "Alderley Edge находится в Cheshire, а не в Greater Manchester.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 26,
       "section": "Business/tech события для тебя",
       "problem": "Некорректное указание места проведения события.",
       "risk": "geo",
       "suggested_action": "repair"
+    },
+    {
+      "line_index": 27,
+      "section": "Дальние анонсы",
+      "problem": "Событие не соответствует географическому контракту раздела.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 30,
+      "section": "Крупные концерты вне GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 7,
+      "section": "Свежие новости",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'fatal' (death/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "death"
     }
   ],
   "actions": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• Подросток получил потенциально изменяющие жизнь травмы после того, как неизвестное вещество было брошено в него на площади Exchange в Манчестере. 19-летний мужчина был арестован по подозрению в нападении.",
-      "reason": "Необходимо добавить информацию об аресте, чтобы соответствовать фактам из источника.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 3,
+      "line_index": 6,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• В последние дни в Великом Манчестере активно работает группа Patriot Platform, которая, по сообщениям, уже успела набрать сотни новых членов. Это произошло на фоне протестов в Дувре, где участники в черной одежде и масках блокировали порт, что вызвало осуждение со стороны политиков. Мэр Эндрю Бернэм призвал к бдительности в связи с растущей активностью данной группы.",
-      "reason": "Эндрю Бернэм является мэром, а не премьер-министром.",
+      "replacement_text": "• Число бездомных в Большом Манчестере возросло до 444 в июне, увеличившись на 10,4% по сравнению с прошлым годом, при этом город Манчестер показал наибольшее увеличение. Мэр Энди Бернэм пообещал решить проблему бездомности к Рождеству с помощью финансирования в £442 млн.",
+      "reason": "Исправление неверного указания должности Энди Бернэма.",
       "risk": "factual"
-    },
-    {
-      "line_index": 10,
-      "section": "Что важно сегодня",
-      "action": "patch",
-      "replacement_text": "• В Манчестерском аэропорту 13 сентября 2026 года задержаны несколько рейсов, но отмен нет; пассажиров просят проверять информацию о рейсах и приходить заранее.",
-      "reason": "Дата события должна соответствовать дате выпуска.",
-      "risk": "date"
-    },
-    {
-      "line_index": 11,
-      "section": "Футбол",
-      "action": "strip",
-      "reason": "Челси не является субъектом из Greater Manchester.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 12,
-      "section": "Футбол",
-      "action": "keep",
-      "reason": "Информация о новом отеле в Манчестере соответствует географическому контракту.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 13,
-      "section": "Футбол",
-      "action": "strip",
-      "reason": "Событие 2017 года не является актуальной новостью.",
-      "risk": "date",
-      "replacement_text": ""
     },
     {
       "line_index": 15,
-      "section": "Выходные в GM",
+      "section": "Что важно сегодня",
+      "action": "patch",
+      "replacement_text": "• В аэропорту Манчестера сегодня наблюдаются задержки рейсов, но отмен нет, после сбоя в системе управления воздушным движением на этой неделе. Пассажирам рекомендуется проверять информацию о рейсах и прибывать в аэропорт заранее. (Источник: MEN)",
+      "reason": "Дата в тексте не соответствует текущей дате выпуска.",
+      "risk": "date"
+    },
+    {
+      "line_index": 17,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• Энцо Мареска и Энцо Фернандес получили признание после победы Манчестер Сити над Манчестер Юнайтед 14 сентября 2026 года, заткнув за пояс своих критиков. Они сыграли ключевую роль в матче, что вызвало восторг у болельщиков.",
+      "reason": "Уточнение, что Энцо Мареска также упоминается в источнике и связан с Манчестер Сити.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 22,
+      "section": "Городской радар",
       "action": "strip",
-      "reason": "Wigan не входит в Greater Manchester, нарушение географического контракта.",
+      "reason": "Alderley Edge находится в Cheshire, а не в Greater Manchester.",
       "risk": "geo",
       "replacement_text": ""
     },
     {
-      "line_index": 29,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Кэмерон Касвелл, 23 года, был осужден в Манчестерском королевском суде за торговлю наркотиками после того, как полиция обнаружила оружие и боеприпасы за холодильником в доме его матери в Солфорде.",
-      "reason": "Уточнение обвинения в соответствии с источником.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 33,
+      "line_index": 26,
       "section": "Business/tech события для тебя",
       "action": "patch",
-      "replacement_text": "• 17 сентября в 8:30-10:30 в AC Marriott Manchester Salford Quays пройдет Networking Central, где спикер Тахира Сулейман обсудит внедрение AI для малых и средних предприятий. Бесплатно для членов палаты, £22 для остальных.",
+      "replacement_text": "• 17 сентября с 8:30 до 10:30 в AC Marriott Manchester Salford Quays пройдет Networking Central. Спикер Тахира Сулейман обсудит внедрение AI для малых и средних предприятий. Участие бесплатно для членов палаты, £22 для остальных.",
       "reason": "Уточнение места проведения события в соответствии с данными источника.",
       "risk": "geo"
+    },
+    {
+      "line_index": 27,
+      "section": "Дальние анонсы",
+      "action": "strip",
+      "reason": "Событие в Manchester не соответствует контракту 'Дальние анонсы', который требует события вне GM.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 30,
+      "section": "Крупные концерты вне GM",
+      "action": "patch",
+      "replacement_text": "• Hilary Duff — 15 сентября, The O2 (Pop). Билеты и время указаны на официальной странице.",
+      "reason": "Дата события должна быть 15 сентября, как указано в источнике.",
+      "risk": "date"
     }
   ],
   "warnings": [
-    "Блок 'Выходные в GM' содержит только три события, что ниже минимального требования в шесть событий. Это может повлиять на полноту раздела.",
-    "Недостаточное количество новостей в секции 'Свежие новости' и 'Что важно сегодня'.",
-    "Отсутствие блока 'Русскоязычные концерты и стендап UK'."
+    "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога в 3 элемента.",
+    "Секция 'Русскоязычные концерты и стендап UK' отсутствует, что ниже минимального порога в 1 элемент.",
+    "Секция 'Еда, открытия и рынки' отсутствует, что ниже минимального порога в 3 элемента."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -155,288 +140,264 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 5,
-      "Общественный транспорт сегодня": 2,
+      "Свежие новости": 9,
+      "Общественный транспорт сегодня": 3,
       "Что важно сегодня": 1,
       "Футбол": 3,
-      "Выходные в GM": 12,
-      "Городской радар": 4,
+      "Городской радар": 7,
       "Business/tech события для тебя": 1,
-      "Билеты / Ticket Radar": 7,
-      "Крупные концерты вне GM": 3
+      "Дальние анонсы": 1,
+      "Билеты / Ticket Radar": 2,
+      "Крупные концерты вне GM": 1
     },
     "core_counts": {
       "Погода": 1,
       "Что важно сегодня": 1,
-      "Свежие новости": 5,
+      "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 4,
-      "Выходные в GM": 12,
-      "Билеты / Ticket Radar": 7,
+      "Городской радар": 7,
+      "Билеты / Ticket Radar": 2,
       "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 1,
       "Футбол": 3
     },
-    "ticket_items": 10,
-    "core_items": 28,
+    "ticket_items": 3,
+    "core_items": 23,
     "writer_quality_counts": {
-      "included_candidates": 43,
-      "rendered_candidates": 40,
+      "included_candidates": 31,
+      "rendered_candidates": 30,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 2,
-      "replaced_from_plan_backup": 1,
-      "removed_with_reason": 2
+      "dropped_low_quality": 1,
+      "replaced_from_plan_backup": 0,
+      "removed_with_reason": 1
     },
     "source_health_counts": {
-      "ok": 95,
+      "ok": 102,
       "partial": 2,
-      "stale": 11,
-      "empty": 16,
-      "failed": 5,
-      "zero_yield": 70,
+      "stale": 9,
+      "empty": 12,
+      "failed": 4,
+      "zero_yield": 88,
       "no_contribution_breakdown": {
-        "fetch_failed": 5,
-        "all_rejected": 70,
-        "idle_no_items": 27
+        "fetch_failed": 4,
+        "all_rejected": 88,
+        "idle_no_items": 22
       },
       "zero_contribution_by_stage": {
-        "written": 35,
-        "parsed": 27,
-        "selected": 35,
-        "fetched": 5
+        "selected": 40,
+        "written": 48,
+        "parsed": 22,
+        "fetched": 4
       },
-      "weekend_source_coverage_incidents": 51
+      "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 1 item(s), emergency floor 3",
-      "Свежие новости: 5 item(s), emergency floor 6",
-      "Городской радар: 4 item(s), emergency floor 5",
       "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "source failures: 5"
+      "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 29 has unchecked number/date token(s): 23",
-      "patch for line 33 has unchecked number/date token(s): 10:30, 8:30"
+      "patch for line 6 has unchecked number/date token(s): 10,4, 442, 444",
+      "patch for line 26 has unchecked number/date token(s): 10:30, 8:30"
     ],
     "can_apply_actions": true,
-    "action_count": 9
+    "action_count": 7
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 40,
-    "matched_lines": 40,
-    "applicable_lines": 0,
-    "unmatched_lines": 3,
-    "critical_omission_count": 0,
-    "critical_omissions": [],
+    "checked_lines": 30,
+    "matched_lines": 30,
+    "applicable_lines": 1,
+    "unmatched_lines": 0,
+    "critical_omission_count": 1,
+    "critical_omissions": [
+      {
+        "line_index": 7,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/inadequate-manchester-care-service-rapped-34605612",
+        "concept": "death",
+        "obligation": "who/what",
+        "source_hit": "fatal"
+      }
+    ],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 0,
+    "pulled_for_rework": 1,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 5,
-    "attempted": 3,
-    "applied": 3,
-    "model_patch_applied": 1,
+    "requested": 6,
+    "attempted": 4,
+    "applied": 4,
+    "model_patch_applied": 2,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 1,
     "stripped": 1,
-    "unresolved": 0,
-    "blocking_unresolved": 0,
+    "unresolved": 1,
+    "blocking_unresolved": 1,
     "resolved": 5,
-    "resolved_in_place": 3,
-    "resolved_by_replacement": 1,
+    "resolved_in_place": 4,
+    "resolved_by_replacement": 0,
     "resolved_by_removal": 1,
-    "fact_lock_rejected": 1,
-    "enrich_attempted": 5,
+    "fact_lock_rejected": 0,
+    "enrich_attempted": 6,
     "post_check_errors": [],
     "geo_contract_rejected": [
       {
-        "line_index": 11,
-        "section": "Футбол",
-        "geo_scope": "gm_subject",
-        "reason": "Челси не является субъектом из Greater Manchester.",
-        "gm_anchor_present": false
-      },
-      {
-        "line_index": 12,
-        "section": "Футбол",
-        "geo_scope": "gm_subject",
-        "reason": "Информация о новом отеле в Манчестере соответствует географическому контракту.",
-        "gm_anchor_present": false
-      },
-      {
-        "line_index": 15,
-        "section": "Выходные в GM",
-        "geo_scope": "gm",
-        "reason": "Wigan не входит в Greater Manchester, нарушение географического контракта.",
-        "gm_anchor_present": true
-      },
-      {
-        "line_index": 33,
+        "line_index": 26,
         "section": "Business/tech события для тебя",
         "geo_scope": "gm",
         "reason": "Уточнение места проведения события в соответствии с данными источника.",
+        "gm_anchor_present": true
+      },
+      {
+        "line_index": 27,
+        "section": "Дальние анонсы",
+        "geo_scope": "gm",
+        "reason": "Событие в Manchester не соответствует контракту 'Дальние анонсы', который требует события вне GM.",
         "gm_anchor_present": true
       }
     ],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "requested_action": "patch",
-        "reason": "Необходимо добавить информацию об аресте, чтобы соответствовать фактам из источника.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Не упомянут арест 19-летнего мужчины по подозрению в нападении.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-exchange-square-incident-leaves-teenager-34609162-945d928155cb",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/exchange-square-incident-leaves-teenager-34609162",
-        "original_html": "<b>Подросток получил потенциально изменяющие жизнь травмы после того, как неизвестное вещество было брошено в него на площади Exchange в Манчестере.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/exchange-square-incident-leaves-teenager-34609162\">MEN</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 3,
+        "line_index": 6,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Эндрю Бернэм является мэром, а не премьер-министром.",
+        "reason": "Исправление неверного указания должности Энди Бернэма.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неправильное использование титула 'премьер-министр' для Эндрю Бернхэма.",
+        "critical_problem": "Энди Бернэм указан как премьер-министр, что неверно. Он мэр Большого Манчестера.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-masked-far-right-group-quietly-34579576-f1a980e7f0eb",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/masked-far-right-group-quietly-34579576",
-        "original_html": "• В последние дни в Великом Манчестере активно работает группа Patriot Platform, которая, по сообщениям, уже успела набрать сотни новых членов. Это произошло на фоне протестов в Дувре, где участники в черной одежде и масках блокировали порт, что вызвало осуждение со стороны политиков. Премьер-министр Эндрю Бернэм призвал к бдительности в связи с растущей активностью данной группы. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/masked-far-right-group-quietly-34579576\">MEN</a>",
+        "plan_slot_id": "last_24h-04",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-rough-sleeping-rises-greater-manchester-34584127-126eeb05e1a5",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/rough-sleeping-rises-greater-manchester-34584127",
+        "original_html": "• Число бездомных в Большом Манчестере возросло до 444 в июне, увеличившись на 10,4% по сравнению с прошлым годом, при этом город Манчестер показал наибольшее увеличение. Премьер-министр Энди Бернэм пообещал решить проблему бездомности к Рождеству с помощью финансирования в £442 млн. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/rough-sleeping-rises-greater-manchester-34584127\">MEN</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 10,
+        "line_index": 15,
         "section": "Что важно сегодня",
         "requested_action": "patch",
-        "reason": "Дата события должна соответствовать дате выпуска.",
+        "reason": "Дата в тексте не соответствует текущей дате выпуска.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события указана как 12 сентября 2026 года, но выпуск датирован 13 сентября 2026 года.",
+        "critical_problem": "Дата в тексте не соответствует текущей дате выпуска.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "today_focus-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-delays-september-13-34609623-21abab2b7489",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchester-airport-delays-september-13-34609623",
+        "original_html": "• В аэропорту Манчестера сегодня наблюдаются задержки рейсов, но отмен нет, после сбоя в системе управления воздушным движением на этой неделе. Пассажирам рекомендуется проверять информацию о рейсах и прибывать в аэропорт заранее. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchester-airport-delays-september-13-34609623\">MEN</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 17,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Уточнение, что Энцо Мареска также упоминается в источнике и связан с Манчестер Сити.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Энцо Фернандес не является игроком Манчестер Сити, что может ввести в заблуждение.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "football-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-new-hero-who-34612050-dacfe76c356e",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-new-hero-who-34612050",
+        "original_html": "• Энцо Фернандес получил признание после победы Манчестер Сити над Манчестер Юнайтед 14 сентября 2026 года, заткнув за пояс своих критиков. Он сыграл ключевую роль в матче, что вызвало восторг у болельщиков. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-new-hero-who-34612050\">MEN Manchester City</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 22,
+        "section": "Городской радар",
+        "requested_action": "strip",
+        "reason": "Alderley Edge находится в Cheshire, а не в Greater Manchester.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Alderley Edge находится в Cheshire, а не в Greater Manchester.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "today_focus-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-full-list-delayed-cancelled-flights-34606944-cf7f6f30ccf5",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/full-list-delayed-cancelled-flights-34606944",
-        "original_html": "• В Манчестерском аэропорту 12 сентября 2026 года задержаны несколько рейсов, но отмен нет; пассажиров просят проверять информацию о рейсах и приходить заранее. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/full-list-delayed-cancelled-flights-34606944\">MEN</a>",
-        "model_replacement_rejected": "fact_lock: 13 сентября 2026",
+        "plan_slot_id": "city_watch-04",
+        "candidate_fingerprint": "url-manchestermill-co-uk-the-private-school-money-couldnt-save-why-did-alderley-edge-school-for-girls-close-b17a3d01ae6a",
+        "original_url_identity": "manchestermill.co.uk/the-private-school-money-couldnt-save-why-did-alderley-edge-school-for-girls-close",
+        "original_html": "• Школа Alderley Edge для девочек закрылась, несмотря на финансовую поддержку родителей. <a href=\"https://manchestermill.co.uk/the-private-school-money-couldnt-save-why-did-alderley-edge-school-for-girls-close\">The Mill</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 13,
-        "section": "Футбол",
-        "requested_action": "strip",
-        "reason": "Событие 2017 года не является актуальной новостью.",
+        "line_index": 30,
+        "section": "Крупные концерты вне GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 15 сентября, как указано в источнике.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Событие 2017 года не является актуальной новостью.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "football-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-city-fight-guardiola-34590235-b6e33fc05685",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-city-fight-guardiola-34590235",
-        "original_html": "• В 2017 году после победы Манчестер Сити в дерби произошла драка в раздевалке Манчестер Юнайтед, и Пеп Гвардиола извинился, но не стал винить своих игроков. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-city-fight-guardiola-34590235\">MEN Manchester United</a>",
-        "replacement_fingerprint": "url-theguardian-com-football-2026-sep-12-febrile-manchester-derby-awaits-amid-growing-rift-between-united-fans-and-club-4d08fc9dfcc6",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 29,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Уточнение обвинения в соответствии с источником.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильное описание преступления. Оружие и боеприпасы были найдены, но субъект был осужден как наркоторговец.",
+        "critical_problem": "Дата события указана неверно.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-salford-drug-dealer-behind-bars-34604837-5d3bb75c2460",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/salford-drug-dealer-behind-bars-34604837",
-        "original_html": "• Кэмерон Касвелл, 23 года, был осужден в Манчестерском королевском суде после того, как полиция обнаружила оружие и боеприпасы за холодильником в доме его матери в Солфорде. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/salford-drug-dealer-behind-bars-34604837\">MEN Latest News</a>",
+        "plan_slot_id": "outside_gm_tickets-01",
+        "candidate_fingerprint": "event-event-hilary-duff-the-lucky-me-tour-2026-09-15-the-o2-73ebda3c39a7",
+        "original_url_identity": "ticketmaster.co.uk/hilary-duff-the-lucky-me-tour-london-15-09-2026/event/35006451CD7E81FD",
+        "original_html": "• <b>Hilary Duff</b> — 15 сентября, The O2 (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/hilary-duff-the-lucky-me-tour-london-15-09-2026/event/35006451CD7E81FD\">Ticketmaster</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
+      },
+      {
+        "line_index": 7,
+        "section": "Свежие новости",
+        "requested_action": "replace",
+        "reason": "critical source fact dropped in translation: 'fatal' (death/who/what) has no Russian rendering in the shipped line",
+        "risk": "translation",
+        "critical_error": true,
+        "critical_problem": "",
+        "completeness_concept": "death",
+        "outcome": "unresolved",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-05",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-inadequate-manchester-care-service-rapped-34605612-2cf0e02dac2c",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/inadequate-manchester-care-service-rapped-34605612",
+        "original_html": "• Служба ухода в Манчестере была признана 'недостаточной' после выявления серьезных нарушений в ходе последней проверки. Инспекторы отметили, что у компании South Manchester Care Limited, расположенной в Chorlton, были проблемы с обеспечением пациентов необходимыми медикаментами, а также случаи агрессивного поведения со стороны пользователей, что ставило под угрозу безопасность сотрудников. Основатель компании Амаан Хабиб признал серьезность ситуации и пообещал внести необходимые улучшения. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/inadequate-manchester-care-service-rapped-34605612\">MEN</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-1200-hgv-journeys-775-metre-34604390-76cfa8ee2afa",
+        "post_check_passed": false
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::необходимо добавить информацию об аресте, чтобы соответствовать фактам из источника.",
+        "group_key": "свежие новости::исправление неверного указания должности энди бернэма.",
         "actions": [
           {
-            "line_index": 1,
-            "section": "Главная история дня",
-            "requested_action": "patch",
-            "reason": "Необходимо добавить информацию об аресте, чтобы соответствовать фактам из источника.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Не упомянут арест 19-летнего мужчины по подозрению в нападении.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-exchange-square-incident-leaves-teenager-34609162-945d928155cb",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/exchange-square-incident-leaves-teenager-34609162",
-            "original_html": "<b>Подросток получил потенциально изменяющие жизнь травмы после того, как неизвестное вещество было брошено в него на площади Exchange в Манчестере.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/exchange-square-incident-leaves-teenager-34609162\">MEN</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 1,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::эндрю бернэм является мэром, а не премьер-министром.",
-        "actions": [
-          {
-            "line_index": 3,
+            "line_index": 6,
             "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Эндрю Бернэм является мэром, а не премьер-министром.",
+            "reason": "Исправление неверного указания должности Энди Бернэма.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неправильное использование титула 'премьер-министр' для Эндрю Бернхэма.",
+            "critical_problem": "Энди Бернэм указан как премьер-министр, что неверно. Он мэр Большого Манчестера.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-masked-far-right-group-quietly-34579576-f1a980e7f0eb",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/masked-far-right-group-quietly-34579576",
-            "original_html": "• В последние дни в Великом Манчестере активно работает группа Patriot Platform, которая, по сообщениям, уже успела набрать сотни новых членов. Это произошло на фоне протестов в Дувре, где участники в черной одежде и масках блокировали порт, что вызвало осуждение со стороны политиков. Премьер-министр Эндрю Бернэм призвал к бдительности в связи с растущей активностью данной группы. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/masked-far-right-group-quietly-34579576\">MEN</a>",
+            "plan_slot_id": "last_24h-04",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-rough-sleeping-rises-greater-manchester-34584127-126eeb05e1a5",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/rough-sleeping-rises-greater-manchester-34584127",
+            "original_html": "• Число бездомных в Большом Манчестере возросло до 444 в июне, увеличившись на 10,4% по сравнению с прошлым годом, при этом город Манчестер показал наибольшее увеличение. Премьер-министр Энди Бернэм пообещал решить проблему бездомности к Рождеству с помощью финансирования в £442 млн. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/rough-sleeping-rises-greater-manchester-34584127\">MEN</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -444,7 +405,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 3,
+            "line_index": 6,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -452,24 +413,85 @@
         "known_factual_error": true
       },
       {
-        "group_key": "что важно сегодня::дата события должна соответствовать дате выпуска.",
+        "group_key": "что важно сегодня::дата в тексте не соответствует текущей дате выпуска.",
         "actions": [
           {
-            "line_index": 10,
+            "line_index": 15,
             "section": "Что важно сегодня",
             "requested_action": "patch",
-            "reason": "Дата события должна соответствовать дате выпуска.",
+            "reason": "Дата в тексте не соответствует текущей дате выпуска.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата события указана как 12 сентября 2026 года, но выпуск датирован 13 сентября 2026 года.",
+            "critical_problem": "Дата в тексте не соответствует текущей дате выпуска.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "today_focus-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-delays-september-13-34609623-21abab2b7489",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchester-airport-delays-september-13-34609623",
+            "original_html": "• В аэропорту Манчестера сегодня наблюдаются задержки рейсов, но отмен нет, после сбоя в системе управления воздушным движением на этой неделе. Пассажирам рекомендуется проверять информацию о рейсах и прибывать в аэропорт заранее. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchester-airport-delays-september-13-34609623\">MEN</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 15,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::уточнение, что энцо мареска также упоминается в источнике и связан с манчестер сити.",
+        "actions": [
+          {
+            "line_index": 17,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Уточнение, что Энцо Мареска также упоминается в источнике и связан с Манчестер Сити.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Энцо Фернандес не является игроком Манчестер Сити, что может ввести в заблуждение.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "football-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-new-hero-who-34612050-dacfe76c356e",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-new-hero-who-34612050",
+            "original_html": "• Энцо Фернандес получил признание после победы Манчестер Сити над Манчестер Юнайтед 14 сентября 2026 года, заткнув за пояс своих критиков. Он сыграл ключевую роль в матче, что вызвало восторг у болельщиков. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-new-hero-who-34612050\">MEN Manchester City</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 17,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::alderley edge находится в cheshire, а не в greater manchester.",
+        "actions": [
+          {
+            "line_index": 22,
+            "section": "Городской радар",
+            "requested_action": "strip",
+            "reason": "Alderley Edge находится в Cheshire, а не в Greater Manchester.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Alderley Edge находится в Cheshire, а не в Greater Manchester.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "today_focus-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-full-list-delayed-cancelled-flights-34606944-cf7f6f30ccf5",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/full-list-delayed-cancelled-flights-34606944",
-            "original_html": "• В Манчестерском аэропорту 12 сентября 2026 года задержаны несколько рейсов, но отмен нет; пассажиров просят проверять информацию о рейсах и приходить заранее. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/full-list-delayed-cancelled-flights-34606944\">MEN</a>",
-            "model_replacement_rejected": "fact_lock: 13 сентября 2026",
+            "plan_slot_id": "city_watch-04",
+            "candidate_fingerprint": "url-manchestermill-co-uk-the-private-school-money-couldnt-save-why-did-alderley-edge-school-for-girls-close-b17a3d01ae6a",
+            "original_url_identity": "manchestermill.co.uk/the-private-school-money-couldnt-save-why-did-alderley-edge-school-for-girls-close",
+            "original_html": "• Школа Alderley Edge для девочек закрылась, несмотря на финансовую поддержку родителей. <a href=\"https://manchestermill.co.uk/the-private-school-money-couldnt-save-why-did-alderley-edge-school-for-girls-close\">The Mill</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -478,7 +500,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 10,
+            "line_index": 22,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -486,55 +508,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::событие 2017 года не является актуальной новостью.",
+        "group_key": "крупные концерты вне gm::дата события должна быть 15 сентября, как указано в источнике.",
         "actions": [
           {
-            "line_index": 13,
-            "section": "Футбол",
-            "requested_action": "strip",
-            "reason": "Событие 2017 года не является актуальной новостью.",
+            "line_index": 30,
+            "section": "Крупные концерты вне GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 15 сентября, как указано в источнике.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Событие 2017 года не является актуальной новостью.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "football-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-city-fight-guardiola-34590235-b6e33fc05685",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-city-fight-guardiola-34590235",
-            "original_html": "• В 2017 году после победы Манчестер Сити в дерби произошла драка в раздевалке Манчестер Юнайтед, и Пеп Гвардиола извинился, но не стал винить своих игроков. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-city-fight-guardiola-34590235\">MEN Manchester United</a>",
-            "replacement_fingerprint": "url-theguardian-com-football-2026-sep-12-febrile-manchester-derby-awaits-amid-growing-rift-between-united-fans-and-club-4d08fc9dfcc6",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 13,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::уточнение обвинения в соответствии с источником.",
-        "actions": [
-          {
-            "line_index": 29,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Уточнение обвинения в соответствии с источником.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неправильное описание преступления. Оружие и боеприпасы были найдены, но субъект был осужден как наркоторговец.",
+            "critical_problem": "Дата события указана неверно.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-salford-drug-dealer-behind-bars-34604837-5d3bb75c2460",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/salford-drug-dealer-behind-bars-34604837",
-            "original_html": "• Кэмерон Касвелл, 23 года, был осужден в Манчестерском королевском суде после того, как полиция обнаружила оружие и боеприпасы за холодильником в доме его матери в Солфорде. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/salford-drug-dealer-behind-bars-34604837\">MEN Latest News</a>",
+            "plan_slot_id": "outside_gm_tickets-01",
+            "candidate_fingerprint": "event-event-hilary-duff-the-lucky-me-tour-2026-09-15-the-o2-73ebda3c39a7",
+            "original_url_identity": "ticketmaster.co.uk/hilary-duff-the-lucky-me-tour-london-15-09-2026/event/35006451CD7E81FD",
+            "original_html": "• <b>Hilary Duff</b> — 15 сентября, The O2 (Pop). Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/hilary-duff-the-lucky-me-tour-london-15-09-2026/event/35006451CD7E81FD\">Ticketmaster</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -542,9 +532,41 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 29,
+            "line_index": 30,
             "passed": true,
             "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::critical source fact dropped in translation: 'fatal' (death/who/what) has no russian rendering in the shipped line",
+        "actions": [
+          {
+            "line_index": 7,
+            "section": "Свежие новости",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'fatal' (death/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
+            "critical_error": true,
+            "critical_problem": "",
+            "completeness_concept": "death",
+            "outcome": "unresolved",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-05",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-inadequate-manchester-care-service-rapped-34605612-2cf0e02dac2c",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/inadequate-manchester-care-service-rapped-34605612",
+            "original_html": "• Служба ухода в Манчестере была признана 'недостаточной' после выявления серьезных нарушений в ходе последней проверки. Инспекторы отметили, что у компании South Manchester Care Limited, расположенной в Chorlton, были проблемы с обеспечением пациентов необходимыми медикаментами, а также случаи агрессивного поведения со стороны пользователей, что ставило под угрозу безопасность сотрудников. Основатель компании Амаан Хабиб признал серьезность ситуации и пообещал внести необходимые улучшения. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/inadequate-manchester-care-service-rapped-34605612\">MEN</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-1200-hgv-journeys-775-metre-34604390-76cfa8ee2afa",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 7,
+            "passed": false,
+            "detail": "shared prose policy still fails"
           }
         ],
         "known_factual_error": true
@@ -555,18 +577,28 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 0
+      "skipped": 1,
+      "reports": [
+        {
+          "fingerprint": "event-event-hilary-duff-the-lucky-me-tour-2026-09-15-the-o2-73ebda3c39a7",
+          "title": "Hilary Duff: the lucky me tour — event 2026-09-15 — public sale 2026-02-20 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/hilary-duff-the-lucky-me-tour-london-15-09-2026/event/35006451CD7E81FD",
+          "candidate_evidence_chars": 327
+        }
+      ]
     },
-    "enrich_improved": 5,
+    "enrich_improved": 6,
     "false_positive_existing_fact": 2,
-    "deterministic_rewrite_rejected": 1,
     "no_eligible_backup": 1,
+    "deterministic_rewrite_rejected": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 39,
-      "matched_lines": 39,
+      "checked_lines": 29,
+      "matched_lines": 29,
       "applicable_lines": 0,
-      "unmatched_lines": 3,
+      "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -577,155 +609,142 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 42,
-      "resolved_in_place": 42,
-      "unresolved": 0,
-      "findings": []
+      "checked_lines": 29,
+      "resolved_in_place": 28,
+      "unresolved": 1,
+      "findings": [
+        {
+          "line_index": 7,
+          "section": "Свежие новости",
+          "outcome": "unresolved",
+          "code": "language_policy_defect",
+          "severity": "warning"
+        }
+      ]
     },
-    "status": "resolved"
+    "status": "unresolved"
   },
-  "notes": "Добавьте информацию об аресте, чтобы обеспечить полноту и точность сообщения.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление титула Эндрю Бернхэма с 'премьер-министр' на 'мэр' необходимо для точности.; Обе строки корректны и соответствуют требованиям географии и содержания.; Дата события д",
+  "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в указании должности Энди Бернэма.; Все строки соответствуют требованиям и содержат актуальную информацию о транспортных изменениях в Greater Manchester.; Дата в т",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.85,
     "critical_errors": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Не упомянут арест 19-летнего мужчины по подозрению в нападении.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 3,
+        "line_index": 6,
         "section": "Свежие новости",
-        "problem": "Неправильное использование титула 'премьер-министр' для Эндрю Бернхэма.",
+        "problem": "Энди Бернэм указан как премьер-министр, что неверно. Он мэр Большого Манчестера.",
         "risk": "factual",
         "suggested_action": "repair"
-      },
-      {
-        "line_index": 10,
-        "section": "Что важно сегодня",
-        "problem": "Дата события указана как 12 сентября 2026 года, но выпуск датирован 13 сентября 2026 года.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 11,
-        "section": "Футбол",
-        "problem": "Неверная география: Челси не из Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 13,
-        "section": "Футбол",
-        "problem": "Событие 2017 года не является актуальной новостью.",
-        "risk": "date",
-        "suggested_action": "strip"
       },
       {
         "line_index": 15,
-        "section": "Выходные в GM",
-        "problem": "Wigan находится за пределами Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
+        "section": "Что важно сегодня",
+        "problem": "Дата в тексте не соответствует текущей дате выпуска.",
+        "risk": "date",
+        "suggested_action": "repair"
       },
       {
-        "line_index": 29,
-        "section": "Городской радар",
-        "problem": "Неправильное описание преступления. Оружие и боеприпасы были найдены, но субъект был осужден как наркоторговец.",
+        "line_index": 17,
+        "section": "Футбол",
+        "problem": "Энцо Фернандес не является игроком Манчестер Сити, что может ввести в заблуждение.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 33,
+        "line_index": 22,
+        "section": "Городской радар",
+        "problem": "Alderley Edge находится в Cheshire, а не в Greater Manchester.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 26,
         "section": "Business/tech события для тебя",
         "problem": "Некорректное указание места проведения события.",
         "risk": "geo",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 27,
+        "section": "Дальние анонсы",
+        "problem": "Событие не соответствует географическому контракту раздела.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 30,
+        "section": "Крупные концерты вне GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
         "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• Подросток получил потенциально изменяющие жизнь травмы после того, как неизвестное вещество было брошено в него на площади Exchange в Манчестере. 19-летний мужчина был арестован по подозрению в нападении.",
-        "reason": "Необходимо добавить информацию об аресте, чтобы соответствовать фактам из источника.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 3,
+        "line_index": 6,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• В последние дни в Великом Манчестере активно работает группа Patriot Platform, которая, по сообщениям, уже успела набрать сотни новых членов. Это произошло на фоне протестов в Дувре, где участники в черной одежде и масках блокировали порт, что вызвало осуждение со стороны политиков. Мэр Эндрю Бернэм призвал к бдительности в связи с растущей активностью данной группы.",
-        "reason": "Эндрю Бернэм является мэром, а не премьер-министром.",
+        "replacement_text": "• Число бездомных в Большом Манчестере возросло до 444 в июне, увеличившись на 10,4% по сравнению с прошлым годом, при этом город Манчестер показал наибольшее увеличение. Мэр Энди Бернэм пообещал решить проблему бездомности к Рождеству с помощью финансирования в £442 млн.",
+        "reason": "Исправление неверного указания должности Энди Бернэма.",
         "risk": "factual"
-      },
-      {
-        "line_index": 10,
-        "section": "Что важно сегодня",
-        "action": "patch",
-        "replacement_text": "• В Манчестерском аэропорту 13 сентября 2026 года задержаны несколько рейсов, но отмен нет; пассажиров просят проверять информацию о рейсах и приходить заранее.",
-        "reason": "Дата события должна соответствовать дате выпуска.",
-        "risk": "date"
-      },
-      {
-        "line_index": 11,
-        "section": "Футбол",
-        "action": "strip",
-        "reason": "Челси не является субъектом из Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 12,
-        "section": "Футбол",
-        "action": "keep",
-        "reason": "Информация о новом отеле в Манчестере соответствует географическому контракту.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 13,
-        "section": "Футбол",
-        "action": "strip",
-        "reason": "Событие 2017 года не является актуальной новостью.",
-        "risk": "date"
       },
       {
         "line_index": 15,
-        "section": "Выходные в GM",
-        "action": "strip",
-        "reason": "Wigan не входит в Greater Manchester, нарушение географического контракта.",
-        "risk": "geo"
+        "section": "Что важно сегодня",
+        "action": "patch",
+        "replacement_text": "• В аэропорту Манчестера сегодня наблюдаются задержки рейсов, но отмен нет, после сбоя в системе управления воздушным движением на этой неделе. Пассажирам рекомендуется проверять информацию о рейсах и прибывать в аэропорт заранее. (Источник: MEN)",
+        "reason": "Дата в тексте не соответствует текущей дате выпуска.",
+        "risk": "date"
       },
       {
-        "line_index": 29,
-        "section": "Городской радар",
+        "line_index": 17,
+        "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Кэмерон Касвелл, 23 года, был осужден в Манчестерском королевском суде за торговлю наркотиками после того, как полиция обнаружила оружие и боеприпасы за холодильником в доме его матери в Солфорде.",
-        "reason": "Уточнение обвинения в соответствии с источником.",
+        "replacement_text": "• Энцо Мареска и Энцо Фернандес получили признание после победы Манчестер Сити над Манчестер Юнайтед 14 сентября 2026 года, заткнув за пояс своих критиков. Они сыграли ключевую роль в матче, что вызвало восторг у болельщиков.",
+        "reason": "Уточнение, что Энцо Мареска также упоминается в источнике и связан с Манчестер Сити.",
         "risk": "factual"
       },
       {
-        "line_index": 33,
+        "line_index": 22,
+        "section": "Городской радар",
+        "action": "strip",
+        "reason": "Alderley Edge находится в Cheshire, а не в Greater Manchester.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 26,
         "section": "Business/tech события для тебя",
         "action": "patch",
-        "replacement_text": "• 17 сентября в 8:30-10:30 в AC Marriott Manchester Salford Quays пройдет Networking Central, где спикер Тахира Сулейман обсудит внедрение AI для малых и средних предприятий. Бесплатно для членов палаты, £22 для остальных.",
+        "replacement_text": "• 17 сентября с 8:30 до 10:30 в AC Marriott Manchester Salford Quays пройдет Networking Central. Спикер Тахира Сулейман обсудит внедрение AI для малых и средних предприятий. Участие бесплатно для членов палаты, £22 для остальных.",
         "reason": "Уточнение места проведения события в соответствии с данными источника.",
         "risk": "geo"
+      },
+      {
+        "line_index": 27,
+        "section": "Дальние анонсы",
+        "action": "strip",
+        "reason": "Событие в Manchester не соответствует контракту 'Дальние анонсы', который требует события вне GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 30,
+        "section": "Крупные концерты вне GM",
+        "action": "patch",
+        "replacement_text": "• Hilary Duff — 15 сентября, The O2 (Pop). Билеты и время указаны на официальной странице.",
+        "reason": "Дата события должна быть 15 сентября, как указано в источнике.",
+        "risk": "date"
       }
     ],
     "warnings": [
-      "Блок 'Выходные в GM' содержит только три события, что ниже минимального требования в шесть событий. Это может повлиять на полноту раздела.",
-      "Недостаточное количество новостей в секции 'Свежие новости' и 'Что важно сегодня'.",
-      "Отсутствие блока 'Русскоязычные концерты и стендап UK'."
+      "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога в 3 элемента.",
+      "Секция 'Русскоязычные концерты и стендап UK' отсутствует, что ниже минимального порога в 1 элемент.",
+      "Секция 'Еда, открытия и рынки' отсутствует, что ниже минимального порога в 3 элемента."
     ],
-    "notes": "Добавьте информацию об аресте, чтобы обеспечить полноту и точность сообщения.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление титула Эндрю Бернхэма с 'премьер-министр' на 'мэр' необходимо для точности.; Обе строки корректны и соответствуют требованиям географии и содержания.; Дата события д",
+    "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в указании должности Энди Бернэма.; Все строки соответствуют требованиям и содержат актуальную информацию о транспортных изменениях в Greater Manchester.; Дата в т",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 12,
+      "chunk_count": 11,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -738,13 +757,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2708,
-          "duration_seconds": 4.152
+          "estimated_tokens": 2602,
+          "duration_seconds": 1.645
         },
         {
           "chunk_id": "chunk-02",
@@ -762,14 +781,14 @@
           "warning_count": 0,
           "error": "",
           "estimated_tokens": 2447,
-          "duration_seconds": 1.797
+          "duration_seconds": 1.928
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            7
+            11
           ],
           "sections": [
             "Свежие новости"
@@ -779,15 +798,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4886,
-          "duration_seconds": 4.581
+          "estimated_tokens": 7322,
+          "duration_seconds": 5.166
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            8,
-            9
+            12,
+            14
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -797,15 +816,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2985,
-          "duration_seconds": 1.218
+          "estimated_tokens": 3402,
+          "duration_seconds": 1.026
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            10,
-            10
+            15,
+            15
           ],
           "sections": [
             "Что важно сегодня"
@@ -815,69 +834,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2702,
-          "duration_seconds": 3.232
+          "estimated_tokens": 2722,
+          "duration_seconds": 3.784
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            11,
-            13
+            16,
+            18
           ],
           "sections": [
             "Футбол"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 3,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3678,
-          "duration_seconds": 5.32
-        },
-        {
-          "chunk_id": "chunk-07",
-          "status": "ok",
-          "line_range": [
-            14,
-            25
-          ],
-          "sections": [
-            "Выходные в GM"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7873,
-          "duration_seconds": 3.212
+          "estimated_tokens": 3622,
+          "duration_seconds": 3.885
         },
         {
-          "chunk_id": "chunk-08",
+          "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            26,
-            28
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 4115,
-          "duration_seconds": 11.473
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            29,
-            32
+            19,
+            25
           ],
           "sections": [
             "Городской радар"
@@ -887,15 +870,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4223,
-          "duration_seconds": 28.749
+          "estimated_tokens": 5644,
+          "duration_seconds": 2.442
         },
         {
-          "chunk_id": "chunk-10",
+          "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            33,
-            33
+            26,
+            26
           ],
           "sections": [
             "Business/tech события для тебя"
@@ -905,15 +888,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2840,
-          "duration_seconds": 3.478
+          "estimated_tokens": 2842,
+          "duration_seconds": 17.667
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            34,
-            40
+            27,
+            27
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2658,
+          "duration_seconds": 4.704
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            28,
+            29
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -923,26 +924,26 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6098,
-          "duration_seconds": 36.378
+          "estimated_tokens": 3300,
+          "duration_seconds": 20.742
         },
         {
-          "chunk_id": "chunk-12",
+          "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            41,
-            43
+            30,
+            30
           ],
           "sections": [
             "Крупные концерты вне GM"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3773,
-          "duration_seconds": 7.871
+          "estimated_tokens": 2706,
+          "duration_seconds": 4.293
         }
       ],
       "reduce": {
@@ -953,10 +954,10 @@
         "decision": "warn",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 2,
+        "warning_count": 3,
         "error": "",
-        "estimated_tokens": 10084,
-        "duration_seconds": 22.285
+        "estimated_tokens": 9806,
+        "duration_seconds": 22.768
       },
       "max_workers": 3,
       "chunk_line_target": 12,
