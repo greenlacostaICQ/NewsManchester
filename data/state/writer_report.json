@@ -1,68 +1,68 @@
 {
-  "pipeline_run_id": "20260914T080145+0100",
-  "run_at_london": "2026-09-14T08:25:13.425013+01:00",
-  "run_date_london": "2026-09-14",
+  "pipeline_run_id": "20260915T080146+0100",
+  "run_at_london": "2026-09-15T08:27:02.544285+01:00",
+  "run_date_london": "2026-09-15",
   "stage_status": "complete",
   "empty_plan": false,
   "errors": [],
   "warnings": [
-    "1 plan slot(s) removed with coded reason — см. plan_execution_report.json."
+    "2 plan slot(s) removed with coded reason — см. plan_execution_report.json."
   ],
   "quality_counts": {
-    "included_candidates": 31,
-    "rendered_candidates": 30,
+    "included_candidates": 40,
+    "rendered_candidates": 38,
     "blocked_for_quality": 0,
     "held_for_editorial_quality": 0,
     "dropped_missing_draft_line": 0,
     "dropped_ticket_not_selected": 0,
     "dropped_english_passthrough": 0,
-    "dropped_low_quality": 1,
+    "dropped_low_quality": 2,
     "replaced_from_plan_backup": 0,
-    "removed_with_reason": 1
+    "removed_with_reason": 2
   },
   "section_counts": {
     "Погода": 1,
     "Главная история дня": 1,
     "Свежие новости": 9,
     "Общественный транспорт сегодня": 3,
-    "Что важно сегодня": 1,
-    "Футбол": 3,
-    "Городской радар": 7,
+    "Что важно сегодня": 2,
+    "Футбол": 2,
+    "Городской радар": 12,
     "Что важно в ближайшие 7 дней": 0,
-    "Еда, открытия и рынки": 0,
-    "IT и бизнес": 0,
+    "Еда, открытия и рынки": 1,
+    "IT и бизнес": 2,
     "Business/tech события для тебя": 1,
-    "Дальние анонсы": 1,
-    "Билеты / Ticket Radar": 2,
+    "Дальние анонсы": 0,
+    "Билеты / Ticket Radar": 3,
     "Крупные концерты вне GM": 1,
     "Русскоязычные концерты и стендап UK": 0
   },
-  "visible_item_count": 30,
+  "visible_item_count": 38,
   "plan_execution": {
-    "slots_total": 31,
-    "shown": 30,
+    "slots_total": 40,
+    "shown": 38,
     "replaced": 0,
-    "removed": 1,
+    "removed": 2,
     "repair_attempts_used": 6
   },
   "candidate_resolution": {
-    "input_rows": 1355,
-    "unique_fingerprints": 1119,
-    "duplicate_rows": 236,
+    "input_rows": 1415,
+    "unique_fingerprints": 1164,
+    "duplicate_rows": 251,
     "policy": "strongest_selected_enriched_row_per_fingerprint"
   },
   "controlled_enrichment": {
-    "model_enriched": 5,
+    "model_enriched": 4,
     "model_attempts": 6,
     "model_cap": "shared_plan_execution_budget",
     "short_but_complete": 0,
-    "held_thin_evidence": 8
+    "held_thin_evidence": 9
   },
   "a_tier_ticket_trace": {
     "counts": {
       "total": 35,
-      "rendered": 2,
-      "not_rendered": 33,
+      "rendered": 1,
+      "not_rendered": 34,
       "blocked_by_repeat_policy": 0
     },
     "items": [
@@ -74,7 +74,7 @@
         "tier": "A",
         "notability_signal": "wikidata_sitelinks+multi_source",
         "include": true,
-        "status": "rendered",
+        "status": "not_rendered",
         "drop_reasons": [],
         "calendar_repeat_review": {}
       },
@@ -448,7 +448,8 @@
         "include": true,
         "status": "writer_dropped",
         "drop_reasons": [
-          "draft_line contains mixed Latin/Cyrillic word: Темзi."
+          "draft_line contains mixed Latin/Cyrillic word: Темзi.",
+          "Pound amount £39 not present in evidence_text."
         ],
         "calendar_repeat_review": {}
       },
@@ -498,13 +499,48 @@
   },
   "dropped_candidates": [
     {
+      "fingerprint": "url-prolificnorth-co-uk-news-manchester-one-two-as-tommy-fury-and-angry-ginge-top-uk-under-30-influencer-rich-list-711baff4ae88",
+      "title": "Manchester one-two as Tommy Fury and Angry Ginge top UK under 30 influencer rich list",
+      "category": "tech_business",
+      "primary_block": "tech_business",
+      "is_lead": false,
+      "reasons": [
+        "draft_line contains number(s) not present in candidate evidence: 13.63."
+      ],
+      "slot_id": "tech_business-03",
+      "recovery_trace": [
+        {
+          "step": "final_replacement",
+          "outcome": "attempted",
+          "missing_facts": [
+            "draft_line contains number(s) not present in candidate evidence: 13.63."
+          ]
+        },
+        {
+          "step": "must_show_model_recovery",
+          "outcome": "attempted",
+          "missing_facts": [
+            "draft_line contains number(s) not present in candidate evidence: 13.63."
+          ]
+        },
+        {
+          "step": "must_show_model_recovery",
+          "outcome": "held",
+          "missing_facts": [
+            "skipped_shared_budget"
+          ]
+        }
+      ]
+    },
+    {
       "fingerprint": "event-id-jsonld-event-030d21f72c6d-44882d98c244",
       "title": "Autumn Boat Party - Українська вечірка на Темзi",
       "category": "russian_speaking_events",
       "primary_block": "russian_events",
       "is_lead": false,
       "reasons": [
-        "draft_line contains mixed Latin/Cyrillic word: Темзi."
+        "draft_line contains mixed Latin/Cyrillic word: Темзi.",
+        "Pound amount £39 not present in evidence_text."
       ],
       "slot_id": "russian_events-01",
       "recovery_trace": [
@@ -512,7 +548,8 @@
           "step": "final_replacement",
           "outcome": "attempted",
           "missing_facts": [
-            "draft_line contains mixed Latin/Cyrillic word: Темзi."
+            "draft_line contains mixed Latin/Cyrillic word: Темзi.",
+            "Pound amount £39 not present in evidence_text."
           ]
         },
         {
@@ -526,7 +563,8 @@
           "step": "must_show_model_recovery",
           "outcome": "attempted",
           "missing_facts": [
-            "draft_line contains mixed Latin/Cyrillic word: Темзi."
+            "draft_line contains mixed Latin/Cyrillic word: Темзi.",
+            "Pound amount £39 not present in evidence_text."
           ]
         },
         {
@@ -540,72 +578,88 @@
     }
   ],
   "rendered_candidate_fingerprints": [
-    "url-bbc-com-news-articles-c20vpx85yl1o-15814722a77f",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-two-men-charged-counter-terror-34617402-3f4c9abb7803",
     "url-weather-metoffice-gov-uk-forecast-gcw2hzs1u-4760ce9bdcae",
-    "url-bbc-com-news-articles-cr7dmkj94mgo-fdde948c78c1",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-lovelorn-cop-told-stay-away-34607044-08b5c3c7e831",
-    "url-aboutmanchester-co-uk-it-was-calculated-deception-salford-van-traders-four-year-deception-ea53df032879",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-rough-sleeping-rises-greater-manchester-34584127-126eeb05e1a5",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-inadequate-manchester-care-service-rapped-34605612-2cf0e02dac2c",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-issue-warning-ford-owners-34612059-998876d3281d",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-searching-missing-12-year-34612078-1ffab05527b8",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-law-being-broken-oldham-could-34593770-2ed4eccfe198",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-masked-far-right-group-quietly-34579576-f1a980e7f0eb",
-    "url-tfgm-com-travel-updates-travel-alerts-bury-new-road-whitefield-bus-stop-closure-a92acf02ac00",
-    "url-tfgm-com-travel-updates-travel-alerts-whitworth-street-manchester-bus-stop-closure-70453af3eaea",
-    "url-tfgm-com-travel-updates-travel-alerts-keswick-road-stockport-bus-service-diversion-a77a884f5fb4",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-delays-september-13-34609623-21abab2b7489",
-    "url-manchestereveningnews-co-uk-sport-football-man-city-reaction-proves-knew-34610618-0c9573e16611",
-    "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-new-hero-who-34612050-dacfe76c356e",
-    "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-transfers-alex-scott-34611018-c98f6550180f",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-m6-incident-live-traffic-held-34612208-7647e277e583",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-funding-cuts-leave-vulnerable-salford-34567474-241988b4da1d",
-    "url-manchestermill-co-uk-trafford-parks-kellogs-factory-closed-f6610d0245d3",
+    "url-bbc-com-news-articles-cmp3042q6w3zo-c13d645f664c",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-salford-royal-hospital-admits-failures-34616968-025a78296e9b",
+    "url-bbc-com-news-articles-cm9w47x890d2o-f6cfe3c703e6",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-stark-grave-says-you-didnt-34593408-e6854ea3f32a",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-gmp-officer-trashed-career-after-34616535-1efc570a9e1f",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-trying-help-drivers-salford-34616743-48ccaa1c21ce",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-woman-30s-knifed-radcliffe-street-34612755-3a1e7a443c5e",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-30s-rushed-hospital-after-34612836-8773153a0303",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-horwich-dad-38-dies-instantly-34612482-6692c1e76799",
+    "url-tfgm-com-travel-updates-travel-alerts-metrolink-timetable-changes-99a5ee75cedf",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-metrolink-trams-stopped-near-manchester-34612964-7ddf9aa9cd91",
+    "url-altrincham-todaynews-co-uk-news-2026-09-10-altrincham-tram-line-facing-another-two-week-closure-this-autumn-fdeb23779b7c",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-80-staff-strike-council-owned-34617316-583bdb4eea6a",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-m62-traffic-live-updates-drivers-34614512-0dce999c0860",
+    "url-manchestereveningnews-co-uk-sport-football-football-news-man-utd-marcus-rashford-city-34615838-9c4f01cd65b1",
+    "url-theguardian-com-football-2026-sep-14-vars-erling-haaland-goal-manchester-united-stood-down-wrongly-allowed-512f7920ae90",
+    "url-bbc-com-news-articles-crd68xx1ql21o-75e3d8152455",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-government-set-announce-manchester-g20-34617304-c5386983a687",
+    "url-bbc-com-news-articles-c68xkddgnd47o-ccb8497bbba0",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-crack-back-how-5-rocks-34580116-eb14bb473cb2",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-hyde-mum-turkey-boob-job-34613093-3918679e87ff",
+    "url-bolton-gov-uk-news-article-2111-rogue-retailer-closed-for-three-months-following-court-order-3872d7cd3453",
+    "url-placenorthwest-co-uk-manchester-finally-rubber-stamps-next-five-renaker-skyscrapers-f40f30863be5",
     "url-manchestermill-co-uk-the-private-school-money-couldnt-save-why-did-alderley-edge-school-for-girls-close-b17a3d01ae6a",
-    "url-bdaily-co-uk-articles-2026-09-13-pmm-welcomes-nine-new-trainees-4771835dcfcf",
-    "url-bdaily-co-uk-articles-2026-09-13-compassionate-care-appoints-services-director-db700d263636",
-    "url-aboutmanchester-co-uk-greater-manchester-firefighters-take-on-climbing-challenge-to-commemorate-9-11-7806dbfab661",
+    "url-bolton-gov-uk-news-article-2110-local-heroes-will-again-be-celebrated-with-bolton-civic-medals-00a33e54a413",
+    "url-prolificnorth-co-uk-news-masterchef-the-professionals-champion-and-sexy-fish-creator-bring-new-restaurant-brand-to-man-citys-medlock-square-9979760da48f",
+    "url-aboutmanchester-co-uk-greater-manchester-pupils-put-engineering-skills-to-the-test-in-manchester-minesweeper-challenge-0b76273b7e81",
+    "url-altrincham-todaynews-co-uk-news-2026-09-10-man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher-81f95ab6d856",
+    "url-themanc-com-eats-dahlia-manchester-northern-quarter-latin-d98df1495bd6",
+    "url-aboutmanchester-co-uk-9-ms-stores-in-greater-manchester-launch-partnership-with-too-good-to-go-dd208275eb27",
+    "url-prolificnorth-co-uk-news-workforce-management-software-specialist-broadens-scope-with-new-rota-time-clock-offer-f8463edf198d",
     "event-event-networking-networking-central-salford-september-thursday-17-sep-8-30am-10-30am-2026-09-17-55e4f9d5616c",
-    "event-event-anastacia-2026-09-21-o2-apollo-manchester-270f95ef29e5",
-    "event-event-ecca-vandal-14th-september-2026-2026-09-14-manchester-academy-c23ecce2a995",
-    "event-event-bbc-sibelius-symphony-no-5-saturday-19-september-2026-2026-09-19-bridgewater-hall-5b303a8aeda6",
+    "event-event-saint-etienne-final-uk-tour-2026-09-15-manchester-new-century-hall-5ecb8a4b408e",
+    "event-event-spiritbox-tsunami-sea-tour-wed-16-sep-2026-multiple-times-2026-09-16-co-op-live-d8f35d83134a",
+    "event-event-baby-dave-15th-october-2026-2026-10-15-manchester-academy-34c828fb41ee",
     "event-event-hilary-duff-the-lucky-me-tour-2026-09-15-the-o2-73ebda3c39a7"
   ],
   "rendered_section_by_fingerprint": {
-    "url-bbc-com-news-articles-c20vpx85yl1o-15814722a77f": "Главная история дня",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-two-men-charged-counter-terror-34617402-3f4c9abb7803": "Главная история дня",
     "url-weather-metoffice-gov-uk-forecast-gcw2hzs1u-4760ce9bdcae": "Погода",
-    "url-bbc-com-news-articles-cr7dmkj94mgo-fdde948c78c1": "Свежие новости",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-lovelorn-cop-told-stay-away-34607044-08b5c3c7e831": "Свежие новости",
-    "url-aboutmanchester-co-uk-it-was-calculated-deception-salford-van-traders-four-year-deception-ea53df032879": "Свежие новости",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-rough-sleeping-rises-greater-manchester-34584127-126eeb05e1a5": "Свежие новости",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-inadequate-manchester-care-service-rapped-34605612-2cf0e02dac2c": "Свежие новости",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-issue-warning-ford-owners-34612059-998876d3281d": "Свежие новости",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-searching-missing-12-year-34612078-1ffab05527b8": "Свежие новости",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-law-being-broken-oldham-could-34593770-2ed4eccfe198": "Свежие новости",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-masked-far-right-group-quietly-34579576-f1a980e7f0eb": "Свежие новости",
-    "url-tfgm-com-travel-updates-travel-alerts-bury-new-road-whitefield-bus-stop-closure-a92acf02ac00": "Общественный транспорт сегодня",
-    "url-tfgm-com-travel-updates-travel-alerts-whitworth-street-manchester-bus-stop-closure-70453af3eaea": "Общественный транспорт сегодня",
-    "url-tfgm-com-travel-updates-travel-alerts-keswick-road-stockport-bus-service-diversion-a77a884f5fb4": "Общественный транспорт сегодня",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-delays-september-13-34609623-21abab2b7489": "Что важно сегодня",
-    "url-manchestereveningnews-co-uk-sport-football-man-city-reaction-proves-knew-34610618-0c9573e16611": "Футбол",
-    "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-new-hero-who-34612050-dacfe76c356e": "Футбол",
-    "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-transfers-alex-scott-34611018-c98f6550180f": "Футбол",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-m6-incident-live-traffic-held-34612208-7647e277e583": "Городской радар",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-funding-cuts-leave-vulnerable-salford-34567474-241988b4da1d": "Городской радар",
-    "url-manchestermill-co-uk-trafford-parks-kellogs-factory-closed-f6610d0245d3": "Городской радар",
+    "url-bbc-com-news-articles-cmp3042q6w3zo-c13d645f664c": "Свежие новости",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-salford-royal-hospital-admits-failures-34616968-025a78296e9b": "Свежие новости",
+    "url-bbc-com-news-articles-cm9w47x890d2o-f6cfe3c703e6": "Свежие новости",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-stark-grave-says-you-didnt-34593408-e6854ea3f32a": "Свежие новости",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-gmp-officer-trashed-career-after-34616535-1efc570a9e1f": "Свежие новости",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-trying-help-drivers-salford-34616743-48ccaa1c21ce": "Свежие новости",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-woman-30s-knifed-radcliffe-street-34612755-3a1e7a443c5e": "Свежие новости",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-30s-rushed-hospital-after-34612836-8773153a0303": "Свежие новости",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-horwich-dad-38-dies-instantly-34612482-6692c1e76799": "Свежие новости",
+    "url-tfgm-com-travel-updates-travel-alerts-metrolink-timetable-changes-99a5ee75cedf": "Общественный транспорт сегодня",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-metrolink-trams-stopped-near-manchester-34612964-7ddf9aa9cd91": "Общественный транспорт сегодня",
+    "url-altrincham-todaynews-co-uk-news-2026-09-10-altrincham-tram-line-facing-another-two-week-closure-this-autumn-fdeb23779b7c": "Общественный транспорт сегодня",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-80-staff-strike-council-owned-34617316-583bdb4eea6a": "Что важно сегодня",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-m62-traffic-live-updates-drivers-34614512-0dce999c0860": "Что важно сегодня",
+    "url-manchestereveningnews-co-uk-sport-football-football-news-man-utd-marcus-rashford-city-34615838-9c4f01cd65b1": "Футбол",
+    "url-theguardian-com-football-2026-sep-14-vars-erling-haaland-goal-manchester-united-stood-down-wrongly-allowed-512f7920ae90": "Футбол",
+    "url-bbc-com-news-articles-crd68xx1ql21o-75e3d8152455": "Городской радар",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-government-set-announce-manchester-g20-34617304-c5386983a687": "Городской радар",
+    "url-bbc-com-news-articles-c68xkddgnd47o-ccb8497bbba0": "Городской радар",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-crack-back-how-5-rocks-34580116-eb14bb473cb2": "Городской радар",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-hyde-mum-turkey-boob-job-34613093-3918679e87ff": "Городской радар",
+    "url-bolton-gov-uk-news-article-2111-rogue-retailer-closed-for-three-months-following-court-order-3872d7cd3453": "Городской радар",
+    "url-placenorthwest-co-uk-manchester-finally-rubber-stamps-next-five-renaker-skyscrapers-f40f30863be5": "Городской радар",
     "url-manchestermill-co-uk-the-private-school-money-couldnt-save-why-did-alderley-edge-school-for-girls-close-b17a3d01ae6a": "Городской радар",
-    "url-bdaily-co-uk-articles-2026-09-13-pmm-welcomes-nine-new-trainees-4771835dcfcf": "Городской радар",
-    "url-bdaily-co-uk-articles-2026-09-13-compassionate-care-appoints-services-director-db700d263636": "Городской радар",
-    "url-aboutmanchester-co-uk-greater-manchester-firefighters-take-on-climbing-challenge-to-commemorate-9-11-7806dbfab661": "Городской радар",
+    "url-bolton-gov-uk-news-article-2110-local-heroes-will-again-be-celebrated-with-bolton-civic-medals-00a33e54a413": "Городской радар",
+    "url-prolificnorth-co-uk-news-masterchef-the-professionals-champion-and-sexy-fish-creator-bring-new-restaurant-brand-to-man-citys-medlock-square-9979760da48f": "Городской радар",
+    "url-aboutmanchester-co-uk-greater-manchester-pupils-put-engineering-skills-to-the-test-in-manchester-minesweeper-challenge-0b76273b7e81": "Городской радар",
+    "url-altrincham-todaynews-co-uk-news-2026-09-10-man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher-81f95ab6d856": "Городской радар",
+    "url-themanc-com-eats-dahlia-manchester-northern-quarter-latin-d98df1495bd6": "Еда, открытия и рынки",
+    "url-aboutmanchester-co-uk-9-ms-stores-in-greater-manchester-launch-partnership-with-too-good-to-go-dd208275eb27": "IT и бизнес",
+    "url-prolificnorth-co-uk-news-workforce-management-software-specialist-broadens-scope-with-new-rota-time-clock-offer-f8463edf198d": "IT и бизнес",
     "event-event-networking-networking-central-salford-september-thursday-17-sep-8-30am-10-30am-2026-09-17-55e4f9d5616c": "Business/tech события для тебя",
-    "event-event-anastacia-2026-09-21-o2-apollo-manchester-270f95ef29e5": "Дальние анонсы",
-    "event-event-ecca-vandal-14th-september-2026-2026-09-14-manchester-academy-c23ecce2a995": "Билеты / Ticket Radar",
-    "event-event-bbc-sibelius-symphony-no-5-saturday-19-september-2026-2026-09-19-bridgewater-hall-5b303a8aeda6": "Билеты / Ticket Radar",
+    "event-event-saint-etienne-final-uk-tour-2026-09-15-manchester-new-century-hall-5ecb8a4b408e": "Билеты / Ticket Radar",
+    "event-event-spiritbox-tsunami-sea-tour-wed-16-sep-2026-multiple-times-2026-09-16-co-op-live-d8f35d83134a": "Билеты / Ticket Radar",
+    "event-event-baby-dave-15th-october-2026-2026-10-15-manchester-academy-34c828fb41ee": "Билеты / Ticket Radar",
     "event-event-hilary-duff-the-lucky-me-tour-2026-09-15-the-o2-73ebda3c39a7": "Крупные концерты вне GM"
   },
   "lead": {
-    "planned_fingerprint": "url-bbc-com-news-articles-c20vpx85yl1o-15814722a77f",
+    "planned_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-two-men-charged-counter-terror-34617402-3f4c9abb7803",
     "rendered": true
   },
-  "writer_seconds": 9.4
+  "writer_seconds": 8.99
 }
