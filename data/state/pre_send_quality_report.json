@@ -1,5 +1,5 @@
 {
-  "status": "partial",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
   "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
@@ -7,49 +7,98 @@
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-09-16",
-  "pipeline_run_id": "20260916T080146+0100",
-  "digest_sha256": "a859e120b61d45b9c10db24f366ae7ff975727006132c8757a0ad0566f823d44",
-  "duration_seconds": 72.196,
+  "run_date_london": "2026-09-17",
+  "pipeline_run_id": "20260917T080134+0100",
+  "digest_sha256": "b820b3255f7d1ac3764bcfb0c79a997b0359500dc0f55fe42ce349b6fe710a8a",
+  "duration_seconds": 114.853,
   "confidence": 0.9,
   "critical_errors": [
     {
       "line_index": 6,
       "section": "Свежие новости",
-      "problem": "Некорректное указание года рождения жертвы.",
+      "problem": "География события не соответствует контракту раздела.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 12,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Строка не относится к общественному транспорту.",
+      "risk": "factual",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 17,
+      "section": "Что важно сегодня",
+      "problem": "Неправильное указание улицы. Воронка образовалась на Bury Street, а не на Heywood Road.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 15,
+      "line_index": 18,
       "section": "Футбол",
-      "problem": "Неверная информация о клубе игрока. Эллиот Андерсон не играет за Манчестер Сити.",
+      "problem": "Неправильное представление фактов: Майкл Каррик не участвует в обсуждениях о будущем Джей Джей Габриэля, а только предоставил обновление.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 19,
-      "section": "Городской радар",
-      "problem": "Текст содержит чувствительную информацию о преступлениях, включая изнасилование, и требует осторожного подхода.",
-      "risk": "sensitive",
+      "line_index": 22,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 28,
-      "section": "IT и бизнес",
-      "problem": "Неверное указание местоположения компании Debenhams.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 30,
-      "section": "Business/tech события для тебя",
-      "problem": "Некорректное указание места проведения события.",
+      "line_index": 24,
+      "section": "Выходные в GM",
+      "problem": "Географическая ошибка: Leigh находится в Wigan, а не в Manchester.",
       "risk": "geo",
       "suggested_action": "repair"
     },
     {
-      "line_index": 23,
+      "line_index": 39,
+      "section": "Городской радар",
+      "problem": "Неправильное указание места ареста.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 48,
+      "section": "Business/tech события для тебя",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 3,
+      "section": "Свежие новости",
+      "problem": "Неправильное использование термина 'осуждены' вместо 'обвиняются'.",
+      "risk": "legal",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 6,
+      "section": "Свежие новости",
+      "problem": "Географическая ошибка: Уоррингтон не является частью Greater Manchester.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 18,
+      "section": "Футбол",
+      "problem": "Дублирование информации о Джей Джей Габриэле.",
+      "risk": "factual",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 20,
+      "section": "Выходные в GM",
+      "problem": "Отсутствие информации о дате и времени события.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 41,
       "section": "Городской радар",
       "risk": "translation",
       "problem": "critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no Russian rendering in the shipped line",
@@ -61,16 +110,16 @@
     {
       "line_index": 6,
       "section": "Свежие новости",
-      "action": "patch",
-      "replacement_text": "• Мать, которая трясла свою дочь до смерти после 'садистского' насилия, не получит увеличения срока заключения. Омра Уали Джан, 2022 года рождения, скончалась от тяжелых травм головы, вызванных 'крайне сильным тряской' со стороны матери Морсал Мохаммед Найм. Судья описал действия Найм как 'садистское поведение', однако ее срок в девять лет остается без изменений после обращения Генерального прокурора в Апелляционный суд.",
-      "reason": "Исправление года рождения жертвы на 2022 для соответствия фактам.",
-      "risk": "factual"
+      "action": "strip",
+      "reason": "Событие произошло в Уоррингтоне, который находится за пределами Greater Manchester.",
+      "risk": "geo",
+      "replacement_text": ""
     },
     {
       "line_index": 12,
       "section": "Общественный транспорт сегодня",
-      "action": "keep",
-      "reason": "Информация о изменении расписания Metrolink актуальна и соответствует источнику.",
+      "action": "strip",
+      "reason": "Информация о жилищных проектах не относится к общественному транспорту.",
       "risk": "factual",
       "replacement_text": ""
     },
@@ -78,63 +127,152 @@
       "line_index": 13,
       "section": "Общественный транспорт сегодня",
       "action": "keep",
-      "reason": "Информация о закрытии линии Altrincham соответствует источнику и актуальна для планирования.",
-      "risk": "factual",
+      "reason": "Информация о изменениях в расписании Metrolink актуальна и соответствует теме.",
+      "risk": "none",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 14,
+      "section": "Общественный транспорт сегодня",
+      "action": "keep",
+      "reason": "Информация о нарушениях в движении поездов актуальна и соответствует теме.",
+      "risk": "none",
       "replacement_text": ""
     },
     {
       "line_index": 15,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Эллиот Андерсон продемонстрировал отличную игру за Ньюкасл Юнайтед в дерби против Манчестер Юнайтед, подтвердив свои слова о том, что Ньюкасл — \"Короли Манчестера\".",
-      "reason": "Эллиот Андерсон играет за Ньюкасл Юнайтед, а не за Манчестер Сити.",
-      "risk": "factual"
+      "section": "Общественный транспорт сегодня",
+      "action": "keep",
+      "reason": "Информация о временном закрытии улиц в Манчестере актуальна и соответствует теме.",
+      "risk": "none",
+      "replacement_text": ""
     },
     {
       "line_index": 16,
-      "section": "Футбол",
+      "section": "Общественный транспорт сегодня",
       "action": "keep",
-      "reason": "Информация о Энцо Фернандесе и его игре за Манчестер Сити корректна.",
+      "reason": "Информация о закрытии трамвайной линии Altrincham актуальна и соответствует теме.",
+      "risk": "none",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 17,
+      "section": "Что важно сегодня",
+      "action": "patch",
+      "replacement_text": "• На Bury Street в Prestwich образовалась огромная воронка из-за обрушения канализации. Инженеры United Utilities начали ремонтные работы, и дорога остается закрытой на неопределенный срок.",
+      "reason": "Указана неверная улица, что может ввести в заблуждение жителей.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 18,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• Майкл Каррик предоставил обновление о будущем Джей Джей Габриэля в Манчестер Юнайтед после того, как юноша попросил уйти из клуба.",
+      "reason": "Уточнение роли Майкла Каррика в обсуждениях.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 22,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 18 сентября — Makers Market in Great Northern Square - Great Northern, Manchester. На площадке: рынок, вход £19.95, ремесленные товары, еда. Дата проведения: 1 сентября 2026 года.",
+      "reason": "Дата начала события указана как 1 сентября 2026 года в источнике.",
+      "risk": "date"
+    },
+    {
+      "line_index": 24,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• В субботу, 19 сентября 2026 года, в Leigh Cricket Club (Wigan) состоится фестиваль Leigh Cricket Club Festival, который начнется в 12:00.",
+      "reason": "Leigh находится в Wigan, а не в Manchester.",
+      "risk": "geo"
+    },
+    {
+      "line_index": 39,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Полиция арестовала мужчину на борту самолета в аэропорту Малаги, направлявшегося в Манчестер, после того как 12-летний мальчик получил черепно-мозговую травму в результате наезда с побегом на побережье Коста-дель-Соль 15 сентября 2026 года.",
+      "reason": "Уточнение места ареста: арест произошел в аэропорту Малаги, а не в Манчестере.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 48,
+      "section": "Business/tech события для тебя",
+      "action": "patch",
+      "replacement_text": "• В Tameside 18 сентября пройдет завтрак в честь запуска новой сети финансовых и профессиональных услуг, сосредоточенной на ИИ и будущем сектора.",
+      "reason": "Дата события должна быть 18 сентября, а не 17 сентября.",
+      "risk": "date"
+    },
+    {
+      "line_index": 49,
+      "section": "Business/tech события для тебя",
+      "action": "keep",
+      "reason": "Информация о событии верна и соответствует источнику.",
       "risk": "factual",
       "replacement_text": ""
     },
     {
-      "line_index": 19,
-      "section": "Городской радар",
+      "line_index": 50,
+      "section": "Билеты / Ticket Radar",
       "action": "patch",
-      "replacement_text": "• Мужчина из Стокпорта признал себя виновным в более чем 60 преступлениях против своей жены, включая серьёзные преступления, за 20-летний период. Приговор будет вынесен по завершении судебного разбирательства.",
-      "reason": "Смягчение формулировки для уменьшения чувствительности.",
-      "risk": "sensitive"
+      "replacement_text": "• Rashmeet Kaur — 17 сентября, Manchester Academy; цена £31.80. Билеты доступны на официальной странице.",
+      "reason": "Уточнение информации о билетах для соответствия другим строкам.",
+      "risk": "format"
     },
     {
-      "line_index": 28,
-      "section": "IT и бизнес",
+      "line_index": 52,
+      "section": "Билеты / Ticket Radar",
       "action": "patch",
-      "replacement_text": "• Группа Debenhams, базирующаяся в Манчестере, продала бренд Nasty Gal компании WSG Brands за 16 миллионов долларов.",
-      "reason": "Уточнение местоположения компании Debenhams.",
-      "risk": "factual"
+      "replacement_text": "• The Jayhawks — 17 сентября, Manchester Academy. Билеты доступны на официальной странице.",
+      "reason": "Уточнение информации о билетах для соответствия другим строкам.",
+      "risk": "format"
     },
     {
-      "line_index": 30,
-      "section": "Business/tech события для тебя",
+      "line_index": 3,
+      "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• #networking Networking Central - Salford - September Thursday 17 Sep 8:30am - 10:30am — 17 сентября, AC Marriot Manchester Salford Quays, 17 Trafford Road Salford, M5 3AW. Уровень: высокий уровень; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь.",
-      "reason": "Указано неверное место проведения события. Исправлено на AC Marriot Manchester Salford Quays.",
+      "replacement_text": "• В результате многонационального расследования, начатого в июле прошлого года, братья Винь Ван Нгуен и Куанг Ван Нгуен, а также трое их сообщников, обвиняются в организации контрабанды людей и отмывании денег.",
+      "reason": "Исправление юридической ошибки.",
+      "risk": "legal"
+    },
+    {
+      "line_index": 6,
+      "section": "Свежие новости",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Уоррингтон не входит в Greater Manchester.",
       "risk": "geo"
     },
     {
-      "line_index": 34,
-      "section": "Билеты / Ticket Radar",
+      "line_index": 18,
+      "section": "Футбол",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации о Джей Джей Габриэле.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 20,
+      "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• Spiritbox Tsunami Sea Tour — 16 сентября, Co-op Live. Событие проходит сегодня. Билеты и время указаны на официальной странице.",
-      "reason": "Добавление информации о билетах и времени для соответствия другим строкам.",
-      "risk": "product"
+      "replacement_text": "• 18 сентября в Victoria Baths — Manchester Wing Festival 2026. На площадке: фестиваль, еда.",
+      "reason": "Добавление даты и времени события.",
+      "risk": "date"
+    },
+    {
+      "line_index": 37,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Все транспортные средства были остановлены на восточном направлении M62 рядом с развязкой Eccles 16 сентября 2026 года из-за аварии, что привело к образованию длинных очередей.",
+      "reason": "Добавление контекста для остановки транспорта.",
+      "risk": "factual"
     }
   ],
   "warnings": [
-    "В разделе 'Общественный транспорт сегодня' нет информации о текущих изменениях или влиянии на поездки сегодня, что может снизить практическую пользу для читателей.",
-    "Строка о Spiritbox Tsunami Sea Tour не содержит информации о билетах и времени, что снижает продуктовую полноту.",
-    "judge reduce failed: parse_failed no parseable JSON"
+    "Блок 'Выходные в GM' содержит только 5 событий, что ниже минимального требования в 6 события. Это может повлиять на полноту раздела.",
+    "Некоторые строки требуют уточнения информации о билетах для единообразия.",
+    "Секция 'Что важно сегодня' содержит только один элемент, что ниже минимального порога.",
+    "Секция 'Русскоязычные концерты и стендап UK' отсутствует, что ниже минимального порога."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -143,86 +281,90 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 2,
+      "Общественный транспорт сегодня": 5,
       "Что важно сегодня": 1,
       "Футбол": 2,
-      "Городской радар": 11,
-      "IT и бизнес": 2,
-      "Business/tech события для тебя": 1,
-      "Билеты / Ticket Radar": 4,
-      "Крупные концерты вне GM": 1,
-      "Русскоязычные концерты и стендап UK": 1
+      "Выходные в GM": 13,
+      "Городской радар": 9,
+      "Еда, открытия и рынки": 1,
+      "IT и бизнес": 1,
+      "Business/tech события для тебя": 2,
+      "Билеты / Ticket Radar": 6,
+      "Крупные концерты вне GM": 1
     },
     "core_counts": {
       "Погода": 1,
       "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 11,
-      "Билеты / Ticket Radar": 4,
-      "Русскоязычные концерты и стендап UK": 1,
-      "Еда, открытия и рынки": 0,
-      "Business/tech события для тебя": 1,
+      "Городской радар": 9,
+      "Выходные в GM": 13,
+      "Билеты / Ticket Radar": 6,
+      "Русскоязычные концерты и стендап UK": 0,
+      "Еда, открытия и рынки": 1,
+      "Business/tech события для тебя": 2,
       "Футбол": 2
     },
-    "ticket_items": 6,
-    "core_items": 26,
+    "ticket_items": 7,
+    "core_items": 39,
     "writer_quality_counts": {
-      "included_candidates": 37,
-      "rendered_candidates": 36,
+      "included_candidates": 54,
+      "rendered_candidates": 52,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 0,
-      "replaced_from_plan_backup": 1,
-      "removed_with_reason": 0
+      "dropped_low_quality": 2,
+      "replaced_from_plan_backup": 0,
+      "removed_with_reason": 2
     },
     "source_health_counts": {
-      "ok": 109,
-      "partial": 0,
-      "stale": 5,
-      "empty": 13,
-      "failed": 3,
-      "zero_yield": 76,
+      "ok": 105,
+      "partial": 2,
+      "stale": 6,
+      "empty": 11,
+      "failed": 4,
+      "zero_yield": 82,
       "no_contribution_breakdown": {
-        "fetch_failed": 3,
-        "all_rejected": 76,
-        "idle_no_items": 32
+        "fetch_failed": 4,
+        "all_rejected": 82,
+        "idle_no_items": 15
       },
       "zero_contribution_by_stage": {
-        "written": 39,
-        "selected": 37,
-        "parsed": 32,
-        "fetched": 3
+        "written": 42,
+        "selected": 40,
+        "parsed": 15,
+        "fetched": 4
       },
-      "weekend_source_coverage_incidents": 61
+      "weekend_source_coverage_incidents": 50
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 1 item(s), emergency floor 3",
-      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "source failures: 3"
+      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
+      "Еда, открытия и рынки: 1 item(s), emergency floor 3",
+      "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 6 has unchecked number/date token(s): 2022"
+      "multiple actions target line 6",
+      "multiple actions target line 18"
     ],
     "can_apply_actions": true,
-    "action_count": 9
+    "action_count": 20
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 36,
-    "matched_lines": 36,
-    "applicable_lines": 4,
-    "unmatched_lines": 0,
+    "checked_lines": 52,
+    "matched_lines": 52,
+    "applicable_lines": 6,
+    "unmatched_lines": 4,
     "critical_omission_count": 1,
     "critical_omissions": [
       {
-        "line_index": 23,
+        "line_index": 41,
         "source_url_key": "altrincham.todaynews.co.uk/news/2026/09/10/man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher",
         "concept": "acquittal",
         "obligation": "charge/verdict/victim",
@@ -238,68 +380,55 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 9,
-    "attempted": 7,
-    "applied": 7,
-    "model_patch_applied": 2,
+    "requested": 19,
+    "attempted": 10,
+    "applied": 9,
+    "model_patch_applied": 4,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 2,
     "stripped": 3,
     "unresolved": 1,
     "blocking_unresolved": 1,
-    "resolved": 8,
-    "resolved_in_place": 4,
-    "resolved_by_replacement": 1,
+    "resolved": 17,
+    "resolved_in_place": 12,
+    "resolved_by_replacement": 2,
     "resolved_by_removal": 3,
-    "fact_lock_rejected": 1,
-    "enrich_attempted": 6,
+    "fact_lock_rejected": 2,
+    "enrich_attempted": 13,
     "post_check_errors": [],
     "geo_contract_rejected": [
       {
-        "line_index": 30,
-        "section": "Business/tech события для тебя",
+        "line_index": 6,
+        "section": "Свежие новости",
         "geo_scope": "gm",
-        "reason": "Указано неверное место проведения события. Исправлено на AC Marriot Manchester Salford Quays.",
+        "reason": "Событие произошло в Уоррингтоне, который находится за пределами Greater Manchester.",
+        "gm_anchor_present": true
+      },
+      {
+        "line_index": 6,
+        "section": "Свежие новости",
+        "geo_scope": "gm",
+        "reason": "Уоррингтон не входит в Greater Manchester.",
         "gm_anchor_present": true
       }
     ],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 6,
-        "section": "Свежие новости",
-        "requested_action": "patch",
-        "reason": "Исправление года рождения жертвы на 2022 для соответствия фактам.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Некорректное указание года рождения жертвы.",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-04",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mum-who-shook-baby-girl-34622983-b71c4509f664",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mum-who-shook-baby-girl-34622983",
-        "original_html": "• Мать, которая трясла свою дочь до смерти после 'садистского' насилия, не получит увеличения срока заключения. Омра Уали Джан, 2024 года рождения, скончалась от тяжелых травм головы, вызванных 'крайне сильным тряской' со стороны матери Морсал Мохаммед Найм. Судья описал действия Найм как 'садистское поведение', однако ее срок в девять лет остается без изменений после обращения Генерального прокурора в Апелляционный суд. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mum-who-shook-baby-girl-34622983\">MEN</a>",
-        "model_replacement_rejected": "fact_lock: 2022",
-        "replacement_fingerprint": "url-rochdale-gov-uk-news-article-675-council-urges-families-to-apply-on-time-for-secondary-school-places-024040013431",
-        "post_check_passed": false
-      },
-      {
         "line_index": 12,
         "section": "Общественный транспорт сегодня",
-        "requested_action": "keep",
-        "reason": "Информация о изменении расписания Metrolink актуальна и соответствует источнику.",
+        "requested_action": "strip",
+        "reason": "Информация о жилищных проектах не относится к общественному транспорту.",
         "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
+        "critical_error": true,
+        "critical_problem": "Строка не относится к общественному транспорту.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
         "plan_slot_id": "transport-01",
-        "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-metrolink-timetable-changes-99a5ee75cedf",
-        "original_url_identity": "tfgm.com/travel-updates/travel-alerts/metrolink-timetable-changes",
-        "original_html": "• Metrolink изменил расписание с 14 сентября, добавив дополнительные трамваи в часы пик. Изменения будут действовать до дальнейшего уведомления, некоторые до 28 сентября. <a href=\"https://tfgm.com/travel-updates/travel-alerts/metrolink-timetable-changes\">TfGM</a>",
-        "keep_rejected": "known_factual_error",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-two-major-bury-housing-projects-34625030-31c8575c2629",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/two-major-bury-housing-projects-34625030",
+        "original_html": "• Официально начались работы по двум крупным жилищным проектам в центре Бери: Pyramid Park и Q-Park. Ожидается, что на этих заброшенных участках будет построено сотни новых домов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/two-major-bury-housing-projects-34625030\">MEN Latest News</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
@@ -308,113 +437,305 @@
         "line_index": 13,
         "section": "Общественный транспорт сегодня",
         "requested_action": "keep",
-        "reason": "Информация о закрытии линии Altrincham соответствует источнику и актуальна для планирования.",
+        "reason": "Информация о изменениях в расписании Metrolink актуальна и соответствует теме.",
+        "risk": "none",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "keep",
+        "plan_slot_id": "transport-02",
+        "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-metrolink-timetable-changes-99a5ee75cedf",
+        "original_url_identity": "tfgm.com/travel-updates/travel-alerts/metrolink-timetable-changes",
+        "original_html": "• Metrolink: С 14 сентября в Metrolink введены изменения расписания для повышения надежности. Трамваи будут ходить каждые 15 минут, а в часы пик добавлены дополнительные рейсы. <a href=\"https://tfgm.com/travel-updates/travel-alerts/metrolink-timetable-changes\">TfGM</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 14,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "keep",
+        "reason": "Информация о нарушениях в движении поездов актуальна и соответствует теме.",
+        "risk": "none",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "keep",
+        "plan_slot_id": "transport-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-train-disruption-live-services-between-34627166-85cc6e89eab1",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/train-disruption-live-services-between-34627166",
+        "original_html": "• National Rail: 16 сентября 2026 года поезда между Лондоном и Манчестером отменены, перенаправлены или задержаны из-за проверки безопасности на участке между Милтон-Кинсом и Рагби, задержки до 20 минут ожидаются до 17:00. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/train-disruption-live-services-between-34627166\">MEN</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "keep",
+        "reason": "Информация о временном закрытии улиц в Манчестере актуальна и соответствует теме.",
+        "risk": "none",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "keep",
+        "plan_slot_id": "transport-04",
+        "candidate_fingerprint": "url-manchester-gov-uk-news-stories-2026-take-a-walk-on-the-wild-side-people-put-first-as-manchester-transforms-its-streets-3842087a9077",
+        "original_url_identity": "manchester.gov.uk/news-stories/2026/take-a-walk-on-the-wild-side-people-put-first-as-manchester-transforms-its-streets",
+        "original_html": "• Пять улиц в центре Манчестера будут временно закрыты для автомобилей 22-23 сентября для проведения мероприятий. <a href=\"https://manchester.gov.uk/news-stories/2026/take-a-walk-on-the-wild-side-people-put-first-as-manchester-transforms-its-streets\">Manchester Council</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 16,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "keep",
+        "reason": "Информация о закрытии трамвайной линии Altrincham актуальна и соответствует теме.",
+        "risk": "none",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "keep",
+        "plan_slot_id": "transport-05",
+        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-10-altrincham-tram-line-facing-another-two-week-closure-this-autumn-fdeb23779b7c",
+        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/10/altrincham-tram-line-facing-another-two-week-closure-this-autumn",
+        "original_html": "• Metrolink: трамвайная линия Altrincham будет закрыта на две недели с 19 октября по 1 ноября 2026 года для проведения крупных ремонтных работ на Deansgate-Castlefield и Trafford Bar. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/10/altrincham-tram-line-facing-another-two-week-closure-this-autumn\">Altrincham Today</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 17,
+        "section": "Что важно сегодня",
+        "requested_action": "patch",
+        "reason": "Указана неверная улица, что может ввести в заблуждение жителей.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неправильное указание улицы. Воронка образовалась на Bury Street, а не на Heywood Road.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "today_focus-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-united-utility-issue-update-after-34628686-aa0f357c5168",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/united-utility-issue-update-after-34628686",
+        "original_html": "• На Heywood Road в Prestwich образовалась огромная воронка из-за обрушения канализации. Инженеры United Utilities начали ремонтные работы, и дорога остается закрытой на неопределенный срок. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/united-utility-issue-update-after-34628686\">MEN</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 18,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Уточнение роли Майкла Каррика в обсуждениях.",
+        "risk": "factual",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-michael-carrick-opens-up-jj-34628834-fbecf21ec656",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/michael-carrick-opens-up-jj-34628834",
+        "original_html": "• Майкл Каррик подтвердил, что участвует в обсуждениях о будущем Джей Джей Габриэля в Манчестер Юнайтед после того, как юноша попросил уйти из клуба. <a href=\"https://manchestereveningnews.co.uk/sport/football/michael-carrick-opens-up-jj-34628834\">MEN Manchester United</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 22,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата начала события указана как 1 сентября 2026 года в источнике.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "weekend_activities-02",
+        "candidate_fingerprint": "event-event-makers-market-in-great-northern-square-great-northern-manchester-2026-09-01-great-northern-square-f041f0f97950",
+        "original_url_identity": "thegreatnorthern.com/event/makers-market-in-great-northern-square",
+        "original_html": "• 18 сентября — Makers Market in Great Northern Square - Great Northern, Manchester. На площадке: рынок, вход £19.95, ремесленные товары, еда. <a href=\"https://thegreatnorthern.com/event/makers-market-in-great-northern-square\">Great Northern Makers Market</a>",
+        "model_replacement_rejected": "fact_lock: 1 сентября 2026, 18 сентября",
+        "replacement_fingerprint": "event-event-henry-paker-pencil-case-2026-09-18-aviva-studios-home-of-factory-international-a7ed096a4e50",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 24,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Leigh находится в Wigan, а не в Manchester.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Географическая ошибка: Leigh находится в Wigan, а не в Manchester.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-04",
+        "candidate_fingerprint": "event-id-skiddle-com-388491f1d7cd-151278a752d7",
+        "original_url_identity": "skiddle.com/whats-on/Wigan/Leigh-Cricket-Club/Leigh-Cricket-club-Festival-2026/41387043",
+        "original_html": "• В субботу, 19 сентября 2026 года, в Leigh Cricket Club состоится фестиваль Leigh Cricket Club Festival, который начнется в 12:00. <a href=\"https://skiddle.com/whats-on/Wigan/Leigh-Cricket-Club/Leigh-Cricket-club-Festival-2026/41387043\">Skiddle Manchester Festivals</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 39,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Уточнение места ареста: арест произошел в аэропорту Малаги, а не в Манчестере.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неправильное указание места ареста.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "city_watch-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-manchester-airport-plane-malaga-34629008-76eebc9e73eb",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-manchester-airport-plane-malaga-34629008",
+        "original_html": "• Полиция арестовала мужчину на борту самолета, направлявшегося в Манчестер из аэропорта Малаги, после того как 12-летний мальчик получил черепно-мозговую травму в результате наезда с побегом на побережье Коста-дель-Соль 15 сентября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-manchester-airport-plane-malaga-34629008\">MEN</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 48,
+        "section": "Business/tech события для тебя",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 18 сентября, а не 17 сентября.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "professional_events-01",
+        "candidate_fingerprint": "event-event-tameside-finance-and-professional-services-network-2026-09-18-tameside-ba5557a41951",
+        "original_url_identity": "businessgrowthhub.com/events/tameside-finance-and-professional-services-network",
+        "original_html": "• В Tameside 18 сентября пройдет завтрак в честь запуска новой сети финансовых и профессиональных услуг, сосредоточенной на ИИ и будущем сектора. <a href=\"https://businessgrowthhub.com/events/tameside-finance-and-professional-services-network\">GM Business Growth Hub Events</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 49,
+        "section": "Business/tech события для тебя",
+        "requested_action": "keep",
+        "reason": "Информация о событии верна и соответствует источнику.",
         "risk": "factual",
         "critical_error": false,
         "critical_problem": "",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "transport-02",
-        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-10-altrincham-tram-line-facing-another-two-week-closure-this-autumn-fdeb23779b7c",
-        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/10/altrincham-tram-line-facing-another-two-week-closure-this-autumn",
-        "original_html": "• Metrolink: трамвайная линия Altrincham будет закрыта на две недели с 19 октября по 1 ноября 2026 года для проведения крупных ремонтных работ на Deansgate-Castlefield и Trafford Bar. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/10/altrincham-tram-line-facing-another-two-week-closure-this-autumn\">Altrincham Today</a>",
+        "plan_slot_id": "professional_events-02",
+        "candidate_fingerprint": "event-event-networking-networking-central-salford-september-thursday-17-sep-8-30am-10-30am-2026-09-17-55e4f9d5616c",
+        "original_url_identity": "gmchamber.co.uk/events/networking-central-salford-september",
+        "original_html": "• 17 сентября в 8:30-10:30 в AC Marriott Salford Quays пройдет Networking Central, где спикер Тахира Сулейман обсудит внедрение AI для малых и средних предприятий. Бесплатно для членов палаты, £22 для остальных. <a href=\"https://gmchamber.co.uk/events/networking-central-salford-september\">GM Chamber Events</a>",
         "keep_rejected": "known_factual_error",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 15,
-        "section": "Футбол",
+        "line_index": 50,
+        "section": "Билеты / Ticket Radar",
         "requested_action": "patch",
-        "reason": "Эллиот Андерсон играет за Ньюкасл Юнайтед, а не за Манчестер Сити.",
-        "risk": "factual",
+        "reason": "Уточнение информации о билетах для соответствия другим строкам.",
+        "risk": "format",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "ticket_radar-01",
+        "candidate_fingerprint": "event-event-rashmeet-kaur-17th-september-2026-2026-09-17-manchester-academy-a4c7494f7d38",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13381434/rashmeet-kaur-manchester-academy-3-2026-09-17-19-30-00",
+        "original_html": "• <b>Rashmeet Kaur</b> — 17 сентября, Manchester Academy; цена £31.80. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13381434/rashmeet-kaur-manchester-academy-3-2026-09-17-19-30-00\">Manchester Academy</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 52,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "patch",
+        "reason": "Уточнение информации о билетах для соответствия другим строкам.",
+        "risk": "format",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "ticket_radar-03",
+        "candidate_fingerprint": "event-event-the-jayhawks-17th-september-2026-2026-09-17-manchester-academy-002d94915d45",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13380628/the-jayhawks-manchester-academy-2-2026-09-17-19-30-00",
+        "original_html": "• <b>The Jayhawks</b> — 17 сентября, Manchester Academy. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13380628/the-jayhawks-manchester-academy-2-2026-09-17-19-30-00\">Manchester Academy</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "requested_action": "patch",
+        "reason": "Исправление юридической ошибки.",
+        "risk": "legal",
         "critical_error": true,
-        "critical_problem": "Неверная информация о клубе игрока. Эллиот Андерсон не играет за Манчестер Сити.",
+        "critical_problem": "Неправильное использование термина 'осуждены' вместо 'обвиняются'.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-elliot-anderson-needed-just-three-34615340-4904d7530566",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/elliot-anderson-needed-just-three-34615340",
-        "original_html": "• Эллиот Андерсон продемонстрировал отличную игру за Манчестер Сити в дерби против Манчестер Юнайтед, подтвердив свои слова о том, что Сити — \"Короли Манчестера\". <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/elliot-anderson-needed-just-three-34615340\">MEN Manchester City</a>",
+        "plan_slot_id": "last_24h-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-cops-uncover-1m-cannabis-farm-34626471-cfb3a0d5f12f",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/cops-uncover-1m-cannabis-farm-34626471",
+        "original_html": "• Полиция обнаружила крупную плантацию каннабиса стоимостью около £1 млн в ходе рейда на складе на Уилсон-стрит в Бесвике 16 сентября 2026 года. Один подозреваемый был арестован по подозрению в наркопреступлениях, и в настоящее время он находится под стражей для допроса. Инспектор Рэйчел Девалле отметила, что это значительное открытие стало результатом целенаправленной работы сотрудников, собравших информацию о преступной деятельности в этом районе. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/cops-uncover-1m-cannabis-farm-34626471\">MEN</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 16,
+        "line_index": 18,
         "section": "Футбол",
-        "requested_action": "keep",
-        "reason": "Информация о Энцо Фернандесе и его игре за Манчестер Сити корректна.",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о Джей Джей Габриэле.",
         "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
+        "critical_error": true,
+        "critical_problem": "Неправильное представление фактов: Майкл Каррик не участвует в обсуждениях о будущем Джей Джей Габриэля, а только предоставил обновление.",
         "completeness_concept": "",
         "outcome": "resolved_by_replacement",
         "method": "reserve_replacement",
-        "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-theguardian-com-football-2026-sep-13-enzo-fernandez-enzo-maresca-manchester-city-reunion-united-derby-c49ffc537a01",
-        "original_url_identity": "theguardian.com/football/2026/sep/13/enzo-fernandez-enzo-maresca-manchester-city-reunion-united-derby",
-        "original_html": "• Энцо Фернандес продемонстрировал свою стойкость в дерби 13 сентября 2026 года, подтвердив, что Энцо Мареска был прав, желая его возвращения в Манчестер Сити. <a href=\"https://theguardian.com/football/2026/sep/13/enzo-fernandez-enzo-maresca-manchester-city-reunion-united-derby\">Guardian Manchester City</a>",
-        "keep_rejected": "known_factual_error",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-united-line-up-vs-34614943-5efb7b5358a9",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-michael-carrick-opens-up-jj-34628834-fbecf21ec656",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/michael-carrick-opens-up-jj-34628834",
+        "original_html": "• Майкл Каррик подтвердил, что участвует в обсуждениях о будущем Джей Джей Габриэля в Манчестер Юнайтед после того, как юноша попросил уйти из клуба. <a href=\"https://manchestereveningnews.co.uk/sport/football/michael-carrick-opens-up-jj-34628834\">MEN Manchester United</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-shea-lacey-provided-small-glimmer-34628477-c32bc46c2459",
         "post_check_passed": true
       },
       {
-        "line_index": 19,
+        "line_index": 20,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Добавление даты и времени события.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Отсутствие информации о дате и времени события.",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "",
+        "plan_slot_id": "",
+        "candidate_fingerprint": "",
+        "original_url_identity": "",
+        "original_html": "<i>Фестивали и специальные события</i>",
+        "model_replacement_rejected": "fact_lock: 18 сентября, 2026, manchester wing festival, victoria baths",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 37,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Смягчение формулировки для уменьшения чувствительности.",
-        "risk": "sensitive",
-        "critical_error": true,
-        "critical_problem": "Текст содержит чувствительную информацию о преступлениях, включая изнасилование, и требует осторожного подхода.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "city_watch-03",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cmp3042q6w3zo-c13d645f664c",
-        "original_url_identity": "bbc.com/news/articles/cmp3042q6w3zo",
-        "original_html": "• Мужчина из Стокпорта признал себя виновным в более чем 60 преступлениях против своей жены, включая изнасилование, за 20-летний период. Приговор будет вынесен по завершении судебного разбирательства. <a href=\"https://bbc.co.uk/news/articles/cmp3042q6w3zo\">BBC Manchester</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 28,
-        "section": "IT и бизнес",
-        "requested_action": "patch",
-        "reason": "Уточнение местоположения компании Debenhams.",
+        "reason": "Добавление контекста для остановки транспорта.",
         "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неверное указание местоположения компании Debenhams.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "tech_business-01",
-        "candidate_fingerprint": "url-prolificnorth-co-uk-news-debenhams-dumps-nasty-gal-in-16m-us-deal-92571bd40093",
-        "original_url_identity": "prolificnorth.co.uk/news/debenhams-dumps-nasty-gal-in-16m-us-deal",
-        "original_html": "• Группа Debenhams из Манчестера продала бренд Nasty Gal компании WSG Brands за 16 миллионов долларов. <a href=\"https://prolificnorth.co.uk/news/debenhams-dumps-nasty-gal-in-16m-us-deal\">Prolific North Manchester</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 34,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Добавление информации о билетах и времени для соответствия другим строкам.",
-        "risk": "product",
         "critical_error": false,
         "critical_problem": "",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "ticket_radar-04",
-        "candidate_fingerprint": "event-event-spiritbox-tsunami-sea-tour-wed-16-sep-2026-multiple-times-2026-09-16-co-op-live-d8f35d83134a",
-        "original_url_identity": "cooplive.com/events/spiritbox-617b",
-        "original_html": "• <b>Spiritbox Tsunami Sea Tour</b> — 16 сентября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/spiritbox-617b\">Co-op Live</a>",
+        "plan_slot_id": "city_watch-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m62-traffic-live-drivers-face-34625617-a713373e05d0",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/m62-traffic-live-drivers-face-34625617",
+        "original_html": "• Все транспортные средства были остановлены на восточном направлении M62 рядом с развязкой Eccles 16 сентября 2026 года, что привело к образованию длинных очередей. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/m62-traffic-live-drivers-face-34625617\">MEN Latest News</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 23,
+        "line_index": 41,
         "section": "Городской радар",
         "requested_action": "replace",
         "reason": "critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no Russian rendering in the shipped line",
@@ -424,10 +745,10 @@
         "completeness_concept": "acquittal",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "city_watch-07",
+        "plan_slot_id": "city_watch-06",
         "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-10-man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher-81f95ab6d856",
         "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/10/man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher",
-        "original_html": "• Саймон Ричардсон не признал себя виновным в убийстве, непредумышленном убийстве и опасном вождении, связанных со смертью директора школы Stretford Grammar Майкла Муллинса. Судебный процесс начнется 13 октября 2026 года. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/10/man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher\">Altrincham Today</a>",
+        "original_html": "• Саймон Ричардсон не признал себя виновным в убийстве, непредумышленном убийстве и опасном вождении в связи со смертью директора Stretford Grammar School Майкла Муллинса. Судебный процесс начнется 13 октября 2026 года. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/10/man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher\">Altrincham Today</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
@@ -435,57 +756,23 @@
     ],
     "operations": [
       {
-        "group_key": "свежие новости::исправление года рождения жертвы на 2022 для соответствия фактам.",
-        "actions": [
-          {
-            "line_index": 6,
-            "section": "Свежие новости",
-            "requested_action": "patch",
-            "reason": "Исправление года рождения жертвы на 2022 для соответствия фактам.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Некорректное указание года рождения жертвы.",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-04",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mum-who-shook-baby-girl-34622983-b71c4509f664",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mum-who-shook-baby-girl-34622983",
-            "original_html": "• Мать, которая трясла свою дочь до смерти после 'садистского' насилия, не получит увеличения срока заключения. Омра Уали Джан, 2024 года рождения, скончалась от тяжелых травм головы, вызванных 'крайне сильным тряской' со стороны матери Морсал Мохаммед Найм. Судья описал действия Найм как 'садистское поведение', однако ее срок в девять лет остается без изменений после обращения Генерального прокурора в Апелляционный суд. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mum-who-shook-baby-girl-34622983\">MEN</a>",
-            "model_replacement_rejected": "fact_lock: 2022",
-            "replacement_fingerprint": "url-rochdale-gov-uk-news-article-675-council-urges-families-to-apply-on-time-for-secondary-school-places-024040013431",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 6,
-            "passed": false,
-            "detail": "shared prose policy still fails"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::информация о изменении расписания metrolink актуальна и соответствует источнику.",
+        "group_key": "общественный транспорт сегодня::информация о жилищных проектах не относится к общественному транспорту.",
         "actions": [
           {
             "line_index": 12,
             "section": "Общественный транспорт сегодня",
-            "requested_action": "keep",
-            "reason": "Информация о изменении расписания Metrolink актуальна и соответствует источнику.",
+            "requested_action": "strip",
+            "reason": "Информация о жилищных проектах не относится к общественному транспорту.",
             "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
+            "critical_error": true,
+            "critical_problem": "Строка не относится к общественному транспорту.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
             "plan_slot_id": "transport-01",
-            "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-metrolink-timetable-changes-99a5ee75cedf",
-            "original_url_identity": "tfgm.com/travel-updates/travel-alerts/metrolink-timetable-changes",
-            "original_html": "• Metrolink изменил расписание с 14 сентября, добавив дополнительные трамваи в часы пик. Изменения будут действовать до дальнейшего уведомления, некоторые до 28 сентября. <a href=\"https://tfgm.com/travel-updates/travel-alerts/metrolink-timetable-changes\">TfGM</a>",
-            "keep_rejected": "known_factual_error",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-two-major-bury-housing-projects-34625030-31c8575c2629",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/two-major-bury-housing-projects-34625030",
+            "original_html": "• Официально начались работы по двум крупным жилищным проектам в центре Бери: Pyramid Park и Q-Park. Ожидается, что на этих заброшенных участках будет построено сотни новых домов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/two-major-bury-housing-projects-34625030\">MEN Latest News</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -502,58 +789,85 @@
         "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::информация о закрытии линии altrincham соответствует источнику и актуальна для планирования.",
+        "group_key": "общественный транспорт сегодня::информация о изменениях в расписании metrolink актуальна и соответствует теме.",
         "actions": [
           {
             "line_index": 13,
             "section": "Общественный транспорт сегодня",
             "requested_action": "keep",
-            "reason": "Информация о закрытии линии Altrincham соответствует источнику и актуальна для планирования.",
-            "risk": "factual",
+            "reason": "Информация о изменениях в расписании Metrolink актуальна и соответствует теме.",
+            "risk": "none",
             "critical_error": false,
             "critical_problem": "",
             "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
+            "outcome": "resolved_in_place",
+            "method": "keep",
             "plan_slot_id": "transport-02",
-            "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-10-altrincham-tram-line-facing-another-two-week-closure-this-autumn-fdeb23779b7c",
-            "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/10/altrincham-tram-line-facing-another-two-week-closure-this-autumn",
-            "original_html": "• Metrolink: трамвайная линия Altrincham будет закрыта на две недели с 19 октября по 1 ноября 2026 года для проведения крупных ремонтных работ на Deansgate-Castlefield и Trafford Bar. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/10/altrincham-tram-line-facing-another-two-week-closure-this-autumn\">Altrincham Today</a>",
-            "keep_rejected": "known_factual_error",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
+            "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-metrolink-timetable-changes-99a5ee75cedf",
+            "original_url_identity": "tfgm.com/travel-updates/travel-alerts/metrolink-timetable-changes",
+            "original_html": "• Metrolink: С 14 сентября в Metrolink введены изменения расписания для повышения надежности. Трамваи будут ходить каждые 15 минут, а в часы пик добавлены дополнительные рейсы. <a href=\"https://tfgm.com/travel-updates/travel-alerts/metrolink-timetable-changes\">TfGM</a>",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_by_removal",
+        "outcome": "resolved_in_place",
         "post_checks": [
           {
             "line_index": 13,
             "passed": true,
-            "detail": "slot removed and source absent"
+            "detail": "no repair requested"
           }
         ],
-        "known_factual_error": true
+        "known_factual_error": false
       },
       {
-        "group_key": "футбол::эллиот андерсон играет за ньюкасл юнайтед, а не за манчестер сити.",
+        "group_key": "общественный транспорт сегодня::информация о нарушениях в движении поездов актуальна и соответствует теме.",
+        "actions": [
+          {
+            "line_index": 14,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "keep",
+            "reason": "Информация о нарушениях в движении поездов актуальна и соответствует теме.",
+            "risk": "none",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "keep",
+            "plan_slot_id": "transport-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-train-disruption-live-services-between-34627166-85cc6e89eab1",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/train-disruption-live-services-between-34627166",
+            "original_html": "• National Rail: 16 сентября 2026 года поезда между Лондоном и Манчестером отменены, перенаправлены или задержаны из-за проверки безопасности на участке между Милтон-Кинсом и Рагби, задержки до 20 минут ожидаются до 17:00. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/train-disruption-live-services-between-34627166\">MEN</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 14,
+            "passed": true,
+            "detail": "no repair requested"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "общественный транспорт сегодня::информация о временном закрытии улиц в манчестере актуальна и соответствует теме.",
         "actions": [
           {
             "line_index": 15,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Эллиот Андерсон играет за Ньюкасл Юнайтед, а не за Манчестер Сити.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неверная информация о клубе игрока. Эллиот Андерсон не играет за Манчестер Сити.",
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "keep",
+            "reason": "Информация о временном закрытии улиц в Манчестере актуальна и соответствует теме.",
+            "risk": "none",
+            "critical_error": false,
+            "critical_problem": "",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-elliot-anderson-needed-just-three-34615340-4904d7530566",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/elliot-anderson-needed-just-three-34615340",
-            "original_html": "• Эллиот Андерсон продемонстрировал отличную игру за Манчестер Сити в дерби против Манчестер Юнайтед, подтвердив свои слова о том, что Сити — \"Короли Манчестера\". <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/elliot-anderson-needed-just-three-34615340\">MEN Manchester City</a>",
-            "verification": "structured fact already rendered correctly",
+            "method": "keep",
+            "plan_slot_id": "transport-04",
+            "candidate_fingerprint": "url-manchester-gov-uk-news-stories-2026-take-a-walk-on-the-wild-side-people-put-first-as-manchester-transforms-its-streets-3842087a9077",
+            "original_url_identity": "manchester.gov.uk/news-stories/2026/take-a-walk-on-the-wild-side-people-put-first-as-manchester-transforms-its-streets",
+            "original_html": "• Пять улиц в центре Манчестера будут временно закрыты для автомобилей 22-23 сентября для проведения мероприятий. <a href=\"https://manchester.gov.uk/news-stories/2026/take-a-walk-on-the-wild-side-people-put-first-as-manchester-transforms-its-streets\">Manchester Council</a>",
             "post_check_passed": true
           }
         ],
@@ -562,38 +876,132 @@
           {
             "line_index": 15,
             "passed": true,
+            "detail": "no repair requested"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "общественный транспорт сегодня::информация о закрытии трамвайной линии altrincham актуальна и соответствует теме.",
+        "actions": [
+          {
+            "line_index": 16,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "keep",
+            "reason": "Информация о закрытии трамвайной линии Altrincham актуальна и соответствует теме.",
+            "risk": "none",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "keep",
+            "plan_slot_id": "transport-05",
+            "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-10-altrincham-tram-line-facing-another-two-week-closure-this-autumn-fdeb23779b7c",
+            "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/10/altrincham-tram-line-facing-another-two-week-closure-this-autumn",
+            "original_html": "• Metrolink: трамвайная линия Altrincham будет закрыта на две недели с 19 октября по 1 ноября 2026 года для проведения крупных ремонтных работ на Deansgate-Castlefield и Trafford Bar. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/10/altrincham-tram-line-facing-another-two-week-closure-this-autumn\">Altrincham Today</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 16,
+            "passed": true,
+            "detail": "no repair requested"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "что важно сегодня::указана неверная улица, что может ввести в заблуждение жителей.",
+        "actions": [
+          {
+            "line_index": 17,
+            "section": "Что важно сегодня",
+            "requested_action": "patch",
+            "reason": "Указана неверная улица, что может ввести в заблуждение жителей.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильное указание улицы. Воронка образовалась на Bury Street, а не на Heywood Road.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "today_focus-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-united-utility-issue-update-after-34628686-aa0f357c5168",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/united-utility-issue-update-after-34628686",
+            "original_html": "• На Heywood Road в Prestwich образовалась огромная воронка из-за обрушения канализации. Инженеры United Utilities начали ремонтные работы, и дорога остается закрытой на неопределенный срок. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/united-utility-issue-update-after-34628686\">MEN</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 17,
+            "passed": true,
             "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::информация о энцо фернандесе и его игре за манчестер сити корректна.",
+        "group_key": "футбол::уточнение роли майкла каррика в обсуждениях.",
         "actions": [
           {
-            "line_index": 16,
+            "line_index": 18,
             "section": "Футбол",
-            "requested_action": "keep",
-            "reason": "Информация о Энцо Фернандесе и его игре за Манчестер Сити корректна.",
+            "requested_action": "patch",
+            "reason": "Уточнение роли Майкла Каррика в обсуждениях.",
             "risk": "factual",
             "critical_error": false,
             "critical_problem": "",
             "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-michael-carrick-opens-up-jj-34628834-fbecf21ec656",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/michael-carrick-opens-up-jj-34628834",
+            "original_html": "• Майкл Каррик подтвердил, что участвует в обсуждениях о будущем Джей Джей Габриэля в Манчестер Юнайтед после того, как юноша попросил уйти из клуба. <a href=\"https://manchestereveningnews.co.uk/sport/football/michael-carrick-opens-up-jj-34628834\">MEN Manchester United</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 18,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата начала события указана как 1 сентября 2026 года в источнике.",
+        "actions": [
+          {
+            "line_index": 22,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата начала события указана как 1 сентября 2026 года в источнике.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-theguardian-com-football-2026-sep-13-enzo-fernandez-enzo-maresca-manchester-city-reunion-united-derby-c49ffc537a01",
-            "original_url_identity": "theguardian.com/football/2026/sep/13/enzo-fernandez-enzo-maresca-manchester-city-reunion-united-derby",
-            "original_html": "• Энцо Фернандес продемонстрировал свою стойкость в дерби 13 сентября 2026 года, подтвердив, что Энцо Мареска был прав, желая его возвращения в Манчестер Сити. <a href=\"https://theguardian.com/football/2026/sep/13/enzo-fernandez-enzo-maresca-manchester-city-reunion-united-derby\">Guardian Manchester City</a>",
-            "keep_rejected": "known_factual_error",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-united-line-up-vs-34614943-5efb7b5358a9",
+            "plan_slot_id": "weekend_activities-02",
+            "candidate_fingerprint": "event-event-makers-market-in-great-northern-square-great-northern-manchester-2026-09-01-great-northern-square-f041f0f97950",
+            "original_url_identity": "thegreatnorthern.com/event/makers-market-in-great-northern-square",
+            "original_html": "• 18 сентября — Makers Market in Great Northern Square - Great Northern, Manchester. На площадке: рынок, вход £19.95, ремесленные товары, еда. <a href=\"https://thegreatnorthern.com/event/makers-market-in-great-northern-square\">Great Northern Makers Market</a>",
+            "model_replacement_rejected": "fact_lock: 1 сентября 2026, 18 сентября",
+            "replacement_fingerprint": "event-event-henry-paker-pencil-case-2026-09-18-aviva-studios-home-of-factory-international-a7ed096a4e50",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 16,
+            "line_index": 22,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -601,54 +1009,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::смягчение формулировки для уменьшения чувствительности.",
+        "group_key": "выходные в gm::leigh находится в wigan, а не в manchester.",
         "actions": [
           {
-            "line_index": 19,
-            "section": "Городской радар",
+            "line_index": 24,
+            "section": "Выходные в GM",
             "requested_action": "patch",
-            "reason": "Смягчение формулировки для уменьшения чувствительности.",
-            "risk": "sensitive",
+            "reason": "Leigh находится в Wigan, а не в Manchester.",
+            "risk": "geo",
             "critical_error": true,
-            "critical_problem": "Текст содержит чувствительную информацию о преступлениях, включая изнасилование, и требует осторожного подхода.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "city_watch-03",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cmp3042q6w3zo-c13d645f664c",
-            "original_url_identity": "bbc.com/news/articles/cmp3042q6w3zo",
-            "original_html": "• Мужчина из Стокпорта признал себя виновным в более чем 60 преступлениях против своей жены, включая изнасилование, за 20-летний период. Приговор будет вынесен по завершении судебного разбирательства. <a href=\"https://bbc.co.uk/news/articles/cmp3042q6w3zo\">BBC Manchester</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 19,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "it и бизнес::уточнение местоположения компании debenhams.",
-        "actions": [
-          {
-            "line_index": 28,
-            "section": "IT и бизнес",
-            "requested_action": "patch",
-            "reason": "Уточнение местоположения компании Debenhams.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неверное указание местоположения компании Debenhams.",
+            "critical_problem": "Географическая ошибка: Leigh находится в Wigan, а не в Manchester.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "tech_business-01",
-            "candidate_fingerprint": "url-prolificnorth-co-uk-news-debenhams-dumps-nasty-gal-in-16m-us-deal-92571bd40093",
-            "original_url_identity": "prolificnorth.co.uk/news/debenhams-dumps-nasty-gal-in-16m-us-deal",
-            "original_html": "• Группа Debenhams из Манчестера продала бренд Nasty Gal компании WSG Brands за 16 миллионов долларов. <a href=\"https://prolificnorth.co.uk/news/debenhams-dumps-nasty-gal-in-16m-us-deal\">Prolific North Manchester</a>",
+            "plan_slot_id": "weekend_activities-04",
+            "candidate_fingerprint": "event-id-skiddle-com-388491f1d7cd-151278a752d7",
+            "original_url_identity": "skiddle.com/whats-on/Wigan/Leigh-Cricket-Club/Leigh-Cricket-club-Festival-2026/41387043",
+            "original_html": "• В субботу, 19 сентября 2026 года, в Leigh Cricket Club состоится фестиваль Leigh Cricket Club Festival, который начнется в 12:00. <a href=\"https://skiddle.com/whats-on/Wigan/Leigh-Cricket-Club/Leigh-Cricket-club-Festival-2026/41387043\">Skiddle Manchester Festivals</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -656,7 +1033,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 28,
+            "line_index": 24,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -664,30 +1041,150 @@
         "known_factual_error": true
       },
       {
-        "group_key": "билеты / ticket radar::добавление информации о билетах и времени для соответствия другим строкам.",
+        "group_key": "городской радар::уточнение места ареста: арест произошел в аэропорту малаги, а не в манчестере.",
         "actions": [
           {
-            "line_index": 34,
-            "section": "Билеты / Ticket Radar",
+            "line_index": 39,
+            "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Добавление информации о билетах и времени для соответствия другим строкам.",
-            "risk": "product",
-            "critical_error": false,
-            "critical_problem": "",
+            "reason": "Уточнение места ареста: арест произошел в аэропорту Малаги, а не в Манчестере.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильное указание места ареста.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "ticket_radar-04",
-            "candidate_fingerprint": "event-event-spiritbox-tsunami-sea-tour-wed-16-sep-2026-multiple-times-2026-09-16-co-op-live-d8f35d83134a",
-            "original_url_identity": "cooplive.com/events/spiritbox-617b",
-            "original_html": "• <b>Spiritbox Tsunami Sea Tour</b> — 16 сентября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/spiritbox-617b\">Co-op Live</a>",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "city_watch-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-manchester-airport-plane-malaga-34629008-76eebc9e73eb",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-manchester-airport-plane-malaga-34629008",
+            "original_html": "• Полиция арестовала мужчину на борту самолета, направлявшегося в Манчестер из аэропорта Малаги, после того как 12-летний мальчик получил черепно-мозговую травму в результате наезда с побегом на побережье Коста-дель-Соль 15 сентября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-manchester-airport-plane-malaga-34629008\">MEN</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 34,
+            "line_index": 39,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "business/tech события для тебя::дата события должна быть 18 сентября, а не 17 сентября.",
+        "actions": [
+          {
+            "line_index": 48,
+            "section": "Business/tech события для тебя",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 18 сентября, а не 17 сентября.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "professional_events-01",
+            "candidate_fingerprint": "event-event-tameside-finance-and-professional-services-network-2026-09-18-tameside-ba5557a41951",
+            "original_url_identity": "businessgrowthhub.com/events/tameside-finance-and-professional-services-network",
+            "original_html": "• В Tameside 18 сентября пройдет завтрак в честь запуска новой сети финансовых и профессиональных услуг, сосредоточенной на ИИ и будущем сектора. <a href=\"https://businessgrowthhub.com/events/tameside-finance-and-professional-services-network\">GM Business Growth Hub Events</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 48,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "business/tech события для тебя::информация о событии верна и соответствует источнику.",
+        "actions": [
+          {
+            "line_index": 49,
+            "section": "Business/tech события для тебя",
+            "requested_action": "keep",
+            "reason": "Информация о событии верна и соответствует источнику.",
+            "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "professional_events-02",
+            "candidate_fingerprint": "event-event-networking-networking-central-salford-september-thursday-17-sep-8-30am-10-30am-2026-09-17-55e4f9d5616c",
+            "original_url_identity": "gmchamber.co.uk/events/networking-central-salford-september",
+            "original_html": "• 17 сентября в 8:30-10:30 в AC Marriott Salford Quays пройдет Networking Central, где спикер Тахира Сулейман обсудит внедрение AI для малых и средних предприятий. Бесплатно для членов палаты, £22 для остальных. <a href=\"https://gmchamber.co.uk/events/networking-central-salford-september\">GM Chamber Events</a>",
+            "keep_rejected": "known_factual_error",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 49,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::уточнение информации о билетах для соответствия другим строкам.",
+        "actions": [
+          {
+            "line_index": 50,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Уточнение информации о билетах для соответствия другим строкам.",
+            "risk": "format",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "ticket_radar-01",
+            "candidate_fingerprint": "event-event-rashmeet-kaur-17th-september-2026-2026-09-17-manchester-academy-a4c7494f7d38",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13381434/rashmeet-kaur-manchester-academy-3-2026-09-17-19-30-00",
+            "original_html": "• <b>Rashmeet Kaur</b> — 17 сентября, Manchester Academy; цена £31.80. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13381434/rashmeet-kaur-manchester-academy-3-2026-09-17-19-30-00\">Manchester Academy</a>",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 52,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Уточнение информации о билетах для соответствия другим строкам.",
+            "risk": "format",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "ticket_radar-03",
+            "candidate_fingerprint": "event-event-the-jayhawks-17th-september-2026-2026-09-17-manchester-academy-002d94915d45",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13380628/the-jayhawks-manchester-academy-2-2026-09-17-19-30-00",
+            "original_html": "• <b>The Jayhawks</b> — 17 сентября, Manchester Academy. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13380628/the-jayhawks-manchester-academy-2-2026-09-17-19-30-00\">Manchester Academy</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 50,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "line_index": 52,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -695,10 +1192,143 @@
         "known_factual_error": false
       },
       {
+        "group_key": "свежие новости::исправление юридической ошибки.",
+        "actions": [
+          {
+            "line_index": 3,
+            "section": "Свежие новости",
+            "requested_action": "patch",
+            "reason": "Исправление юридической ошибки.",
+            "risk": "legal",
+            "critical_error": true,
+            "critical_problem": "Неправильное использование термина 'осуждены' вместо 'обвиняются'.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-cops-uncover-1m-cannabis-farm-34626471-cfb3a0d5f12f",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/cops-uncover-1m-cannabis-farm-34626471",
+            "original_html": "• Полиция обнаружила крупную плантацию каннабиса стоимостью около £1 млн в ходе рейда на складе на Уилсон-стрит в Бесвике 16 сентября 2026 года. Один подозреваемый был арестован по подозрению в наркопреступлениях, и в настоящее время он находится под стражей для допроса. Инспектор Рэйчел Девалле отметила, что это значительное открытие стало результатом целенаправленной работы сотрудников, собравших информацию о преступной деятельности в этом районе. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/cops-uncover-1m-cannabis-farm-34626471\">MEN</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 3,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::дублирование информации о джей джей габриэле",
+        "actions": [
+          {
+            "line_index": 18,
+            "section": "Футбол",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о Джей Джей Габриэле.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильное представление фактов: Майкл Каррик не участвует в обсуждениях о будущем Джей Джей Габриэля, а только предоставил обновление.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-michael-carrick-opens-up-jj-34628834-fbecf21ec656",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/michael-carrick-opens-up-jj-34628834",
+            "original_html": "• Майкл Каррик подтвердил, что участвует в обсуждениях о будущем Джей Джей Габриэля в Манчестер Юнайтед после того, как юноша попросил уйти из клуба. <a href=\"https://manchestereveningnews.co.uk/sport/football/michael-carrick-opens-up-jj-34628834\">MEN Manchester United</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-shea-lacey-provided-small-glimmer-34628477-c32bc46c2459",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 18,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "story:manchester united|news|manchester|same story new facts|2026 09 17",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::добавление даты и времени события.",
+        "actions": [
+          {
+            "line_index": 20,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Добавление даты и времени события.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Отсутствие информации о дате и времени события.",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "",
+            "plan_slot_id": "",
+            "candidate_fingerprint": "",
+            "original_url_identity": "",
+            "original_html": "<i>Фестивали и специальные события</i>",
+            "model_replacement_rejected": "fact_lock: 18 сентября, 2026, manchester wing festival, victoria baths",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 20,
+            "passed": false,
+            "detail": "final line missing"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::добавление контекста для остановки транспорта.",
+        "actions": [
+          {
+            "line_index": 37,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Добавление контекста для остановки транспорта.",
+            "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "city_watch-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m62-traffic-live-drivers-face-34625617-a713373e05d0",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/m62-traffic-live-drivers-face-34625617",
+            "original_html": "• Все транспортные средства были остановлены на восточном направлении M62 рядом с развязкой Eccles 16 сентября 2026 года, что привело к образованию длинных очередей. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/m62-traffic-live-drivers-face-34625617\">MEN Latest News</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 37,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
         "group_key": "городской радар::critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no russian rendering in the shipped line",
         "actions": [
           {
-            "line_index": 23,
+            "line_index": 41,
             "section": "Городской радар",
             "requested_action": "replace",
             "reason": "critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no Russian rendering in the shipped line",
@@ -708,10 +1338,10 @@
             "completeness_concept": "acquittal",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "city_watch-07",
+            "plan_slot_id": "city_watch-06",
             "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-10-man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher-81f95ab6d856",
             "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/10/man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher",
-            "original_html": "• Саймон Ричардсон не признал себя виновным в убийстве, непредумышленном убийстве и опасном вождении, связанных со смертью директора школы Stretford Grammar Майкла Муллинса. Судебный процесс начнется 13 октября 2026 года. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/10/man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher\">Altrincham Today</a>",
+            "original_html": "• Саймон Ричардсон не признал себя виновным в убийстве, непредумышленном убийстве и опасном вождении в связи со смертью директора Stretford Grammar School Майкла Муллинса. Судебный процесс начнется 13 октября 2026 года. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/10/man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher\">Altrincham Today</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -720,7 +1350,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 23,
+            "line_index": 41,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -729,32 +1359,48 @@
       }
     ],
     "refetch": {
-      "attempted": 0,
+      "attempted": 1,
       "improved": 0,
       "failed": 0,
-      "empty_or_not_better": 0,
-      "skipped": 1,
+      "empty_or_not_better": 1,
+      "skipped": 2,
       "reports": [
         {
-          "fingerprint": "event-event-spiritbox-tsunami-sea-tour-wed-16-sep-2026-multiple-times-2026-09-16-co-op-live-d8f35d83134a",
-          "title": "Spiritbox Tsunami Sea Tour Wed 16 Sep 2026 Multiple times",
+          "fingerprint": "event-id-skiddle-com-388491f1d7cd-151278a752d7",
+          "title": "Leigh Cricket club Festival 2026",
+          "status": "empty",
+          "url": "https://skiddle.com/whats-on/Wigan/Leigh-Cricket-Club/Leigh-Cricket-club-Festival-2026/41387043",
+          "chars": 0
+        },
+        {
+          "fingerprint": "event-event-rashmeet-kaur-17th-september-2026-2026-09-17-manchester-academy-a4c7494f7d38",
+          "title": "Rashmeet Kaur - 17th September 2026",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
-          "url": "https://cooplive.com/events/spiritbox-617b",
-          "candidate_evidence_chars": 0
+          "url": "https://manchesteracademy.net/order/gateway/13381434/rashmeet-kaur-manchester-academy-3-2026-09-17-19-30-00",
+          "candidate_evidence_chars": 1199
+        },
+        {
+          "fingerprint": "event-event-the-jayhawks-17th-september-2026-2026-09-17-manchester-academy-002d94915d45",
+          "title": "The Jayhawks - 17th September 2026",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://manchesteracademy.net/order/gateway/13380628/the-jayhawks-manchester-academy-2-2026-09-17-19-30-00",
+          "candidate_evidence_chars": 1169
         }
       ]
     },
-    "enrich_improved": 5,
-    "deterministic_rewrite_rejected": 5,
+    "enrich_improved": 13,
     "no_eligible_backup": 3,
-    "false_positive_existing_fact": 2,
+    "false_positive_existing_fact": 5,
+    "deterministic_fact_lock_rejected": 1,
+    "deterministic_rewrite_rejected": 2,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 33,
-      "matched_lines": 33,
-      "applicable_lines": 2,
-      "unmatched_lines": 0,
+      "checked_lines": 49,
+      "matched_lines": 49,
+      "applicable_lines": 5,
+      "unmatched_lines": 4,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -765,29 +1411,14 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 33,
-      "resolved_in_place": 31,
-      "unresolved": 2,
-      "findings": [
-        {
-          "line_index": 6,
-          "section": "Свежие новости",
-          "outcome": "unresolved",
-          "code": "language_policy_defect",
-          "severity": "warning"
-        },
-        {
-          "line_index": 33,
-          "section": "Русскоязычные концерты и стендап UK",
-          "outcome": "unresolved",
-          "code": "language_policy_defect",
-          "severity": "warning"
-        }
-      ]
+      "checked_lines": 53,
+      "resolved_in_place": 53,
+      "unresolved": 0,
+      "findings": []
     },
     "status": "unresolved"
   },
-  "notes": "Строка соответствует всем требованиям: событие в GM, информация точная и актуальная.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлен год рождения жертвы в строке 6 для соответствия фактам.; Информация актуальна, но стоит добавить данные о текущих изменениях для повышения пользы.; Строка соотв",
+  "notes": "Строка соответствует требованиям: событие в GM, информация точная и актуальная.; Прогноз погоды соответствует источнику и географическому охвату.; Строка о происшествии в Уоррингтоне нарушает географический контракт раздела.; Строка о жилищных проектах в Бери не соответствует теме раздела 'Общественный транспорт сегодн",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
@@ -795,36 +1426,92 @@
       {
         "line_index": 6,
         "section": "Свежие новости",
-        "problem": "Некорректное указание года рождения жертвы.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 15,
-        "section": "Футбол",
-        "problem": "Неверная информация о клубе игрока. Эллиот Андерсон не играет за Манчестер Сити.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 19,
-        "section": "Городской радар",
-        "problem": "Текст содержит чувствительную информацию о преступлениях, включая изнасилование, и требует осторожного подхода.",
-        "risk": "sensitive",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 28,
-        "section": "IT и бизнес",
-        "problem": "Неверное указание местоположения компании Debenhams.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 30,
-        "section": "Business/tech события для тебя",
-        "problem": "Некорректное указание места проведения события.",
+        "problem": "География события не соответствует контракту раздела.",
         "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Строка не относится к общественному транспорту.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 17,
+        "section": "Что важно сегодня",
+        "problem": "Неправильное указание улицы. Воронка образовалась на Bury Street, а не на Heywood Road.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 18,
+        "section": "Футбол",
+        "problem": "Неправильное представление фактов: Майкл Каррик не участвует в обсуждениях о будущем Джей Джей Габриэля, а только предоставил обновление.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 22,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 24,
+        "section": "Выходные в GM",
+        "problem": "Географическая ошибка: Leigh находится в Wigan, а не в Manchester.",
+        "risk": "geo",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 39,
+        "section": "Городской радар",
+        "problem": "Неправильное указание места ареста.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 48,
+        "section": "Business/tech события для тебя",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "problem": "Неправильное использование термина 'осуждены' вместо 'обвиняются'.",
+        "risk": "legal",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 6,
+        "section": "Свежие новости",
+        "problem": "Географическая ошибка: Уоррингтон не является частью Greater Manchester.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 18,
+        "section": "Футбол",
+        "problem": "Дублирование информации о Джей Джей Габриэле.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 20,
+        "section": "Выходные в GM",
+        "problem": "Отсутствие информации о дате и времени события.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 37,
+        "section": "Городской радар",
+        "problem": "Отсутствие контекста для остановки транспорта.",
+        "risk": "factual",
         "suggested_action": "repair"
       }
     ],
@@ -832,83 +1519,168 @@
       {
         "line_index": 6,
         "section": "Свежие новости",
-        "action": "patch",
-        "replacement_text": "• Мать, которая трясла свою дочь до смерти после 'садистского' насилия, не получит увеличения срока заключения. Омра Уали Джан, 2022 года рождения, скончалась от тяжелых травм головы, вызванных 'крайне сильным тряской' со стороны матери Морсал Мохаммед Найм. Судья описал действия Найм как 'садистское поведение', однако ее срок в девять лет остается без изменений после обращения Генерального прокурора в Апелляционный суд.",
-        "reason": "Исправление года рождения жертвы на 2022 для соответствия фактам.",
-        "risk": "factual"
+        "action": "strip",
+        "reason": "Событие произошло в Уоррингтоне, который находится за пределами Greater Manchester.",
+        "risk": "geo"
       },
       {
         "line_index": 12,
         "section": "Общественный транспорт сегодня",
-        "action": "keep",
-        "reason": "Информация о изменении расписания Metrolink актуальна и соответствует источнику.",
+        "action": "strip",
+        "reason": "Информация о жилищных проектах не относится к общественному транспорту.",
         "risk": "factual"
       },
       {
         "line_index": 13,
         "section": "Общественный транспорт сегодня",
         "action": "keep",
-        "reason": "Информация о закрытии линии Altrincham соответствует источнику и актуальна для планирования.",
-        "risk": "factual"
+        "reason": "Информация о изменениях в расписании Metrolink актуальна и соответствует теме.",
+        "risk": "none"
+      },
+      {
+        "line_index": 14,
+        "section": "Общественный транспорт сегодня",
+        "action": "keep",
+        "reason": "Информация о нарушениях в движении поездов актуальна и соответствует теме.",
+        "risk": "none"
       },
       {
         "line_index": 15,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Эллиот Андерсон продемонстрировал отличную игру за Ньюкасл Юнайтед в дерби против Манчестер Юнайтед, подтвердив свои слова о том, что Ньюкасл — \"Короли Манчестера\".",
-        "reason": "Эллиот Андерсон играет за Ньюкасл Юнайтед, а не за Манчестер Сити.",
-        "risk": "factual"
+        "section": "Общественный транспорт сегодня",
+        "action": "keep",
+        "reason": "Информация о временном закрытии улиц в Манчестере актуальна и соответствует теме.",
+        "risk": "none"
       },
       {
         "line_index": 16,
-        "section": "Футбол",
+        "section": "Общественный транспорт сегодня",
         "action": "keep",
-        "reason": "Информация о Энцо Фернандесе и его игре за Манчестер Сити корректна.",
+        "reason": "Информация о закрытии трамвайной линии Altrincham актуальна и соответствует теме.",
+        "risk": "none"
+      },
+      {
+        "line_index": 17,
+        "section": "Что важно сегодня",
+        "action": "patch",
+        "replacement_text": "• На Bury Street в Prestwich образовалась огромная воронка из-за обрушения канализации. Инженеры United Utilities начали ремонтные работы, и дорога остается закрытой на неопределенный срок.",
+        "reason": "Указана неверная улица, что может ввести в заблуждение жителей.",
         "risk": "factual"
       },
       {
-        "line_index": 19,
-        "section": "Городской радар",
+        "line_index": 18,
+        "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Мужчина из Стокпорта признал себя виновным в более чем 60 преступлениях против своей жены, включая серьёзные преступления, за 20-летний период. Приговор будет вынесен по завершении судебного разбирательства.",
-        "reason": "Смягчение формулировки для уменьшения чувствительности.",
-        "risk": "sensitive"
-      },
-      {
-        "line_index": 28,
-        "section": "IT и бизнес",
-        "action": "patch",
-        "replacement_text": "• Группа Debenhams, базирующаяся в Манчестере, продала бренд Nasty Gal компании WSG Brands за 16 миллионов долларов.",
-        "reason": "Уточнение местоположения компании Debenhams.",
+        "replacement_text": "• Майкл Каррик предоставил обновление о будущем Джей Джей Габриэля в Манчестер Юнайтед после того, как юноша попросил уйти из клуба.",
+        "reason": "Уточнение роли Майкла Каррика в обсуждениях.",
         "risk": "factual"
       },
       {
-        "line_index": 30,
-        "section": "Business/tech события для тебя",
+        "line_index": 22,
+        "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• #networking Networking Central - Salford - September Thursday 17 Sep 8:30am - 10:30am — 17 сентября, AC Marriot Manchester Salford Quays, 17 Trafford Road Salford, M5 3AW. Уровень: высокий уровень; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь.",
-        "reason": "Указано неверное место проведения события. Исправлено на AC Marriot Manchester Salford Quays.",
+        "replacement_text": "• 18 сентября — Makers Market in Great Northern Square - Great Northern, Manchester. На площадке: рынок, вход £19.95, ремесленные товары, еда. Дата проведения: 1 сентября 2026 года.",
+        "reason": "Дата начала события указана как 1 сентября 2026 года в источнике.",
+        "risk": "date"
+      },
+      {
+        "line_index": 24,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• В субботу, 19 сентября 2026 года, в Leigh Cricket Club (Wigan) состоится фестиваль Leigh Cricket Club Festival, который начнется в 12:00.",
+        "reason": "Leigh находится в Wigan, а не в Manchester.",
         "risk": "geo"
       },
       {
-        "line_index": 34,
+        "line_index": 39,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Полиция арестовала мужчину на борту самолета в аэропорту Малаги, направлявшегося в Манчестер, после того как 12-летний мальчик получил черепно-мозговую травму в результате наезда с побегом на побережье Коста-дель-Соль 15 сентября 2026 года.",
+        "reason": "Уточнение места ареста: арест произошел в аэропорту Малаги, а не в Манчестере.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 48,
+        "section": "Business/tech события для тебя",
+        "action": "patch",
+        "replacement_text": "• В Tameside 18 сентября пройдет завтрак в честь запуска новой сети финансовых и профессиональных услуг, сосредоточенной на ИИ и будущем сектора.",
+        "reason": "Дата события должна быть 18 сентября, а не 17 сентября.",
+        "risk": "date"
+      },
+      {
+        "line_index": 49,
+        "section": "Business/tech события для тебя",
+        "action": "keep",
+        "reason": "Информация о событии верна и соответствует источнику.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 50,
         "section": "Билеты / Ticket Radar",
         "action": "patch",
-        "replacement_text": "• Spiritbox Tsunami Sea Tour — 16 сентября, Co-op Live. Событие проходит сегодня. Билеты и время указаны на официальной странице.",
-        "reason": "Добавление информации о билетах и времени для соответствия другим строкам.",
-        "risk": "product"
+        "replacement_text": "• Rashmeet Kaur — 17 сентября, Manchester Academy; цена £31.80. Билеты доступны на официальной странице.",
+        "reason": "Уточнение информации о билетах для соответствия другим строкам.",
+        "risk": "format"
+      },
+      {
+        "line_index": 52,
+        "section": "Билеты / Ticket Radar",
+        "action": "patch",
+        "replacement_text": "• The Jayhawks — 17 сентября, Manchester Academy. Билеты доступны на официальной странице.",
+        "reason": "Уточнение информации о билетах для соответствия другим строкам.",
+        "risk": "format"
+      },
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "action": "patch",
+        "replacement_text": "• В результате многонационального расследования, начатого в июле прошлого года, братья Винь Ван Нгуен и Куанг Ван Нгуен, а также трое их сообщников, обвиняются в организации контрабанды людей и отмывании денег.",
+        "reason": "Исправление юридической ошибки.",
+        "risk": "legal"
+      },
+      {
+        "line_index": 6,
+        "section": "Свежие новости",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Уоррингтон не входит в Greater Manchester.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 18,
+        "section": "Футбол",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации о Джей Джей Габриэле.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 20,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 18 сентября в Victoria Baths — Manchester Wing Festival 2026. На площадке: фестиваль, еда.",
+        "reason": "Добавление даты и времени события.",
+        "risk": "date"
+      },
+      {
+        "line_index": 37,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Все транспортные средства были остановлены на восточном направлении M62 рядом с развязкой Eccles 16 сентября 2026 года из-за аварии, что привело к образованию длинных очередей.",
+        "reason": "Добавление контекста для остановки транспорта.",
+        "risk": "factual"
       }
     ],
     "warnings": [
-      "В разделе 'Общественный транспорт сегодня' нет информации о текущих изменениях или влиянии на поездки сегодня, что может снизить практическую пользу для читателей.",
-      "Строка о Spiritbox Tsunami Sea Tour не содержит информации о билетах и времени, что снижает продуктовую полноту.",
-      "judge reduce failed: parse_failed no parseable JSON"
+      "Блок 'Выходные в GM' содержит только 5 событий, что ниже минимального требования в 6 события. Это может повлиять на полноту раздела.",
+      "Некоторые строки требуют уточнения информации о билетах для единообразия.",
+      "Секция 'Что важно сегодня' содержит только один элемент, что ниже минимального порога.",
+      "Секция 'Русскоязычные концерты и стендап UK' отсутствует, что ниже минимального порога."
     ],
-    "notes": "Строка соответствует всем требованиям: событие в GM, информация точная и актуальная.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлен год рождения жертвы в строке 6 для соответствия фактам.; Информация актуальна, но стоит добавить данные о текущих изменениях для повышения пользы.; Строка соотв",
+    "notes": "Строка соответствует требованиям: событие в GM, информация точная и актуальная.; Прогноз погоды соответствует источнику и географическому охвату.; Строка о происшествии в Уоррингтоне нарушает географический контракт раздела.; Строка о жилищных проектах в Бери не соответствует теме раздела 'Общественный транспорт сегодн",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "partial",
-      "chunk_count": 12,
+      "status": "ok",
+      "chunk_count": 14,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -926,7 +1698,7 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2700,
+          "estimated_tokens": 2764,
           "duration_seconds": 1.524
         },
         {
@@ -944,8 +1716,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2487,
-          "duration_seconds": 1.417
+          "estimated_tokens": 2471,
+          "duration_seconds": 1.63
         },
         {
           "chunk_id": "chunk-03",
@@ -962,69 +1734,105 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7289,
-          "duration_seconds": 3.096
+          "estimated_tokens": 7265,
+          "duration_seconds": 2.377
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            13
+            16
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 2,
-          "warning_count": 1,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 5,
+          "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3190,
-          "duration_seconds": 1.839
+          "estimated_tokens": 4832,
+          "duration_seconds": 3.421
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            14,
-            14
+            17,
+            17
           ],
           "sections": [
             "Что важно сегодня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2680,
-          "duration_seconds": 0.88
+          "estimated_tokens": 2704,
+          "duration_seconds": 2.282
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            15,
-            16
+            18,
+            19
           ],
           "sections": [
             "Футбол"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
-          "action_count": 2,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3186,
-          "duration_seconds": 3.161
+          "estimated_tokens": 3096,
+          "duration_seconds": 2.717
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            17,
-            27
+            20,
+            31
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 7539,
+          "duration_seconds": 74.783
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            32,
+            36
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 5380,
+          "duration_seconds": 1.598
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            37,
+            45
           ],
           "sections": [
             "Городской радар"
@@ -1034,69 +1842,87 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7734,
-          "duration_seconds": 40.1
+          "estimated_tokens": 6834,
+          "duration_seconds": 55.368
         },
         {
-          "chunk_id": "chunk-08",
+          "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            28,
-            29
+            46,
+            46
+          ],
+          "sections": [
+            "Еда, открытия и рынки"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2786,
+          "duration_seconds": 3.947
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            47,
+            47
           ],
           "sections": [
             "IT и бизнес"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3145,
-          "duration_seconds": 2.448
+          "estimated_tokens": 2674,
+          "duration_seconds": 5.821
         },
         {
-          "chunk_id": "chunk-09",
+          "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
-            30,
-            30
+            48,
+            49
           ],
           "sections": [
             "Business/tech события для тебя"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
-          "action_count": 1,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2875,
-          "duration_seconds": 2.197
+          "estimated_tokens": 3510,
+          "duration_seconds": 9.101
         },
         {
-          "chunk_id": "chunk-10",
+          "chunk_id": "chunk-13",
           "status": "ok",
           "line_range": [
-            31,
-            34
+            50,
+            55
           ],
           "sections": [
             "Билеты / Ticket Radar"
           ],
           "decision": "warn",
           "critical_error_count": 0,
-          "action_count": 1,
+          "action_count": 2,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 4541,
-          "duration_seconds": 19.385
+          "estimated_tokens": 5954,
+          "duration_seconds": 14.15
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-14",
           "status": "ok",
           "line_range": [
-            35,
-            35
+            56,
+            56
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -1106,40 +1932,22 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2690,
-          "duration_seconds": 0.771
-        },
-        {
-          "chunk_id": "chunk-12",
-          "status": "ok",
-          "line_range": [
-            36,
-            36
-          ],
-          "sections": [
-            "Русскоязычные концерты и стендап UK"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2738,
-          "duration_seconds": 5.684
+          "estimated_tokens": 2662,
+          "duration_seconds": 4.09
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
-        "critical_error_count": 0,
-        "action_count": 0,
-        "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 10099,
-        "duration_seconds": 26.465
+        "decision": "repair_required",
+        "critical_error_count": 5,
+        "action_count": 5,
+        "warning_count": 2,
+        "error": "",
+        "estimated_tokens": 11457,
+        "duration_seconds": 29.554
       },
       "max_workers": 3,
       "chunk_line_target": 12,
