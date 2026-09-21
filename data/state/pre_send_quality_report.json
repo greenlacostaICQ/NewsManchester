@@ -1,155 +1,137 @@
 {
-  "status": "ok",
+  "status": "partial",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 7 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair executor applied 1 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-09-20",
-  "pipeline_run_id": "20260920T080135+0100",
-  "digest_sha256": "9ef012897482324f411a57ac4aa313893c907190bffda4dbc4cdfea02b385207",
-  "duration_seconds": 75.694,
-  "confidence": 0.85,
+  "run_date_london": "2026-09-21",
+  "pipeline_run_id": "20260921T080138+0100",
+  "digest_sha256": "50eacfb67d7cfda5ee09e310ecd633f8a00a50da6c1cf7db7dfa2393c9f5080c",
+  "duration_seconds": 39.64,
+  "confidence": 0.9,
   "critical_errors": [
+    {
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Отсутствует информация о национальности обвиняемого, что может быть важным для контекста.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
     {
       "line_index": 4,
       "section": "Свежие новости",
-      "problem": "Термин 'биологически мужской' может быть воспринят как некорректный и дискриминационный.",
-      "risk": "sensitive",
+      "problem": "Неправильное имя одной из жертв теракта.",
+      "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 14,
+      "line_index": 6,
       "section": "Общественный транспорт сегодня",
-      "problem": "Дата события не соответствует текущей дате выпуска.",
-      "risk": "date",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 15,
-      "section": "Футбол",
-      "problem": "Некорректное указание состава: Маттейс де Лигт не является игроком Манчестер Юнайтед.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 18,
-      "section": "Выходные в GM",
-      "problem": "Некорректное указание города для The White Hotel.",
+      "problem": "География события выходит за пределы Greater Manchester.",
       "risk": "geo",
-      "suggested_action": "repair"
+      "suggested_action": "strip"
     },
     {
-      "line_index": 24,
-      "section": "Выходные в GM",
-      "problem": "Некорректная дата события 'Grub on the Docks'.",
-      "risk": "date",
-      "suggested_action": "repair"
+      "line_index": 9,
+      "section": "Футбол",
+      "problem": "Обзор матчей Премьер-лиги не соответствует географическому контракту gm_subject.",
+      "risk": "geo",
+      "suggested_action": "strip"
     },
     {
-      "line_index": 34,
+      "line_index": 10,
       "section": "Городской радар",
-      "problem": "Неверная информация о статусе Люка Литтлера.",
+      "problem": "Текст утверждает, что сеть Bee Network уже стала первой углеродно-нейтральной транспортной системой в Великобритании, что не соответствует фактам.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 37,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дублирование информации о событии.",
-      "risk": "format",
-      "suggested_action": "strip"
+      "line_index": 11,
+      "section": "Business/tech события для тебя",
+      "problem": "Дата мероприятия указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
     },
     {
-      "line_index": 38,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дублирование информации о событии.",
-      "risk": "format",
-      "suggested_action": "strip"
+      "line_index": 13,
+      "section": "Дальние анонсы",
+      "problem": "Событие указано как проходящее сегодня, но это не соответствует дате публикации.",
+      "risk": "date",
+      "suggested_action": "repair"
     }
   ],
   "actions": [
     {
+      "line_index": 1,
+      "section": "Главная история дня",
+      "action": "patch",
+      "replacement_text": "• 22-летний Абдулмалик Абдулла Абасс, гражданин Судана, из Гаткомб-сквер, Манчестер, был обвинён в сексуальных преступлениях против ребёнка младше 16 лет. Он обвиняется в том, что встретил девочку с намерением её соблазнить, а также в вовлечении её в сексуальную активность. Абасс задержан и предстанет перед судом в Stockport завтра утром.",
+      "reason": "Добавление информации о национальности обвиняемого для полноты контекста.",
+      "risk": "factual"
+    },
+    {
       "line_index": 4,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• В Greater Manchester произошёл инцидент, когда пациент якобы обнажился на женском отделении больницы. Это вызвало юридические действия со стороны консультанта-психиатра, который считает это 'системным нарушением' и указывает на недостатки в политике безопасности NHS. Больничный трест заявил, что пересматривает свои правила, чтобы обеспечить безопасность всех пациентов.",
-      "reason": "Использование термина 'биологически мужской' может быть воспринято как дискриминационное и неуместное в контексте.",
-      "risk": "sensitive"
-    },
-    {
-      "line_index": 14,
-      "section": "Общественный транспорт сегодня",
-      "action": "strip",
-      "reason": "Указанные даты события (19 октября по 1 ноября 2026 года) не соответствуют текущей дате выпуска (20 сентября 2026 года).",
-      "risk": "date",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 15,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Обновление по травмам Манчестер Юнайтед: Бенджамин Сеско не в составе на матч с Фулхэмом; Люк Шоу в составе. Матч против Фулхэма сегодня.",
-      "reason": "Маттейс де Лигт не является игроком Манчестер Юнайтед.",
+      "replacement_text": "• Мэр Манчестера Бев Крейг напомнила о трагедии, произошедшей год назад в синагоге Хитон Парк, когда произошел антисемитский теракт, унесший жизни Мелвина Кравица и Адриана Долби. В своем обращении она подчеркнула важность единства и солидарности в борьбе с растущим антисемитизмом, отметив, что атака на одну из общин — это атака на всех нас.",
+      "reason": "Имя одной из жертв должно быть исправлено на Адриан Долби.",
       "risk": "factual"
     },
     {
-      "line_index": 16,
-      "section": "Футбол",
-      "action": "keep",
-      "reason": "Информация о прогнозируемом составе и времени матча корректна.",
-      "risk": "factual",
+      "line_index": 6,
+      "section": "Общественный транспорт сегодня",
+      "action": "strip",
+      "reason": "Событие охватывает маршруты за пределами Greater Manchester, что нарушает контракт geo_scope.",
+      "risk": "geo",
       "replacement_text": ""
     },
     {
-      "line_index": 18,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• Сегодня с 16:00 до 23:00 в The White Hotel, Салфорд, пройдет последний Sunday Club сезона с Shy One в главной роли и Chunky в поддержке. Билеты от £15.",
-      "reason": "The White Hotel находится в Салфорде, а не в Манчестере.",
-      "risk": "geo"
+      "line_index": 9,
+      "section": "Футбол",
+      "action": "strip",
+      "reason": "Обзор матчей Премьер-лиги не соответствует географическому контракту gm_subject, так как не связан с субъектами из Greater Manchester.",
+      "risk": "geo",
+      "replacement_text": ""
     },
     {
-      "line_index": 24,
-      "section": "Выходные в GM",
+      "line_index": 10,
+      "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Событие 'Grub on the Docks' продолжается в MediaCity с уличной едой и викториной 20 сентября; следующее мероприятие пройдет 25 сентября.",
-      "reason": "Дата события должна быть 20 сентября, а не 23 сентября.",
+      "replacement_text": "• TfGM заключил долгосрочное соглашение о покупке электроэнергии с AGR Power для возобновляемых источников энергии, что приближает сеть Bee Network к статусу первой углеродно-нейтральной общественной транспортной системы в Великобритании.",
+      "reason": "Текст должен отражать, что это шаг к достижению углеродно-нейтрального статуса, а не утверждать, что он уже достигнут.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 11,
+      "section": "Business/tech события для тебя",
+      "action": "patch",
+      "replacement_text": "• 22 сентября в Центральном Манчестере пройдет мероприятие Greater Manchester Business Index, которое предоставит экономические данные и возможности для сетевого взаимодействия для бизнеса.",
+      "reason": "Дата мероприятия указана неверно. Должно быть 22 сентября.",
       "risk": "date"
     },
     {
-      "line_index": 34,
-      "section": "Городской радар",
+      "line_index": 13,
+      "section": "Дальние анонсы",
       "action": "patch",
-      "replacement_text": "• Манчестер выбран местом проведения живого шоу Netflix 'Beat Luke Littler', где 20 любителей дартса попытаются обыграть профессионального игрока Люка Литтлера в одном матче на 501 дартс за шанс выиграть £501,000.",
-      "reason": "Люк Литтлер не является номером один мира, это ошибка в фактах.",
+      "replacement_text": "• Anastacia — 21 сентября, O2 Apollo Manchester. Концерт состоится сегодня.",
+      "reason": "Уточнение формулировки для соответствия дате публикации.",
+      "risk": "date"
+    },
+    {
+      "line_index": 15,
+      "section": "Билеты / Ticket Radar",
+      "action": "patch",
+      "replacement_text": "• Марина Хайд выступит на Манчестерском литературном фестивале 28 сентября, чтобы обсудить свою новую книгу; билеты от £20.",
+      "reason": "Цена билетов указана неверно, согласно источнику она составляет £20.",
       "risk": "factual"
-    },
-    {
-      "line_index": 37,
-      "section": "Билеты / Ticket Radar",
-      "action": "strip",
-      "reason": "Дублирование информации о событии.",
-      "risk": "format",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 38,
-      "section": "Билеты / Ticket Radar",
-      "action": "strip",
-      "reason": "Дублирование информации о событии.",
-      "risk": "format",
-      "replacement_text": ""
     }
   ],
   "warnings": [
-    "Отсутствие блока 'Что важно сегодня' снижает полноту выпуска.",
-    "Отсутствие блока 'Русскоязычные концерты и стендап UK' снижает полноту выпуска.",
-    "Отсутствие блока 'Еда, открытия и рынки' снижает полноту выпуска.",
-    "Отсутствие блока 'Business/tech события для тебя' снижает полноту выпуска.",
-    "Дублирование информации о концерте Diljit Dosanjh в разделе 'Билеты / Ticket Radar'."
+    "Цена билетов на мероприятие с Мариной Хайд была указана неверно, исправлено на £20.",
+    "judge reduce failed: parse_failed no parseable JSON"
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -157,34 +139,33 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 9,
-      "Общественный транспорт сегодня": 3,
-      "Футбол": 2,
-      "Выходные в GM": 9,
-      "Городской радар": 5,
-      "IT и бизнес": 1,
+      "Свежие новости": 3,
+      "Общественный транспорт сегодня": 1,
+      "Футбол": 3,
+      "Городской радар": 1,
+      "Business/tech события для тебя": 2,
       "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 5,
-      "Крупные концерты вне GM": 1
+      "Билеты / Ticket Radar": 3,
+      "Крупные концерты вне GM": 2,
+      "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
       "Что важно сегодня": 0,
-      "Свежие новости": 9,
+      "Свежие новости": 3,
       "Главная история дня": 1,
-      "Городской радар": 5,
-      "Выходные в GM": 9,
-      "Билеты / Ticket Radar": 5,
-      "Русскоязычные концерты и стендап UK": 0,
+      "Городской радар": 1,
+      "Билеты / Ticket Radar": 3,
+      "Русскоязычные концерты и стендап UK": 1,
       "Еда, открытия и рынки": 0,
-      "Business/tech события для тебя": 0,
-      "Футбол": 2
+      "Business/tech события для тебя": 2,
+      "Футбол": 3
     },
     "ticket_items": 6,
-    "core_items": 27,
+    "core_items": 11,
     "writer_quality_counts": {
-      "included_candidates": 39,
-      "rendered_candidates": 38,
+      "included_candidates": 20,
+      "rendered_candidates": 19,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
@@ -195,48 +176,47 @@
       "removed_with_reason": 1
     },
     "source_health_counts": {
-      "ok": 95,
+      "ok": 92,
       "partial": 2,
-      "stale": 9,
-      "empty": 17,
-      "failed": 5,
-      "zero_yield": 76,
+      "stale": 10,
+      "empty": 13,
+      "failed": 11,
+      "zero_yield": 80,
       "no_contribution_breakdown": {
-        "fetch_failed": 5,
-        "all_rejected": 76,
-        "idle_no_items": 24
+        "fetch_failed": 11,
+        "all_rejected": 80,
+        "idle_no_items": 22
       },
       "zero_contribution_by_stage": {
-        "selected": 30,
+        "selected": 34,
+        "fetched": 11,
         "written": 46,
-        "parsed": 24,
-        "fetched": 5
+        "parsed": 22
       },
-      "weekend_source_coverage_incidents": 53
+      "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 0 item(s), emergency floor 3",
-      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
+      "Свежие новости: 3 item(s), emergency floor 6",
+      "Городской радар: 1 item(s), emergency floor 5",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "Business/tech события для тебя: 0 item(s), emergency floor 1",
-      "source failures: 5"
+      "source failures: 11"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 18 has unchecked number/date token(s): 16:00, 23:00",
-      "patch for line 34 has unchecked number/date token(s): 501, 501,000"
+      "patch for line 15 has unchecked number/date token(s): 28"
     ],
     "can_apply_actions": true,
-    "action_count": 9
+    "action_count": 8
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 38,
-    "matched_lines": 38,
+    "checked_lines": 19,
+    "matched_lines": 19,
     "applicable_lines": 1,
-    "unmatched_lines": 4,
+    "unmatched_lines": 0,
     "critical_omission_count": 0,
     "critical_omissions": [],
     "noncritical_omissions": [],
@@ -248,208 +228,199 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 9,
-    "attempted": 7,
-    "applied": 7,
-    "model_patch_applied": 3,
+    "requested": 6,
+    "attempted": 2,
+    "applied": 1,
+    "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 1,
-    "stripped": 3,
+    "reserve_replacement_used": 0,
+    "stripped": 0,
     "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 8,
-    "resolved_in_place": 5,
-    "resolved_by_replacement": 1,
-    "resolved_by_removal": 2,
+    "resolved": 6,
+    "resolved_in_place": 6,
+    "resolved_by_replacement": 0,
+    "resolved_by_removal": 0,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 8,
+    "enrich_attempted": 6,
     "post_check_errors": [],
-    "geo_contract_rejected": [],
+    "geo_contract_rejected": [
+      {
+        "line_index": 6,
+        "section": "Общественный транспорт сегодня",
+        "geo_scope": "gm",
+        "reason": "Событие охватывает маршруты за пределами Greater Manchester, что нарушает контракт geo_scope.",
+        "gm_anchor_present": true
+      },
+      {
+        "line_index": 9,
+        "section": "Футбол",
+        "geo_scope": "gm_subject",
+        "reason": "Обзор матчей Премьер-лиги не соответствует географическому контракту gm_subject, так как не связан с субъектами из Greater Manchester.",
+        "gm_anchor_present": false
+      }
+    ],
     "source_link_metadata_rejected": [],
     "actions": [
+      {
+        "line_index": 1,
+        "section": "Главная история дня",
+        "requested_action": "patch",
+        "reason": "Добавление информации о национальности обвиняемого для полноты контекста.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Отсутствует информация о национальности обвиняемого, что может быть важным для контекста.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "url-aboutmanchester-co-uk-22-man-named-over-child-sex-offences-d15fef4fcbc5",
+        "original_url_identity": "aboutmanchester.co.uk/22-man-named-over-child-sex-offences",
+        "original_html": "<b>22-летний Абдулмалик Абдулла Абасс из Гаткомб-сквер, Манчестер, был обвинён в сексуальных преступлениях против ребёнка младше 16 лет.</b> Он обвиняется в том, что встретил девочку с намерением её соблазнить, а также в вовлечении её в сексуальную активность. Абасс задержан и предстанет перед судом в Stockport завтра утром. <a href=\"https://aboutmanchester.co.uk/22-man-named-over-child-sex-offences\">About Manchester News</a>",
+        "post_check_passed": true
+      },
       {
         "line_index": 4,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Использование термина 'биологически мужской' может быть воспринято как дискриминационное и неуместное в контексте.",
-        "risk": "sensitive",
+        "reason": "Имя одной из жертв должно быть исправлено на Адриан Долби.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Термин 'биологически мужской' может быть воспринят как некорректный и дискриминационный.",
+        "critical_problem": "Неправильное имя одной из жертв теракта.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "model_patch",
+        "method": "verified_existing_fact",
         "plan_slot_id": "last_24h-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-biologically-male-patient-exposed-himself-34641366-df81d2b5f55f",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/biologically-male-patient-exposed-himself-34641366",
-        "original_html": "• В Greater Manchester произошёл инцидент, когда биологически мужской пациент якобы обнажился на женском отделении больницы. Это вызвало юридические действия со стороны консультанта-психиатра, который считает это 'системным нарушением' и указывает на недостатки в политике безопасности NHS. Больничный трест заявил, что пересматривает свои правила, чтобы обеспечить безопасность всех пациентов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/biologically-male-patient-exposed-himself-34641366\">MEN Latest News</a>",
+        "candidate_fingerprint": "url-aboutmanchester-co-uk-bev-craigs-message-on-yom-kippurof-heaton-park-synagogue-attack-9d0b898d511b",
+        "original_url_identity": "aboutmanchester.co.uk/bev-craigs-message-on-yom-kippurof-heaton-park-synagogue-attack",
+        "original_html": "• Мэр Манчестера Бев Крейг напомнила о трагедии, произошедшей год назад в синагоге Хитон Парк, когда произошел антисемитский теракт, унесший жизни Мелвина Кравица и Адриана Долби. В своем обращении она подчеркнула важность единства и солидарности в борьбе с растущим антисемитизмом, отметив, что атака на одну из общин — это атака на всех нас. <a href=\"https://aboutmanchester.co.uk/bev-craigs-message-on-yom-kippurof-heaton-park-synagogue-attack\">About Manchester News</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 14,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Указанные даты события (19 октября по 1 ноября 2026 года) не соответствуют текущей дате выпуска (20 сентября 2026 года).",
+        "line_index": 10,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Текст должен отражать, что это шаг к достижению углеродно-нейтрального статуса, а не утверждать, что он уже достигнут.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Текст утверждает, что сеть Bee Network уже стала первой углеродно-нейтральной транспортной системой в Великобритании, что не соответствует фактам.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "city_watch-01",
+        "candidate_fingerprint": "url-aboutmanchester-co-uk-bee-network-becomes-uks-first-carbon-neutral-transport-system-3283ec78a910",
+        "original_url_identity": "aboutmanchester.co.uk/bee-network-becomes-uks-first-carbon-neutral-transport-system",
+        "original_html": "• TfGM заключил долгосрочное соглашение о покупке электроэнергии с AGR Power для возобновляемых источников энергии, что приближает сеть Bee Network к статусу первой углеродно-нейтральной общественной транспортной системы в Великобритании. <a href=\"https://aboutmanchester.co.uk/bee-network-becomes-uks-first-carbon-neutral-transport-system\">About Manchester News</a>",
+        "verification": "judge correction matches the existing visible facts",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 11,
+        "section": "Business/tech события для тебя",
+        "requested_action": "patch",
+        "reason": "Дата мероприятия указана неверно. Должно быть 22 сентября.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события не соответствует текущей дате выпуска.",
+        "critical_problem": "Дата мероприятия указана неверно.",
         "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-metrolink-trams-cancelled-key-lines-34636629-91d29d1275ad",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/metrolink-trams-cancelled-key-lines-34636629",
-        "original_html": "• Metrolink: мероприятие отменено — С 19 октября по 1 ноября 2026 года трамваи Metrolink будут отменены на ключевых линиях в Манчестере, включая станции Deansgate-Castlefield, Cornbrook и Trafford Bar. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/metrolink-trams-cancelled-key-lines-34636629\">MEN</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "professional_events-01",
+        "candidate_fingerprint": "event-event-greater-manchester-business-index-september-2026-09-22-central-manchester-f284f5c97f57",
+        "original_url_identity": "businessgrowthhub.com/events/greater-manchester-business-index-september",
+        "original_html": "• 22 сентября в Центральном Манчестере пройдет мероприятие Greater Manchester Business Index, которое предоставит экономические данные и возможности для сетевого взаимодействия для бизнеса. <a href=\"https://businessgrowthhub.com/events/greater-manchester-business-index-september\">GM Business Growth Hub Events</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 13,
+        "section": "Дальние анонсы",
+        "requested_action": "patch",
+        "reason": "Уточнение формулировки для соответствия дате публикации.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Событие указано как проходящее сегодня, но это не соответствует дате публикации.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "future_announcements-01",
+        "candidate_fingerprint": "event-event-anastacia-2026-09-21-o2-apollo-manchester-270f95ef29e5",
+        "original_url_identity": "ticketmaster.co.uk/anastacia-manchester-21-09-2026/event/3600631CDC683FDA",
+        "original_html": "• <b>Anastacia</b> — 21 сентября, O2 Apollo Manchester. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/anastacia-manchester-21-09-2026/event/3600631CDC683FDA\">Ticketmaster</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
         "line_index": 15,
-        "section": "Футбол",
+        "section": "Билеты / Ticket Radar",
         "requested_action": "patch",
-        "reason": "Маттейс де Лигт не является игроком Манчестер Юнайтед.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Некорректное указание состава: Маттейс де Лигт не является игроком Манчестер Юнайтед.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-premier-league-man-utd-fulham-34643739-b282549477e7",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/premier-league-man-utd-fulham-34643739",
-        "original_html": "• Обновление по травмам Манчестер Юнайтед: Бенджамин Сеско не в составе на матч с Фулхэмом; Люк Шоу и Маттейс де Лигт в составе. Матч против Фулхэма сегодня. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/premier-league-man-utd-fulham-34643739\">MEN Manchester United</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 16,
-        "section": "Футбол",
-        "requested_action": "keep",
-        "reason": "Информация о прогнозируемом составе и времени матча корректна.",
+        "reason": "Цена билетов указана неверно, согласно источнику она составляет £20.",
         "risk": "factual",
         "critical_error": false,
         "critical_problem": "",
         "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-united-line-up-vs-34642389-a9acb5bb74ad",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-united-line-up-vs-34642389",
-        "original_html": "• Прогнозируемый состав Манчестер Юнайтед на матч с Фулхэмом: Сенне Ламменс в воротах, Люк Шоу может начать. • Матч против Фулхэма сегодня. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-united-line-up-vs-34642389\">MEN Manchester United</a>",
-        "keep_rejected": "known_factual_error",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-erling-haaland-alternative-floyd-samba-34638485-5be1e5208fcb",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 18,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "The White Hotel находится в Салфорде, а не в Манчестере.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Некорректное указание города для The White Hotel.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "weekend_activities-01",
-        "candidate_fingerprint": "event-event-sunday-club-at-white-hotel-2026-09-20-the-white-hotel-2e8068451410",
-        "original_url_identity": "manchestersfinest.com/events/sunday-club-at-white-hotel",
-        "original_html": "• Сегодня с 16:00 до 23:00 в The White Hotel пройдет последний Sunday Club сезона с Shy One в главной роли и Chunky в поддержке. Билеты от £15. <a href=\"https://manchestersfinest.com/events/sunday-club-at-white-hotel\">Manchester's Finest Events</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 24,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события должна быть 20 сентября, а не 23 сентября.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Некорректная дата события 'Grub on the Docks'.",
-        "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-03",
-        "candidate_fingerprint": "event-id-mediacity-event-page-0ca3d429bc24-7f8ba80d7268",
-        "original_url_identity": "mediacityuk.co.uk/events/grub-on-the-docks",
-        "original_html": "• Событие 'Grub on the Docks' продолжается в MediaCity с уличной едой и викториной 23 сентября; следующее мероприятие пройдет 25 сентября. <a href=\"https://mediacityuk.co.uk/events/grub-on-the-docks\">MediaCity What's On</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 34,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Люк Литтлер не является номером один мира, это ошибка в фактах.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неверная информация о статусе Люка Литтлера.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-06",
-        "candidate_fingerprint": "url-prolificnorth-co-uk-news-manchester-home-for-netflixs-beat-luke-littler-69f7dd7063d7",
-        "original_url_identity": "prolificnorth.co.uk/news/manchester-home-for-netflixs-beat-luke-littler",
-        "original_html": "• Манчестер выбран местом проведения живого шоу Netflix 'Beat Luke Littler', где 20 любителей дартса попытаются обыграть номер один мира Люка Литтлера в одном матче на 501 дартс за шанс выиграть £501,000. <a href=\"https://prolificnorth.co.uk/news/manchester-home-for-netflixs-beat-luke-littler\">Prolific North Manchester</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 37,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о событии.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о событии.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "ticket_radar-01",
-        "candidate_fingerprint": "event-event-diljit-dosanjh-aura-world-tour-2026-09-20-co-op-live-650c9e9f3069",
-        "original_url_identity": "ticketmaster.co.uk/diljit-dosanjh-aura-world-tour-manchester-20-09-2026/event/370064D2D20292ED",
-        "original_html": "• <b>Diljit Dosanjh</b> — 20 сентября, Co-op Live (World). Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/diljit-dosanjh-aura-world-tour-manchester-20-09-2026/event/370064D2D20292ED\">Ticketmaster</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 38,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о событии.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о событии.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
         "plan_slot_id": "ticket_radar-02",
-        "candidate_fingerprint": "event-event-diljit-dosanjh-aura-world-tour-sun-20-sep-2026-multiple-times-2026-09-20-co-op-live-fdec9ec841d1",
-        "original_url_identity": "cooplive.com/events/diljit-dosanjh-ym1l",
-        "original_html": "• <b>Diljit Dosanjh Aura World Tour</b> — 20 сентября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/diljit-dosanjh-ym1l\">Co-op Live</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
+        "candidate_fingerprint": "event-event-manchester-literature-festival-presents-an-evening-with-marina-2026-09-28-943c437e3497",
+        "original_url_identity": "rncm.ac.uk/performance/manchester-literature-festival-presents-an-evening-with-marina-hyde",
+        "original_html": "• Марина Хайд выступит на Манчестерском литературном фестивале 28 сентября, чтобы обсудить свою новую книгу; билеты от £22. <a href=\"https://rncm.ac.uk/performance/manchester-literature-festival-presents-an-evening-with-marina-hyde\">RNCM</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::использование термина 'биологически мужской' может быть воспринято как дискриминационное и неуместное в контексте.",
+        "group_key": "главная история дня::добавление информации о национальности обвиняемого для полноты контекста.",
+        "actions": [
+          {
+            "line_index": 1,
+            "section": "Главная история дня",
+            "requested_action": "patch",
+            "reason": "Добавление информации о национальности обвиняемого для полноты контекста.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Отсутствует информация о национальности обвиняемого, что может быть важным для контекста.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-aboutmanchester-co-uk-22-man-named-over-child-sex-offences-d15fef4fcbc5",
+            "original_url_identity": "aboutmanchester.co.uk/22-man-named-over-child-sex-offences",
+            "original_html": "<b>22-летний Абдулмалик Абдулла Абасс из Гаткомб-сквер, Манчестер, был обвинён в сексуальных преступлениях против ребёнка младше 16 лет.</b> Он обвиняется в том, что встретил девочку с намерением её соблазнить, а также в вовлечении её в сексуальную активность. Абасс задержан и предстанет перед судом в Stockport завтра утром. <a href=\"https://aboutmanchester.co.uk/22-man-named-over-child-sex-offences\">About Manchester News</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 1,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::имя одной из жертв должно быть исправлено на адриан долби.",
         "actions": [
           {
             "line_index": 4,
             "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Использование термина 'биологически мужской' может быть воспринято как дискриминационное и неуместное в контексте.",
-            "risk": "sensitive",
+            "reason": "Имя одной из жертв должно быть исправлено на Адриан Долби.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Термин 'биологически мужской' может быть воспринят как некорректный и дискриминационный.",
+            "critical_problem": "Неправильное имя одной из жертв теракта.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
+            "method": "verified_existing_fact",
             "plan_slot_id": "last_24h-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-biologically-male-patient-exposed-himself-34641366-df81d2b5f55f",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/biologically-male-patient-exposed-himself-34641366",
-            "original_html": "• В Greater Manchester произошёл инцидент, когда биологически мужской пациент якобы обнажился на женском отделении больницы. Это вызвало юридические действия со стороны консультанта-психиатра, который считает это 'системным нарушением' и указывает на недостатки в политике безопасности NHS. Больничный трест заявил, что пересматривает свои правила, чтобы обеспечить безопасность всех пациентов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/biologically-male-patient-exposed-himself-34641366\">MEN Latest News</a>",
+            "candidate_fingerprint": "url-aboutmanchester-co-uk-bev-craigs-message-on-yom-kippurof-heaton-park-synagogue-attack-9d0b898d511b",
+            "original_url_identity": "aboutmanchester.co.uk/bev-craigs-message-on-yom-kippurof-heaton-park-synagogue-attack",
+            "original_html": "• Мэр Манчестера Бев Крейг напомнила о трагедии, произошедшей год назад в синагоге Хитон Парк, когда произошел антисемитский теракт, унесший жизни Мелвина Кравица и Адриана Долби. В своем обращении она подчеркнула важность единства и солидарности в борьбе с растущим антисемитизмом, отметив, что атака на одну из общин — это атака на всех нас. <a href=\"https://aboutmanchester.co.uk/bev-craigs-message-on-yom-kippurof-heaton-park-synagogue-attack\">About Manchester News</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
@@ -458,268 +429,135 @@
           {
             "line_index": 4,
             "passed": true,
-            "detail": "post-check passed"
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::указанные даты события (19 октября по 1 ноября 2026 года) не соответствуют текущей дате выпуска (20 сентября 2026 года).",
+        "group_key": "городской радар::текст должен отражать, что это шаг к достижению углеродно-нейтрального статуса, а не утверждать, что он уже достигнут.",
         "actions": [
           {
-            "line_index": 14,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Указанные даты события (19 октября по 1 ноября 2026 года) не соответствуют текущей дате выпуска (20 сентября 2026 года).",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события не соответствует текущей дате выпуска.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-metrolink-trams-cancelled-key-lines-34636629-91d29d1275ad",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/metrolink-trams-cancelled-key-lines-34636629",
-            "original_html": "• Metrolink: мероприятие отменено — С 19 октября по 1 ноября 2026 года трамваи Metrolink будут отменены на ключевых линиях в Манчестере, включая станции Deansgate-Castlefield, Cornbrook и Trafford Bar. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/metrolink-trams-cancelled-key-lines-34636629\">MEN</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 14,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::маттейс де лигт не является игроком манчестер юнайтед.",
-        "actions": [
-          {
-            "line_index": 15,
-            "section": "Футбол",
+            "line_index": 10,
+            "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Маттейс де Лигт не является игроком Манчестер Юнайтед.",
+            "reason": "Текст должен отражать, что это шаг к достижению углеродно-нейтрального статуса, а не утверждать, что он уже достигнут.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Некорректное указание состава: Маттейс де Лигт не является игроком Манчестер Юнайтед.",
+            "critical_problem": "Текст утверждает, что сеть Bee Network уже стала первой углеродно-нейтральной транспортной системой в Великобритании, что не соответствует фактам.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-premier-league-man-utd-fulham-34643739-b282549477e7",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/premier-league-man-utd-fulham-34643739",
-            "original_html": "• Обновление по травмам Манчестер Юнайтед: Бенджамин Сеско не в составе на матч с Фулхэмом; Люк Шоу и Маттейс де Лигт в составе. Матч против Фулхэма сегодня. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/premier-league-man-utd-fulham-34643739\">MEN Manchester United</a>",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "city_watch-01",
+            "candidate_fingerprint": "url-aboutmanchester-co-uk-bee-network-becomes-uks-first-carbon-neutral-transport-system-3283ec78a910",
+            "original_url_identity": "aboutmanchester.co.uk/bee-network-becomes-uks-first-carbon-neutral-transport-system",
+            "original_html": "• TfGM заключил долгосрочное соглашение о покупке электроэнергии с AGR Power для возобновляемых источников энергии, что приближает сеть Bee Network к статусу первой углеродно-нейтральной общественной транспортной системы в Великобритании. <a href=\"https://aboutmanchester.co.uk/bee-network-becomes-uks-first-carbon-neutral-transport-system\">About Manchester News</a>",
+            "verification": "judge correction matches the existing visible facts",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 15,
+            "line_index": 10,
             "passed": true,
-            "detail": "post-check passed"
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::информация о прогнозируемом составе и времени матча корректна.",
+        "group_key": "business/tech события для тебя::дата мероприятия указана неверно. должно быть 22 сентября.",
         "actions": [
           {
-            "line_index": 16,
-            "section": "Футбол",
-            "requested_action": "keep",
-            "reason": "Информация о прогнозируемом составе и времени матча корректна.",
+            "line_index": 11,
+            "section": "Business/tech события для тебя",
+            "requested_action": "patch",
+            "reason": "Дата мероприятия указана неверно. Должно быть 22 сентября.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата мероприятия указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "professional_events-01",
+            "candidate_fingerprint": "event-event-greater-manchester-business-index-september-2026-09-22-central-manchester-f284f5c97f57",
+            "original_url_identity": "businessgrowthhub.com/events/greater-manchester-business-index-september",
+            "original_html": "• 22 сентября в Центральном Манчестере пройдет мероприятие Greater Manchester Business Index, которое предоставит экономические данные и возможности для сетевого взаимодействия для бизнеса. <a href=\"https://businessgrowthhub.com/events/greater-manchester-business-index-september\">GM Business Growth Hub Events</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 11,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "дальние анонсы::уточнение формулировки для соответствия дате публикации.",
+        "actions": [
+          {
+            "line_index": 13,
+            "section": "Дальние анонсы",
+            "requested_action": "patch",
+            "reason": "Уточнение формулировки для соответствия дате публикации.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Событие указано как проходящее сегодня, но это не соответствует дате публикации.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "future_announcements-01",
+            "candidate_fingerprint": "event-event-anastacia-2026-09-21-o2-apollo-manchester-270f95ef29e5",
+            "original_url_identity": "ticketmaster.co.uk/anastacia-manchester-21-09-2026/event/3600631CDC683FDA",
+            "original_html": "• <b>Anastacia</b> — 21 сентября, O2 Apollo Manchester. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/anastacia-manchester-21-09-2026/event/3600631CDC683FDA\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 13,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::цена билетов указана неверно, согласно источнику она составляет £20.",
+        "actions": [
+          {
+            "line_index": 15,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Цена билетов указана неверно, согласно источнику она составляет £20.",
             "risk": "factual",
             "critical_error": false,
             "critical_problem": "",
             "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-united-line-up-vs-34642389-a9acb5bb74ad",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-united-line-up-vs-34642389",
-            "original_html": "• Прогнозируемый состав Манчестер Юнайтед на матч с Фулхэмом: Сенне Ламменс в воротах, Люк Шоу может начать. • Матч против Фулхэма сегодня. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-united-line-up-vs-34642389\">MEN Manchester United</a>",
-            "keep_rejected": "known_factual_error",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-erling-haaland-alternative-floyd-samba-34638485-5be1e5208fcb",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 16,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::the white hotel находится в салфорде, а не в манчестере.",
-        "actions": [
-          {
-            "line_index": 18,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "The White Hotel находится в Салфорде, а не в Манчестере.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Некорректное указание города для The White Hotel.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "weekend_activities-01",
-            "candidate_fingerprint": "event-event-sunday-club-at-white-hotel-2026-09-20-the-white-hotel-2e8068451410",
-            "original_url_identity": "manchestersfinest.com/events/sunday-club-at-white-hotel",
-            "original_html": "• Сегодня с 16:00 до 23:00 в The White Hotel пройдет последний Sunday Club сезона с Shy One в главной роли и Chunky в поддержке. Билеты от £15. <a href=\"https://manchestersfinest.com/events/sunday-club-at-white-hotel\">Manchester's Finest Events</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 18,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дата события должна быть 20 сентября, а не 23 сентября.",
-        "actions": [
-          {
-            "line_index": 24,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события должна быть 20 сентября, а не 23 сентября.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Некорректная дата события 'Grub on the Docks'.",
-            "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-03",
-            "candidate_fingerprint": "event-id-mediacity-event-page-0ca3d429bc24-7f8ba80d7268",
-            "original_url_identity": "mediacityuk.co.uk/events/grub-on-the-docks",
-            "original_html": "• Событие 'Grub on the Docks' продолжается в MediaCity с уличной едой и викториной 23 сентября; следующее мероприятие пройдет 25 сентября. <a href=\"https://mediacityuk.co.uk/events/grub-on-the-docks\">MediaCity What's On</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 24,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::люк литтлер не является номером один мира, это ошибка в фактах.",
-        "actions": [
-          {
-            "line_index": 34,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Люк Литтлер не является номером один мира, это ошибка в фактах.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неверная информация о статусе Люка Литтлера.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-06",
-            "candidate_fingerprint": "url-prolificnorth-co-uk-news-manchester-home-for-netflixs-beat-luke-littler-69f7dd7063d7",
-            "original_url_identity": "prolificnorth.co.uk/news/manchester-home-for-netflixs-beat-luke-littler",
-            "original_html": "• Манчестер выбран местом проведения живого шоу Netflix 'Beat Luke Littler', где 20 любителей дартса попытаются обыграть номер один мира Люка Литтлера в одном матче на 501 дартс за шанс выиграть £501,000. <a href=\"https://prolificnorth.co.uk/news/manchester-home-for-netflixs-beat-luke-littler\">Prolific North Manchester</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 34,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::дублирование информации о событии",
-        "actions": [
-          {
-            "line_index": 37,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о событии.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о событии.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "event-event-diljit-dosanjh-aura-world-tour-2026-09-20-co-op-live-650c9e9f3069",
-            "original_url_identity": "ticketmaster.co.uk/diljit-dosanjh-aura-world-tour-manchester-20-09-2026/event/370064D2D20292ED",
-            "original_html": "• <b>Diljit Dosanjh</b> — 20 сентября, Co-op Live (World). Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/diljit-dosanjh-aura-world-tour-manchester-20-09-2026/event/370064D2D20292ED\">Ticketmaster</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 38,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о событии.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о событии.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
             "plan_slot_id": "ticket_radar-02",
-            "candidate_fingerprint": "event-event-diljit-dosanjh-aura-world-tour-sun-20-sep-2026-multiple-times-2026-09-20-co-op-live-fdec9ec841d1",
-            "original_url_identity": "cooplive.com/events/diljit-dosanjh-ym1l",
-            "original_html": "• <b>Diljit Dosanjh Aura World Tour</b> — 20 сентября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/diljit-dosanjh-ym1l\">Co-op Live</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
+            "candidate_fingerprint": "event-event-manchester-literature-festival-presents-an-evening-with-marina-2026-09-28-943c437e3497",
+            "original_url_identity": "rncm.ac.uk/performance/manchester-literature-festival-presents-an-evening-with-marina-hyde",
+            "original_html": "• Марина Хайд выступит на Манчестерском литературном фестивале 28 сентября, чтобы обсудить свою новую книгу; билеты от £22. <a href=\"https://rncm.ac.uk/performance/manchester-literature-festival-presents-an-evening-with-marina-hyde\">RNCM</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_by_removal",
+        "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 37,
+            "line_index": 15,
             "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "line_index": 38,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:diljit dosanjh|2026-09-20|co op live",
-            "visible_count": 0,
-            "passed": true
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:diljit dosanjh aura world tour|2026-09-20|co op live",
-            "visible_count": 0,
-            "passed": true
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
@@ -730,36 +568,26 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 2,
+      "skipped": 1,
       "reports": [
         {
-          "fingerprint": "event-event-diljit-dosanjh-aura-world-tour-2026-09-20-co-op-live-650c9e9f3069",
-          "title": "Diljit Dosanjh - Aura World Tour — event 2026-09-20 — public sale 2026-07-02 10:00",
+          "fingerprint": "event-event-anastacia-2026-09-21-o2-apollo-manchester-270f95ef29e5",
+          "title": "Anastacia — event 2026-09-21 — public sale 2025-09-05 10:00",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/diljit-dosanjh-aura-world-tour-manchester-20-09-2026/event/370064D2D20292ED",
-          "candidate_evidence_chars": 347
-        },
-        {
-          "fingerprint": "event-event-diljit-dosanjh-aura-world-tour-sun-20-sep-2026-multiple-times-2026-09-20-co-op-live-fdec9ec841d1",
-          "title": "Diljit Dosanjh Aura World Tour Sun 20 Sep 2026 Multiple times",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://cooplive.com/events/diljit-dosanjh-ym1l",
-          "candidate_evidence_chars": 0
+          "url": "https://ticketmaster.co.uk/anastacia-manchester-21-09-2026/event/3600631CDC683FDA",
+          "candidate_evidence_chars": 343
         }
       ]
     },
-    "enrich_improved": 7,
-    "no_eligible_backup": 3,
-    "deterministic_rewrite_rejected": 1,
-    "false_positive_existing_fact": 2,
+    "enrich_improved": 6,
+    "false_positive_existing_fact": 5,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 35,
-      "matched_lines": 35,
+      "checked_lines": 19,
+      "matched_lines": 19,
       "applicable_lines": 1,
-      "unmatched_lines": 4,
+      "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -770,157 +598,141 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 39,
-      "resolved_in_place": 39,
+      "checked_lines": 19,
+      "resolved_in_place": 19,
       "unresolved": 0,
       "findings": []
     },
     "status": "resolved"
   },
-  "notes": "Строка соответствует требованиям: событие произошло в GM, информация актуальна и соответствует источнику.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для устранения потенциально дискриминационного языка.; Строка о Metrolink содержит информацию о будущем событии, не относящемс",
+  "notes": "Добавление национальности обвиняемого важно для полноты и точности информации.; Прогноз погоды корректен и соответствует источнику Met Office.; Имя одной из жертв теракта было неправильно указано. Исправлено на Адриан Долби.; Событие затрагивает маршруты между Честером и Ливерпулем, что выходит за пределы GM.; Обзор ма",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.85,
+    "confidence": 0.9,
     "critical_errors": [
+      {
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Отсутствует информация о национальности обвиняемого, что может быть важным для контекста.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
       {
         "line_index": 4,
         "section": "Свежие новости",
-        "problem": "Термин 'биологически мужской' может быть воспринят как некорректный и дискриминационный.",
-        "risk": "sensitive",
+        "problem": "Неправильное имя одной из жертв теракта.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 14,
+        "line_index": 6,
         "section": "Общественный транспорт сегодня",
-        "problem": "Дата события не соответствует текущей дате выпуска.",
-        "risk": "date",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 15,
-        "section": "Футбол",
-        "problem": "Некорректное указание состава: Маттейс де Лигт не является игроком Манчестер Юнайтед.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 18,
-        "section": "Выходные в GM",
-        "problem": "Некорректное указание города для The White Hotel.",
+        "problem": "География события выходит за пределы Greater Manchester.",
         "risk": "geo",
-        "suggested_action": "repair"
+        "suggested_action": "strip"
       },
       {
-        "line_index": 24,
-        "section": "Выходные в GM",
-        "problem": "Некорректная дата события 'Grub on the Docks'.",
-        "risk": "date",
-        "suggested_action": "repair"
+        "line_index": 9,
+        "section": "Футбол",
+        "problem": "Обзор матчей Премьер-лиги не соответствует географическому контракту gm_subject.",
+        "risk": "geo",
+        "suggested_action": "strip"
       },
       {
-        "line_index": 34,
+        "line_index": 10,
         "section": "Городской радар",
-        "problem": "Неверная информация о статусе Люка Литтлера.",
+        "problem": "Текст утверждает, что сеть Bee Network уже стала первой углеродно-нейтральной транспортной системой в Великобритании, что не соответствует фактам.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 37,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дублирование информации о событии.",
-        "risk": "format",
-        "suggested_action": "strip"
+        "line_index": 11,
+        "section": "Business/tech события для тебя",
+        "problem": "Дата мероприятия указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
       },
       {
-        "line_index": 38,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дублирование информации о событии.",
-        "risk": "format",
-        "suggested_action": "strip"
+        "line_index": 13,
+        "section": "Дальние анонсы",
+        "problem": "Событие указано как проходящее сегодня, но это не соответствует дате публикации.",
+        "risk": "date",
+        "suggested_action": "repair"
       }
     ],
     "actions": [
       {
+        "line_index": 1,
+        "section": "Главная история дня",
+        "action": "patch",
+        "replacement_text": "• 22-летний Абдулмалик Абдулла Абасс, гражданин Судана, из Гаткомб-сквер, Манчестер, был обвинён в сексуальных преступлениях против ребёнка младше 16 лет. Он обвиняется в том, что встретил девочку с намерением её соблазнить, а также в вовлечении её в сексуальную активность. Абасс задержан и предстанет перед судом в Stockport завтра утром.",
+        "reason": "Добавление информации о национальности обвиняемого для полноты контекста.",
+        "risk": "factual"
+      },
+      {
         "line_index": 4,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• В Greater Manchester произошёл инцидент, когда пациент якобы обнажился на женском отделении больницы. Это вызвало юридические действия со стороны консультанта-психиатра, который считает это 'системным нарушением' и указывает на недостатки в политике безопасности NHS. Больничный трест заявил, что пересматривает свои правила, чтобы обеспечить безопасность всех пациентов.",
-        "reason": "Использование термина 'биологически мужской' может быть воспринято как дискриминационное и неуместное в контексте.",
-        "risk": "sensitive"
+        "replacement_text": "• Мэр Манчестера Бев Крейг напомнила о трагедии, произошедшей год назад в синагоге Хитон Парк, когда произошел антисемитский теракт, унесший жизни Мелвина Кравица и Адриана Долби. В своем обращении она подчеркнула важность единства и солидарности в борьбе с растущим антисемитизмом, отметив, что атака на одну из общин — это атака на всех нас.",
+        "reason": "Имя одной из жертв должно быть исправлено на Адриан Долби.",
+        "risk": "factual"
       },
       {
-        "line_index": 14,
+        "line_index": 6,
         "section": "Общественный транспорт сегодня",
         "action": "strip",
-        "reason": "Указанные даты события (19 октября по 1 ноября 2026 года) не соответствуют текущей дате выпуска (20 сентября 2026 года).",
+        "reason": "Событие охватывает маршруты за пределами Greater Manchester, что нарушает контракт geo_scope.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 9,
+        "section": "Футбол",
+        "action": "strip",
+        "reason": "Обзор матчей Премьер-лиги не соответствует географическому контракту gm_subject, так как не связан с субъектами из Greater Manchester.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 10,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• TfGM заключил долгосрочное соглашение о покупке электроэнергии с AGR Power для возобновляемых источников энергии, что приближает сеть Bee Network к статусу первой углеродно-нейтральной общественной транспортной системы в Великобритании.",
+        "reason": "Текст должен отражать, что это шаг к достижению углеродно-нейтрального статуса, а не утверждать, что он уже достигнут.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 11,
+        "section": "Business/tech события для тебя",
+        "action": "patch",
+        "replacement_text": "• 22 сентября в Центральном Манчестере пройдет мероприятие Greater Manchester Business Index, которое предоставит экономические данные и возможности для сетевого взаимодействия для бизнеса.",
+        "reason": "Дата мероприятия указана неверно. Должно быть 22 сентября.",
+        "risk": "date"
+      },
+      {
+        "line_index": 13,
+        "section": "Дальние анонсы",
+        "action": "patch",
+        "replacement_text": "• Anastacia — 21 сентября, O2 Apollo Manchester. Концерт состоится сегодня.",
+        "reason": "Уточнение формулировки для соответствия дате публикации.",
         "risk": "date"
       },
       {
         "line_index": 15,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Обновление по травмам Манчестер Юнайтед: Бенджамин Сеско не в составе на матч с Фулхэмом; Люк Шоу в составе. Матч против Фулхэма сегодня.",
-        "reason": "Маттейс де Лигт не является игроком Манчестер Юнайтед.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 16,
-        "section": "Футбол",
-        "action": "keep",
-        "reason": "Информация о прогнозируемом составе и времени матча корректна.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 18,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• Сегодня с 16:00 до 23:00 в The White Hotel, Салфорд, пройдет последний Sunday Club сезона с Shy One в главной роли и Chunky в поддержке. Билеты от £15.",
-        "reason": "The White Hotel находится в Салфорде, а не в Манчестере.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 24,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• Событие 'Grub on the Docks' продолжается в MediaCity с уличной едой и викториной 20 сентября; следующее мероприятие пройдет 25 сентября.",
-        "reason": "Дата события должна быть 20 сентября, а не 23 сентября.",
-        "risk": "date"
-      },
-      {
-        "line_index": 34,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Манчестер выбран местом проведения живого шоу Netflix 'Beat Luke Littler', где 20 любителей дартса попытаются обыграть профессионального игрока Люка Литтлера в одном матче на 501 дартс за шанс выиграть £501,000.",
-        "reason": "Люк Литтлер не является номером один мира, это ошибка в фактах.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 37,
         "section": "Билеты / Ticket Radar",
-        "action": "strip",
-        "reason": "Дублирование информации о событии.",
-        "risk": "format"
-      },
-      {
-        "line_index": 38,
-        "section": "Билеты / Ticket Radar",
-        "action": "strip",
-        "reason": "Дублирование информации о событии.",
-        "risk": "format"
+        "action": "patch",
+        "replacement_text": "• Марина Хайд выступит на Манчестерском литературном фестивале 28 сентября, чтобы обсудить свою новую книгу; билеты от £20.",
+        "reason": "Цена билетов указана неверно, согласно источнику она составляет £20.",
+        "risk": "factual"
       }
     ],
     "warnings": [
-      "Отсутствие блока 'Что важно сегодня' снижает полноту выпуска.",
-      "Отсутствие блока 'Русскоязычные концерты и стендап UK' снижает полноту выпуска.",
-      "Отсутствие блока 'Еда, открытия и рынки' снижает полноту выпуска.",
-      "Отсутствие блока 'Business/tech события для тебя' снижает полноту выпуска.",
-      "Дублирование информации о концерте Diljit Dosanjh в разделе 'Билеты / Ticket Radar'."
+      "Цена билетов на мероприятие с Мариной Хайд была указана неверно, исправлено на £20.",
+      "judge reduce failed: parse_failed no parseable JSON"
     ],
-    "notes": "Строка соответствует требованиям: событие произошло в GM, информация актуальна и соответствует источнику.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для устранения потенциально дискриминационного языка.; Строка о Metrolink содержит информацию о будущем событии, не относящемс",
+    "notes": "Добавление национальности обвиняемого важно для полноты и точности информации.; Прогноз погоды корректен и соответствует источнику Met Office.; Имя одной из жертв теракта было неправильно указано. Исправлено на Адриан Долби.; Событие затрагивает маршруты между Честером и Ливерпулем, что выходит за пределы GM.; Обзор ма",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "ok",
-      "chunk_count": 12,
+      "status": "partial",
+      "chunk_count": 11,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -933,13 +745,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2675,
-          "duration_seconds": 2.241
+          "estimated_tokens": 2696,
+          "duration_seconds": 2.479
         },
         {
           "chunk_id": "chunk-02",
@@ -956,15 +768,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2434,
-          "duration_seconds": 2.058
+          "estimated_tokens": 2440,
+          "duration_seconds": 1.126
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            11
+            5
           ],
           "sections": [
             "Свежие новости"
@@ -974,15 +786,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7296,
-          "duration_seconds": 5.405
+          "estimated_tokens": 3781,
+          "duration_seconds": 2.849
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            12,
-            14
+            6,
+            6
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -992,69 +804,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3746,
-          "duration_seconds": 3.255
+          "estimated_tokens": 2732,
+          "duration_seconds": 1.858
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            15,
-            16
+            7,
+            9
           ],
           "sections": [
             "Футбол"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
-          "action_count": 2,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3128,
-          "duration_seconds": 5.06
+          "estimated_tokens": 3759,
+          "duration_seconds": 2.164
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            17,
-            28
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 7624,
-          "duration_seconds": 6.365
-        },
-        {
-          "chunk_id": "chunk-07",
-          "status": "ok",
-          "line_range": [
-            29,
-            29
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2812,
-          "duration_seconds": 2.843
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            30,
-            34
+            10,
+            10
           ],
           "sections": [
             "Городской радар"
@@ -1064,69 +840,69 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4669,
-          "duration_seconds": 29.269
+          "estimated_tokens": 2707,
+          "duration_seconds": 2.235
+        },
+        {
+          "chunk_id": "chunk-07",
+          "status": "ok",
+          "line_range": [
+            11,
+            12
+          ],
+          "sections": [
+            "Business/tech события для тебя"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3489,
+          "duration_seconds": 1.664
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            13,
+            13
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2651,
+          "duration_seconds": 1.716
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            35,
-            35
+            14,
+            16
           ],
           "sections": [
-            "IT и бизнес"
+            "Билеты / Ticket Radar"
           ],
-          "decision": "pass",
+          "decision": "warn",
           "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
+          "action_count": 1,
+          "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2677,
-          "duration_seconds": 10.945
+          "estimated_tokens": 3772,
+          "duration_seconds": 1.646
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            36,
-            36
-          ],
-          "sections": [
-            "Дальние анонсы"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2658,
-          "duration_seconds": 1.506
-        },
-        {
-          "chunk_id": "chunk-11",
-          "status": "ok",
-          "line_range": [
-            37,
-            41
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 4830,
-          "duration_seconds": 36.802
-        },
-        {
-          "chunk_id": "chunk-12",
-          "status": "ok",
-          "line_range": [
-            42,
-            42
+            17,
+            18
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -1136,22 +912,40 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2664,
-          "duration_seconds": 5.561
+          "estimated_tokens": 3187,
+          "duration_seconds": 11.077
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            19,
+            19
+          ],
+          "sections": [
+            "Русскоязычные концерты и стендап UK"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2759,
+          "duration_seconds": 3.004
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "ok",
+        "status": "parse_failed",
         "line_range": [],
         "sections": [],
-        "decision": "warn",
+        "decision": "",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 5,
-        "error": "",
-        "estimated_tokens": 10338,
-        "duration_seconds": 21.251
+        "warning_count": 0,
+        "error": "no parseable JSON",
+        "estimated_tokens": 7434,
+        "duration_seconds": 21.561
       },
       "max_workers": 3,
       "chunk_line_target": 12,
