@@ -2,91 +2,147 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 4 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair executor applied 2 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-09-23",
-  "pipeline_run_id": "20260923T080133+0100",
-  "digest_sha256": "29e2cf1ca64f98c2fa66d661db5ab04b0f56964d4c75e53010d8ca0638c8ea05",
-  "duration_seconds": 80.318,
-  "confidence": 0.9,
+  "run_date_london": "2026-09-24",
+  "pipeline_run_id": "20260924T080143+0100",
+  "digest_sha256": "87d511670ae07b62035b4848e3d4bbe2befc3b3124dca8bc2e185d3dc4fc8207",
+  "duration_seconds": 113.931,
+  "confidence": 0.85,
   "critical_errors": [
     {
-      "line_index": 6,
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Текст утверждает, что произошла трагедия в синагоге в Хитон Парке в прошлом году, что не подтверждается источником.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 3,
       "section": "Свежие новости",
-      "problem": "Энди Бернэм не является премьер-министром.",
-      "risk": "factual",
+      "problem": "Неправильное указание географии. Hindley Green находится в Wigan, который не является частью Greater Manchester.",
+      "risk": "geo",
       "suggested_action": "repair"
     },
     {
-      "line_index": 14,
+      "line_index": 13,
       "section": "Общественный транспорт сегодня",
-      "problem": "Событие связано с инцидентом безопасности, а не с транспортной проблемой.",
-      "risk": "sensitive",
+      "problem": "Некорректное указание на M60 в контексте Metrolink.",
+      "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 21,
+      "line_index": 20,
       "section": "Футбол",
-      "problem": "Дата матча указана неверно. Матч состоялся 21 сентября, а не 23 сентября.",
+      "problem": "Неверная информация о главном тренере Манчестер Сити.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 30,
-      "section": "Городской радар",
-      "problem": "Фактическая ошибка: Дональд Трамп не является президентом США в 2026 году.",
-      "risk": "factual",
+      "line_index": 22,
+      "section": "Выходные в GM",
+      "problem": "Неверная географическая привязка.",
+      "risk": "geo",
       "suggested_action": "repair"
     },
     {
-      "line_index": 27,
+      "line_index": 36,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 39,
       "section": "Городской радар",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "acquittal"
+      "problem": "Дата события указана неверно. Выходные 26-28 сентября 2026 года не совпадают с реальными выходными.",
+      "risk": "date",
+      "suggested_action": "repair"
     }
   ],
   "actions": [
     {
-      "line_index": 6,
+      "line_index": 1,
+      "section": "Главная история дня",
+      "action": "patch",
+      "replacement_text": "• Мэр Манчестера Бев Крейг направила сообщение еврейской общине города после предотвращённой полицией террористической атаки. Она отметила, что рассматривает дополнительные меры для обеспечения безопасности, особенно в преддверии Йом-Кипура, когда еврейские общины готовятся к празднованию. Крейг подчеркнула, что события прошлого года вызывают тревогу и требуют повышенного внимания к безопасности.",
+      "reason": "Утверждение о трагедии в синагоге в Хитон Парке не подтверждено источником.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 3,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• Мэр Манчестера Энди Бернэм объявил, что Манчестер станет хозяином саммита G20 в ноябре 2027 года, где ожидается визит мировых лидеров, включая Дональда Трампа. Это событие станет крупнейшей операцией по обеспечению безопасности в истории города, что подчеркивает его растущий международный статус.",
-      "reason": "Энди Бернэм является мэром Манчестера, а не премьер-министром.",
-      "risk": "factual"
+      "replacement_text": "• В результате аварии на Atherton Road в районе Hindley Green, Wigan, произошедшей во вторник днем, погиб мотоциклист. Полиция Большого Манчестера начала расследование инцидента, в котором также участвовал автомобиль. Подробности о происшествии пока не раскрыты, но ожидается, что полиция предоставит дополнительную информацию в ближайшее время.",
+      "reason": "Уточнение географического расположения Hindley Green как части Wigan, а не Greater Manchester.",
+      "risk": "geo"
     },
     {
-      "line_index": 14,
+      "line_index": 13,
       "section": "Общественный транспорт сегодня",
       "action": "patch",
-      "replacement_text": "• Metrolink: два подростка были госпитализированы после ножевого ранения на Whittaker Lane в Прествиче. Станция трамваев Heaton Park закрыта в обе стороны с 18:30 из-за полицейского расследования. Пассажирам рекомендуется использовать станции Bowker Vale или Prestwich.",
-      "reason": "Уточнение причины закрытия станции для безопасности.",
-      "risk": "sensitive"
+      "replacement_text": "• Metrolink: полиция отреагировала на беспокойство о благополучии мужчины на M60, что вызвало остановку движения и сбой в движении трамваев между Эштон-андер-Лайн и Эштон Мосс; движение уже восстановлено.",
+      "reason": "Уточнение, что инцидент на M60 вызвал сбой в движении трамваев, но не был непосредственно связан с Metrolink.",
+      "risk": "factual"
     },
     {
-      "line_index": 21,
+      "line_index": 20,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Гари Невилл назвал начало второго тайма в матче Манчестер Юнайтед против Фулхэма 21 сентября 2026 года \"самыми худшими 15 минутами, которые я когда-либо видел\".",
-      "reason": "Исправление даты матча на 21 сентября, чтобы соответствовать фактам.",
+      "replacement_text": "• Главный тренер Манчестер Сити Пеп Гвардиола заявил, что предпочел бы выиграть 1-0, чем 5-3, подчеркивая акцент на контроле игры.",
+      "reason": "Неверно указан главный тренер Манчестер Сити. Энцо Мареска не является главным тренером команды.",
       "risk": "factual"
     },
     {
-      "line_index": 30,
+      "line_index": 22,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• Ramsbottom Cricket Club Festival 2026 вернется 26 сентября в Ramsbottom Cricket Club, Bolton, после успешного первого издания.",
+      "reason": "Уточнение местоположения события, чтобы соответствовать географическому контракту.",
+      "risk": "geo"
+    },
+    {
+      "line_index": 36,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 10 мая — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
+      "reason": "Дата события указана неверно, необходимо исправить на 10 мая.",
+      "risk": "date"
+    },
+    {
+      "line_index": 39,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Премьер-министр Энди Бернэм встретился с бывшим президентом США Дональдом Трампом и предпринимателем из Манчестера в Центральном парке, где ему подарили носки с его изображением.",
-      "reason": "Дональд Трамп не является президентом США в 2026 году.",
-      "risk": "factual"
+      "replacement_text": "• Работы на развязке Симистер на M60 в Bury вызовут \"серьезные заторы\" в выходные 25-27 сентября и 10-12 октября 2026 года.",
+      "reason": "Исправление даты на реальные выходные.",
+      "risk": "date"
+    },
+    {
+      "line_index": 52,
+      "section": "IT и бизнес",
+      "action": "patch",
+      "replacement_text": "• На конференции MD Future 26 в Campfield Studios обсуждались темы, связанные с искусственным интеллектом, инфраструктурой, кибербезопасностью и здоровьем. Мероприятие прошло недавно, но точная дата не указана.",
+      "reason": "Уточнение, что мероприятие уже прошло, добавляет ясности.",
+      "risk": "date"
+    },
+    {
+      "line_index": 60,
+      "section": "Крупные концерты вне GM",
+      "action": "patch",
+      "replacement_text": "• Anastacia — тур: 24 сентября, Utilita Arena Cardiff; 27 сентября, The Brighton Centre. Концерт в Кардиффе проходит сегодня.",
+      "reason": "Уточнение, что именно концерт в Кардиффе проходит сегодня.",
+      "risk": "date"
     }
   ],
   "warnings": [
-    "Секция 'Что важно сегодня' содержит только 2 элемента, что ниже минимального порога в 3 элемента.",
-    "Секция 'Еда, открытия и рынки' содержит только 1 элемент, что ниже минимального порога в 3 элемента."
+    "В строке 52 не указана точная дата проведения мероприятия, что может вызвать путаницу.",
+    "Уточните, что именно концерт в Кардиффе проходит сегодня, чтобы избежать путаницы.",
+    "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога.",
+    "Секция 'Еда, открытия и рынки' полностью отсутствует, что ниже минимального порога.",
+    "Некоторые чанки требуют исправлений, но выпуск можно отправить с учётом этих замечаний."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -96,290 +152,282 @@
       "Погода": 1,
       "Свежие новости": 9,
       "Общественный транспорт сегодня": 6,
-      "Что важно сегодня": 2,
+      "Что важно сегодня": 1,
       "Футбол": 2,
+      "Выходные в GM": 14,
       "Городской радар": 9,
-      "Еда, открытия и рынки": 1,
-      "IT и бизнес": 1,
-      "Business/tech события для тебя": 2,
+      "IT и бизнес": 5,
+      "Business/tech события для тебя": 1,
+      "Дальние анонсы": 1,
       "Билеты / Ticket Radar": 5,
       "Крупные концерты вне GM": 2,
       "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 2,
+      "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
       "Городской радар": 9,
+      "Выходные в GM": 14,
       "Билеты / Ticket Radar": 5,
       "Русскоязычные концерты и стендап UK": 1,
-      "Еда, открытия и рынки": 1,
-      "Business/tech события для тебя": 2,
+      "Еда, открытия и рынки": 0,
+      "Business/tech события для тебя": 1,
       "Футбол": 2
     },
     "ticket_items": 8,
-    "core_items": 27,
+    "core_items": 38,
     "writer_quality_counts": {
-      "included_candidates": 46,
-      "rendered_candidates": 42,
+      "included_candidates": 60,
+      "rendered_candidates": 58,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
       "dropped_low_quality": 1,
-      "replaced_from_plan_backup": 3,
+      "replaced_from_plan_backup": 1,
       "removed_with_reason": 1
     },
     "source_health_counts": {
-      "ok": 102,
+      "ok": 108,
       "partial": 2,
-      "stale": 6,
+      "stale": 4,
       "empty": 13,
-      "failed": 5,
-      "zero_yield": 82,
+      "failed": 4,
+      "zero_yield": 73,
       "no_contribution_breakdown": {
-        "fetch_failed": 5,
-        "all_rejected": 82,
-        "idle_no_items": 17
+        "fetch_failed": 4,
+        "all_rejected": 73,
+        "idle_no_items": 18
       },
       "zero_contribution_by_stage": {
-        "written": 48,
+        "written": 39,
+        "parsed": 18,
         "selected": 34,
-        "parsed": 17,
-        "fetched": 5
+        "fetched": 4
       },
-      "weekend_source_coverage_incidents": 61
+      "weekend_source_coverage_incidents": 50
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 2 item(s), emergency floor 3",
-      "Еда, открытия и рынки: 1 item(s), emergency floor 3",
-      "source failures: 5"
+      "Что важно сегодня: 1 item(s), emergency floor 3",
+      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
+      "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [
-      "patch for line 21 has unchecked number/date token(s): 21"
-    ],
+    "warnings": [],
     "can_apply_actions": true,
-    "action_count": 4
+    "action_count": 9
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 42,
-    "matched_lines": 42,
-    "applicable_lines": 5,
-    "unmatched_lines": 0,
-    "critical_omission_count": 1,
-    "critical_omissions": [
-      {
-        "line_index": 27,
-        "source_url_key": "altrincham.todaynews.co.uk/news/2026/09/10/man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher",
-        "concept": "acquittal",
-        "obligation": "charge/verdict/victim",
-        "source_hit": "not guilty"
-      }
-    ],
+    "checked_lines": 58,
+    "matched_lines": 58,
+    "applicable_lines": 3,
+    "unmatched_lines": 4,
+    "critical_omission_count": 0,
+    "critical_omissions": [],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 1,
+    "pulled_for_rework": 0,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 5,
-    "attempted": 4,
-    "applied": 4,
-    "model_patch_applied": 3,
+    "requested": 8,
+    "attempted": 2,
+    "applied": 2,
+    "model_patch_applied": 2,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 0,
-    "stripped": 1,
+    "stripped": 0,
     "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 5,
-    "resolved_in_place": 4,
+    "resolved": 8,
+    "resolved_in_place": 8,
     "resolved_by_replacement": 0,
-    "resolved_by_removal": 1,
+    "resolved_by_removal": 0,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 5,
+    "enrich_attempted": 8,
     "post_check_errors": [],
-    "geo_contract_rejected": [],
+    "geo_contract_rejected": [
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "geo_scope": "gm",
+        "reason": "Уточнение географического расположения Hindley Green как части Wigan, а не Greater Manchester.",
+        "gm_anchor_present": true
+      }
+    ],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 6,
-        "section": "Свежие новости",
+        "line_index": 1,
+        "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Энди Бернэм является мэром Манчестера, а не премьер-министром.",
+        "reason": "Утверждение о трагедии в синагоге в Хитон Парке не подтверждено источником.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Энди Бернэм не является премьер-министром.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "last_24h-04",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-g20-host-city-trump-34652436-6514520c4724",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchester-g20-host-city-trump-34652436",
-        "original_html": "• Премьер-министр Энди Бернэм объявил, что Манчестер станет хозяином саммита G20 в ноябре 2027 года, где ожидается визит мировых лидеров, включая Дональда Трампа. Это событие станет крупнейшей операцией по обеспечению безопасности в истории города, что подчеркивает его растущий международный статус. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchester-g20-host-city-trump-34652436\">MEN</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 14,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "patch",
-        "reason": "Уточнение причины закрытия станции для безопасности.",
-        "risk": "sensitive",
-        "critical_error": true,
-        "critical_problem": "Событие связано с инцидентом безопасности, а не с транспортной проблемой.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "transport-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-heaton-park-police-incident-live-34656979-ae1ab2281b24",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/heaton-park-police-incident-live-34656979",
-        "original_html": "• Metrolink: два подростка были госпитализированы после ножевого ранения на Whittaker Lane в Прествиче; станция трамваев Heaton Park закрыта в обе стороны с 18:30. Пассажирам рекомендуется использовать станции Bowker Vale или Prestwich. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/heaton-park-police-incident-live-34656979\">MEN</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 21,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Исправление даты матча на 21 сентября, чтобы соответствовать фактам.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Дата матча указана неверно. Матч состоялся 21 сентября, а не 23 сентября.",
+        "critical_problem": "Текст утверждает, что произошла трагедия в синагоге в Хитон Парке в прошлом году, что не подтверждается источником.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-gary-neville-fulham-34653157-ee8ba1bdb172",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-gary-neville-fulham-34653157",
-        "original_html": "• Гари Невилл назвал начало второго тайма в матче Манчестер Юнайтед против Фулхэма 23 сентября 2026 года \"самыми худшими 15 минутами, которые я когда-либо видел\". <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-gary-neville-fulham-34653157\">MEN Manchester United</a>",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mayor-bev-craig-sends-message-34659717-ccdbddcd2026",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mayor-bev-craig-sends-message-34659717",
+        "original_html": "<b>Мэр Манчестера Бев Крейг направила сообщение еврейской общине города после предотвращённой полицией террористической атаки.</b> Она отметила, что рассматривает дополнительные меры для обеспечения безопасности, особенно в преддверии Йом-Кипура, когда еврейские общины готовятся к празднованию. Крейг подчеркнула, что события прошлого года, когда в синагоге в Хитон Парке произошла трагедия, вызывают тревогу и требуют повышенного внимания к безопасности. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mayor-bev-craig-sends-message-34659717\">MEN</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 30,
-        "section": "Городской радар",
+        "line_index": 13,
+        "section": "Общественный транспорт сегодня",
         "requested_action": "patch",
-        "reason": "Дональд Трамп не является президентом США в 2026 году.",
+        "reason": "Уточнение, что инцидент на M60 вызвал сбой в движении трамваев, но не был непосредственно связан с Metrolink.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Фактическая ошибка: Дональд Трамп не является президентом США в 2026 году.",
+        "critical_problem": "Некорректное указание на M60 в контексте Metrolink.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "city_watch-10",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mancunian-way-charming-man-34656594-b992431eb2cf",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mancunian-way-charming-man-34656594",
-        "original_html": "• Премьер-министр Энди Бернэм встретился с президентом США Дональдом Трампом и предпринимателем из Манчестера в Центральном парке, где ему подарили носки с его изображением. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mancunian-way-charming-man-34656594\">MEN</a>",
+        "plan_slot_id": "transport-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m60-traffic-live-updates-vehicles-34658556-bbbf8350d462",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/m60-traffic-live-updates-vehicles-34658556",
+        "original_html": "• Metrolink: полиция отреагировала на беспокойство о благополучии мужчины на M60, что вызвало остановку движения и сбой в движении трамваев между Эштон-андер-Лайн и Эштон Мосс; все маршруты уже открыты. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/m60-traffic-live-updates-vehicles-34658556\">MEN</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 27,
-        "section": "Городской радар",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no Russian rendering in the shipped line",
-        "risk": "translation",
+        "line_index": 20,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Неверно указан главный тренер Манчестер Сити. Энцо Мареска не является главным тренером команды.",
+        "risk": "factual",
         "critical_error": true,
+        "critical_problem": "Неверная информация о главном тренере Манчестер Сити.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "football-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-enzo-maresca-sends-clear-man-34660399-b7413f91cdc0",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-sends-clear-man-34660399",
+        "original_html": "• Главный тренер Манчестер Сити Энцо Мареска заявил, что предпочел бы выиграть 1-0, чем 5-3, подчеркивая акцент на контроле игры. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-sends-clear-man-34660399\">MEN Manchester City</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 22,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Уточнение местоположения события, чтобы соответствовать географическому контракту.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Неверная географическая привязка.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-01",
+        "candidate_fingerprint": "event-id-skiddle-com-f29db732b41e-73da7728d660",
+        "original_url_identity": "skiddle.com/whats-on/Bolton/Ramsbottom-Cricket-Club/Ramsbottom-Cricket-Club-Festival-2026/41411125",
+        "original_html": "• Ramsbottom Cricket Club Festival 2026 вернется 26 сентября после успешного первого издания. <a href=\"https://skiddle.com/whats-on/Bolton/Ramsbottom-Cricket-Club/Ramsbottom-Cricket-Club-Festival-2026/41411125\">Skiddle Manchester Festivals</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 36,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события указана неверно, необходимо исправить на 10 мая.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-12",
+        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+        "original_html": "• 27 сентября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 39,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Исправление даты на реальные выходные.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно. Выходные 26-28 сентября 2026 года не совпадают с реальными выходными.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "city_watch-01",
+        "candidate_fingerprint": "url-bbc-com-news-articles-ck9dw237dwldo-eecf2610b11e",
+        "original_url_identity": "bbc.com/news/articles/ck9dw237dwldo",
+        "original_html": "• Работы на развязке Симистер на M60 в Bury вызовут \"серьезные заторы\" в выходные 26-28 сентября и 10-12 октября 2026 года. <a href=\"https://bbc.co.uk/news/articles/ck9dw237dwldo\">BBC Manchester</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 52,
+        "section": "IT и бизнес",
+        "requested_action": "patch",
+        "reason": "Уточнение, что мероприятие уже прошло, добавляет ясности.",
+        "risk": "date",
+        "critical_error": false,
         "critical_problem": "",
-        "completeness_concept": "acquittal",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "city_watch-07",
-        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-10-man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher-81f95ab6d856",
-        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/10/man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher",
-        "original_html": "• Саймон Ричардсон не признал себя виновным в убийстве, непредумышленном убийстве и опасном вождении в связи со смертью директора Stretford Grammar School Майкла Муллинса. Судебный процесс начнется 13 октября 2026 года. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/10/man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher\">Altrincham Today</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "tech_business-05",
+        "candidate_fingerprint": "url-manchesterdigital-com-post-manchester-digital-md-future-26-the-roundup-b29d7101625c",
+        "original_url_identity": "manchesterdigital.com/post/manchester-digital/md-future-26-the-roundup",
+        "original_html": "• На конференции MD Future 26 в Campfield Studios обсуждались темы, связанные с искусственным интеллектом, инфраструктурой, кибербезопасностью и здоровьем. Точная дата проведения мероприятия не указана. <a href=\"https://manchesterdigital.com/post/manchester-digital/md-future-26-the-roundup\">Manchester Digital</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 60,
+        "section": "Крупные концерты вне GM",
+        "requested_action": "patch",
+        "reason": "Уточнение, что именно концерт в Кардиффе проходит сегодня.",
+        "risk": "date",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "outside_gm_tickets-01",
+        "candidate_fingerprint": "event-event-anastacia-2026-09-24-utilita-arena-cardiff-5f419963347d",
+        "original_url_identity": "ticketmaster.co.uk/anastacia-cardiff-24-09-2026/event/3600631D08FB6DE9",
+        "original_html": "• <b>Anastacia</b> — тур: 24 сентября, Utilita Arena Cardiff; 27 сентября, The Brighton Centre. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/anastacia-cardiff-24-09-2026/event/3600631D08FB6DE9\">Ticketmaster</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::энди бернэм является мэром манчестера, а не премьер-министром.",
+        "group_key": "главная история дня::утверждение о трагедии в синагоге в хитон парке не подтверждено источником.",
         "actions": [
           {
-            "line_index": 6,
-            "section": "Свежие новости",
+            "line_index": 1,
+            "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Энди Бернэм является мэром Манчестера, а не премьер-министром.",
+            "reason": "Утверждение о трагедии в синагоге в Хитон Парке не подтверждено источником.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Энди Бернэм не является премьер-министром.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "last_24h-04",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-g20-host-city-trump-34652436-6514520c4724",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchester-g20-host-city-trump-34652436",
-            "original_html": "• Премьер-министр Энди Бернэм объявил, что Манчестер станет хозяином саммита G20 в ноябре 2027 года, где ожидается визит мировых лидеров, включая Дональда Трампа. Это событие станет крупнейшей операцией по обеспечению безопасности в истории города, что подчеркивает его растущий международный статус. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchester-g20-host-city-trump-34652436\">MEN</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 6,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::уточнение причины закрытия станции для безопасности.",
-        "actions": [
-          {
-            "line_index": 14,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "patch",
-            "reason": "Уточнение причины закрытия станции для безопасности.",
-            "risk": "sensitive",
-            "critical_error": true,
-            "critical_problem": "Событие связано с инцидентом безопасности, а не с транспортной проблемой.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "transport-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-heaton-park-police-incident-live-34656979-ae1ab2281b24",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/heaton-park-police-incident-live-34656979",
-            "original_html": "• Metrolink: два подростка были госпитализированы после ножевого ранения на Whittaker Lane в Прествиче; станция трамваев Heaton Park закрыта в обе стороны с 18:30. Пассажирам рекомендуется использовать станции Bowker Vale или Prestwich. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/heaton-park-police-incident-live-34656979\">MEN</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 14,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::исправление даты матча на 21 сентября, чтобы соответствовать фактам.",
-        "actions": [
-          {
-            "line_index": 21,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Исправление даты матча на 21 сентября, чтобы соответствовать фактам.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Дата матча указана неверно. Матч состоялся 21 сентября, а не 23 сентября.",
+            "critical_problem": "Текст утверждает, что произошла трагедия в синагоге в Хитон Парке в прошлом году, что не подтверждается источником.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-gary-neville-fulham-34653157-ee8ba1bdb172",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-gary-neville-fulham-34653157",
-            "original_html": "• Гари Невилл назвал начало второго тайма в матче Манчестер Юнайтед против Фулхэма 23 сентября 2026 года \"самыми худшими 15 минутами, которые я когда-либо видел\". <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-gary-neville-fulham-34653157\">MEN Manchester United</a>",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mayor-bev-craig-sends-message-34659717-ccdbddcd2026",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mayor-bev-craig-sends-message-34659717",
+            "original_html": "<b>Мэр Манчестера Бев Крейг направила сообщение еврейской общине города после предотвращённой полицией террористической атаки.</b> Она отметила, что рассматривает дополнительные меры для обеспечения безопасности, особенно в преддверии Йом-Кипура, когда еврейские общины готовятся к празднованию. Крейг подчеркнула, что события прошлого года, когда в синагоге в Хитон Парке произошла трагедия, вызывают тревогу и требуют повышенного внимания к безопасности. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mayor-bev-craig-sends-message-34659717\">MEN</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -387,7 +435,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 21,
+            "line_index": 1,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -395,30 +443,30 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::дональд трамп не является президентом сша в 2026 году.",
+        "group_key": "общественный транспорт сегодня::уточнение, что инцидент на m60 вызвал сбой в движении трамваев, но не был непосредственно связан с metrolink.",
         "actions": [
           {
-            "line_index": 30,
-            "section": "Городской радар",
+            "line_index": 13,
+            "section": "Общественный транспорт сегодня",
             "requested_action": "patch",
-            "reason": "Дональд Трамп не является президентом США в 2026 году.",
+            "reason": "Уточнение, что инцидент на M60 вызвал сбой в движении трамваев, но не был непосредственно связан с Metrolink.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Фактическая ошибка: Дональд Трамп не является президентом США в 2026 году.",
+            "critical_problem": "Некорректное указание на M60 в контексте Metrolink.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "city_watch-10",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mancunian-way-charming-man-34656594-b992431eb2cf",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mancunian-way-charming-man-34656594",
-            "original_html": "• Премьер-министр Энди Бернэм встретился с президентом США Дональдом Трампом и предпринимателем из Манчестера в Центральном парке, где ему подарили носки с его изображением. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mancunian-way-charming-man-34656594\">MEN</a>",
+            "plan_slot_id": "transport-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m60-traffic-live-updates-vehicles-34658556-bbbf8350d462",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/m60-traffic-live-updates-vehicles-34658556",
+            "original_html": "• Metrolink: полиция отреагировала на беспокойство о благополучии мужчины на M60, что вызвало остановку движения и сбой в движении трамваев между Эштон-андер-Лайн и Эштон Мосс; все маршруты уже открыты. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/m60-traffic-live-updates-vehicles-34658556\">MEN</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 30,
+            "line_index": 13,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -426,56 +474,229 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no russian rendering in the shipped line",
+        "group_key": "футбол::неверно указан главный тренер манчестер сити. энцо мареска не является главным тренером команды.",
         "actions": [
           {
-            "line_index": 27,
-            "section": "Городской радар",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no Russian rendering in the shipped line",
-            "risk": "translation",
+            "line_index": 20,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Неверно указан главный тренер Манчестер Сити. Энцо Мареска не является главным тренером команды.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "acquittal",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "city_watch-07",
-            "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-10-man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher-81f95ab6d856",
-            "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/10/man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher",
-            "original_html": "• Саймон Ричардсон не признал себя виновным в убийстве, непредумышленном убийстве и опасном вождении в связи со смертью директора Stretford Grammar School Майкла Муллинса. Судебный процесс начнется 13 октября 2026 года. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/10/man-pleads-not-guilty-to-murder-of-stretford-grammar-school-headteacher\">Altrincham Today</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
+            "critical_problem": "Неверная информация о главном тренере Манчестер Сити.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-enzo-maresca-sends-clear-man-34660399-b7413f91cdc0",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-sends-clear-man-34660399",
+            "original_html": "• Главный тренер Манчестер Сити Энцо Мареска заявил, что предпочел бы выиграть 1-0, чем 5-3, подчеркивая акцент на контроле игры. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-sends-clear-man-34660399\">MEN Manchester City</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_by_removal",
+        "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 27,
+            "line_index": 20,
             "passed": true,
-            "detail": "slot removed and source absent"
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::уточнение местоположения события, чтобы соответствовать географическому контракту.",
+        "actions": [
+          {
+            "line_index": 22,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Уточнение местоположения события, чтобы соответствовать географическому контракту.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Неверная географическая привязка.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-01",
+            "candidate_fingerprint": "event-id-skiddle-com-f29db732b41e-73da7728d660",
+            "original_url_identity": "skiddle.com/whats-on/Bolton/Ramsbottom-Cricket-Club/Ramsbottom-Cricket-Club-Festival-2026/41411125",
+            "original_html": "• Ramsbottom Cricket Club Festival 2026 вернется 26 сентября после успешного первого издания. <a href=\"https://skiddle.com/whats-on/Bolton/Ramsbottom-Cricket-Club/Ramsbottom-Cricket-Club-Festival-2026/41411125\">Skiddle Manchester Festivals</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 22,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата события указана неверно, необходимо исправить на 10 мая.",
+        "actions": [
+          {
+            "line_index": 36,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события указана неверно, необходимо исправить на 10 мая.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-12",
+            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+            "original_html": "• 27 сентября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 36,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::исправление даты на реальные выходные.",
+        "actions": [
+          {
+            "line_index": 39,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Исправление даты на реальные выходные.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно. Выходные 26-28 сентября 2026 года не совпадают с реальными выходными.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "city_watch-01",
+            "candidate_fingerprint": "url-bbc-com-news-articles-ck9dw237dwldo-eecf2610b11e",
+            "original_url_identity": "bbc.com/news/articles/ck9dw237dwldo",
+            "original_html": "• Работы на развязке Симистер на M60 в Bury вызовут \"серьезные заторы\" в выходные 26-28 сентября и 10-12 октября 2026 года. <a href=\"https://bbc.co.uk/news/articles/ck9dw237dwldo\">BBC Manchester</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 39,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "it и бизнес::уточнение, что мероприятие уже прошло, добавляет ясности.",
+        "actions": [
+          {
+            "line_index": 52,
+            "section": "IT и бизнес",
+            "requested_action": "patch",
+            "reason": "Уточнение, что мероприятие уже прошло, добавляет ясности.",
+            "risk": "date",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "tech_business-05",
+            "candidate_fingerprint": "url-manchesterdigital-com-post-manchester-digital-md-future-26-the-roundup-b29d7101625c",
+            "original_url_identity": "manchesterdigital.com/post/manchester-digital/md-future-26-the-roundup",
+            "original_html": "• На конференции MD Future 26 в Campfield Studios обсуждались темы, связанные с искусственным интеллектом, инфраструктурой, кибербезопасностью и здоровьем. Точная дата проведения мероприятия не указана. <a href=\"https://manchesterdigital.com/post/manchester-digital/md-future-26-the-roundup\">Manchester Digital</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 52,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "крупные концерты вне gm::уточнение, что именно концерт в кардиффе проходит сегодня.",
+        "actions": [
+          {
+            "line_index": 60,
+            "section": "Крупные концерты вне GM",
+            "requested_action": "patch",
+            "reason": "Уточнение, что именно концерт в Кардиффе проходит сегодня.",
+            "risk": "date",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "outside_gm_tickets-01",
+            "candidate_fingerprint": "event-event-anastacia-2026-09-24-utilita-arena-cardiff-5f419963347d",
+            "original_url_identity": "ticketmaster.co.uk/anastacia-cardiff-24-09-2026/event/3600631D08FB6DE9",
+            "original_html": "• <b>Anastacia</b> — тур: 24 сентября, Utilita Arena Cardiff; 27 сентября, The Brighton Centre. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/anastacia-cardiff-24-09-2026/event/3600631D08FB6DE9\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 60,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": false
       }
     ],
     "refetch": {
-      "attempted": 0,
+      "attempted": 1,
       "improved": 0,
       "failed": 0,
-      "empty_or_not_better": 0,
-      "skipped": 0
+      "empty_or_not_better": 1,
+      "skipped": 1,
+      "reports": [
+        {
+          "fingerprint": "event-id-skiddle-com-f29db732b41e-73da7728d660",
+          "title": "Ramsbottom Cricket Club Festival 2026",
+          "status": "empty",
+          "url": "https://skiddle.com/whats-on/Bolton/Ramsbottom-Cricket-Club/Ramsbottom-Cricket-Club-Festival-2026/41411125",
+          "chars": 0
+        },
+        {
+          "fingerprint": "event-event-anastacia-2026-09-24-utilita-arena-cardiff-5f419963347d",
+          "title": "Anastacia — event 2026-09-24 — public sale 2025-09-05 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/anastacia-cardiff-24-09-2026/event/3600631D08FB6DE9",
+          "candidate_evidence_chars": 339
+        }
+      ]
     },
-    "enrich_improved": 5,
-    "false_positive_existing_fact": 1,
-    "deterministic_rewrite_rejected": 1,
-    "no_eligible_backup": 1,
+    "enrich_improved": 8,
+    "false_positive_existing_fact": 6,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 41,
-      "matched_lines": 41,
-      "applicable_lines": 4,
-      "unmatched_lines": 0,
+      "checked_lines": 58,
+      "matched_lines": 58,
+      "applicable_lines": 3,
+      "unmatched_lines": 4,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -486,90 +707,154 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 41,
-      "resolved_in_place": 41,
+      "checked_lines": 62,
+      "resolved_in_place": 62,
       "unresolved": 0,
       "findings": []
     },
     "status": "resolved"
   },
-  "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного указания должности Энди Бернэма.; Строка 14 требует уточнения причины закрытия станции для безопасности.; Обе строки соответствуют требованиям",
+  "notes": "Утверждение о трагедии в синагоге в Хитон Парке требует подтверждения или удаления.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Уточнение географии необходимо для соответствия контракту geo_scope.; Ошибка в строке 13 связана с некорректной связью между инцидентом на M60 и Metrolink.; Строка соответ",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.9,
+    "confidence": 0.85,
     "critical_errors": [
       {
-        "line_index": 6,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Текст утверждает, что произошла трагедия в синагоге в Хитон Парке в прошлом году, что не подтверждается источником.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 3,
         "section": "Свежие новости",
-        "problem": "Энди Бернэм не является премьер-министром.",
-        "risk": "factual",
+        "problem": "Неправильное указание географии. Hindley Green находится в Wigan, который не является частью Greater Manchester.",
+        "risk": "geo",
         "suggested_action": "repair"
       },
       {
-        "line_index": 14,
+        "line_index": 13,
         "section": "Общественный транспорт сегодня",
-        "problem": "Событие связано с инцидентом безопасности, а не с транспортной проблемой.",
-        "risk": "sensitive",
+        "problem": "Некорректное указание на M60 в контексте Metrolink.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 21,
+        "line_index": 20,
         "section": "Футбол",
-        "problem": "Дата матча указана неверно. Матч состоялся 21 сентября, а не 23 сентября.",
+        "problem": "Неверная информация о главном тренере Манчестер Сити.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 30,
+        "line_index": 22,
+        "section": "Выходные в GM",
+        "problem": "Неверная географическая привязка.",
+        "risk": "geo",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 36,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 39,
         "section": "Городской радар",
-        "problem": "Фактическая ошибка: Дональд Трамп не является президентом США в 2026 году.",
-        "risk": "factual",
+        "problem": "Дата события указана неверно. Выходные 26-28 сентября 2026 года не совпадают с реальными выходными.",
+        "risk": "date",
         "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 6,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "action": "patch",
+        "replacement_text": "• Мэр Манчестера Бев Крейг направила сообщение еврейской общине города после предотвращённой полицией террористической атаки. Она отметила, что рассматривает дополнительные меры для обеспечения безопасности, особенно в преддверии Йом-Кипура, когда еврейские общины готовятся к празднованию. Крейг подчеркнула, что события прошлого года вызывают тревогу и требуют повышенного внимания к безопасности.",
+        "reason": "Утверждение о трагедии в синагоге в Хитон Парке не подтверждено источником.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 3,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• Мэр Манчестера Энди Бернэм объявил, что Манчестер станет хозяином саммита G20 в ноябре 2027 года, где ожидается визит мировых лидеров, включая Дональда Трампа. Это событие станет крупнейшей операцией по обеспечению безопасности в истории города, что подчеркивает его растущий международный статус.",
-        "reason": "Энди Бернэм является мэром Манчестера, а не премьер-министром.",
-        "risk": "factual"
+        "replacement_text": "• В результате аварии на Atherton Road в районе Hindley Green, Wigan, произошедшей во вторник днем, погиб мотоциклист. Полиция Большого Манчестера начала расследование инцидента, в котором также участвовал автомобиль. Подробности о происшествии пока не раскрыты, но ожидается, что полиция предоставит дополнительную информацию в ближайшее время.",
+        "reason": "Уточнение географического расположения Hindley Green как части Wigan, а не Greater Manchester.",
+        "risk": "geo"
       },
       {
-        "line_index": 14,
+        "line_index": 13,
         "section": "Общественный транспорт сегодня",
         "action": "patch",
-        "replacement_text": "• Metrolink: два подростка были госпитализированы после ножевого ранения на Whittaker Lane в Прествиче. Станция трамваев Heaton Park закрыта в обе стороны с 18:30 из-за полицейского расследования. Пассажирам рекомендуется использовать станции Bowker Vale или Prestwich.",
-        "reason": "Уточнение причины закрытия станции для безопасности.",
-        "risk": "sensitive"
+        "replacement_text": "• Metrolink: полиция отреагировала на беспокойство о благополучии мужчины на M60, что вызвало остановку движения и сбой в движении трамваев между Эштон-андер-Лайн и Эштон Мосс; движение уже восстановлено.",
+        "reason": "Уточнение, что инцидент на M60 вызвал сбой в движении трамваев, но не был непосредственно связан с Metrolink.",
+        "risk": "factual"
       },
       {
-        "line_index": 21,
+        "line_index": 20,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Гари Невилл назвал начало второго тайма в матче Манчестер Юнайтед против Фулхэма 21 сентября 2026 года \"самыми худшими 15 минутами, которые я когда-либо видел\".",
-        "reason": "Исправление даты матча на 21 сентября, чтобы соответствовать фактам.",
+        "replacement_text": "• Главный тренер Манчестер Сити Пеп Гвардиола заявил, что предпочел бы выиграть 1-0, чем 5-3, подчеркивая акцент на контроле игры.",
+        "reason": "Неверно указан главный тренер Манчестер Сити. Энцо Мареска не является главным тренером команды.",
         "risk": "factual"
       },
       {
-        "line_index": 30,
+        "line_index": 22,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• Ramsbottom Cricket Club Festival 2026 вернется 26 сентября в Ramsbottom Cricket Club, Bolton, после успешного первого издания.",
+        "reason": "Уточнение местоположения события, чтобы соответствовать географическому контракту.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 36,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 10 мая — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
+        "reason": "Дата события указана неверно, необходимо исправить на 10 мая.",
+        "risk": "date"
+      },
+      {
+        "line_index": 39,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Премьер-министр Энди Бернэм встретился с бывшим президентом США Дональдом Трампом и предпринимателем из Манчестера в Центральном парке, где ему подарили носки с его изображением.",
-        "reason": "Дональд Трамп не является президентом США в 2026 году.",
-        "risk": "factual"
+        "replacement_text": "• Работы на развязке Симистер на M60 в Bury вызовут \"серьезные заторы\" в выходные 25-27 сентября и 10-12 октября 2026 года.",
+        "reason": "Исправление даты на реальные выходные.",
+        "risk": "date"
+      },
+      {
+        "line_index": 52,
+        "section": "IT и бизнес",
+        "action": "patch",
+        "replacement_text": "• На конференции MD Future 26 в Campfield Studios обсуждались темы, связанные с искусственным интеллектом, инфраструктурой, кибербезопасностью и здоровьем. Мероприятие прошло недавно, но точная дата не указана.",
+        "reason": "Уточнение, что мероприятие уже прошло, добавляет ясности.",
+        "risk": "date"
+      },
+      {
+        "line_index": 60,
+        "section": "Крупные концерты вне GM",
+        "action": "patch",
+        "replacement_text": "• Anastacia — тур: 24 сентября, Utilita Arena Cardiff; 27 сентября, The Brighton Centre. Концерт в Кардиффе проходит сегодня.",
+        "reason": "Уточнение, что именно концерт в Кардиффе проходит сегодня.",
+        "risk": "date"
       }
     ],
     "warnings": [
-      "Секция 'Что важно сегодня' содержит только 2 элемента, что ниже минимального порога в 3 элемента.",
-      "Секция 'Еда, открытия и рынки' содержит только 1 элемент, что ниже минимального порога в 3 элемента."
+      "В строке 52 не указана точная дата проведения мероприятия, что может вызвать путаницу.",
+      "Уточните, что именно концерт в Кардиффе проходит сегодня, чтобы избежать путаницы.",
+      "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога.",
+      "Секция 'Еда, открытия и рынки' полностью отсутствует, что ниже минимального порога.",
+      "Некоторые чанки требуют исправлений, но выпуск можно отправить с учётом этих замечаний."
     ],
-    "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного указания должности Энди Бернэма.; Строка 14 требует уточнения причины закрытия станции для безопасности.; Обе строки соответствуют требованиям",
+    "notes": "Утверждение о трагедии в синагоге в Хитон Парке требует подтверждения или удаления.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Уточнение географии необходимо для соответствия контракту geo_scope.; Ошибка в строке 13 связана с некорректной связью между инцидентом на M60 и Metrolink.; Строка соответ",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 13,
+      "chunk_count": 15,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -582,13 +867,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2592,
-          "duration_seconds": 1.498
+          "estimated_tokens": 2804,
+          "duration_seconds": 3.073
         },
         {
           "chunk_id": "chunk-02",
@@ -605,8 +890,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2487,
-          "duration_seconds": 1.292
+          "estimated_tokens": 2429,
+          "duration_seconds": 1.366
         },
         {
           "chunk_id": "chunk-03",
@@ -623,8 +908,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7082,
-          "duration_seconds": 2.75
+          "estimated_tokens": 6867,
+          "duration_seconds": 3.035
         },
         {
           "chunk_id": "chunk-04",
@@ -641,15 +926,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5162,
-          "duration_seconds": 2.194
+          "estimated_tokens": 5051,
+          "duration_seconds": 2.397
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
             18,
-            19
+            18
           ],
           "sections": [
             "Что важно сегодня"
@@ -659,15 +944,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3235,
-          "duration_seconds": 0.961
+          "estimated_tokens": 2715,
+          "duration_seconds": 1.095
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            20,
-            21
+            19,
+            20
           ],
           "sections": [
             "Футбол"
@@ -677,15 +962,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3167,
-          "duration_seconds": 2.14
+          "estimated_tokens": 3142,
+          "duration_seconds": 2.482
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            22,
-            30
+            21,
+            32
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 7290,
+          "duration_seconds": 81.908
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            33,
+            38
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 6008,
+          "duration_seconds": 2.231
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            39,
+            47
           ],
           "sections": [
             "Городской радар"
@@ -695,51 +1016,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6778,
-          "duration_seconds": 51.728
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            31,
-            31
-          ],
-          "sections": [
-            "Еда, открытия и рынки"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2765,
-          "duration_seconds": 0.757
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            32,
-            32
-          ],
-          "sections": [
-            "IT и бизнес"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2662,
-          "duration_seconds": 1.82
+          "estimated_tokens": 6918,
+          "duration_seconds": 63.913
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            33,
-            34
+            48,
+            52
+          ],
+          "sections": [
+            "IT и бизнес"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 1,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 4839,
+          "duration_seconds": 11.298
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            53,
+            53
           ],
           "sections": [
             "Business/tech события для тебя"
@@ -749,15 +1052,33 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3569,
-          "duration_seconds": 9.005
+          "estimated_tokens": 2877,
+          "duration_seconds": 6.043
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
-            35,
-            39
+            54,
+            54
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2659,
+          "duration_seconds": 4.757
+        },
+        {
+          "chunk_id": "chunk-13",
+          "status": "ok",
+          "line_range": [
+            55,
+            59
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -767,33 +1088,33 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5052,
-          "duration_seconds": 32.153
+          "estimated_tokens": 4981,
+          "duration_seconds": 11.411
         },
         {
-          "chunk_id": "chunk-12",
+          "chunk_id": "chunk-14",
           "status": "ok",
           "line_range": [
-            40,
-            41
+            60,
+            61
           ],
           "sections": [
             "Крупные концерты вне GM"
           ],
-          "decision": "pass",
+          "decision": "warn",
           "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
+          "action_count": 1,
+          "warning_count": 1,
           "error": "",
-          "estimated_tokens": 3278,
-          "duration_seconds": 7.293
+          "estimated_tokens": 3202,
+          "duration_seconds": 7.959
         },
         {
-          "chunk_id": "chunk-13",
+          "chunk_id": "chunk-15",
           "status": "ok",
           "line_range": [
-            42,
-            42
+            62,
+            62
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
@@ -803,8 +1124,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2767,
-          "duration_seconds": 6.044
+          "estimated_tokens": 2738,
+          "duration_seconds": 4.942
         }
       ],
       "reduce": {
@@ -815,10 +1136,10 @@
         "decision": "warn",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 2,
+        "warning_count": 3,
         "error": "",
-        "estimated_tokens": 10685,
-        "duration_seconds": 23.171
+        "estimated_tokens": 11772,
+        "duration_seconds": 25.951
       },
       "max_workers": 3,
       "chunk_line_target": 12,
