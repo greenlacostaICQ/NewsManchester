@@ -2,159 +2,138 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 3 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair executor applied 4 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-09-27",
-  "pipeline_run_id": "20260927T080135+0100",
-  "digest_sha256": "1b34fca0234502abc4af6ed227297a3a58735826ef99e59b4ba9792fde64f490",
-  "duration_seconds": 60.442,
-  "confidence": 0.9,
+  "run_date_london": "2026-09-28",
+  "pipeline_run_id": "20260928T080150+0100",
+  "digest_sha256": "1e5b768933a7891dfc538931110181faa89410ec1aa404c812b6fa380937abc8",
+  "duration_seconds": 65.058,
+  "confidence": 0.85,
   "critical_errors": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Текст утверждает, что мужчины задержаны, но это не подтверждается источником.",
+      "line_index": 8,
+      "section": "Свежие новости",
+      "problem": "Дата события не указана, что может ввести в заблуждение о его актуальности.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 16,
+      "section": "Футбол",
+      "problem": "Текст вводит в заблуждение относительно количества обвинений.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 4,
-      "section": "Свежие новости",
-      "problem": "Макклсфилд находится в Чешире, а не в Greater Manchester.",
+      "line_index": 17,
+      "section": "Футбол",
+      "problem": "Количество обвинений указано неверно.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 18,
+      "section": "Футбол",
+      "problem": "Количество обвинений указано неверно.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 25,
+      "section": "Городской радар",
+      "problem": "Текст утверждает, что Манчестер Сити был признан виновным по почти всем обвинениям, что не соответствует фактам.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 27,
+      "section": "Business/tech события для тебя",
+      "problem": "Отсутствует информация о конкретном событии, дате и месте проведения.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 28,
+      "section": "Дальние анонсы",
+      "problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
       "risk": "geo",
       "suggested_action": "strip"
-    },
-    {
-      "line_index": 12,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Несоответствие контекста: футбольная новость в разделе транспорта.",
-      "risk": "format",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 13,
-      "section": "Футбол",
-      "problem": "Неверное утверждение о признании Манчестер Сити виновным.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 14,
-      "section": "Футбол",
-      "problem": "Неверное утверждение о признании Манчестер Сити виновным.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 15,
-      "section": "Футбол",
-      "problem": "Неверное утверждение о признании Манчестер Сити виновным.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 24,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно. Указана дата 27 сентября, но в источнике указано, что событие проходит с 10 мая по 30 августа 2026 года.",
-      "risk": "date",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 26,
-      "section": "Городской радар",
-      "problem": "Неверное утверждение о роли Эндрю Бернхэма.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 33,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Мероприятие отложено, но указана дата 27 сентября.",
-      "risk": "factual",
-      "suggested_action": "repair"
     }
   ],
   "actions": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
+      "line_index": 8,
+      "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• Два мужчины были ранены ножом в переулке на Бриджвотер-стрит в Oldham в пятницу, 25 сентября 2026 года, оба находятся в больнице с травмами, не угрожающими жизни.",
-      "reason": "Утверждение о задержании не подтверждается источником.",
+      "replacement_text": "• Полиция выпустила изображение с камер видеонаблюдения после того, как мужчина был серьезно избит, пытаясь сесть в такси в центре Манчестера 5 сентября 2026 года.",
+      "reason": "Уточнение даты события для ясности и актуальности.",
+      "risk": "date"
+    },
+    {
+      "line_index": 16,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• Вопрос-ответ с главным автором Манчестер Сити Симоном Байковски о позиции председателя, требованиях компенсации и будущем клуба после вердикта по 114 обвинениям.",
+      "reason": "Количество обвинений должно быть 114, а не 115.",
       "risk": "factual"
     },
     {
-      "line_index": 4,
-      "section": "Свежие новости",
+      "line_index": 17,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• Манчестер Сити признан виновным в 114 нарушениях финансовых правил Премьер-лиги и ожидает наказания, при этом клуб планирует подать апелляцию.",
+      "reason": "Количество обвинений должно быть 114, а не 115.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 18,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• 28 сентября 2026 года бывший тренер Манчестер Сити Роберто Манчини защитил клуб после сообщений о том, что Манчестер Сити признан виновным по 114 из 115 обвинений Премьер-лиги.",
+      "reason": "Количество обвинений должно быть 114, а не 115.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 25,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Ноэль Галлахер выразил шок и печаль в связи с обвинениями против Манчестер Сити в нарушении финансовых правил Премьер-лиги. Клуб уверял, что категорически отвергает все обвинения.",
+      "reason": "Текущая формулировка вводит в заблуждение, утверждая, что клуб был признан виновным, что не подтверждается источником.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 27,
+      "section": "Business/tech события для тебя",
+      "action": "patch",
+      "replacement_text": "• 29 сентября в Bury пройдет бесплатная бизнес-клиника, где участники получат доступ к полностью финансируемой поддержке и специализированным программам.",
+      "reason": "Добавлена информация о дате и месте проведения события.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 28,
+      "section": "Дальние анонсы",
       "action": "strip",
-      "reason": "Макклсфилд не входит в Greater Manchester, что нарушает географический контракт раздела.",
+      "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
       "risk": "geo",
       "replacement_text": ""
     },
     {
-      "line_index": 12,
-      "section": "Общественный транспорт сегодня",
-      "action": "strip",
-      "reason": "Футбольная новость не относится к общественному транспорту.",
-      "risk": "format",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 13,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Хуан Мата шутливо спросил, может ли он теперь считаться обладателем титула Премьер-лиги после того, как Манчестер Сити был обвинён в 114 из 115 финансовых нарушений.",
-      "reason": "Манчестер Сити обвинён, но не признан виновным.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 14,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Манчестер Сити обвинён в 114 из 115 нарушений финансовых правил Премьер-лиги. Бывшие и нынешние игроки, включая Рио Фердинанда, отреагировали на это, заявив: 'Еще одна медаль Премьер-лиги будет добавлена в коллекцию.'",
-      "reason": "Манчестер Сити обвинён, но не признан виновным.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 15,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Манчестер Сити обвинён в 114 нарушениях правил Премьер-лиги независимой комиссией. Клуб выпустил заявление и, вероятно, будет подавать апелляцию, наказание еще не определено.",
-      "reason": "Манчестер Сити обвинён, но не признан виновным.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 24,
-      "section": "Выходные в GM",
-      "action": "strip",
-      "reason": "Дата события не соответствует информации из источника.",
-      "risk": "date",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 26,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Лейбористы опережают Reform UK в опросах благодаря популярности партии под руководством Эндрю Бернхэма, который имеет наивысший рейтинг одобрения среди лидеров регионов.",
-      "reason": "Эндрю Бернхэм не является лидером партии, он мэр Манчестера.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 33,
+      "line_index": 31,
       "section": "Билеты / Ticket Radar",
       "action": "patch",
-      "replacement_text": "• VAEB — мероприятие отложено, новая дата будет объявлена позже. Цена билетов £17.50.",
-      "reason": "Указана дата, хотя мероприятие отложено.",
-      "risk": "factual"
+      "replacement_text": "• 3 октября 2026 года в Манчестере пройдет шоу The Ultimate Classic Rock Show, в котором прозвучат классические рок-гимны от таких исполнителей, как Эрик Клэптон и Лед Зеппелин. Мероприятие пройдет в RNCM. Билеты доступны на сайте RNCM.",
+      "reason": "Добавление конкретного сайта для покупки билетов для ясности.",
+      "risk": "product"
     }
   ],
   "warnings": [
-    "Отсутствует блок 'Что важно сегодня', что может снизить информативность выпуска.",
-    "Недостаточное количество элементов в 'Городской радар', что может повлиять на полноту информации о городских событиях.",
-    "Отсутствие блока 'Русскоязычные концерты и стендап UK' может снизить интерес для русскоязычной аудитории."
+    "В строке 31 не указан конкретный сайт для покупки билетов, что может вызвать путаницу у читателей.",
+    "Секция 'Что важно сегодня' содержит только один элемент, что ниже минимального порога.",
+    "Секция 'Русскоязычные концерты и стендап UK' отсутствует, что ниже минимального порога.",
+    "Секция 'Еда, открытия и рынки' отсутствует, что ниже минимального порога."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -162,83 +141,85 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 6,
-      "Общественный транспорт сегодня": 4,
+      "Свежие новости": 9,
+      "Общественный транспорт сегодня": 3,
+      "Что важно сегодня": 1,
       "Футбол": 3,
-      "Выходные в GM": 7,
-      "Городской радар": 4,
-      "Дальние анонсы": 3,
-      "Билеты / Ticket Radar": 5,
-      "Крупные концерты вне GM": 3
+      "Городской радар": 7,
+      "IT и бизнес": 1,
+      "Business/tech события для тебя": 1,
+      "Дальние анонсы": 1,
+      "Билеты / Ticket Radar": 3,
+      "Крупные концерты вне GM": 2
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
-      "Свежие новости": 6,
+      "Что важно сегодня": 1,
+      "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 4,
-      "Выходные в GM": 7,
-      "Билеты / Ticket Radar": 5,
+      "Городской радар": 7,
+      "Билеты / Ticket Radar": 3,
       "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 0,
-      "Business/tech события для тебя": 0,
+      "Business/tech события для тебя": 1,
       "Футбол": 3
     },
-    "ticket_items": 8,
-    "core_items": 22,
+    "ticket_items": 5,
+    "core_items": 23,
     "writer_quality_counts": {
-      "included_candidates": 39,
-      "rendered_candidates": 37,
+      "included_candidates": 34,
+      "rendered_candidates": 33,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 2,
+      "dropped_low_quality": 1,
       "replaced_from_plan_backup": 0,
-      "removed_with_reason": 2
+      "removed_with_reason": 1
     },
     "source_health_counts": {
       "ok": 100,
       "partial": 2,
-      "stale": 11,
-      "empty": 13,
-      "failed": 5,
-      "zero_yield": 76,
+      "stale": 8,
+      "empty": 14,
+      "failed": 6,
+      "zero_yield": 84,
       "no_contribution_breakdown": {
-        "fetch_failed": 5,
-        "all_rejected": 76,
-        "idle_no_items": 26
+        "fetch_failed": 6,
+        "all_rejected": 84,
+        "idle_no_items": 25
       },
       "zero_contribution_by_stage": {
-        "written": 41,
-        "selected": 35,
-        "parsed": 26,
-        "fetched": 5
+        "written": 50,
+        "selected": 34,
+        "parsed": 25,
+        "fetched": 6
       },
-      "weekend_source_coverage_incidents": 54
+      "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
-      "Городской радар: 4 item(s), emergency floor 5",
+      "Что важно сегодня: 1 item(s), emergency floor 3",
       "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "Business/tech события для тебя: 0 item(s), emergency floor 1",
-      "source failures: 5"
+      "source failures: 6"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [],
+    "warnings": [
+      "patch for line 8 has unchecked number/date token(s): 5",
+      "patch for line 27 has unchecked number/date token(s): 29"
+    ],
     "can_apply_actions": true,
-    "action_count": 9
+    "action_count": 8
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 37,
-    "matched_lines": 37,
-    "applicable_lines": 1,
-    "unmatched_lines": 2,
+    "checked_lines": 33,
+    "matched_lines": 33,
+    "applicable_lines": 2,
+    "unmatched_lines": 0,
     "critical_omission_count": 0,
     "critical_omissions": [],
     "noncritical_omissions": [],
@@ -250,386 +231,192 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 9,
-    "attempted": 3,
-    "applied": 3,
-    "model_patch_applied": 0,
+    "requested": 8,
+    "attempted": 5,
+    "applied": 4,
+    "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 0,
-    "stripped": 3,
+    "reserve_replacement_used": 2,
+    "stripped": 1,
     "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 7,
-    "resolved_in_place": 4,
-    "resolved_by_replacement": 0,
-    "resolved_by_removal": 3,
-    "fact_lock_rejected": 0,
-    "enrich_attempted": 9,
+    "resolved": 6,
+    "resolved_in_place": 3,
+    "resolved_by_replacement": 2,
+    "resolved_by_removal": 1,
+    "fact_lock_rejected": 2,
+    "enrich_attempted": 8,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "requested_action": "patch",
-        "reason": "Утверждение о задержании не подтверждается источником.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Текст утверждает, что мужчины задержаны, но это не подтверждается источником.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-double-stabbing-violence-erupts-oldham-34675809-1ebfc9ca3cc0",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/double-stabbing-violence-erupts-oldham-34675809",
-        "original_html": "<b>Два мужчины были раненые ножом в переулке на Бриджвотер-стрит в Oldham в пятницу, 25 сентября 2026 года, оба находятся в больнице с травмами, не угрожающими жизни, и задержаны.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/double-stabbing-violence-erupts-oldham-34675809\">MEN</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 4,
+        "line_index": 8,
         "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Макклсфилд не входит в Greater Manchester, что нарушает географический контракт раздела.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Макклсфилд находится в Чешире, а не в Greater Manchester.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "last_24h-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-fake-gmp-officer-who-targeted-34658495-0ca0d05540a9",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/fake-gmp-officer-who-targeted-34658495",
-        "original_html": "• В Макклсфилде мошенник, выдававший себя за сотрудника полиции, попытался обмануть пенсионерку, требуя у неё банковские карты для расследования мошенничества. Женщина передала две дебетовые карты и кредитку, но вовремя заподозрила обман и сообщила в полицию. Это один из пяти случаев мошенничества с курьерами за восемь дней в Чешире, все жертвы - пожилые люди. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/fake-gmp-officer-who-targeted-34658495\">MEN</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Футбольная новость не относится к общественному транспорту.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Несоответствие контекста: футбольная новость в разделе транспорта.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-05",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-alejandro-garnacho-man-united-villa-34677602-a8ae9e4e8fd6",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/alejandro-garnacho-man-united-villa-34677602",
-        "original_html": "• 26 сентября 2026 года бывший игрок Манчестер Юнайтед Алехандро Гарначо забил свой первый гол за Астон Виллу в товарищеском матче против Саутгемптона. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/alejandro-garnacho-man-united-villa-34677602\">MEN Manchester United</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 13,
-        "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Манчестер Сити обвинён, но не признан виновным.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неверное утверждение о признании Манчестер Сити виновным.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-juan-mata-man-city-charges-34677536-207e55ac28b0",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/juan-mata-man-city-charges-34677536",
-        "original_html": "• Хуан Мата шутливо спросил, может ли он теперь считаться обладателем титула Премьер-лиги после того, как Манчестер Сити был признан виновным в 114 из 115 финансовых обвинений. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/juan-mata-man-city-charges-34677536\">MEN Manchester United</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 14,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Манчестер Сити обвинён, но не признан виновным.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неверное утверждение о признании Манчестер Сити виновным.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-send-medal-premier-league-stars-34675624-6b8155cf173b",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/send-medal-premier-league-stars-34675624",
-        "original_html": "• Манчестер Сити признаны виновными по 114 из 115 обвинений в нарушении финансовых правил Премьер-лиги. Бывшие и нынешние игроки, включая Рио Фердинанда, отреагировали на это, заявив: 'Еще одна медаль Премьер-лиги будет добавлена в коллекцию.' <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/send-medal-premier-league-stars-34675624\">MEN Manchester United</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 15,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Манчестер Сити обвинён, но не признан виновным.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неверное утверждение о признании Манчестер Сити виновным.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "football-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-man-city-115-charges-verdict-31212935-4f038fac4321",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/man-city-115-charges-verdict-31212935",
-        "original_html": "• Манчестер Сити признаны виновными в 114 нарушениях правил Премьер-лиги независимой комиссией. Клуб выпустил заявление и, вероятно, будет подавать апелляцию, наказание еще не определено. <a href=\"https://manchestereveningnews.co.uk/sport/football/man-city-115-charges-verdict-31212935\">MEN Manchester City</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 24,
-        "section": "Выходные в GM",
-        "requested_action": "strip",
-        "reason": "Дата события не соответствует информации из источника.",
+        "reason": "Уточнение даты события для ясности и актуальности.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события указана неверно. Указана дата 27 сентября, но в источнике указано, что событие проходит с 10 мая по 30 августа 2026 года.",
+        "critical_problem": "Дата события не указана, что может ввести в заблуждение о его актуальности.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "weekend_activities-06",
-        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-        "original_html": "• 27 сентября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+        "plan_slot_id": "last_24h-06",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-cctv-image-released-after-man-34679054-01e78c6bf039",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/cctv-image-released-after-man-34679054",
+        "original_html": "• Полиция выпустила изображение с камер видеонаблюдения после того, как мужчина был серьезно избит, пытаясь сесть в такси в центре Манчестера 5 сентября. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/cctv-image-released-after-man-34679054\">MEN</a>",
+        "model_replacement_rejected": "fact_lock: 5 сентября 2026",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 26,
-        "section": "Городской радар",
+        "line_index": 16,
+        "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Эндрю Бернхэм не является лидером партии, он мэр Манчестера.",
+        "reason": "Количество обвинений должно быть 114, а не 115.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неверное утверждение о роли Эндрю Бернхэма.",
+        "critical_problem": "Текст вводит в заблуждение относительно количества обвинений.",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-chairmans-115-stance-over-115-34679076-ac9ef43d865e",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/chairmans-115-stance-over-115-34679076",
+        "original_html": "• Вопрос-ответ с главным автором Манчестер Сити Симоном Байковски о позиции председателя, требованиях компенсации и будущем клуба после вердикта по 115 обвинениям. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/chairmans-115-stance-over-115-34679076\">MEN Manchester City</a>",
+        "model_replacement_rejected": "fact_lock: 114",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-utd-ineos-jim-ratcliffe-34679894-cb9c450a451c",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 17,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Количество обвинений должно быть 114, а не 115.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Количество обвинений указано неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
         "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-labour-ahead-reform-polls-after-34677631-e437b7ed7e37",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/labour-ahead-reform-polls-after-34677631",
-        "original_html": "• Лейбористы опережают Reform UK в опросах благодаря популярности Эндрю Бернхэма, который имеет наивысший рейтинг одобрения среди лидеров партий. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/labour-ahead-reform-polls-after-34677631\">MEN</a>",
+        "plan_slot_id": "football-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-115-charges-live-34677861-1e0d2cc1ca2e",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-115-charges-live-34677861",
+        "original_html": "• Манчестер Сити признан виновным в 114 нарушениях финансовых правил Премьер-лиги и ожидает наказания, при этом клуб планирует подать апелляцию. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-115-charges-live-34677861\">MEN Manchester City</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 33,
-        "section": "Билеты / Ticket Radar",
+        "line_index": 18,
+        "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Указана дата, хотя мероприятие отложено.",
+        "reason": "Количество обвинений должно быть 114, а не 115.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Мероприятие отложено, но указана дата 27 сентября.",
+        "critical_problem": "Количество обвинений указано неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "football-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-roberto-mancini-man-city-charges-34680154-00389933f0f9",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/roberto-mancini-man-city-charges-34680154",
+        "original_html": "• 28 сентября 2026 года бывший тренер Манчестер Сити Роберто Манчини защитил клуб после сообщений о том, что Манчестер Сити признан виновным по 114 из 115 обвинений Премьер-лиги. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/roberto-mancini-man-city-charges-34680154\">MEN Manchester City</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 25,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Текущая формулировка вводит в заблуждение, утверждая, что клуб был признан виновным, что не подтверждается источником.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Текст утверждает, что Манчестер Сити был признан виновным по почти всем обвинениям, что не соответствует фактам.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "ticket_radar-02",
-        "candidate_fingerprint": "event-event-vaeb-27th-september-2026-2026-09-27-manchester-academy-f547162e6234",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13380648/vaeb-manchester-club-academy-2026-09-27-19-00-00",
-        "original_html": "• <b>VAEB</b> — 27 сентября, Manchester Academy; цена £17.50. Обратите внимание, что мероприятие отложено, новая дата будет объявлена позже. <a href=\"https://manchesteracademy.net/order/gateway/13380648/vaeb-manchester-club-academy-2026-09-27-19-00-00\">Manchester Academy</a>",
+        "plan_slot_id": "city_watch-08",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-we-won-pitch-says-noel-34676141-930fc3a29470",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/we-won-pitch-says-noel-34676141",
+        "original_html": "• Ноэль Галлахер выразил шок и печаль в связи с тем, что Манчестер Сити был признан виновным по почти всем обвинениям в нарушении финансовых правил Премьер-лиги. Клуб уверял, что категорически отвергает все обвинения. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/we-won-pitch-says-noel-34676141\">MEN</a>",
         "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 27,
+        "section": "Business/tech события для тебя",
+        "requested_action": "patch",
+        "reason": "Добавлена информация о дате и месте проведения события.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Отсутствует информация о конкретном событии, дате и месте проведения.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "professional_events-01",
+        "candidate_fingerprint": "url-businessgrowthhub-com-events-business-clinic-drop-in-bury-1e5c544a0fe0",
+        "original_url_identity": "businessgrowthhub.com/events/business-clinic-drop-in-bury",
+        "original_html": "• Участники получат доступ к полностью финансируемой поддержке и специализированным программам, разработанным в соответствии с потребностями их бизнеса. <a href=\"https://businessgrowthhub.com/events/business-clinic-drop-in-bury\">GM Business Growth Hub Events</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 28,
+        "section": "Дальние анонсы",
+        "requested_action": "strip",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "future_announcements-01",
+        "candidate_fingerprint": "event-event-nirvana-uk-2026-10-17-o2-academy-liverpool-d1949c32f51f",
+        "original_url_identity": "ticketmaster.co.uk/nirvana-uk-liverpool-17-10-2026/event/3E00643AE50D4555",
+        "original_html": "• <b>Nirvana UK</b> — 17 октября, O2 Academy Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/nirvana-uk-liverpool-17-10-2026/event/3E00643AE50D4555\">Ticketmaster</a>",
+        "replacement_fingerprint": "event-id-skiddle-com-9958c5aaf064-7d875e9c7454",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 31,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "patch",
+        "reason": "Добавление конкретного сайта для покупки билетов для ясности.",
+        "risk": "product",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "ticket_radar-03",
+        "candidate_fingerprint": "event-event-the-ultimate-classic-rock-show-2026-10-03-4d5847ee8fa4",
+        "original_url_identity": "rncm.ac.uk/performance/the-ultimate-classic-rock-show",
+        "original_html": "• 3 октября 2026 года в Манчестере пройдет шоу The Ultimate Classic Rock Show, в котором прозвучат классические рок-гимны от таких исполнителей, как Эрик Клэптон и Лед Зеппелин. Мероприятие пройдет в RNCM. Билеты доступны на сайте <a href=\"https://rncm.ac.uk/performance/the-ultimate-classic-rock-show\">RNCM</a>",
+        "verification": "judge correction matches the existing visible facts",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::утверждение о задержании не подтверждается источником.",
+        "group_key": "свежие новости::уточнение даты события для ясности и актуальности.",
         "actions": [
           {
-            "line_index": 1,
-            "section": "Главная история дня",
-            "requested_action": "patch",
-            "reason": "Утверждение о задержании не подтверждается источником.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Текст утверждает, что мужчины задержаны, но это не подтверждается источником.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-double-stabbing-violence-erupts-oldham-34675809-1ebfc9ca3cc0",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/double-stabbing-violence-erupts-oldham-34675809",
-            "original_html": "<b>Два мужчины были раненые ножом в переулке на Бриджвотер-стрит в Oldham в пятницу, 25 сентября 2026 года, оба находятся в больнице с травмами, не угрожающими жизни, и задержаны.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/double-stabbing-violence-erupts-oldham-34675809\">MEN</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 1,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::макклсфилд не входит в greater manchester, что нарушает географический контракт раздела.",
-        "actions": [
-          {
-            "line_index": 4,
+            "line_index": 8,
             "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "Макклсфилд не входит в Greater Manchester, что нарушает географический контракт раздела.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Макклсфилд находится в Чешире, а не в Greater Manchester.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "last_24h-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-fake-gmp-officer-who-targeted-34658495-0ca0d05540a9",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/fake-gmp-officer-who-targeted-34658495",
-            "original_html": "• В Макклсфилде мошенник, выдававший себя за сотрудника полиции, попытался обмануть пенсионерку, требуя у неё банковские карты для расследования мошенничества. Женщина передала две дебетовые карты и кредитку, но вовремя заподозрила обман и сообщила в полицию. Это один из пяти случаев мошенничества с курьерами за восемь дней в Чешире, все жертвы - пожилые люди. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/fake-gmp-officer-who-targeted-34658495\">MEN</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 4,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::футбольная новость не относится к общественному транспорту.",
-        "actions": [
-          {
-            "line_index": 12,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Футбольная новость не относится к общественному транспорту.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Несоответствие контекста: футбольная новость в разделе транспорта.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-05",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-alejandro-garnacho-man-united-villa-34677602-a8ae9e4e8fd6",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/alejandro-garnacho-man-united-villa-34677602",
-            "original_html": "• 26 сентября 2026 года бывший игрок Манчестер Юнайтед Алехандро Гарначо забил свой первый гол за Астон Виллу в товарищеском матче против Саутгемптона. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/alejandro-garnacho-man-united-villa-34677602\">MEN Manchester United</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 12,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::манчестер сити обвинён, но не признан виновным.",
-        "actions": [
-          {
-            "line_index": 13,
-            "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Манчестер Сити обвинён, но не признан виновным.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неверное утверждение о признании Манчестер Сити виновным.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-juan-mata-man-city-charges-34677536-207e55ac28b0",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/juan-mata-man-city-charges-34677536",
-            "original_html": "• Хуан Мата шутливо спросил, может ли он теперь считаться обладателем титула Премьер-лиги после того, как Манчестер Сити был признан виновным в 114 из 115 финансовых обвинений. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/juan-mata-man-city-charges-34677536\">MEN Manchester United</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 14,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Манчестер Сити обвинён, но не признан виновным.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неверное утверждение о признании Манчестер Сити виновным.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-send-medal-premier-league-stars-34675624-6b8155cf173b",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/send-medal-premier-league-stars-34675624",
-            "original_html": "• Манчестер Сити признаны виновными по 114 из 115 обвинений в нарушении финансовых правил Премьер-лиги. Бывшие и нынешние игроки, включая Рио Фердинанда, отреагировали на это, заявив: 'Еще одна медаль Премьер-лиги будет добавлена в коллекцию.' <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/send-medal-premier-league-stars-34675624\">MEN Manchester United</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 15,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Манчестер Сити обвинён, но не признан виновным.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неверное утверждение о признании Манчестер Сити виновным.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-man-city-115-charges-verdict-31212935-4f038fac4321",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/man-city-115-charges-verdict-31212935",
-            "original_html": "• Манчестер Сити признаны виновными в 114 нарушениях правил Премьер-лиги независимой комиссией. Клуб выпустил заявление и, вероятно, будет подавать апелляцию, наказание еще не определено. <a href=\"https://manchestereveningnews.co.uk/sport/football/man-city-115-charges-verdict-31212935\">MEN Manchester City</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 13,
-            "passed": true,
-            "detail": "existing fact verified"
-          },
-          {
-            "line_index": 14,
-            "passed": true,
-            "detail": "existing fact verified"
-          },
-          {
-            "line_index": 15,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дата события не соответствует информации из источника.",
-        "actions": [
-          {
-            "line_index": 24,
-            "section": "Выходные в GM",
-            "requested_action": "strip",
-            "reason": "Дата события не соответствует информации из источника.",
+            "reason": "Уточнение даты события для ясности и актуальности.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно. Указана дата 27 сентября, но в источнике указано, что событие проходит с 10 мая по 30 августа 2026 года.",
+            "critical_problem": "Дата события не указана, что может ввести в заблуждение о его актуальности.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "weekend_activities-06",
-            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-            "original_html": "• 27 сентября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+            "plan_slot_id": "last_24h-06",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-cctv-image-released-after-man-34679054-01e78c6bf039",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/cctv-image-released-after-man-34679054",
+            "original_html": "• Полиция выпустила изображение с камер видеонаблюдения после того, как мужчина был серьезно избит, пытаясь сесть в такси в центре Манчестера 5 сентября. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/cctv-image-released-after-man-34679054\">MEN</a>",
+            "model_replacement_rejected": "fact_lock: 5 сентября 2026",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -638,7 +425,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 24,
+            "line_index": 8,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -646,31 +433,78 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::эндрю бернхэм не является лидером партии, он мэр манчестера.",
+        "group_key": "футбол::количество обвинений должно быть 114, а не 115.",
         "actions": [
           {
-            "line_index": 26,
-            "section": "Городской радар",
+            "line_index": 16,
+            "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Эндрю Бернхэм не является лидером партии, он мэр Манчестера.",
+            "reason": "Количество обвинений должно быть 114, а не 115.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неверное утверждение о роли Эндрю Бернхэма.",
+            "critical_problem": "Текст вводит в заблуждение относительно количества обвинений.",
             "completeness_concept": "",
-            "outcome": "resolved_in_place",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-chairmans-115-stance-over-115-34679076-ac9ef43d865e",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/chairmans-115-stance-over-115-34679076",
+            "original_html": "• Вопрос-ответ с главным автором Манчестер Сити Симоном Байковски о позиции председателя, требованиях компенсации и будущем клуба после вердикта по 115 обвинениям. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/chairmans-115-stance-over-115-34679076\">MEN Manchester City</a>",
+            "model_replacement_rejected": "fact_lock: 114",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-utd-ineos-jim-ratcliffe-34679894-cb9c450a451c",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 17,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Количество обвинений должно быть 114, а не 115.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Количество обвинений указано неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
             "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-labour-ahead-reform-polls-after-34677631-e437b7ed7e37",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/labour-ahead-reform-polls-after-34677631",
-            "original_html": "• Лейбористы опережают Reform UK в опросах благодаря популярности Эндрю Бернхэма, который имеет наивысший рейтинг одобрения среди лидеров партий. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/labour-ahead-reform-polls-after-34677631\">MEN</a>",
+            "plan_slot_id": "football-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-115-charges-live-34677861-1e0d2cc1ca2e",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-115-charges-live-34677861",
+            "original_html": "• Манчестер Сити признан виновным в 114 нарушениях финансовых правил Премьер-лиги и ожидает наказания, при этом клуб планирует подать апелляцию. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-115-charges-live-34677861\">MEN Manchester City</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 18,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Количество обвинений должно быть 114, а не 115.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Количество обвинений указано неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-roberto-mancini-man-city-charges-34680154-00389933f0f9",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/roberto-mancini-man-city-charges-34680154",
+            "original_html": "• 28 сентября 2026 года бывший тренер Манчестер Сити Роберто Манчини защитил клуб после сообщений о том, что Манчестер Сити признан виновным по 114 из 115 обвинений Премьер-лиги. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/roberto-mancini-man-city-charges-34680154\">MEN Manchester City</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 26,
+            "line_index": 16,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "line_index": 17,
+            "passed": true,
+            "detail": "existing fact verified"
+          },
+          {
+            "line_index": 18,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -678,23 +512,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "билеты / ticket radar::указана дата, хотя мероприятие отложено.",
+        "group_key": "городской радар::текущая формулировка вводит в заблуждение, утверждая, что клуб был признан виновным, что не подтверждается источником.",
         "actions": [
           {
-            "line_index": 33,
-            "section": "Билеты / Ticket Radar",
+            "line_index": 25,
+            "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Указана дата, хотя мероприятие отложено.",
+            "reason": "Текущая формулировка вводит в заблуждение, утверждая, что клуб был признан виновным, что не подтверждается источником.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Мероприятие отложено, но указана дата 27 сентября.",
+            "critical_problem": "Текст утверждает, что Манчестер Сити был признан виновным по почти всем обвинениям, что не соответствует фактам.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "ticket_radar-02",
-            "candidate_fingerprint": "event-event-vaeb-27th-september-2026-2026-09-27-manchester-academy-f547162e6234",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13380648/vaeb-manchester-club-academy-2026-09-27-19-00-00",
-            "original_html": "• <b>VAEB</b> — 27 сентября, Manchester Academy; цена £17.50. Обратите внимание, что мероприятие отложено, новая дата будет объявлена позже. <a href=\"https://manchesteracademy.net/order/gateway/13380648/vaeb-manchester-club-academy-2026-09-27-19-00-00\">Manchester Academy</a>",
+            "plan_slot_id": "city_watch-08",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-we-won-pitch-says-noel-34676141-930fc3a29470",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/we-won-pitch-says-noel-34676141",
+            "original_html": "• Ноэль Галлахер выразил шок и печаль в связи с тем, что Манчестер Сити был признан виновным по почти всем обвинениям в нарушении финансовых правил Премьер-лиги. Клуб уверял, что категорически отвергает все обвинения. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/we-won-pitch-says-noel-34676141\">MEN</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -702,12 +536,107 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 33,
+            "line_index": 25,
             "passed": true,
             "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
+      },
+      {
+        "group_key": "business/tech события для тебя::добавлена информация о дате и месте проведения события.",
+        "actions": [
+          {
+            "line_index": 27,
+            "section": "Business/tech события для тебя",
+            "requested_action": "patch",
+            "reason": "Добавлена информация о дате и месте проведения события.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Отсутствует информация о конкретном событии, дате и месте проведения.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "professional_events-01",
+            "candidate_fingerprint": "url-businessgrowthhub-com-events-business-clinic-drop-in-bury-1e5c544a0fe0",
+            "original_url_identity": "businessgrowthhub.com/events/business-clinic-drop-in-bury",
+            "original_html": "• Участники получат доступ к полностью финансируемой поддержке и специализированным программам, разработанным в соответствии с потребностями их бизнеса. <a href=\"https://businessgrowthhub.com/events/business-clinic-drop-in-bury\">GM Business Growth Hub Events</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 27,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "дальние анонсы::событие проходит в ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+        "actions": [
+          {
+            "line_index": 28,
+            "section": "Дальние анонсы",
+            "requested_action": "strip",
+            "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "future_announcements-01",
+            "candidate_fingerprint": "event-event-nirvana-uk-2026-10-17-o2-academy-liverpool-d1949c32f51f",
+            "original_url_identity": "ticketmaster.co.uk/nirvana-uk-liverpool-17-10-2026/event/3E00643AE50D4555",
+            "original_html": "• <b>Nirvana UK</b> — 17 октября, O2 Academy Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/nirvana-uk-liverpool-17-10-2026/event/3E00643AE50D4555\">Ticketmaster</a>",
+            "replacement_fingerprint": "event-id-skiddle-com-9958c5aaf064-7d875e9c7454",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 28,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::добавление конкретного сайта для покупки билетов для ясности.",
+        "actions": [
+          {
+            "line_index": 31,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Добавление конкретного сайта для покупки билетов для ясности.",
+            "risk": "product",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "ticket_radar-03",
+            "candidate_fingerprint": "event-event-the-ultimate-classic-rock-show-2026-10-03-4d5847ee8fa4",
+            "original_url_identity": "rncm.ac.uk/performance/the-ultimate-classic-rock-show",
+            "original_html": "• 3 октября 2026 года в Манчестере пройдет шоу The Ultimate Classic Rock Show, в котором прозвучат классические рок-гимны от таких исполнителей, как Эрик Клэптон и Лед Зеппелин. Мероприятие пройдет в RNCM. Билеты доступны на сайте <a href=\"https://rncm.ac.uk/performance/the-ultimate-classic-rock-show\">RNCM</a>",
+            "verification": "judge correction matches the existing visible facts",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 31,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": false
       }
     ],
     "refetch": {
@@ -715,17 +644,28 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 0
+      "skipped": 1,
+      "reports": [
+        {
+          "fingerprint": "event-event-nirvana-uk-2026-10-17-o2-academy-liverpool-d1949c32f51f",
+          "title": "Nirvana UK — event 2026-10-17 — public sale 2026-01-30 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/nirvana-uk-liverpool-17-10-2026/event/3E00643AE50D4555",
+          "candidate_evidence_chars": 353
+        }
+      ]
     },
-    "enrich_improved": 9,
-    "false_positive_existing_fact": 6,
-    "no_eligible_backup": 3,
+    "enrich_improved": 8,
+    "deterministic_rewrite_rejected": 2,
+    "no_eligible_backup": 1,
+    "false_positive_existing_fact": 4,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 34,
-      "matched_lines": 34,
-      "applicable_lines": 1,
-      "unmatched_lines": 2,
+      "checked_lines": 32,
+      "matched_lines": 32,
+      "applicable_lines": 2,
+      "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -736,163 +676,144 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 36,
-      "resolved_in_place": 36,
+      "checked_lines": 32,
+      "resolved_in_place": 32,
       "unresolved": 0,
       "findings": []
     },
     "status": "resolved"
   },
-  "notes": "Утверждение о задержании мужчин требует исправления, так как оно не подтверждено источником.; Прогноз погоды соответствует источнику и географическому охвату.; Макклсфилд не соответствует geo_scope GM, требуется удаление строки.; Футбольная новость ошибочно попала в раздел транспорта, требуется удаление.; Все три строк",
+  "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Уточнение даты в строке 8 необходимо для предотвращения путаницы с актуальностью события.; Все строки соответствуют требованиям и содержат актуальную информацию о транспортных измен",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.9,
+    "confidence": 0.85,
     "critical_errors": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Текст утверждает, что мужчины задержаны, но это не подтверждается источником.",
+        "line_index": 8,
+        "section": "Свежие новости",
+        "problem": "Дата события не указана, что может ввести в заблуждение о его актуальности.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 16,
+        "section": "Футбол",
+        "problem": "Текст вводит в заблуждение относительно количества обвинений.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 4,
-        "section": "Свежие новости",
-        "problem": "Макклсфилд находится в Чешире, а не в Greater Manchester.",
+        "line_index": 17,
+        "section": "Футбол",
+        "problem": "Количество обвинений указано неверно.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 18,
+        "section": "Футбол",
+        "problem": "Количество обвинений указано неверно.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 25,
+        "section": "Городской радар",
+        "problem": "Текст утверждает, что Манчестер Сити был признан виновным по почти всем обвинениям, что не соответствует фактам.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 27,
+        "section": "Business/tech события для тебя",
+        "problem": "Отсутствует информация о конкретном событии, дате и месте проведения.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 28,
+        "section": "Дальние анонсы",
+        "problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
         "risk": "geo",
         "suggested_action": "strip"
-      },
-      {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Несоответствие контекста: футбольная новость в разделе транспорта.",
-        "risk": "format",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 13,
-        "section": "Футбол",
-        "problem": "Неверное утверждение о признании Манчестер Сити виновным.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 14,
-        "section": "Футбол",
-        "problem": "Неверное утверждение о признании Манчестер Сити виновным.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 15,
-        "section": "Футбол",
-        "problem": "Неверное утверждение о признании Манчестер Сити виновным.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 24,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно. Указана дата 27 сентября, но в источнике указано, что событие проходит с 10 мая по 30 августа 2026 года.",
-        "risk": "date",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 26,
-        "section": "Городской радар",
-        "problem": "Неверное утверждение о роли Эндрю Бернхэма.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 33,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Мероприятие отложено, но указана дата 27 сентября.",
-        "risk": "factual",
-        "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• Два мужчины были ранены ножом в переулке на Бриджвотер-стрит в Oldham в пятницу, 25 сентября 2026 года, оба находятся в больнице с травмами, не угрожающими жизни.",
-        "reason": "Утверждение о задержании не подтверждается источником.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 4,
+        "line_index": 8,
         "section": "Свежие новости",
-        "action": "strip",
-        "reason": "Макклсфилд не входит в Greater Manchester, что нарушает географический контракт раздела.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
-        "action": "strip",
-        "reason": "Футбольная новость не относится к общественному транспорту.",
-        "risk": "format"
-      },
-      {
-        "line_index": 13,
-        "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Хуан Мата шутливо спросил, может ли он теперь считаться обладателем титула Премьер-лиги после того, как Манчестер Сити был обвинён в 114 из 115 финансовых нарушений.",
-        "reason": "Манчестер Сити обвинён, но не признан виновным.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 14,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Манчестер Сити обвинён в 114 из 115 нарушений финансовых правил Премьер-лиги. Бывшие и нынешние игроки, включая Рио Фердинанда, отреагировали на это, заявив: 'Еще одна медаль Премьер-лиги будет добавлена в коллекцию.'",
-        "reason": "Манчестер Сити обвинён, но не признан виновным.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 15,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Манчестер Сити обвинён в 114 нарушениях правил Премьер-лиги независимой комиссией. Клуб выпустил заявление и, вероятно, будет подавать апелляцию, наказание еще не определено.",
-        "reason": "Манчестер Сити обвинён, но не признан виновным.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 24,
-        "section": "Выходные в GM",
-        "action": "strip",
-        "reason": "Дата события не соответствует информации из источника.",
+        "replacement_text": "• Полиция выпустила изображение с камер видеонаблюдения после того, как мужчина был серьезно избит, пытаясь сесть в такси в центре Манчестера 5 сентября 2026 года.",
+        "reason": "Уточнение даты события для ясности и актуальности.",
         "risk": "date"
       },
       {
-        "line_index": 26,
-        "section": "Городской радар",
+        "line_index": 16,
+        "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Лейбористы опережают Reform UK в опросах благодаря популярности партии под руководством Эндрю Бернхэма, который имеет наивысший рейтинг одобрения среди лидеров регионов.",
-        "reason": "Эндрю Бернхэм не является лидером партии, он мэр Манчестера.",
+        "replacement_text": "• Вопрос-ответ с главным автором Манчестер Сити Симоном Байковски о позиции председателя, требованиях компенсации и будущем клуба после вердикта по 114 обвинениям.",
+        "reason": "Количество обвинений должно быть 114, а не 115.",
         "risk": "factual"
       },
       {
-        "line_index": 33,
+        "line_index": 17,
+        "section": "Футбол",
+        "action": "patch",
+        "replacement_text": "• Манчестер Сити признан виновным в 114 нарушениях финансовых правил Премьер-лиги и ожидает наказания, при этом клуб планирует подать апелляцию.",
+        "reason": "Количество обвинений должно быть 114, а не 115.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 18,
+        "section": "Футбол",
+        "action": "patch",
+        "replacement_text": "• 28 сентября 2026 года бывший тренер Манчестер Сити Роберто Манчини защитил клуб после сообщений о том, что Манчестер Сити признан виновным по 114 из 115 обвинений Премьер-лиги.",
+        "reason": "Количество обвинений должно быть 114, а не 115.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 25,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Ноэль Галлахер выразил шок и печаль в связи с обвинениями против Манчестер Сити в нарушении финансовых правил Премьер-лиги. Клуб уверял, что категорически отвергает все обвинения.",
+        "reason": "Текущая формулировка вводит в заблуждение, утверждая, что клуб был признан виновным, что не подтверждается источником.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 27,
+        "section": "Business/tech события для тебя",
+        "action": "patch",
+        "replacement_text": "• 29 сентября в Bury пройдет бесплатная бизнес-клиника, где участники получат доступ к полностью финансируемой поддержке и специализированным программам.",
+        "reason": "Добавлена информация о дате и месте проведения события.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 28,
+        "section": "Дальние анонсы",
+        "action": "strip",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 31,
         "section": "Билеты / Ticket Radar",
         "action": "patch",
-        "replacement_text": "• VAEB — мероприятие отложено, новая дата будет объявлена позже. Цена билетов £17.50.",
-        "reason": "Указана дата, хотя мероприятие отложено.",
-        "risk": "factual"
+        "replacement_text": "• 3 октября 2026 года в Манчестере пройдет шоу The Ultimate Classic Rock Show, в котором прозвучат классические рок-гимны от таких исполнителей, как Эрик Клэптон и Лед Зеппелин. Мероприятие пройдет в RNCM. Билеты доступны на сайте RNCM.",
+        "reason": "Добавление конкретного сайта для покупки билетов для ясности.",
+        "risk": "product"
       }
     ],
     "warnings": [
-      "Отсутствует блок 'Что важно сегодня', что может снизить информативность выпуска.",
-      "Недостаточное количество элементов в 'Городской радар', что может повлиять на полноту информации о городских событиях.",
-      "Отсутствие блока 'Русскоязычные концерты и стендап UK' может снизить интерес для русскоязычной аудитории."
+      "В строке 31 не указан конкретный сайт для покупки билетов, что может вызвать путаницу у читателей.",
+      "Секция 'Что важно сегодня' содержит только один элемент, что ниже минимального порога.",
+      "Секция 'Русскоязычные концерты и стендап UK' отсутствует, что ниже минимального порога.",
+      "Секция 'Еда, открытия и рынки' отсутствует, что ниже минимального порога."
     ],
-    "notes": "Утверждение о задержании мужчин требует исправления, так как оно не подтверждено источником.; Прогноз погоды соответствует источнику и географическому охвату.; Макклсфилд не соответствует geo_scope GM, требуется удаление строки.; Футбольная новость ошибочно попала в раздел транспорта, требуется удаление.; Все три строк",
+    "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Уточнение даты в строке 8 необходимо для предотвращения путаницы с актуальностью события.; Все строки соответствуют требованиям и содержат актуальную информацию о транспортных измен",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 10,
+      "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -905,13 +826,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2695,
-          "duration_seconds": 2.023
+          "estimated_tokens": 2750,
+          "duration_seconds": 0.99
         },
         {
           "chunk_id": "chunk-02",
@@ -928,15 +849,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2463,
-          "duration_seconds": 1.003
+          "estimated_tokens": 2433,
+          "duration_seconds": 1.12
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            8
+            11
           ],
           "sections": [
             "Свежие новости"
@@ -946,33 +867,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5648,
-          "duration_seconds": 1.726
+          "estimated_tokens": 7269,
+          "duration_seconds": 2.597
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            9,
-            12
+            12,
+            14
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3910,
-          "duration_seconds": 1.596
+          "estimated_tokens": 3473,
+          "duration_seconds": 1.119
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            13,
+            15,
             15
+          ],
+          "sections": [
+            "Что важно сегодня"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2699,
+          "duration_seconds": 0.952
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "ok",
+          "line_range": [
+            16,
+            18
           ],
           "sections": [
             "Футбол"
@@ -982,33 +921,15 @@
           "action_count": 3,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3692,
-          "duration_seconds": 3.892
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "ok",
-          "line_range": [
-            16,
-            24
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 6764,
-          "duration_seconds": 1.696
+          "estimated_tokens": 3641,
+          "duration_seconds": 5.877
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            25,
-            28
+            19,
+            25
           ],
           "sections": [
             "Городской радар"
@@ -1018,51 +939,87 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4257,
-          "duration_seconds": 22.239
+          "estimated_tokens": 5794,
+          "duration_seconds": 3.14
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            29,
-            31
+            26,
+            26
           ],
           "sections": [
-            "Дальние анонсы"
+            "IT и бизнес"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3904,
-          "duration_seconds": 1.668
+          "estimated_tokens": 2634,
+          "duration_seconds": 6.659
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            32,
-            36
+            27,
+            27
           ],
           "sections": [
-            "Билеты / Ticket Radar"
+            "Business/tech события для тебя"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4933,
-          "duration_seconds": 30.306
+          "estimated_tokens": 2785,
+          "duration_seconds": 17.365
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            37,
-            39
+            28,
+            28
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2645,
+          "duration_seconds": 8.204
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            29,
+            31
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 1,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 3873,
+          "duration_seconds": 29.146
+        },
+        {
+          "chunk_id": "chunk-12",
+          "status": "ok",
+          "line_range": [
+            32,
+            33
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -1072,8 +1029,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3858,
-          "duration_seconds": 8.505
+          "estimated_tokens": 3282,
+          "duration_seconds": 12.217
         }
       ],
       "reduce": {
@@ -1086,8 +1043,8 @@
         "action_count": 0,
         "warning_count": 3,
         "error": "",
-        "estimated_tokens": 9979,
-        "duration_seconds": 22.528
+        "estimated_tokens": 10139,
+        "duration_seconds": 22.465
       },
       "max_workers": 3,
       "chunk_line_target": 12,
