@@ -2,106 +2,105 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 4 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair executor applied 2 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-09-29",
-  "pipeline_run_id": "20260929T080148+0100",
-  "digest_sha256": "44c6074c2c24dd41308e9083cc87e4a9a81b54142fb181150756f03752b98572",
-  "duration_seconds": 69.71,
-  "confidence": 0.9,
+  "run_date_london": "2026-09-30",
+  "pipeline_run_id": "20260930T080143+0100",
+  "digest_sha256": "9df6a40f28f6036035fa37789604b42de0fe87bc4459107c0e6dfc6041bf6d6a",
+  "duration_seconds": 81.236,
+  "confidence": 0.85,
   "critical_errors": [
     {
-      "line_index": 8,
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Текст неясно указывает на связь между смертью и ДТП, что может ввести в заблуждение.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 3,
       "section": "Свежие новости",
-      "problem": "Дата указана неверно: 28 сентября 2026 года — это понедельник, а не воскресенье.",
+      "problem": "Фраза 'Он бы был уволен, если бы не уволился сам' может быть неправильно истолкована как факт увольнения.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 15,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Дата закрытия Metrolink указана как будущая, но не относится к сегодняшнему дню.",
       "risk": "date",
-      "suggested_action": "repair"
+      "suggested_action": "strip"
     },
     {
-      "line_index": 22,
+      "line_index": 19,
       "section": "Футбол",
-      "problem": "Количество обвинений указано неверно.",
+      "problem": "Текст утверждает, что Манчестер Сити признан виновным, что не соответствует источнику.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 29,
+      "line_index": 26,
       "section": "Городской радар",
-      "problem": "Неправильное написание имени игрока.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 31,
-      "section": "IT и бизнес",
-      "problem": "Событие не соответствует географическому контракту.",
+      "problem": "География события не соответствует контракту раздела.",
       "risk": "geo",
       "suggested_action": "strip"
     },
     {
       "line_index": 33,
       "section": "Билеты / Ticket Radar",
-      "problem": "Неправильная дата и место проведения события.",
+      "problem": "Неправильное место проведения события.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 34,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Duplicate entry for Lucy Bedroque concert.",
-      "risk": "format",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 11,
-      "section": "Свежие новости",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "acquittal"
+      "line_index": 42,
+      "section": "Крупные концерты вне GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
     }
   ],
   "actions": [
     {
-      "line_index": 8,
+      "line_index": 1,
+      "section": "Главная история дня",
+      "action": "patch",
+      "replacement_text": "• В сентябре 2012 года, когда карьера Кортни Меппена-Уолтера только начинала набирать обороты, произошла трагедия: он стал виновником ДТП, в котором погибли брат и сестра. На момент аварии он превышал скорость, что привело к его осуждению и негативно сказалось на его дальнейшей карьере. Недавно он внезапно скончался в возрасте 32 лет, что вызвало широкий резонанс, и футбольные клубы уже выпустили официальные заявления в связи с этой утратой.",
+      "reason": "Уточнение, что смерть не связана с ДТП.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 3,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• В понедельник, 28 сентября 2026 года, в Рочдейле полиция арестовала четверых человек и изъяла наркотики на сумму около £1 миллиона в результате серии утренних рейдов.",
-      "reason": "Исправление даты на правильный день недели.",
-      "risk": "date"
+      "replacement_text": "• Бывший офицер полиции Большого Манчестера Форхан Ахмед был признан виновным в том, что целенаправленно преследовал уязвимую жертву домашнего насилия для романтических или сексуальных отношений. Он уволился до того, как мог быть уволен.",
+      "reason": "Уточнение формулировки, чтобы избежать двусмысленности.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 15,
+      "section": "Общественный транспорт сегодня",
+      "action": "strip",
+      "reason": "Информация о закрытии Metrolink с 19 октября по 1 ноября не актуальна для сегодняшнего дня.",
+      "risk": "date",
+      "replacement_text": ""
     },
     {
       "line_index": 19,
-      "section": "Общественный транспорт сегодня",
-      "action": "patch",
-      "replacement_text": "• Metrolink: В период закрытия Metrolink с 19 октября по 1 ноября пассажиры из Алтринча и Тимперли не получат замещающих автобусов и должны использовать автобус 263 или поезда. Это может повлиять на поездки сегодня.",
-      "reason": "Добавление информации о возможном влиянии на поездки сегодня для ясности.",
-      "risk": "product"
-    },
-    {
-      "line_index": 22,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Фанаты Манчестер Юнайтед призвали к серьезным санкциям против Манчестер Сити после того, как клуб был признан виновным по 115 финансовым обвинениям.",
-      "reason": "Исправление фактической ошибки в количестве обвинений.",
+      "replacement_text": "• Манчестер Сити может столкнуться с санкциями на сумму 830,69 миллиона фунтов стерлингов, если будет признан виновным в нарушении финансовых правил Премьер-лиги; клуб должен подтвердить апелляцию в октябре.",
+      "reason": "Утверждение о виновности Манчестер Сити не подтверждено источником.",
       "risk": "factual"
     },
     {
-      "line_index": 29,
+      "line_index": 26,
       "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Бруну Фернандеш из Манчестер Юнайтед играет с травмой весь сезон и вернется в клуб после пропуска матча сборной Португалии.",
-      "reason": "Исправление имени игрока на правильное написание.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 31,
-      "section": "IT и бизнес",
       "action": "strip",
-      "reason": "Национализация Avanti West Coast касается всей Великобритании, а не только Greater Manchester.",
+      "reason": "Событие произошло в Лондоне, что не соответствует geo_scope GM.",
       "risk": "geo",
       "replacement_text": ""
     },
@@ -109,24 +108,23 @@
       "line_index": 33,
       "section": "Билеты / Ticket Radar",
       "action": "patch",
-      "replacement_text": "• Lucy Bedroque — 30 сентября, Manchester Academy; цена £20.00. Билеты и время указаны на официальной странице.",
-      "reason": "Дата и место проведения события должны соответствовать данным из источника.",
+      "replacement_text": "• Lucy Bedroque — 30 сентября, Manchester New Century Hall; цена £20.00. Событие проходит сегодня.",
+      "reason": "Событие перенесено в Manchester New Century Hall.",
       "risk": "factual"
     },
     {
-      "line_index": 34,
-      "section": "Билеты / Ticket Radar",
-      "action": "strip",
-      "replacement_text": "",
-      "reason": "Duplicate entry for the same concert event.",
-      "risk": "format"
+      "line_index": 42,
+      "section": "Крупные концерты вне GM",
+      "action": "patch",
+      "replacement_text": "• 10 Years of 6LACK Tour — 1 октября, O2 Academy Brixton. Билеты и время указаны на официальной странице.",
+      "reason": "Дата события должна быть 1 октября 2026 года, как указано в источнике.",
+      "risk": "date"
     }
   ],
   "warnings": [
-    "Строка 19 требует уточнения о влиянии на поездки сегодня.",
-    "Missing 'Что важно сегодня' section, which is below the emergency floor of 3 items.",
-    "Only one item in 'Еда, открытия и рынки', below the emergency floor of 3 items.",
-    "line 10 drops source number/date fact(s): 77%"
+    "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога.",
+    "Секция 'Русскоязычные концерты и стендап UK' отсутствует, что ниже минимального порога.",
+    "Секция 'Еда, открытия и рынки' содержит только 1 элемент, что ниже минимального порога."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -135,71 +133,75 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 9,
-      "Футбол": 2,
-      "Городской радар": 7,
+      "Общественный транспорт сегодня": 4,
+      "Что важно сегодня": 1,
+      "Футбол": 3,
+      "Городской радар": 8,
       "Еда, открытия и рынки": 1,
-      "IT и бизнес": 1,
+      "IT и бизнес": 2,
       "Business/tech события для тебя": 1,
-      "Билеты / Ticket Radar": 6,
-      "Крупные концерты вне GM": 2
+      "Дальние анонсы": 1,
+      "Билеты / Ticket Radar": 9,
+      "Крупные концерты вне GM": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
+      "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 7,
-      "Билеты / Ticket Radar": 6,
+      "Городской радар": 8,
+      "Билеты / Ticket Radar": 9,
       "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 1,
       "Business/tech события для тебя": 1,
-      "Футбол": 2
+      "Футбол": 3
     },
-    "ticket_items": 8,
-    "core_items": 22,
+    "ticket_items": 10,
+    "core_items": 25,
     "writer_quality_counts": {
       "included_candidates": 43,
-      "rendered_candidates": 40,
+      "rendered_candidates": 42,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 3,
+      "dropped_low_quality": 1,
       "replaced_from_plan_backup": 0,
-      "removed_with_reason": 3
+      "removed_with_reason": 1
     },
     "source_health_counts": {
       "ok": 100,
       "partial": 2,
-      "stale": 6,
-      "empty": 16,
-      "failed": 6,
-      "zero_yield": 78,
+      "stale": 5,
+      "empty": 18,
+      "failed": 5,
+      "zero_yield": 80,
       "no_contribution_breakdown": {
-        "fetch_failed": 6,
-        "all_rejected": 78,
-        "idle_no_items": 24
+        "fetch_failed": 5,
+        "all_rejected": 80,
+        "idle_no_items": 26
       },
       "zero_contribution_by_stage": {
-        "written": 42,
-        "selected": 36,
-        "parsed": 24,
-        "fetched": 6
+        "written": 48,
+        "selected": 32,
+        "parsed": 26,
+        "fetched": 5
       },
       "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
+      "Что важно сегодня: 1 item(s), emergency floor 3",
       "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 1 item(s), emergency floor 3",
-      "source failures: 6"
+      "source failures: 5"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
+      "patch for line 1 has unchecked number/date token(s): 2012",
+      "patch for line 19 has unchecked number/date token(s): 830,69",
       "patch for line 33 has unchecked number/date token(s): 20.00"
     ],
     "can_apply_actions": true,
@@ -207,283 +209,207 @@
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 40,
-    "matched_lines": 40,
-    "applicable_lines": 2,
+    "checked_lines": 42,
+    "matched_lines": 42,
+    "applicable_lines": 3,
     "unmatched_lines": 0,
-    "critical_omission_count": 1,
-    "critical_omissions": [
-      {
-        "line_index": 11,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/man-pleads-not-guilty-dangerous-34682886",
-        "concept": "acquittal",
-        "obligation": "charge/verdict/victim",
-        "source_hit": "not guilty"
-      }
-    ],
-    "noncritical_omissions": [
-      {
-        "line_index": 10,
-        "dropped": [
-          "77%"
-        ]
-      }
-    ],
+    "critical_omission_count": 0,
+    "critical_omissions": [],
+    "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 1,
+    "pulled_for_rework": 0,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 8,
-    "attempted": 4,
-    "applied": 4,
+    "requested": 6,
+    "attempted": 2,
+    "applied": 2,
     "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 1,
-    "stripped": 2,
+    "reserve_replacement_used": 0,
+    "stripped": 1,
     "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 8,
+    "resolved": 6,
     "resolved_in_place": 5,
-    "resolved_by_replacement": 1,
-    "resolved_by_removal": 2,
+    "resolved_by_replacement": 0,
+    "resolved_by_removal": 1,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 8,
+    "enrich_attempted": 6,
     "post_check_errors": [],
-    "geo_contract_rejected": [],
+    "geo_contract_rejected": [
+      {
+        "line_index": 26,
+        "section": "Городской радар",
+        "geo_scope": "gm",
+        "reason": "Событие произошло в Лондоне, что не соответствует geo_scope GM.",
+        "gm_anchor_present": true
+      }
+    ],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 8,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "requested_action": "patch",
+        "reason": "Уточнение, что смерть не связана с ДТП.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Текст неясно указывает на связь между смертью и ДТП, что может ввести в заблуждение.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-courtney-meppen-walter-from-future-34689224-b8f1e2851e98",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/courtney-meppen-walter-from-future-34689224",
+        "original_html": "<b>В сентябре 2012 года, когда карьера Кортни Меппена-Уолтера только начинала набирать обороты, произошла трагедия: он стал виновником ДТП, в котором погибли брат и сестра.</b> На момент аварии он превышал скорость, что привело к его осуждению и негативно сказалось на его дальнейшей карьере. Его внезапная смерть в возрасте 32 лет вызвала широкий резонанс, и футбольные клубы уже выпустили официальные заявления в связи с этой утратой. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/courtney-meppen-walter-from-future-34689224\">MEN</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 3,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Исправление даты на правильный день недели.",
-        "risk": "date",
+        "reason": "Уточнение формулировки, чтобы избежать двусмысленности.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дата указана неверно: 28 сентября 2026 года — это понедельник, а не воскресенье.",
+        "critical_problem": "Фраза 'Он бы был уволен, если бы не уволился сам' может быть неправильно истолкована как факт увольнения.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "last_24h-06",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-four-arrests-as-police-seize-34683077-c3cd1815a713",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/four-arrests-as-police-seize-34683077",
-        "original_html": "• В понедельник, 28 сентября 2026 года, в Рочдейле полиция арестовала четверых человек и изъяла наркотики на сумму около £1 миллиона в результате серии утренних рейдов. Операция, проведенная в рамках шестимесячного расследования, выявила высокоорганизованную сеть, которая поставляла наркотики как онлайн, так и лично по всей стране. В ходе обысков были обнаружены более 100 различных видов наркотиков, включая рецептурные препараты и средства для похудения. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/four-arrests-as-police-seize-34683077\">MEN</a>",
+        "plan_slot_id": "last_24h-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-gmp-cop-targeted-vulnerable-domestic-34688699-85720ab07278",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/gmp-cop-targeted-vulnerable-domestic-34688699",
+        "original_html": "• Бывший офицер полиции Большого Манчестера Форхан Ахмед был признан виновным в том, что целенаправленно преследовал уязвимую жертву домашнего насилия для романтических или сексуальных отношений. Он бы был уволен, если бы не уволился сам. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/gmp-cop-targeted-vulnerable-domestic-34688699\">MEN Latest News</a>",
         "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "strip",
+        "reason": "Информация о закрытии Metrolink с 19 октября по 1 ноября не актуальна для сегодняшнего дня.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата закрытия Metrolink указана как будущая, но не относится к сегодняшнему дню.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "transport-04",
+        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-22-no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure-81e5f6dadd29",
+        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure",
+        "original_html": "• Metrolink: В период закрытия Metrolink с 19 октября по 1 ноября пассажиры из Алтринча и Тимперли не получат замещающих автобусов и должны использовать автобус 263 или поезда. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure\">Altrincham Today</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
         "line_index": 19,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "patch",
-        "reason": "Добавление информации о возможном влиянии на поездки сегодня для ясности.",
-        "risk": "product",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "transport-09",
-        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-22-no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure-81e5f6dadd29",
-        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure",
-        "original_html": "• Metrolink: В период закрытия Metrolink с 19 октября по 1 ноября пассажиры из Алтринча и Тимперли не получат замещающих автобусов и должны использовать автобус 263 или поезда. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure\">Altrincham Today</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 22,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Исправление фактической ошибки в количестве обвинений.",
+        "reason": "Утверждение о виновности Манчестер Сити не подтверждено источником.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Количество обвинений указано неверно.",
+        "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным, что не соответствует источнику.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-manchester-united-supporters-trust-respond-34680481-90a64045a00a",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/manchester-united-supporters-trust-respond-34680481",
-        "original_html": "• Фанаты Манчестер Юнайтед призвали к серьезным санкциям против Манчестер Сити после того, как клуб был признан виновным по 114 финансовым обвинениям. <a href=\"https://manchestereveningnews.co.uk/sport/football/manchester-united-supporters-trust-respond-34680481\">MEN Manchester United</a>",
+        "plan_slot_id": "football-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-sanctions-34691802-9e668cf70859",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-sanctions-34691802",
+        "original_html": "• Манчестер Сити признан виновным в нарушении финансовых правил Премьер-лиги, с санкциями на сумму 830,69 миллиона фунтов стерлингов; клуб должен подтвердить апелляциюоктября. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-sanctions-34691802\">MEN Manchester City</a>",
         "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 29,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Исправление имени игрока на правильное написание.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильное написание имени игрока.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-08",
-        "candidate_fingerprint": "url-aboutmanchester-co-uk-uniteds-fernandez-playing-with-injury-for-three-weeks-ab568d4325a6",
-        "original_url_identity": "aboutmanchester.co.uk/uniteds-fernandez-playing-with-injury-for-three-weeks",
-        "original_html": "• Бруно Фернандеш из Манчестер Юнайтед играет с травмой весь сезон и вернется в клуб после пропуска матча сборной Португалии. <a href=\"https://aboutmanchester.co.uk/uniteds-fernandez-playing-with-injury-for-three-weeks\">About Manchester News</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 31,
-        "section": "IT и бизнес",
-        "requested_action": "strip",
-        "reason": "Национализация Avanti West Coast касается всей Великобритании, а не только Greater Manchester.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Событие не соответствует географическому контракту.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "tech_business-01",
-        "candidate_fingerprint": "url-prolificnorth-co-uk-news-much-maligned-manchester-london-train-brand-to-be-nationalised-698a7f111d62",
-        "original_url_identity": "prolificnorth.co.uk/news/much-maligned-manchester-london-train-brand-to-be-nationalised",
-        "original_html": "• Службы поездов Avanti West Coast будут национализированы с марта следующего года, как объявило правительство 28 сентября 2026 года. <a href=\"https://prolificnorth.co.uk/news/much-maligned-manchester-london-train-brand-to-be-nationalised\">Prolific North Manchester</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
         "line_index": 33,
         "section": "Билеты / Ticket Radar",
         "requested_action": "patch",
-        "reason": "Дата и место проведения события должны соответствовать данным из источника.",
+        "reason": "Событие перенесено в Manchester New Century Hall.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неправильная дата и место проведения события.",
+        "critical_problem": "Неправильное место проведения события.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
         "plan_slot_id": "ticket_radar-01",
         "candidate_fingerprint": "event-event-lucy-bedroque-30th-september-2026-2026-09-30-manchester-academy-1dd462a429cc",
         "original_url_identity": "manchesteracademy.net/order/gateway/13381193/lucy-bedroque-manchester-club-academy-2026-09-30-18-30-00",
-        "original_html": "• <b>Lucy Bedroque</b> — 30 сентября, New Century Hall Manchester; цена £20.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381193/lucy-bedroque-manchester-club-academy-2026-09-30-18-30-00\">Manchester Academy</a>",
+        "original_html": "• <b>Lucy Bedroque</b> — 30 сентября, Manchester Academy; цена £20.00. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13381193/lucy-bedroque-manchester-club-academy-2026-09-30-18-30-00\">Manchester Academy</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 34,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "strip",
-        "reason": "Duplicate entry for the same concert event.",
-        "risk": "format",
+        "line_index": 42,
+        "section": "Крупные концерты вне GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 1 октября 2026 года, как указано в источнике.",
+        "risk": "date",
         "critical_error": true,
-        "critical_problem": "Duplicate entry for Lucy Bedroque concert.",
+        "critical_problem": "Дата события указана неверно.",
         "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "ticket_radar-02",
-        "candidate_fingerprint": "event-event-lucy-bedroque-2026-09-30-manchester-new-century-hall-900393a4d500",
-        "original_url_identity": "ticketmaster.co.uk/lucy-bedroque-manchester-30-09-2026/event/37006522A3D9435D",
-        "original_html": "• <b>Lucy Bedroque</b> — 30 сентября, Manchester New Century Hall. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/lucy-bedroque-manchester-30-09-2026/event/37006522A3D9435D\">Ticketmaster</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 11,
-        "section": "Свежие новости",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no Russian rendering in the shipped line",
-        "risk": "translation",
-        "critical_error": true,
-        "critical_problem": "",
-        "completeness_concept": "acquittal",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-09",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-pleads-not-guilty-dangerous-34682886-737e094f0393",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-pleads-not-guilty-dangerous-34682886",
-        "original_html": "• 57-летний Майкл Коррис не признал себя виновным в опасном вождении после аварии у Sainsbury's, в результате которой пострадал Льюис Риммер. Судебное разбирательство назначено на 16 ноября 2026 года в Болтоне. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-pleads-not-guilty-dangerous-34682886\">MEN Latest News</a>",
-        "replacement_fingerprint": "url-aboutmanchester-co-uk-rusholme-man-jailed-for-terrorism-related-offences-aacbf76fc54a",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "outside_gm_tickets-01",
+        "candidate_fingerprint": "event-event-10-years-of-6lack-tour-2026-10-01-o2-academy-brixton-388cb8fe533d",
+        "original_url_identity": "ticketmaster.co.uk/10-years-of-6lack-tour-london-01-10-2026/event/3E0064B4C9835DE1",
+        "original_html": "• <b>10 Years of 6LACK Tour</b> — 1 октября, O2 Academy Brixton. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/10-years-of-6lack-tour-london-01-10-2026/event/3E0064B4C9835DE1\">Ticketmaster</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::исправление даты на правильный день недели.",
+        "group_key": "главная история дня::уточнение, что смерть не связана с дтп.",
         "actions": [
           {
-            "line_index": 8,
-            "section": "Свежие новости",
+            "line_index": 1,
+            "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Исправление даты на правильный день недели.",
-            "risk": "date",
+            "reason": "Уточнение, что смерть не связана с ДТП.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Дата указана неверно: 28 сентября 2026 года — это понедельник, а не воскресенье.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-06",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-four-arrests-as-police-seize-34683077-c3cd1815a713",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/four-arrests-as-police-seize-34683077",
-            "original_html": "• В понедельник, 28 сентября 2026 года, в Рочдейле полиция арестовала четверых человек и изъяла наркотики на сумму около £1 миллиона в результате серии утренних рейдов. Операция, проведенная в рамках шестимесячного расследования, выявила высокоорганизованную сеть, которая поставляла наркотики как онлайн, так и лично по всей стране. В ходе обысков были обнаружены более 100 различных видов наркотиков, включая рецептурные препараты и средства для похудения. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/four-arrests-as-police-seize-34683077\">MEN</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 8,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::добавление информации о возможном влиянии на поездки сегодня для ясности.",
-        "actions": [
-          {
-            "line_index": 19,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "patch",
-            "reason": "Добавление информации о возможном влиянии на поездки сегодня для ясности.",
-            "risk": "product",
-            "critical_error": false,
-            "critical_problem": "",
+            "critical_problem": "Текст неясно указывает на связь между смертью и ДТП, что может ввести в заблуждение.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "transport-09",
-            "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-22-no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure-81e5f6dadd29",
-            "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure",
-            "original_html": "• Metrolink: В период закрытия Metrolink с 19 октября по 1 ноября пассажиры из Алтринча и Тимперли не получат замещающих автобусов и должны использовать автобус 263 или поезда. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure\">Altrincham Today</a>",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-courtney-meppen-walter-from-future-34689224-b8f1e2851e98",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/courtney-meppen-walter-from-future-34689224",
+            "original_html": "<b>В сентябре 2012 года, когда карьера Кортни Меппена-Уолтера только начинала набирать обороты, произошла трагедия: он стал виновником ДТП, в котором погибли брат и сестра.</b> На момент аварии он превышал скорость, что привело к его осуждению и негативно сказалось на его дальнейшей карьере. Его внезапная смерть в возрасте 32 лет вызвала широкий резонанс, и футбольные клубы уже выпустили официальные заявления в связи с этой утратой. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/courtney-meppen-walter-from-future-34689224\">MEN</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 19,
+            "line_index": 1,
             "passed": true,
             "detail": "post-check passed"
           }
         ],
-        "known_factual_error": false
+        "known_factual_error": true
       },
       {
-        "group_key": "футбол::исправление фактической ошибки в количестве обвинений.",
+        "group_key": "свежие новости::уточнение формулировки, чтобы избежать двусмысленности.",
         "actions": [
           {
-            "line_index": 22,
-            "section": "Футбол",
+            "line_index": 3,
+            "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Исправление фактической ошибки в количестве обвинений.",
+            "reason": "Уточнение формулировки, чтобы избежать двусмысленности.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Количество обвинений указано неверно.",
+            "critical_problem": "Фраза 'Он бы был уволен, если бы не уволился сам' может быть неправильно истолкована как факт увольнения.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-manchester-united-supporters-trust-respond-34680481-90a64045a00a",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/manchester-united-supporters-trust-respond-34680481",
-            "original_html": "• Фанаты Манчестер Юнайтед призвали к серьезным санкциям против Манчестер Сити после того, как клуб был признан виновным по 114 финансовым обвинениям. <a href=\"https://manchestereveningnews.co.uk/sport/football/manchester-united-supporters-trust-respond-34680481\">MEN Manchester United</a>",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-gmp-cop-targeted-vulnerable-domestic-34688699-85720ab07278",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/gmp-cop-targeted-vulnerable-domestic-34688699",
+            "original_html": "• Бывший офицер полиции Большого Манчестера Форхан Ахмед был признан виновным в том, что целенаправленно преследовал уязвимую жертву домашнего насилия для романтических или сексуальных отношений. Он бы был уволен, если бы не уволился сам. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/gmp-cop-targeted-vulnerable-domestic-34688699\">MEN Latest News</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -491,7 +417,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 22,
+            "line_index": 3,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -499,55 +425,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::исправление имени игрока на правильное написание.",
+        "group_key": "общественный транспорт сегодня::информация о закрытии metrolink с 19 октября по 1 ноября не актуальна для сегодняшнего дня.",
         "actions": [
           {
-            "line_index": 29,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Исправление имени игрока на правильное написание.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неправильное написание имени игрока.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-08",
-            "candidate_fingerprint": "url-aboutmanchester-co-uk-uniteds-fernandez-playing-with-injury-for-three-weeks-ab568d4325a6",
-            "original_url_identity": "aboutmanchester.co.uk/uniteds-fernandez-playing-with-injury-for-three-weeks",
-            "original_html": "• Бруно Фернандеш из Манчестер Юнайтед играет с травмой весь сезон и вернется в клуб после пропуска матча сборной Португалии. <a href=\"https://aboutmanchester.co.uk/uniteds-fernandez-playing-with-injury-for-three-weeks\">About Manchester News</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 29,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "it и бизнес::национализация avanti west coast касается всей великобритании, а не только greater manchester.",
-        "actions": [
-          {
-            "line_index": 31,
-            "section": "IT и бизнес",
+            "line_index": 15,
+            "section": "Общественный транспорт сегодня",
             "requested_action": "strip",
-            "reason": "Национализация Avanti West Coast касается всей Великобритании, а не только Greater Manchester.",
-            "risk": "geo",
+            "reason": "Информация о закрытии Metrolink с 19 октября по 1 ноября не актуальна для сегодняшнего дня.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Событие не соответствует географическому контракту.",
+            "critical_problem": "Дата закрытия Metrolink указана как будущая, но не относится к сегодняшнему дню.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "tech_business-01",
-            "candidate_fingerprint": "url-prolificnorth-co-uk-news-much-maligned-manchester-london-train-brand-to-be-nationalised-698a7f111d62",
-            "original_url_identity": "prolificnorth.co.uk/news/much-maligned-manchester-london-train-brand-to-be-nationalised",
-            "original_html": "• Службы поездов Avanti West Coast будут национализированы с марта следующего года, как объявило правительство 28 сентября 2026 года. <a href=\"https://prolificnorth.co.uk/news/much-maligned-manchester-london-train-brand-to-be-nationalised\">Prolific North Manchester</a>",
+            "plan_slot_id": "transport-04",
+            "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-22-no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure-81e5f6dadd29",
+            "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure",
+            "original_html": "• Metrolink: В период закрытия Metrolink с 19 октября по 1 ноября пассажиры из Алтринча и Тимперли не получат замещающих автобусов и должны использовать автобус 263 или поезда. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure\">Altrincham Today</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -556,7 +450,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 31,
+            "line_index": 15,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -564,23 +458,55 @@
         "known_factual_error": true
       },
       {
-        "group_key": "билеты / ticket radar::дата и место проведения события должны соответствовать данным из источника.",
+        "group_key": "футбол::утверждение о виновности манчестер сити не подтверждено источником.",
+        "actions": [
+          {
+            "line_index": 19,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Утверждение о виновности Манчестер Сити не подтверждено источником.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным, что не соответствует источнику.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-sanctions-34691802-9e668cf70859",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-sanctions-34691802",
+            "original_html": "• Манчестер Сити признан виновным в нарушении финансовых правил Премьер-лиги, с санкциями на сумму 830,69 миллиона фунтов стерлингов; клуб должен подтвердить апелляциюоктября. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-sanctions-34691802\">MEN Manchester City</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 19,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::событие перенесено в manchester new century hall.",
         "actions": [
           {
             "line_index": 33,
             "section": "Билеты / Ticket Radar",
             "requested_action": "patch",
-            "reason": "Дата и место проведения события должны соответствовать данным из источника.",
+            "reason": "Событие перенесено в Manchester New Century Hall.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неправильная дата и место проведения события.",
+            "critical_problem": "Неправильное место проведения события.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
             "plan_slot_id": "ticket_radar-01",
             "candidate_fingerprint": "event-event-lucy-bedroque-30th-september-2026-2026-09-30-manchester-academy-1dd462a429cc",
             "original_url_identity": "manchesteracademy.net/order/gateway/13381193/lucy-bedroque-manchester-club-academy-2026-09-30-18-30-00",
-            "original_html": "• <b>Lucy Bedroque</b> — 30 сентября, New Century Hall Manchester; цена £20.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381193/lucy-bedroque-manchester-club-academy-2026-09-30-18-30-00\">Manchester Academy</a>",
+            "original_html": "• <b>Lucy Bedroque</b> — 30 сентября, Manchester Academy; цена £20.00. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13381193/lucy-bedroque-manchester-club-academy-2026-09-30-18-30-00\">Manchester Academy</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -596,72 +522,33 @@
         "known_factual_error": true
       },
       {
-        "group_key": "билеты / ticket radar::duplicate entry for the same concert event",
+        "group_key": "крупные концерты вне gm::дата события должна быть 1 октября 2026 года, как указано в источнике.",
         "actions": [
           {
-            "line_index": 34,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "strip",
-            "reason": "Duplicate entry for the same concert event.",
-            "risk": "format",
+            "line_index": 42,
+            "section": "Крупные концерты вне GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 1 октября 2026 года, как указано в источнике.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Duplicate entry for Lucy Bedroque concert.",
+            "critical_problem": "Дата события указана неверно.",
             "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "ticket_radar-02",
-            "candidate_fingerprint": "event-event-lucy-bedroque-2026-09-30-manchester-new-century-hall-900393a4d500",
-            "original_url_identity": "ticketmaster.co.uk/lucy-bedroque-manchester-30-09-2026/event/37006522A3D9435D",
-            "original_html": "• <b>Lucy Bedroque</b> — 30 сентября, Manchester New Century Hall. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/lucy-bedroque-manchester-30-09-2026/event/37006522A3D9435D\">Ticketmaster</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "outside_gm_tickets-01",
+            "candidate_fingerprint": "event-event-10-years-of-6lack-tour-2026-10-01-o2-academy-brixton-388cb8fe533d",
+            "original_url_identity": "ticketmaster.co.uk/10-years-of-6lack-tour-london-01-10-2026/event/3E0064B4C9835DE1",
+            "original_html": "• <b>10 Years of 6LACK Tour</b> — 1 октября, O2 Academy Brixton. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/10-years-of-6lack-tour-london-01-10-2026/event/3E0064B4C9835DE1\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_by_removal",
+        "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 34,
+            "line_index": 42,
             "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:lucy bedroque|2026-09-30|manchester new century hall",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no russian rendering in the shipped line",
-        "actions": [
-          {
-            "line_index": 11,
-            "section": "Свежие новости",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no Russian rendering in the shipped line",
-            "risk": "translation",
-            "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "acquittal",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-09",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-pleads-not-guilty-dangerous-34682886-737e094f0393",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-pleads-not-guilty-dangerous-34682886",
-            "original_html": "• 57-летний Майкл Коррис не признал себя виновным в опасном вождении после аварии у Sainsbury's, в результате которой пострадал Льюис Риммер. Судебное разбирательство назначено на 16 ноября 2026 года в Болтоне. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-pleads-not-guilty-dangerous-34682886\">MEN Latest News</a>",
-            "replacement_fingerprint": "url-aboutmanchester-co-uk-rusholme-man-jailed-for-terrorism-related-offences-aacbf76fc54a",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 11,
-            "passed": true,
-            "detail": "post-check passed"
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
@@ -675,166 +562,162 @@
       "skipped": 1,
       "reports": [
         {
-          "fingerprint": "event-event-lucy-bedroque-2026-09-30-manchester-new-century-hall-900393a4d500",
-          "title": "Lucy Bedroque — event 2026-09-30 — public sale 2026-09-03 12:00",
+          "fingerprint": "event-event-10-years-of-6lack-tour-2026-10-01-o2-academy-brixton-388cb8fe533d",
+          "title": "10 Years of 6LACK Tour — event 2026-10-01 — public sale 2026-05-29 12:00",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/lucy-bedroque-manchester-30-09-2026/event/37006522A3D9435D",
-          "candidate_evidence_chars": 393
+          "url": "https://ticketmaster.co.uk/10-years-of-6lack-tour-london-01-10-2026/event/3E0064B4C9835DE1",
+          "candidate_evidence_chars": 373
         }
       ]
     },
-    "enrich_improved": 8,
+    "enrich_improved": 6,
     "false_positive_existing_fact": 4,
-    "no_eligible_backup": 2,
-    "deterministic_rewrite_rejected": 1,
+    "no_eligible_backup": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 38,
-      "matched_lines": 38,
-      "applicable_lines": 1,
+      "checked_lines": 41,
+      "matched_lines": 41,
+      "applicable_lines": 3,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
-      "noncritical_omissions": [
-        {
-          "line_index": 10,
-          "dropped": [
-            "77%"
-          ]
-        }
-      ],
+      "noncritical_omissions": [],
       "critical_errors": [],
-      "warnings": [
-        "line 10 drops source number/date fact(s): 77%"
-      ],
+      "warnings": [],
       "recovered": 0,
       "pulled_for_rework": 0,
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 38,
-      "resolved_in_place": 38,
+      "checked_lines": 41,
+      "resolved_in_place": 41,
       "unresolved": 0,
       "findings": []
     },
     "status": "resolved"
   },
-  "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в дате для события в Рочдейле.; В строке 19 добавлено уточнение о влиянии на поездки сегодня для улучшения практической пользы.; Ошибка в количестве обвинений Манч",
+  "notes": "Уточнение необходимо для предотвращения недопонимания связи между событиями.; Прогноз погоды соответствует данным Met Office и контракту блока.; Требуется уточнение формулировки в строке 3 для избежания двусмысленности.; Строка о будущем закрытии Metrolink не соответствует текущей дате и должна быть удалена.; Строка со",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.9,
+    "confidence": 0.85,
     "critical_errors": [
       {
-        "line_index": 8,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Текст неясно указывает на связь между смертью и ДТП, что может ввести в заблуждение.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 3,
         "section": "Свежие новости",
-        "problem": "Дата указана неверно: 28 сентября 2026 года — это понедельник, а не воскресенье.",
+        "problem": "Фраза 'Он бы был уволен, если бы не уволился сам' может быть неправильно истолкована как факт увольнения.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дата закрытия Metrolink указана как будущая, но не относится к сегодняшнему дню.",
         "risk": "date",
-        "suggested_action": "repair"
+        "suggested_action": "strip"
       },
       {
-        "line_index": 22,
+        "line_index": 19,
         "section": "Футбол",
-        "problem": "Количество обвинений указано неверно.",
+        "problem": "Текст утверждает, что Манчестер Сити признан виновным, что не соответствует источнику.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 29,
+        "line_index": 26,
         "section": "Городской радар",
-        "problem": "Неправильное написание имени игрока.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 31,
-        "section": "IT и бизнес",
-        "problem": "Событие не соответствует географическому контракту.",
+        "problem": "География события не соответствует контракту раздела.",
         "risk": "geo",
         "suggested_action": "strip"
       },
       {
         "line_index": 33,
         "section": "Билеты / Ticket Radar",
-        "problem": "Неправильная дата и место проведения события.",
+        "problem": "Неправильное место проведения события.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 34,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Duplicate entry for Lucy Bedroque concert.",
-        "risk": "format",
-        "suggested_action": "strip"
+        "line_index": 42,
+        "section": "Крупные концерты вне GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 8,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "action": "patch",
+        "replacement_text": "• В сентябре 2012 года, когда карьера Кортни Меппена-Уолтера только начинала набирать обороты, произошла трагедия: он стал виновником ДТП, в котором погибли брат и сестра. На момент аварии он превышал скорость, что привело к его осуждению и негативно сказалось на его дальнейшей карьере. Недавно он внезапно скончался в возрасте 32 лет, что вызвало широкий резонанс, и футбольные клубы уже выпустили официальные заявления в связи с этой утратой.",
+        "reason": "Уточнение, что смерть не связана с ДТП.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 3,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• В понедельник, 28 сентября 2026 года, в Рочдейле полиция арестовала четверых человек и изъяла наркотики на сумму около £1 миллиона в результате серии утренних рейдов.",
-        "reason": "Исправление даты на правильный день недели.",
+        "replacement_text": "• Бывший офицер полиции Большого Манчестера Форхан Ахмед был признан виновным в том, что целенаправленно преследовал уязвимую жертву домашнего насилия для романтических или сексуальных отношений. Он уволился до того, как мог быть уволен.",
+        "reason": "Уточнение формулировки, чтобы избежать двусмысленности.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
+        "action": "strip",
+        "reason": "Информация о закрытии Metrolink с 19 октября по 1 ноября не актуальна для сегодняшнего дня.",
         "risk": "date"
       },
       {
         "line_index": 19,
-        "section": "Общественный транспорт сегодня",
-        "action": "patch",
-        "replacement_text": "• Metrolink: В период закрытия Metrolink с 19 октября по 1 ноября пассажиры из Алтринча и Тимперли не получат замещающих автобусов и должны использовать автобус 263 или поезда. Это может повлиять на поездки сегодня.",
-        "reason": "Добавление информации о возможном влиянии на поездки сегодня для ясности.",
-        "risk": "product"
-      },
-      {
-        "line_index": 22,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Фанаты Манчестер Юнайтед призвали к серьезным санкциям против Манчестер Сити после того, как клуб был признан виновным по 115 финансовым обвинениям.",
-        "reason": "Исправление фактической ошибки в количестве обвинений.",
+        "replacement_text": "• Манчестер Сити может столкнуться с санкциями на сумму 830,69 миллиона фунтов стерлингов, если будет признан виновным в нарушении финансовых правил Премьер-лиги; клуб должен подтвердить апелляцию в октябре.",
+        "reason": "Утверждение о виновности Манчестер Сити не подтверждено источником.",
         "risk": "factual"
       },
       {
-        "line_index": 29,
+        "line_index": 26,
         "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Бруну Фернандеш из Манчестер Юнайтед играет с травмой весь сезон и вернется в клуб после пропуска матча сборной Португалии.",
-        "reason": "Исправление имени игрока на правильное написание.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 31,
-        "section": "IT и бизнес",
         "action": "strip",
-        "reason": "Национализация Avanti West Coast касается всей Великобритании, а не только Greater Manchester.",
+        "reason": "Событие произошло в Лондоне, что не соответствует geo_scope GM.",
         "risk": "geo"
       },
       {
         "line_index": 33,
         "section": "Билеты / Ticket Radar",
         "action": "patch",
-        "replacement_text": "• Lucy Bedroque — 30 сентября, Manchester Academy; цена £20.00. Билеты и время указаны на официальной странице.",
-        "reason": "Дата и место проведения события должны соответствовать данным из источника.",
+        "replacement_text": "• Lucy Bedroque — 30 сентября, Manchester New Century Hall; цена £20.00. Событие проходит сегодня.",
+        "reason": "Событие перенесено в Manchester New Century Hall.",
         "risk": "factual"
       },
       {
-        "line_index": 34,
-        "section": "Билеты / Ticket Radar",
-        "action": "strip",
-        "replacement_text": "",
-        "reason": "Duplicate entry for the same concert event.",
-        "risk": "format"
+        "line_index": 42,
+        "section": "Крупные концерты вне GM",
+        "action": "patch",
+        "replacement_text": "• 10 Years of 6LACK Tour — 1 октября, O2 Academy Brixton. Билеты и время указаны на официальной странице.",
+        "reason": "Дата события должна быть 1 октября 2026 года, как указано в источнике.",
+        "risk": "date"
       }
     ],
     "warnings": [
-      "Строка 19 требует уточнения о влиянии на поездки сегодня.",
-      "Missing 'Что важно сегодня' section, which is below the emergency floor of 3 items.",
-      "Only one item in 'Еда, открытия и рынки', below the emergency floor of 3 items."
+      "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога.",
+      "Секция 'Русскоязычные концерты и стендап UK' отсутствует, что ниже минимального порога.",
+      "Секция 'Еда, открытия и рынки' содержит только 1 элемент, что ниже минимального порога."
     ],
-    "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в дате для события в Рочдейле.; В строке 19 добавлено уточнение о влиянии на поездки сегодня для улучшения практической пользы.; Ошибка в количестве обвинений Манч",
+    "notes": "Уточнение необходимо для предотвращения недопонимания связи между событиями.; Прогноз погоды соответствует данным Met Office и контракту блока.; Требуется уточнение формулировки в строке 3 для избежания двусмысленности.; Строка о будущем закрытии Metrolink не соответствует текущей дате и должна быть удалена.; Строка со",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 11,
+      "chunk_count": 13,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -847,13 +730,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2660,
-          "duration_seconds": 1.308
+          "estimated_tokens": 2749,
+          "duration_seconds": 2.973
         },
         {
           "chunk_id": "chunk-02",
@@ -870,8 +753,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2440,
-          "duration_seconds": 1.192
+          "estimated_tokens": 2470,
+          "duration_seconds": 1.126
         },
         {
           "chunk_id": "chunk-03",
@@ -888,33 +771,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7334,
-          "duration_seconds": 2.549
+          "estimated_tokens": 7213,
+          "duration_seconds": 2.716
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            20
+            15
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "warn",
-          "critical_error_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
           "action_count": 1,
-          "warning_count": 1,
+          "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6212,
-          "duration_seconds": 2.062
+          "estimated_tokens": 4047,
+          "duration_seconds": 2.441
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            21,
-            22
+            16,
+            16
+          ],
+          "sections": [
+            "Что важно сегодня"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2660,
+          "duration_seconds": 1.292
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "ok",
+          "line_range": [
+            17,
+            19
           ],
           "sections": [
             "Футбол"
@@ -924,15 +825,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3137,
-          "duration_seconds": 2.284
+          "estimated_tokens": 3666,
+          "duration_seconds": 2.293
         },
         {
-          "chunk_id": "chunk-06",
+          "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            23,
-            29
+            20,
+            27
           ],
           "sections": [
             "Городской радар"
@@ -942,15 +843,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5814,
-          "duration_seconds": 1.741
+          "estimated_tokens": 6306,
+          "duration_seconds": 34.798
         },
         {
-          "chunk_id": "chunk-07",
+          "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            30,
-            30
+            28,
+            28
           ],
           "sections": [
             "Еда, открытия и рынки"
@@ -960,33 +861,33 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2710,
-          "duration_seconds": 10.828
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            31,
-            31
-          ],
-          "sections": [
-            "IT и бизнес"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2577,
-          "duration_seconds": 5.238
+          "estimated_tokens": 2799,
+          "duration_seconds": 1.464
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            32,
-            32
+            29,
+            30
+          ],
+          "sections": [
+            "IT и бизнес"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3140,
+          "duration_seconds": 1.169
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            31,
+            31
           ],
           "sections": [
             "Business/tech события для тебя"
@@ -996,15 +897,33 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2814,
-          "duration_seconds": 15.857
+          "estimated_tokens": 2852,
+          "duration_seconds": 11.596
         },
         {
-          "chunk_id": "chunk-10",
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            32,
+            32
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2733,
+          "duration_seconds": 4.259
+        },
+        {
+          "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
             33,
-            38
+            41
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -1014,26 +933,26 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5626,
-          "duration_seconds": 32.133
+          "estimated_tokens": 7425,
+          "duration_seconds": 44.131
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-13",
           "status": "ok",
           "line_range": [
-            39,
-            40
+            42,
+            42
           ],
           "sections": [
             "Крупные концерты вне GM"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3292,
-          "duration_seconds": 13.714
+          "estimated_tokens": 2710,
+          "duration_seconds": 6.838
         }
       ],
       "reduce": {
@@ -1041,13 +960,13 @@
         "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "repair_required",
-        "critical_error_count": 1,
-        "action_count": 1,
-        "warning_count": 2,
+        "decision": "warn",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 3,
         "error": "",
-        "estimated_tokens": 10409,
-        "duration_seconds": 24.49
+        "estimated_tokens": 10693,
+        "duration_seconds": 23.952
       },
       "max_workers": 3,
       "chunk_line_target": 12,
