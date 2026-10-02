@@ -1,123 +1,144 @@
 {
-  "status": "partial",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
+  "reason": "pre-send repair executor applied 3 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-10-01",
-  "pipeline_run_id": "20261001T080203+0100",
-  "digest_sha256": "2bec6bbe167110b7fb8c2e1d7dc5f6ec013300e7f582d2e2e7a6a8666082b243",
-  "duration_seconds": 98.196,
-  "confidence": 0.9,
+  "run_date_london": "2026-10-02",
+  "pipeline_run_id": "20261002T080145+0100",
+  "digest_sha256": "c8163bc9ef28f2f5cefd6c68c3d36d19118aeac65a2131ec77eb3eb49011ec82",
+  "duration_seconds": 118.889,
+  "confidence": 0.85,
   "critical_errors": [
-    {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Возраст Джеймса Гленденнинга не указан, что может быть важной деталью.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
     {
       "line_index": 5,
       "section": "Свежие новости",
-      "problem": "Дата суда указана как 30 сентября, но это уже прошедшая дата.",
-      "risk": "date",
+      "problem": "Указан субъект из Лонгриджа, который находится вне Greater Manchester.",
+      "risk": "geo",
       "suggested_action": "repair"
     },
     {
-      "line_index": 19,
+      "line_index": 16,
       "section": "Общественный транспорт сегодня",
-      "problem": "Дата события не соответствует текущей дате выпуска.",
-      "risk": "date",
-      "suggested_action": "strip"
+      "problem": "Упоминание о смерти женщины на железнодорожных путях может быть чувствительным и требует осторожного подхода.",
+      "risk": "sensitive",
+      "suggested_action": "repair"
     },
     {
       "line_index": 21,
       "section": "Футбол",
-      "problem": "Неверная информация о признании вины.",
+      "problem": "Текст утверждает, что Манчестер Сити был признан виновным, что не соответствует источнику.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 35,
+      "line_index": 23,
       "section": "Выходные в GM",
-      "problem": "Дата события указана неверно. В тексте указано 4 октября, но в данных события дата начала 10 мая 2027 года.",
+      "problem": "Дата начала события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 34,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
       "line_index": 43,
       "section": "Городской радар",
-      "problem": "Неверное указание на связь с полицией или судом.",
+      "problem": "Неправильное указание клуба Джона Стоунса.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 43,
-      "section": "Городской радар",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'murder' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "homicide"
+      "line_index": 47,
+      "section": "IT и бизнес",
+      "problem": "Событие происходит в Чешире, что не соответствует geo_scope 'gm'.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 50,
+      "section": "Business/tech события для тебя",
+      "problem": "Онлайн-событие не соответствует geo_scope 'gm'.",
+      "risk": "geo",
+      "suggested_action": "strip"
     }
   ],
   "actions": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• Бывший полицейский Джеймс Гленденнинг, осуждённый за преступления против детей, скончался в тюрьме Strangeways в возрасте 93 лет после обрушения в своей камере.",
-      "reason": "Добавление возраста для полноты информации.",
-      "risk": "factual"
-    },
-    {
       "line_index": 5,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• Полицейские сообщили, что 36-летний личный тренер Паям Пошти, проживающий в Бери, был обвинён в сексуальных преступлениях против трёх женщин. Он должен был предстать перед судом в Манчестере 30 сентября. Обвинения включают одно преступление сексуального насилия с проникновением и два — сексуального насилия с прикосновением, которые, по данным полиции, произошли в бизнесе в Болтоне.",
-      "reason": "Дата суда указана как прошедшая, необходимо уточнить, что это было запланировано на 30 сентября.",
-      "risk": "date"
+      "replacement_text": "• Мужчина, 30-летний Джеймс Патерсон, был обвинён в похищении и ряде сексуальных преступлений после того, как женщина сообщила о том, что её изнасиловали в автомобиле. Инцидент произошёл в ночь на 27 сентября, когда она с друзьями села в машину, которую приняла за такси в Уигане. Патерсон остаётся под стражей до следующего заседания суда 28 октября в Ливерпульском коронном суде.",
+      "reason": "Указание на Лонгридж, который находится вне Greater Manchester, нарушает географический контракт.",
+      "risk": "geo"
     },
     {
-      "line_index": 19,
+      "line_index": 16,
       "section": "Общественный транспорт сегодня",
-      "action": "strip",
-      "reason": "Информация о закрытии Metrolink с 19 октября по 1 ноября не актуальна для текущей даты выпуска.",
-      "risk": "date",
-      "replacement_text": ""
+      "action": "patch",
+      "replacement_text": "• National Rail: на железнодорожных путях между Уиганом и Престоном произошёл инцидент в среду вечером, 30 сентября 2026 года, около 23:53. Полиция и экстренные службы были вызваны на место происшествия, в результате чего поезда были отменены или задержаны. Услуги возобновились около 1:22 1 октября.",
+      "reason": "Смягчение чувствительного содержания, связанного с инцидентом на железнодорожных путях.",
+      "risk": "sensitive"
     },
     {
       "line_index": 21,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Манчестер Сити обвиняется в финансовых нарушениях Премьер-лиги независимой комиссией. Клуб планирует подать апелляцию, наказание еще не определено. Обвинения касаются нарушений в период с 2009 по 2018 годы.",
-      "reason": "Неверное утверждение о признании вины, когда речь идет об обвинениях.",
+      "replacement_text": "• 1 октября 2026 года стало известно, что Премьер-лига, вероятно, избежит выплаты 4,5 миллиарда фунтов в качестве компенсации вещателям после обновления по делу о нарушениях финансовых правил Манчестер Сити.",
+      "reason": "Утверждение о признании вины Манчестер Сити не подтверждено источником.",
       "risk": "factual"
     },
     {
-      "line_index": 35,
+      "line_index": 23,
       "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• 10 мая 2027 года — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
-      "reason": "Исправление даты события на правильную.",
+      "replacement_text": "• 1 октября — Makers Market на Great Northern Square в Манчестере. На площадке: рынок, вход £5, ремесленные товары, еда.",
+      "reason": "Дата начала события должна быть 1 октября, согласно источнику.",
+      "risk": "date"
+    },
+    {
+      "line_index": 34,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 4 октября в New Smithfield Market, Openshaw, Manchester, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный. Событие проходит каждое воскресенье.",
+      "reason": "Уточнение, что событие проходит каждое воскресенье, чтобы избежать путаницы с датой.",
       "risk": "date"
     },
     {
       "line_index": 43,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Абни Холл, викторианский особняк в Чидле, связанный с Агатой Кристи, выставлен на продажу за сумму свыше 3,75 миллиона фунтов. Особняк занимает площадь 21,000 кв. футов и в настоящее время арендуется восемью коммерческими арендаторами.",
-      "reason": "Текст не соответствует фактам: нет связи с полицией или судом.",
+      "replacement_text": "• Футболист Джон Стоунс был осужден за превышение скорости после того, как не ответил на письмо полиции, находясь на чемпионате мира; он получил четыре штрафных балла и штраф в размере £1,052. Стоунс, который покинул Манчестер Сити и перешел в Интер Милан летом, был пойман за рулем своего Range Rover.",
+      "reason": "Указание клуба Джона Стоунса должно быть исправлено, чтобы соответствовать фактам.",
       "risk": "factual"
+    },
+    {
+      "line_index": 47,
+      "section": "IT и бизнес",
+      "action": "strip",
+      "reason": "Событие в Чешире не соответствует geo_scope 'gm'.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 50,
+      "section": "Business/tech события для тебя",
+      "action": "strip",
+      "reason": "Онлайн-событие не привязано к конкретному месту в Greater Manchester, что нарушает geo_scope 'gm'.",
+      "risk": "geo",
+      "replacement_text": ""
     }
   ],
   "warnings": [
-    "Секция 'Выходные в GM' содержит только 6 событий, что соответствует минимальному требованию, но не превышает его. Возможно, стоит добавить больше событий для разнообразия.",
-    "В блоке 'IT и бизнес' нет критических ошибок, но стоит отметить, что строка о саммите G20 в Манчестере в 2027 году может быть воспринята как преждевременная информация, учитывая, что событие произойдет через год.",
-    "judge reduce failed: parse_failed no parseable JSON"
+    "Секция 'Что важно сегодня' содержит только 2 элемента, что ниже минимального порога в 3 элемента.",
+    "Секция 'Еда, открытия и рынки' полностью отсутствует, что ниже минимального порога в 3 элемента."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -126,97 +147,92 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 8,
+      "Общественный транспорт сегодня": 6,
+      "Что важно сегодня": 2,
       "Футбол": 2,
-      "Выходные в GM": 13,
-      "Городской радар": 6,
-      "IT и бизнес": 4,
-      "Билеты / Ticket Radar": 10,
-      "Крупные концерты вне GM": 2
+      "Выходные в GM": 12,
+      "Городской радар": 7,
+      "IT и бизнес": 5,
+      "Business/tech события для тебя": 2,
+      "Билеты / Ticket Radar": 12,
+      "Крупные концерты вне GM": 2,
+      "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
+      "Что важно сегодня": 2,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 6,
-      "Выходные в GM": 13,
-      "Билеты / Ticket Radar": 10,
-      "Русскоязычные концерты и стендап UK": 0,
+      "Городской радар": 7,
+      "Выходные в GM": 12,
+      "Билеты / Ticket Radar": 12,
+      "Русскоязычные концерты и стендап UK": 1,
       "Еда, открытия и рынки": 0,
-      "Business/tech события для тебя": 0,
+      "Business/tech события для тебя": 2,
       "Футбол": 2
     },
-    "ticket_items": 12,
-    "core_items": 32,
+    "ticket_items": 15,
+    "core_items": 36,
     "writer_quality_counts": {
-      "included_candidates": 59,
-      "rendered_candidates": 56,
+      "included_candidates": 63,
+      "rendered_candidates": 62,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 2,
-      "replaced_from_plan_backup": 1,
-      "removed_with_reason": 2
+      "dropped_low_quality": 1,
+      "replaced_from_plan_backup": 0,
+      "removed_with_reason": 1
     },
     "source_health_counts": {
-      "ok": 104,
+      "ok": 106,
       "partial": 2,
-      "stale": 5,
-      "empty": 15,
+      "stale": 6,
+      "empty": 11,
       "failed": 5,
       "zero_yield": 74,
       "no_contribution_breakdown": {
         "fetch_failed": 5,
         "all_rejected": 74,
-        "idle_no_items": 21
+        "idle_no_items": 13
       },
       "zero_contribution_by_stage": {
-        "written": 42,
-        "selected": 32,
-        "parsed": 21,
+        "selected": 38,
+        "written": 36,
+        "parsed": 13,
         "fetched": 5
       },
       "weekend_source_coverage_incidents": 49
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
-      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
+      "Что важно сегодня: 2 item(s), emergency floor 3",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "Business/tech события для тебя: 0 item(s), emergency floor 1",
       "source failures: 5"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 5 has unchecked number/date token(s): 36",
-      "patch for line 43 has unchecked number/date token(s): 21,000, 3,75"
+      "patch for line 5 has unchecked number/date token(s): 27",
+      "patch for line 16 has unchecked number/date token(s): 1:22, 23:53",
+      "patch for line 21 has unchecked number/date token(s): 4,5",
+      "patch for line 43 has unchecked number/date token(s): 1,052"
     ],
     "can_apply_actions": true,
-    "action_count": 6
+    "action_count": 8
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 56,
-    "matched_lines": 56,
+    "checked_lines": 62,
+    "matched_lines": 62,
     "applicable_lines": 3,
     "unmatched_lines": 3,
-    "critical_omission_count": 1,
-    "critical_omissions": [
-      {
-        "line_index": 43,
-        "source_url_key": "aboutmanchester.co.uk/own-a-piece-of-murder-mystery-history-as-agatha-christie-inspired-mansion-goes-up-for-sale",
-        "concept": "homicide",
-        "obligation": "charge/verdict/victim",
-        "source_hit": "murder"
-      }
-    ],
+    "critical_omission_count": 0,
+    "critical_omissions": [],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 1,
+    "pulled_for_rework": 0,
     "still_missing": 0
   },
   "repair_executor": {
@@ -226,71 +242,53 @@
     "requested": 6,
     "attempted": 3,
     "applied": 3,
-    "model_patch_applied": 2,
+    "model_patch_applied": 0,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 0,
-    "stripped": 1,
+    "reserve_replacement_used": 1,
+    "stripped": 2,
     "unresolved": 0,
-    "blocking_unresolved": 1,
+    "blocking_unresolved": 0,
     "resolved": 6,
-    "resolved_in_place": 5,
-    "resolved_by_replacement": 0,
-    "resolved_by_removal": 1,
-    "fact_lock_rejected": 0,
+    "resolved_in_place": 3,
+    "resolved_by_replacement": 1,
+    "resolved_by_removal": 2,
+    "fact_lock_rejected": 1,
     "enrich_attempted": 6,
     "post_check_errors": [],
-    "geo_contract_rejected": [],
-    "source_link_metadata_rejected": [],
-    "actions": [
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "requested_action": "patch",
-        "reason": "Добавление возраста для полноты информации.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Возраст Джеймса Гленденнинга не указан, что может быть важной деталью.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-officer-unmasked-depraved-paedophile-34696857-7381d45d5661",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-officer-unmasked-depraved-paedophile-34696857",
-        "original_html": "<b>Бывший полицейский Джеймс Гленденнинг, осуждённый за преступления против детей, скончался в тюрьме Strangeways после обрушения в своей камере.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-officer-unmasked-depraved-paedophile-34696857\">MEN</a>",
-        "post_check_passed": true
-      },
+    "geo_contract_rejected": [
       {
         "line_index": 5,
         "section": "Свежие новости",
-        "requested_action": "patch",
-        "reason": "Дата суда указана как прошедшая, необходимо уточнить, что это было запланировано на 30 сентября.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата суда указана как 30 сентября, но это уже прошедшая дата.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "last_24h-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bolton-personal-trainer-suspected-sexual-34694719-687cb8b62cf2",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/bolton-personal-trainer-suspected-sexual-34694719",
-        "original_html": "• Полицейские сообщили, что 36-летний личный тренер Паям Пошти, проживающий в Бери, был обвинён в сексуальных преступлениях против трёх женщин. Он должен предстать перед судом в Манчестере 30 сентября. Обвинения включают одно преступление сексуального насилия с проникновением и два — сексуального насилия с прикосновением, которые, по данным полиции, произошли в бизнесе в Болтоне. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/bolton-personal-trainer-suspected-sexual-34694719\">MEN Latest News</a>",
-        "post_check_passed": true
+        "geo_scope": "gm",
+        "reason": "Указание на Лонгридж, который находится вне Greater Manchester, нарушает географический контракт.",
+        "gm_anchor_present": true
       },
       {
-        "line_index": 19,
+        "line_index": 50,
+        "section": "Business/tech события для тебя",
+        "geo_scope": "gm",
+        "reason": "Онлайн-событие не привязано к конкретному месту в Greater Manchester, что нарушает geo_scope 'gm'.",
+        "gm_anchor_present": true
+      }
+    ],
+    "source_link_metadata_rejected": [],
+    "actions": [
+      {
+        "line_index": 16,
         "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Информация о закрытии Metrolink с 19 октября по 1 ноября не актуальна для текущей даты выпуска.",
-        "risk": "date",
+        "requested_action": "patch",
+        "reason": "Смягчение чувствительного содержания, связанного с инцидентом на железнодорожных путях.",
+        "risk": "sensitive",
         "critical_error": true,
-        "critical_problem": "Дата события не соответствует текущей дате выпуска.",
+        "critical_problem": "Упоминание о смерти женщины на железнодорожных путях может быть чувствительным и требует осторожного подхода.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "transport-08",
-        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-22-no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure-81e5f6dadd29",
-        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure",
-        "original_html": "• Metrolink: В период закрытия Metrolink с 19 октября по 1 ноября пассажиры из Алтринча и Тимперли не получат замещающих автобусов и должны использовать автобус 263 или поезда. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure\">Altrincham Today</a>",
+        "plan_slot_id": "transport-05",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-person-found-dead-railway-line-34700324-a00fc04bd2ae",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/person-found-dead-railway-line-34700324",
+        "original_html": "• National Rail: на железнодорожных путях между Уиганом и Престоном была найдена мертвая женщина в среду вечером, 30 сентября 2026 года, около 23:53. Полиция и экстренные службы были вызваны на место происшествия, в результате чего поезда были отменены или задержаны. Услуги возобновились около 1:22 1 октября. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/person-found-dead-railway-line-34700324\">MEN</a>",
+        "model_replacement_rejected": "fact_lock: national rail",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
@@ -299,35 +297,54 @@
         "line_index": 21,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Неверное утверждение о признании вины, когда речь идет об обвинениях.",
+        "reason": "Утверждение о признании вины Манчестер Сити не подтверждено источником.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неверная информация о признании вины.",
+        "critical_problem": "Текст утверждает, что Манчестер Сити был признан виновным, что не соответствует источнику.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
         "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-erling-haaland-34698372-c72069788d15",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-erling-haaland-34698372",
-        "original_html": "• Манчестер Сити признан виновным по всем обвинениям Премьер-лиги в финансовых нарушениях независимой комиссией. Клуб планирует подать апелляцию, наказание еще не определено. Обвинения касаются нарушений в период с 2009 по 2018 годы. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-erling-haaland-34698372\">MEN Manchester City</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-premier-league-charges-34704235-a102f514ea36",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34704235",
+        "original_html": "• 1 октября 2026 года стало известно, что Премьер-лига, вероятно, избежит выплаты 4,5 миллиарда фунтов в качестве компенсации вещателям после того, как Манчестер Сити был признан виновным в 114 из 115 нарушений финансовых правил. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34704235\">MEN Manchester City</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 35,
+        "line_index": 23,
         "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Исправление даты события на правильную.",
+        "reason": "Дата начала события должна быть 1 октября, согласно источнику.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события указана неверно. В тексте указано 4 октября, но в данных события дата начала 10 мая 2027 года.",
+        "critical_problem": "Дата начала события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "weekend_activities-01",
+        "candidate_fingerprint": "event-event-makers-market-in-great-northern-square-great-northern-manchester-2026-10-01-great-northern-square-a033ac338359",
+        "original_url_identity": "thegreatnorthern.com/event/makers-market-in-great-northern-square",
+        "original_html": "• 2 октября — Makers Market на Great Northern Square в Манчестере. На площадке: рынок, вход £5, ремесленные товары, еда. <a href=\"https://thegreatnorthern.com/event/makers-market-in-great-northern-square\">Great Northern Makers Market</a>",
+        "model_replacement_rejected": "post_check: structured event date is not rendered correctly",
+        "replacement_fingerprint": "event-event-the-cycle-of-love-12a-an-epic-true-life-adventure-about-self-belief-destiny-and-the-courag-2026-10-02-home-5910674b1f40",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 34,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Уточнение, что событие проходит каждое воскресенье, чтобы избежать путаницы с датой.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-10",
-        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2027-05-10-burnage-rfc-9a3e9cdf54f4",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-        "original_html": "• 4 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+        "plan_slot_id": "weekend_activities-08",
+        "candidate_fingerprint": "event-id-jsonld-event-3e8a6aa74bf5-67b9bf711b1e",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot",
+        "original_html": "• 4 октября в New Smithfield Market, Openshaw, Manchester, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot\">New Smithfield Sunday Market</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
@@ -335,102 +352,60 @@
         "line_index": 43,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Текст не соответствует фактам: нет связи с полицией или судом.",
+        "reason": "Указание клуба Джона Стоунса должно быть исправлено, чтобы соответствовать фактам.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неверное указание на связь с полицией или судом.",
-        "completeness_concept": "homicide",
+        "critical_problem": "Неправильное указание клуба Джона Стоунса.",
+        "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
         "plan_slot_id": "city_watch-08",
-        "candidate_fingerprint": "url-aboutmanchester-co-uk-own-a-piece-of-murder-mystery-history-as-agatha-christie-inspired-mansion-goes-up-for-sale-9cd1b7adde0a",
-        "original_url_identity": "aboutmanchester.co.uk/own-a-piece-of-murder-mystery-history-as-agatha-christie-inspired-mansion-goes-up-for-sale",
-        "original_html": "• Абни Холл, викторианский особняк в Чидле, связанный с Агатой Кристи, выставлен на продажу за сумму свыше 3,75 миллиона фунтов. Особняк занимает площадь 21,000 кв. футов и в настоящее время арендуется восемью коммерческими арендаторами. <a href=\"https://aboutmanchester.co.uk/own-a-piece-of-murder-mystery-history-as-agatha-christie-inspired-mansion-goes-up-for-sale\">About Manchester News</a>",
+        "candidate_fingerprint": "url-bbc-com-news-articles-ckpq0rp2d5xyo-6706ee3df4d4",
+        "original_url_identity": "bbc.com/news/articles/ckpq0rp2d5xyo",
+        "original_html": "• Футболист Джон Стоунс был осужден за превышение скорости после того, как не ответил на письмо полиции, находясь на чемпионате мира; он получил четыре штрафных балла и штраф в размере £1,052. <a href=\"https://bbc.co.uk/news/articles/ckpq0rp2d5xyo\">BBC Manchester</a>",
         "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 47,
+        "section": "IT и бизнес",
+        "requested_action": "strip",
+        "reason": "Событие в Чешире не соответствует geo_scope 'gm'.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие происходит в Чешире, что не соответствует geo_scope 'gm'.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "tech_business-04",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c6grvr9xvpqyo-b54c3c4d6d2a",
+        "original_url_identity": "bbc.com/news/articles/c6grvr9xvpqyo",
+        "original_html": "• Более 100 жителей посетили первое собрание по планам строительства 60-гектарного дата-центра на земле зеленого пояса в Литтл Боллингтоне, Чешир, 1 октября 2026 года. <a href=\"https://bbc.co.uk/news/articles/c6grvr9xvpqyo\">BBC Manchester</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::добавление возраста для полноты информации.",
+        "group_key": "общественный транспорт сегодня::смягчение чувствительного содержания, связанного с инцидентом на железнодорожных путях.",
         "actions": [
           {
-            "line_index": 1,
-            "section": "Главная история дня",
-            "requested_action": "patch",
-            "reason": "Добавление возраста для полноты информации.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Возраст Джеймса Гленденнинга не указан, что может быть важной деталью.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-officer-unmasked-depraved-paedophile-34696857-7381d45d5661",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-officer-unmasked-depraved-paedophile-34696857",
-            "original_html": "<b>Бывший полицейский Джеймс Гленденнинг, осуждённый за преступления против детей, скончался в тюрьме Strangeways после обрушения в своей камере.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-officer-unmasked-depraved-paedophile-34696857\">MEN</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 1,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::дата суда указана как прошедшая, необходимо уточнить, что это было запланировано на 30 сентября.",
-        "actions": [
-          {
-            "line_index": 5,
-            "section": "Свежие новости",
-            "requested_action": "patch",
-            "reason": "Дата суда указана как прошедшая, необходимо уточнить, что это было запланировано на 30 сентября.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата суда указана как 30 сентября, но это уже прошедшая дата.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "last_24h-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bolton-personal-trainer-suspected-sexual-34694719-687cb8b62cf2",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/bolton-personal-trainer-suspected-sexual-34694719",
-            "original_html": "• Полицейские сообщили, что 36-летний личный тренер Паям Пошти, проживающий в Бери, был обвинён в сексуальных преступлениях против трёх женщин. Он должен предстать перед судом в Манчестере 30 сентября. Обвинения включают одно преступление сексуального насилия с проникновением и два — сексуального насилия с прикосновением, которые, по данным полиции, произошли в бизнесе в Болтоне. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/bolton-personal-trainer-suspected-sexual-34694719\">MEN Latest News</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 5,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::информация о закрытии metrolink с 19 октября по 1 ноября не актуальна для текущей даты выпуска.",
-        "actions": [
-          {
-            "line_index": 19,
+            "line_index": 16,
             "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Информация о закрытии Metrolink с 19 октября по 1 ноября не актуальна для текущей даты выпуска.",
-            "risk": "date",
+            "requested_action": "patch",
+            "reason": "Смягчение чувствительного содержания, связанного с инцидентом на железнодорожных путях.",
+            "risk": "sensitive",
             "critical_error": true,
-            "critical_problem": "Дата события не соответствует текущей дате выпуска.",
+            "critical_problem": "Упоминание о смерти женщины на железнодорожных путях может быть чувствительным и требует осторожного подхода.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "transport-08",
-            "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-22-no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure-81e5f6dadd29",
-            "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure",
-            "original_html": "• Metrolink: В период закрытия Metrolink с 19 октября по 1 ноября пассажиры из Алтринча и Тимперли не получат замещающих автобусов и должны использовать автобус 263 или поезда. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure\">Altrincham Today</a>",
+            "plan_slot_id": "transport-05",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-person-found-dead-railway-line-34700324-a00fc04bd2ae",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/person-found-dead-railway-line-34700324",
+            "original_html": "• National Rail: на железнодорожных путях между Уиганом и Престоном была найдена мертвая женщина в среду вечером, 30 сентября 2026 года, около 23:53. Полиция и экстренные службы были вызваны на место происшествия, в результате чего поезда были отменены или задержаны. Услуги возобновились около 1:22 1 октября. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/person-found-dead-railway-line-34700324\">MEN</a>",
+            "model_replacement_rejected": "fact_lock: national rail",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -439,7 +414,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 19,
+            "line_index": 16,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -447,23 +422,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::неверное утверждение о признании вины, когда речь идет об обвинениях.",
+        "group_key": "футбол::утверждение о признании вины манчестер сити не подтверждено источником.",
         "actions": [
           {
             "line_index": 21,
             "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Неверное утверждение о признании вины, когда речь идет об обвинениях.",
+            "reason": "Утверждение о признании вины Манчестер Сити не подтверждено источником.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неверная информация о признании вины.",
+            "critical_problem": "Текст утверждает, что Манчестер Сити был признан виновным, что не соответствует источнику.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
             "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-erling-haaland-34698372-c72069788d15",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-erling-haaland-34698372",
-            "original_html": "• Манчестер Сити признан виновным по всем обвинениям Премьер-лиги в финансовых нарушениях независимой комиссией. Клуб планирует подать апелляцию, наказание еще не определено. Обвинения касаются нарушений в период с 2009 по 2018 годы. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-erling-haaland-34698372\">MEN Manchester City</a>",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-premier-league-charges-34704235-a102f514ea36",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34704235",
+            "original_html": "• 1 октября 2026 года стало известно, что Премьер-лига, вероятно, избежит выплаты 4,5 миллиарда фунтов в качестве компенсации вещателям после того, как Манчестер Сити был признан виновным в 114 из 115 нарушений финансовых правил. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34704235\">MEN Manchester City</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -479,23 +454,56 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::исправление даты события на правильную.",
+        "group_key": "выходные в gm::дата начала события должна быть 1 октября, согласно источнику.",
         "actions": [
           {
-            "line_index": 35,
+            "line_index": 23,
             "section": "Выходные в GM",
             "requested_action": "patch",
-            "reason": "Исправление даты события на правильную.",
+            "reason": "Дата начала события должна быть 1 октября, согласно источнику.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно. В тексте указано 4 октября, но в данных события дата начала 10 мая 2027 года.",
+            "critical_problem": "Дата начала события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "weekend_activities-01",
+            "candidate_fingerprint": "event-event-makers-market-in-great-northern-square-great-northern-manchester-2026-10-01-great-northern-square-a033ac338359",
+            "original_url_identity": "thegreatnorthern.com/event/makers-market-in-great-northern-square",
+            "original_html": "• 2 октября — Makers Market на Great Northern Square в Манчестере. На площадке: рынок, вход £5, ремесленные товары, еда. <a href=\"https://thegreatnorthern.com/event/makers-market-in-great-northern-square\">Great Northern Makers Market</a>",
+            "model_replacement_rejected": "post_check: structured event date is not rendered correctly",
+            "replacement_fingerprint": "event-event-the-cycle-of-love-12a-an-epic-true-life-adventure-about-self-belief-destiny-and-the-courag-2026-10-02-home-5910674b1f40",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 23,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::уточнение, что событие проходит каждое воскресенье, чтобы избежать путаницы с датой.",
+        "actions": [
+          {
+            "line_index": 34,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Уточнение, что событие проходит каждое воскресенье, чтобы избежать путаницы с датой.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-10",
-            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2027-05-10-burnage-rfc-9a3e9cdf54f4",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-            "original_html": "• 4 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+            "plan_slot_id": "weekend_activities-08",
+            "candidate_fingerprint": "event-id-jsonld-event-3e8a6aa74bf5-67b9bf711b1e",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot",
+            "original_html": "• 4 октября в New Smithfield Market, Openshaw, Manchester, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/new-smithfield-sunday-market-and-car-boot\">New Smithfield Sunday Market</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -503,7 +511,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 35,
+            "line_index": 34,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -511,23 +519,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::текст не соответствует фактам: нет связи с полицией или судом.",
+        "group_key": "городской радар::указание клуба джона стоунса должно быть исправлено, чтобы соответствовать фактам.",
         "actions": [
           {
             "line_index": 43,
             "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Текст не соответствует фактам: нет связи с полицией или судом.",
+            "reason": "Указание клуба Джона Стоунса должно быть исправлено, чтобы соответствовать фактам.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неверное указание на связь с полицией или судом.",
-            "completeness_concept": "homicide",
+            "critical_problem": "Неправильное указание клуба Джона Стоунса.",
+            "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
             "plan_slot_id": "city_watch-08",
-            "candidate_fingerprint": "url-aboutmanchester-co-uk-own-a-piece-of-murder-mystery-history-as-agatha-christie-inspired-mansion-goes-up-for-sale-9cd1b7adde0a",
-            "original_url_identity": "aboutmanchester.co.uk/own-a-piece-of-murder-mystery-history-as-agatha-christie-inspired-mansion-goes-up-for-sale",
-            "original_html": "• Абни Холл, викторианский особняк в Чидле, связанный с Агатой Кристи, выставлен на продажу за сумму свыше 3,75 миллиона фунтов. Особняк занимает площадь 21,000 кв. футов и в настоящее время арендуется восемью коммерческими арендаторами. <a href=\"https://aboutmanchester.co.uk/own-a-piece-of-murder-mystery-history-as-agatha-christie-inspired-mansion-goes-up-for-sale\">About Manchester News</a>",
+            "candidate_fingerprint": "url-bbc-com-news-articles-ckpq0rp2d5xyo-6706ee3df4d4",
+            "original_url_identity": "bbc.com/news/articles/ckpq0rp2d5xyo",
+            "original_html": "• Футболист Джон Стоунс был осужден за превышение скорости после того, как не ответил на письмо полиции, находясь на чемпионате мира; он получил четыре штрафных балла и штраф в размере £1,052. <a href=\"https://bbc.co.uk/news/articles/ckpq0rp2d5xyo\">BBC Manchester</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -538,6 +546,39 @@
             "line_index": 43,
             "passed": true,
             "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "it и бизнес::событие в чешире не соответствует geo_scope 'gm'.",
+        "actions": [
+          {
+            "line_index": 47,
+            "section": "IT и бизнес",
+            "requested_action": "strip",
+            "reason": "Событие в Чешире не соответствует geo_scope 'gm'.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие происходит в Чешире, что не соответствует geo_scope 'gm'.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "tech_business-04",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c6grvr9xvpqyo-b54c3c4d6d2a",
+            "original_url_identity": "bbc.com/news/articles/c6grvr9xvpqyo",
+            "original_html": "• Более 100 жителей посетили первое собрание по планам строительства 60-гектарного дата-центра на земле зеленого пояса в Литтл Боллингтоне, Чешир, 1 октября 2026 года. <a href=\"https://bbc.co.uk/news/articles/c6grvr9xvpqyo\">BBC Manchester</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 47,
+            "passed": true,
+            "detail": "slot removed and source absent"
           }
         ],
         "known_factual_error": true
@@ -551,155 +592,169 @@
       "skipped": 0
     },
     "enrich_improved": 6,
-    "no_eligible_backup": 1,
+    "deterministic_rewrite_rejected": 1,
+    "no_eligible_backup": 2,
     "false_positive_existing_fact": 3,
+    "model_post_check_rejected": 1,
+    "deterministic_fact_lock_rejected": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 55,
-      "matched_lines": 55,
-      "applicable_lines": 3,
+      "checked_lines": 60,
+      "matched_lines": 60,
+      "applicable_lines": 2,
       "unmatched_lines": 3,
-      "critical_omission_count": 1,
-      "critical_omissions": [
-        {
-          "line_index": 42,
-          "source_url_key": "aboutmanchester.co.uk/own-a-piece-of-murder-mystery-history-as-agatha-christie-inspired-mansion-goes-up-for-sale",
-          "concept": "homicide",
-          "obligation": "charge/verdict/victim",
-          "source_hit": "murder"
-        }
-      ],
+      "critical_omission_count": 0,
+      "critical_omissions": [],
       "noncritical_omissions": [],
-      "critical_errors": [
-        {
-          "line_index": 42,
-          "section": "Городской радар",
-          "risk": "translation",
-          "problem": "critical source fact dropped in translation: 'murder' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
-          "suggested_action": "repair",
-          "completeness_concept": "homicide"
-        }
-      ],
+      "critical_errors": [],
       "warnings": [],
       "recovered": 0,
       "pulled_for_rework": 0,
-      "still_missing": 1
+      "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 58,
-      "resolved_in_place": 58,
+      "checked_lines": 63,
+      "resolved_in_place": 63,
       "unresolved": 0,
       "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved"
   },
-  "notes": "Добавление возраста Джеймса Гленденнинга важно для полноты информации.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Проблема с датой суда в строке 5 требует исправления для точности информации.; Строка о закрытии Metrolink с 19 октября по 1 ноября не актуальна для выпуска 1 октября.; Ошибка в строке",
+  "notes": "Строка соответствует всем требованиям: география GM, актуальность, полнота информации.; Прогноз погоды соответствует данным Met Office и контракту блока.; Проблема с географией в строке 5, требуется исправление.; Смягчение чувствительного содержания в строке 16 необходимо для соблюдения этических стандартов.; Обе строк",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.9,
+    "confidence": 0.85,
     "critical_errors": [
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Возраст Джеймса Гленденнинга не указан, что может быть важной деталью.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
       {
         "line_index": 5,
         "section": "Свежие новости",
-        "problem": "Дата суда указана как 30 сентября, но это уже прошедшая дата.",
-        "risk": "date",
+        "problem": "Указан субъект из Лонгриджа, который находится вне Greater Manchester.",
+        "risk": "geo",
         "suggested_action": "repair"
       },
       {
-        "line_index": 19,
+        "line_index": 16,
         "section": "Общественный транспорт сегодня",
-        "problem": "Дата события не соответствует текущей дате выпуска.",
-        "risk": "date",
-        "suggested_action": "strip"
+        "problem": "Упоминание о смерти женщины на железнодорожных путях может быть чувствительным и требует осторожного подхода.",
+        "risk": "sensitive",
+        "suggested_action": "repair"
       },
       {
         "line_index": 21,
         "section": "Футбол",
-        "problem": "Неверная информация о признании вины.",
+        "problem": "Текст утверждает, что Манчестер Сити был признан виновным, что не соответствует источнику.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 35,
+        "line_index": 23,
         "section": "Выходные в GM",
-        "problem": "Дата события указана неверно. В тексте указано 4 октября, но в данных события дата начала 10 мая 2027 года.",
+        "problem": "Дата начала события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 34,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
         "line_index": 43,
         "section": "Городской радар",
-        "problem": "Неверное указание на связь с полицией или судом.",
+        "problem": "Неправильное указание клуба Джона Стоунса.",
         "risk": "factual",
         "suggested_action": "repair"
+      },
+      {
+        "line_index": 47,
+        "section": "IT и бизнес",
+        "problem": "Событие происходит в Чешире, что не соответствует geo_scope 'gm'.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 50,
+        "section": "Business/tech события для тебя",
+        "problem": "Онлайн-событие не соответствует geo_scope 'gm'.",
+        "risk": "geo",
+        "suggested_action": "strip"
       }
     ],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• Бывший полицейский Джеймс Гленденнинг, осуждённый за преступления против детей, скончался в тюрьме Strangeways в возрасте 93 лет после обрушения в своей камере.",
-        "reason": "Добавление возраста для полноты информации.",
-        "risk": "factual"
-      },
-      {
         "line_index": 5,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• Полицейские сообщили, что 36-летний личный тренер Паям Пошти, проживающий в Бери, был обвинён в сексуальных преступлениях против трёх женщин. Он должен был предстать перед судом в Манчестере 30 сентября. Обвинения включают одно преступление сексуального насилия с проникновением и два — сексуального насилия с прикосновением, которые, по данным полиции, произошли в бизнесе в Болтоне.",
-        "reason": "Дата суда указана как прошедшая, необходимо уточнить, что это было запланировано на 30 сентября.",
-        "risk": "date"
+        "replacement_text": "• Мужчина, 30-летний Джеймс Патерсон, был обвинён в похищении и ряде сексуальных преступлений после того, как женщина сообщила о том, что её изнасиловали в автомобиле. Инцидент произошёл в ночь на 27 сентября, когда она с друзьями села в машину, которую приняла за такси в Уигане. Патерсон остаётся под стражей до следующего заседания суда 28 октября в Ливерпульском коронном суде.",
+        "reason": "Указание на Лонгридж, который находится вне Greater Manchester, нарушает географический контракт.",
+        "risk": "geo"
       },
       {
-        "line_index": 19,
+        "line_index": 16,
         "section": "Общественный транспорт сегодня",
-        "action": "strip",
-        "reason": "Информация о закрытии Metrolink с 19 октября по 1 ноября не актуальна для текущей даты выпуска.",
-        "risk": "date"
+        "action": "patch",
+        "replacement_text": "• National Rail: на железнодорожных путях между Уиганом и Престоном произошёл инцидент в среду вечером, 30 сентября 2026 года, около 23:53. Полиция и экстренные службы были вызваны на место происшествия, в результате чего поезда были отменены или задержаны. Услуги возобновились около 1:22 1 октября.",
+        "reason": "Смягчение чувствительного содержания, связанного с инцидентом на железнодорожных путях.",
+        "risk": "sensitive"
       },
       {
         "line_index": 21,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Манчестер Сити обвиняется в финансовых нарушениях Премьер-лиги независимой комиссией. Клуб планирует подать апелляцию, наказание еще не определено. Обвинения касаются нарушений в период с 2009 по 2018 годы.",
-        "reason": "Неверное утверждение о признании вины, когда речь идет об обвинениях.",
+        "replacement_text": "• 1 октября 2026 года стало известно, что Премьер-лига, вероятно, избежит выплаты 4,5 миллиарда фунтов в качестве компенсации вещателям после обновления по делу о нарушениях финансовых правил Манчестер Сити.",
+        "reason": "Утверждение о признании вины Манчестер Сити не подтверждено источником.",
         "risk": "factual"
       },
       {
-        "line_index": 35,
+        "line_index": 23,
         "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• 10 мая 2027 года — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
-        "reason": "Исправление даты события на правильную.",
+        "replacement_text": "• 1 октября — Makers Market на Great Northern Square в Манчестере. На площадке: рынок, вход £5, ремесленные товары, еда.",
+        "reason": "Дата начала события должна быть 1 октября, согласно источнику.",
+        "risk": "date"
+      },
+      {
+        "line_index": 34,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 4 октября в New Smithfield Market, Openshaw, Manchester, M11 — New Smithfield Sunday Market and Car Boot. На площадке: автомобильная барахолка, вход свободный. Событие проходит каждое воскресенье.",
+        "reason": "Уточнение, что событие проходит каждое воскресенье, чтобы избежать путаницы с датой.",
         "risk": "date"
       },
       {
         "line_index": 43,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Абни Холл, викторианский особняк в Чидле, связанный с Агатой Кристи, выставлен на продажу за сумму свыше 3,75 миллиона фунтов. Особняк занимает площадь 21,000 кв. футов и в настоящее время арендуется восемью коммерческими арендаторами.",
-        "reason": "Текст не соответствует фактам: нет связи с полицией или судом.",
+        "replacement_text": "• Футболист Джон Стоунс был осужден за превышение скорости после того, как не ответил на письмо полиции, находясь на чемпионате мира; он получил четыре штрафных балла и штраф в размере £1,052. Стоунс, который покинул Манчестер Сити и перешел в Интер Милан летом, был пойман за рулем своего Range Rover.",
+        "reason": "Указание клуба Джона Стоунса должно быть исправлено, чтобы соответствовать фактам.",
         "risk": "factual"
+      },
+      {
+        "line_index": 47,
+        "section": "IT и бизнес",
+        "action": "strip",
+        "reason": "Событие в Чешире не соответствует geo_scope 'gm'.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 50,
+        "section": "Business/tech события для тебя",
+        "action": "strip",
+        "reason": "Онлайн-событие не привязано к конкретному месту в Greater Manchester, что нарушает geo_scope 'gm'.",
+        "risk": "geo"
       }
     ],
     "warnings": [
-      "Секция 'Выходные в GM' содержит только 6 событий, что соответствует минимальному требованию, но не превышает его. Возможно, стоит добавить больше событий для разнообразия.",
-      "В блоке 'IT и бизнес' нет критических ошибок, но стоит отметить, что строка о саммите G20 в Манчестере в 2027 году может быть воспринята как преждевременная информация, учитывая, что событие произойдет через год.",
-      "judge reduce failed: parse_failed no parseable JSON"
+      "Секция 'Что важно сегодня' содержит только 2 элемента, что ниже минимального порога в 3 элемента.",
+      "Секция 'Еда, открытия и рынки' полностью отсутствует, что ниже минимального порога в 3 элемента."
     ],
-    "notes": "Добавление возраста Джеймса Гленденнинга важно для полноты информации.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Проблема с датой суда в строке 5 требует исправления для точности информации.; Строка о закрытии Metrolink с 19 октября по 1 ноября не актуальна для выпуска 1 октября.; Ошибка в строке",
+    "notes": "Строка соответствует всем требованиям: география GM, актуальность, полнота информации.; Прогноз погоды соответствует данным Met Office и контракту блока.; Проблема с географией в строке 5, требуется исправление.; Смягчение чувствительного содержания в строке 16 необходимо для соблюдения этических стандартов.; Обе строк",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "partial",
-      "chunk_count": 11,
+      "status": "ok",
+      "chunk_count": 14,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -712,13 +767,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2695,
-          "duration_seconds": 2.086
+          "estimated_tokens": 2711,
+          "duration_seconds": 1.286
         },
         {
           "chunk_id": "chunk-02",
@@ -735,8 +790,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2447,
-          "duration_seconds": 2.092
+          "estimated_tokens": 2465,
+          "duration_seconds": 1.289
         },
         {
           "chunk_id": "chunk-03",
@@ -753,15 +808,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7141,
-          "duration_seconds": 2.529
+          "estimated_tokens": 7504,
+          "duration_seconds": 3.461
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            19
+            17
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -771,11 +826,29 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5616,
-          "duration_seconds": 1.715
+          "estimated_tokens": 4970,
+          "duration_seconds": 3.044
         },
         {
           "chunk_id": "chunk-05",
+          "status": "ok",
+          "line_range": [
+            18,
+            19
+          ],
+          "sections": [
+            "Что важно сегодня"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3327,
+          "duration_seconds": 1.323
+        },
+        {
+          "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
             20,
@@ -789,33 +862,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3136,
-          "duration_seconds": 1.825
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "ok",
-          "line_range": [
-            22,
-            33
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 7857,
-          "duration_seconds": 43.046
+          "estimated_tokens": 3183,
+          "duration_seconds": 2.313
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            34,
-            37
+            22,
+            33
           ],
           "sections": [
             "Выходные в GM"
@@ -825,14 +880,32 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4672,
-          "duration_seconds": 2.161
+          "estimated_tokens": 7981,
+          "duration_seconds": 63.461
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            38,
+            34,
+            36
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 4080,
+          "duration_seconds": 2.382
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            37,
             43
           ],
           "sections": [
@@ -843,33 +916,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5480,
-          "duration_seconds": 18.11
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            44,
-            47
-          ],
-          "sections": [
-            "IT и бизнес"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 4260,
-          "duration_seconds": 2.252
+          "estimated_tokens": 5751,
+          "duration_seconds": 34.242
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            48,
-            57
+            44,
+            48
+          ],
+          "sections": [
+            "IT и бизнес"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 4668,
+          "duration_seconds": 8.746
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            49,
+            50
+          ],
+          "sections": [
+            "Business/tech события для тебя"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3435,
+          "duration_seconds": 7.64
+        },
+        {
+          "chunk_id": "chunk-12",
+          "status": "ok",
+          "line_range": [
+            51,
+            62
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -879,15 +970,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 8156,
-          "duration_seconds": 55.521
+          "estimated_tokens": 9117,
+          "duration_seconds": 63.465
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-13",
           "status": "ok",
           "line_range": [
-            58,
-            59
+            63,
+            64
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -897,22 +988,40 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3287,
-          "duration_seconds": 5.515
+          "estimated_tokens": 3280,
+          "duration_seconds": 2.465
+        },
+        {
+          "chunk_id": "chunk-14",
+          "status": "ok",
+          "line_range": [
+            65,
+            65
+          ],
+          "sections": [
+            "Русскоязычные концерты и стендап UK"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2739,
+          "duration_seconds": 6.127
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
+        "decision": "warn",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 11347,
-        "duration_seconds": 31.76
+        "warning_count": 2,
+        "error": "",
+        "estimated_tokens": 12071,
+        "duration_seconds": 28.105
       },
       "max_workers": 3,
       "chunk_line_target": 12,
