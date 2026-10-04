@@ -1,144 +1,129 @@
 {
-  "status": "ok",
+  "status": "partial",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair completed with honest unresolved non-factual findings: operations=1, prose=0",
+  "reason": "pre-send repair executor applied 4 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-10-03",
-  "pipeline_run_id": "20261003T080135+0100",
-  "digest_sha256": "748c0724c74bdb32b83d26ff160ede9f7066ac2a3a84c296dd0e715844b0b9d0",
-  "duration_seconds": 92.292,
+  "run_date_london": "2026-10-04",
+  "pipeline_run_id": "20261004T080143+0100",
+  "digest_sha256": "8c1663cea261dc80c9b9433b276520b2d1a072b30789d58c5e163bc30860af20",
+  "duration_seconds": 73.238,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 3,
+      "line_index": 5,
       "section": "Свежие новости",
-      "problem": "Текст утверждает, что обвиняемые арестованы, но не упоминает, что они также обвиняются в подготовке террористического акта.",
+      "problem": "Энди Бернэм не является премьер-министром, а мэром Манчестера.",
       "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 12,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Дата закрытия линии Metrolink не соответствует текущей дате выпуска.",
+      "risk": "date",
       "suggested_action": "repair"
     },
     {
       "line_index": 15,
       "section": "Футбол",
-      "problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждается источником.",
+      "problem": "Текст утверждает, что Манчестер Сити признан виновным почти по всем 115 обвинениям, что не соответствует источнику.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 16,
-      "section": "Футбол",
-      "problem": "Томас Тухель не является главным тренером сборной Англии.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 36,
+      "line_index": 24,
       "section": "Городской радар",
-      "problem": "Неправильная дата события.",
-      "risk": "date",
+      "problem": "Указано, что Джошуа Керри обвиняется в подготовке террористических актов против Найджела Фаража, но Найджел Фараж не является депутатом.",
+      "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 3,
-      "section": "Свежие новости",
-      "problem": "Неправильное указание географии для арестованных лиц.",
+      "line_index": 30,
+      "section": "IT и бизнес",
+      "problem": "Неправильное написание имени одного из основателей.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 31,
+      "section": "Business/tech события для тебя",
+      "problem": "Событие проходит онлайн, но указано, что оно для жителей Greater Manchester.",
       "risk": "geo",
       "suggested_action": "repair"
     },
     {
-      "line_index": 15,
-      "section": "Футбол",
-      "problem": "Неправильное указание срока подачи апелляции.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 17,
-      "section": "Футбол",
-      "problem": "Неправильное указание количества обвинений.",
+      "line_index": 37,
+      "section": "Русскоязычные концерты и стендап UK",
+      "problem": "Отсутствие информации о месте проведения мероприятия.",
       "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 36,
-      "section": "Городской радар",
-      "problem": "Неправильное указание даты события.",
-      "risk": "date",
       "suggested_action": "repair"
     }
   ],
   "actions": [
     {
-      "line_index": 3,
+      "line_index": 5,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• Два иранских гражданина, Рахман Салехи, 34 года, из Salford, и Салам Ахмадиан, 36 лет, из Ливерпуля, были арестованы и обвиняются в Манчестере в районе Нортерн Куотер накануне Йом-Кипура. Они обвиняются в подготовке террористического акта против еврейской общины, что вызывает глубокую тревогу среди местных жителей, особенно в свете годовщины атаки на синагогу в Хитон Парке.",
-      "reason": "Уточнение, что они не только арестованы, но и обвиняются.",
+      "replacement_text": "• Мэр Манчестера Энди Бернэм отменил предложение о сокращении использования судов с участием присяжных, предложенное бывшим премьер-министром Сэром Кииром Стармером. Новый план предполагает направление менее серьезных дел в магистратские суды и лишение права на выбор суда с присяжными для некоторых правонарушений.",
+      "reason": "Энди Бернэм является мэром Манчестера, а не премьер-министром.",
       "risk": "factual"
+    },
+    {
+      "line_index": 12,
+      "section": "Общественный транспорт сегодня",
+      "action": "patch",
+      "replacement_text": "• Metrolink: С 19 октября по 1 ноября линия Metrolink будет закрыта, и пассажиры из Алтринчама и Тимперли не получат замещающих автобусов. Им рекомендуется использовать автобус 263 или поезда. Проверьте, есть ли действующие ограничения сегодня.",
+      "reason": "Добавление актуальной информации о влиянии на сегодняшний день.",
+      "risk": "date"
     },
     {
       "line_index": 15,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Срок подачи апелляции Манчестер Сити истекает сегодня после обвинений клуба в нарушении финансовых правил Премьер-лиги; соперничающие клубы требуют компенсации в размере £800 миллионов.",
-      "reason": "Утверждение о признании виновным не подтверждено источником.",
+      "replacement_text": "• Манчестер Сити обвиняется почти по всем 115 обвинениям Премьер-лиги, включая финансовые нарушения; клуб подтвердил, что будет обжаловать решение.",
+      "reason": "Уточнение статуса обвинений, чтобы избежать неверного утверждения о виновности.",
       "risk": "factual"
     },
     {
-      "line_index": 16,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Главный тренер сборной Англии Гарет Саутгейт заявил, что будет продолжать вызывать игроков Манчестер Сити, даже если они будут понижены в классе, и отметил, что дело Сити стало горячей темой в сборной.",
-      "reason": "Томас Тухель не является главным тренером сборной Англии.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 36,
+      "line_index": 24,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Давид Прайс, 42 года, из Ливерпуля, попытается установить мировой рекорд по быстрейшему полумарафону среди мужчин с рассеянным склерозом на Манчестерском полумарафоне в воскресенье, 5 октября.",
-      "reason": "Дата события указана неверно. 4 октября 2026 года — это суббота, а не воскресенье.",
-      "risk": "date"
+      "replacement_text": "• 28-летний Джошуа Керри обвиняется в подготовке террористических актов, включая действия против Найджела Фаража; он должен явиться в суд в Вестминстере 7 октября 2026 года.",
+      "reason": "Найджел Фараж не является депутатом, необходимо убрать это утверждение.",
+      "risk": "factual"
     },
     {
-      "line_index": 3,
-      "section": "Свежие новости",
+      "line_index": 30,
+      "section": "IT и бизнес",
       "action": "patch",
-      "replacement_text": "• Два иранских гражданина, Рахман Салехи, 34 года, из Манчестера, и Салам Ахмадиан, 36 лет, из Ливерпуля, были арестованы в районе Нортерн Куотер накануне Йом-Кипура. Они обвиняются в подготовке террористического акта против еврейской общины, что вызвало обеспокоенность.",
-      "reason": "Уточнение географии арестованных лиц.",
+      "replacement_text": "• Два 21-летних друга, Джордж Джефферсон и Арт Фрибри, собрали $3 миллиона для своего стартапа в области AI Revnu и выбрали Манчестер вместо Силиконовой долины, отметив доступ к инженерным талантам.",
+      "reason": "Имя Арта Фрибри должно быть исправлено на Арт Фрибри.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 31,
+      "section": "Business/tech события для тебя",
+      "action": "patch",
+      "replacement_text": "• Завтра, 5 октября 2026 года, пройдет бесплатный онлайн-семинар 'Starting a Business Confidently'. Семинар охватывает юридические требования, финансирование и основы финансового управления.",
+      "reason": "Событие проходит онлайн и доступно для всех, а не только для жителей Greater Manchester.",
       "risk": "geo"
     },
     {
-      "line_index": 15,
-      "section": "Футбол",
+      "line_index": 37,
+      "section": "Русскоязычные концерты и стендап UK",
       "action": "patch",
-      "replacement_text": "• Срок подачи апелляции Манчестер Сити истекает завтра после признания клуба виновным в нарушении финансовых правил Премьер-лиги; соперничающие клубы требуют компенсации в размере £800 миллионов.",
-      "reason": "Уточнение срока подачи апелляции.",
-      "risk": "date"
-    },
-    {
-      "line_index": 17,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Манчестер Сити подвергается проверке HMRC после признания виновным по 113 из 115 финансовых обвинений Премьер-лиги; депутаты требуют расследования уплаты налогов.",
-      "reason": "Уточнение количества обвинений.",
+      "replacement_text": "• Семинар на русском языке \"Откровенно о сокровенном. Женское тело: время перемен\" запланирован на 8 октября в Лондоне; место проведения будет уточнено позже.",
+      "reason": "Уточнение о том, что информация о месте проведения будет предоставлена позже, чтобы избежать недоразумений.",
       "risk": "factual"
-    },
-    {
-      "line_index": 36,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Давид Прайс, 42 года, из Ливерпуля, попытается установить мировой рекорд по быстрейшему полумарафону среди мужчин с рассеянным склерозом на Манчестерском полумарафоне в воскресенье, 5 октября.",
-      "reason": "Уточнение даты события.",
-      "risk": "date"
     }
   ],
   "warnings": [
-    "Блок 'Выходные в GM' содержит только 6 событий, что является минимально допустимым количеством. Рекомендуется добавить больше событий для улучшения полноты блока.",
-    "Выходные в GM: 11 item(s), potential overrepresentation"
+    "Блок 'Выходные в GM' содержит только 6 событий, что соответствует минимальному количеству, но не превышает его. Это может указывать на недостаточную полноту блока.",
+    "judge reduce failed: parse_failed no parseable JSON"
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -146,93 +131,82 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 9,
-      "Общественный транспорт сегодня": 2,
-      "Что важно сегодня": 1,
+      "Свежие новости": 7,
+      "Общественный транспорт сегодня": 3,
       "Футбол": 3,
-      "Выходные в GM": 11,
-      "Городской радар": 5,
+      "Выходные в GM": 6,
+      "Городской радар": 6,
       "IT и бизнес": 1,
-      "Дальние анонсы": 3,
-      "Билеты / Ticket Radar": 8,
-      "Крупные концерты вне GM": 1
+      "Business/tech события для тебя": 1,
+      "Дальние анонсы": 2,
+      "Билеты / Ticket Radar": 3,
+      "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 1,
-      "Свежие новости": 9,
+      "Что важно сегодня": 0,
+      "Свежие новости": 7,
       "Главная история дня": 1,
-      "Городской радар": 5,
-      "Выходные в GM": 11,
-      "Билеты / Ticket Radar": 8,
-      "Русскоязычные концерты и стендап UK": 0,
+      "Городской радар": 6,
+      "Выходные в GM": 6,
+      "Билеты / Ticket Radar": 3,
+      "Русскоязычные концерты и стендап UK": 1,
       "Еда, открытия и рынки": 0,
-      "Business/tech события для тебя": 0,
+      "Business/tech события для тебя": 1,
       "Футбол": 3
     },
-    "ticket_items": 9,
-    "core_items": 31,
+    "ticket_items": 4,
+    "core_items": 25,
     "writer_quality_counts": {
-      "included_candidates": 48,
-      "rendered_candidates": 46,
+      "included_candidates": 38,
+      "rendered_candidates": 35,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 2,
+      "dropped_low_quality": 3,
       "replaced_from_plan_backup": 0,
-      "removed_with_reason": 2
+      "removed_with_reason": 3
     },
     "source_health_counts": {
-      "ok": 95,
+      "ok": 96,
       "partial": 2,
       "stale": 9,
       "empty": 17,
-      "failed": 6,
-      "zero_yield": 74,
+      "failed": 4,
+      "zero_yield": 79,
       "no_contribution_breakdown": {
-        "fetch_failed": 6,
-        "all_rejected": 74,
-        "idle_no_items": 21
+        "fetch_failed": 4,
+        "all_rejected": 79,
+        "idle_no_items": 24
       },
       "zero_contribution_by_stage": {
-        "written": 39,
-        "selected": 35,
-        "parsed": 21,
-        "fetched": 6
+        "selected": 36,
+        "written": 43,
+        "parsed": 24,
+        "fetched": 4
       },
-      "weekend_source_coverage_incidents": 50
+      "weekend_source_coverage_incidents": 55
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 1 item(s), emergency floor 3",
-      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
+      "Что важно сегодня: 0 item(s), emergency floor 3",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "Business/tech события для тебя: 0 item(s), emergency floor 1",
-      "source failures: 6"
+      "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [
-      "patch for line 15 has unchecked number/date token(s): 800",
-      "patch for line 36 has unchecked number/date token(s): 5",
-      "multiple actions target line 3",
-      "multiple actions target line 15",
-      "patch for line 15 has unchecked number/date token(s): 800",
-      "patch for line 17 has unchecked number/date token(s): 113",
-      "multiple actions target line 36",
-      "patch for line 36 has unchecked number/date token(s): 5"
-    ],
+    "warnings": [],
     "can_apply_actions": true,
-    "action_count": 8
+    "action_count": 7
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 46,
-    "matched_lines": 46,
-    "applicable_lines": 0,
-    "unmatched_lines": 3,
+    "checked_lines": 35,
+    "matched_lines": 35,
+    "applicable_lines": 2,
+    "unmatched_lines": 2,
     "critical_omission_count": 0,
     "critical_omissions": [],
     "noncritical_omissions": [],
@@ -244,185 +218,164 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 7,
-    "attempted": 3,
-    "applied": 2,
-    "model_patch_applied": 2,
+    "requested": 6,
+    "attempted": 4,
+    "applied": 4,
+    "model_patch_applied": 4,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 0,
     "stripped": 0,
-    "unresolved": 1,
+    "unresolved": 0,
     "blocking_unresolved": 0,
     "resolved": 6,
     "resolved_in_place": 6,
     "resolved_by_replacement": 0,
     "resolved_by_removal": 0,
-    "fact_lock_rejected": 1,
-    "enrich_attempted": 7,
+    "fact_lock_rejected": 0,
+    "enrich_attempted": 6,
     "post_check_errors": [],
     "geo_contract_rejected": [
       {
-        "line_index": 3,
-        "section": "Свежие новости",
+        "line_index": 31,
+        "section": "Business/tech события для тебя",
         "geo_scope": "gm",
-        "reason": "Уточнение географии арестованных лиц.",
+        "reason": "Событие проходит онлайн и доступно для всех, а не только для жителей Greater Manchester.",
         "gm_anchor_present": true
       }
     ],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 3,
+        "line_index": 5,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Уточнение, что они не только арестованы, но и обвиняются.",
+        "reason": "Энди Бернэм является мэром Манчестера, а не премьер-министром.",
         "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
+        "critical_error": true,
+        "critical_problem": "Энди Бернэм не является премьер-министром, а мэром Манчестера.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cqx29nke55kno-17f687ae8fa5",
-        "original_url_identity": "bbc.com/news/articles/cqx29nke55kno",
-        "original_html": "• Два иранских гражданина, Рахман Салехи, 34 года, из Salford, и Салам Ахмадиан, 36 лет, из Ливерпуля, были арестованы в Манчестере в районе Нортерн Куотер накануне Йом-Кипура. Они обвиняются в подготовке террористического акта против еврейской общины, что вызывает глубокую тревогу среди местных жителей, особенно в свете годовщины атаки на синагогу в Хитон Парке. <a href=\"https://bbc.co.uk/news/articles/cqx29nke55kno\">BBC Manchester</a>",
+        "plan_slot_id": "last_24h-04",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-plan-curb-use-jury-trials-34712568-324dfa9accd2",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/plan-curb-use-jury-trials-34712568",
+        "original_html": "• Премьер-министр Энди Бернэм отменил предложение о сокращении использования судов с участием присяжных, предложенное бывшим премьер-министром Сэром Кииром Стармером. Новый план предполагает направление менее серьезных дел в магистратские суды и лишение права на выбор суда с присяжными для некоторых правонарушений. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/plan-curb-use-jury-trials-34712568\">MEN</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "patch",
+        "reason": "Добавление актуальной информации о влиянии на сегодняшний день.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата закрытия линии Metrolink не соответствует текущей дате выпуска.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "transport-03",
+        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-22-no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure-81e5f6dadd29",
+        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure",
+        "original_html": "• Metrolink: С 19 октября по 1 ноября линия Metrolink будет закрыта, и пассажиры из Алтринчама и Тимперли не получат замещающих автобусов. Им рекомендуется использовать автобус 263 или поезда. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure\">Altrincham Today</a>",
         "post_check_passed": true
       },
       {
         "line_index": 15,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Утверждение о признании виновным не подтверждено источником.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-city-charges-live-updates-34705003-e0a051599f2b",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-city-charges-live-updates-34705003",
-        "original_html": "• Срок подачи апелляции Манчестер Сити истекает сегодня после признания клуба виновным в нарушении финансовых правил Премьер-лиги; соперничающие клубы требуют компенсации в размере £800 миллионов. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-city-charges-live-updates-34705003\">MEN Manchester City</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 16,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Томас Тухель не является главным тренером сборной Англии.",
+        "reason": "Уточнение статуса обвинений, чтобы избежать неверного утверждения о виновности.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Томас Тухель не является главным тренером сборной Англии.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-dressing-room-view-34709282-e85c9c3ab734",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-dressing-room-view-34709282",
-        "original_html": "• Главный тренер сборной Англии Томас Тухель заявил, что будет продолжать вызывать игроков Манчестер Сити, даже если они будут понижены в классе, и отметил, что дело Сити стало горячей темой в сборной. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-dressing-room-view-34709282\">MEN Manchester City</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 36,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Дата события указана неверно. 4 октября 2026 года — это суббота, а не воскресенье.",
-        "risk": "date",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "",
-        "plan_slot_id": "city_watch-06",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cv70d2ege8w6o-d6ccc3fb696f",
-        "original_url_identity": "bbc.com/news/articles/cv70d2ege8w6o",
-        "original_html": "• Давид Прайс, 42 года, из Ливерпуля, попытается установить мировой рекорд по быстрейшему полумарафону среди мужчин с рассеянным склерозом на Манчестерском полумарафоне в воскресенье, 4 октября. <a href=\"https://bbc.co.uk/news/articles/cv70d2ege8w6o\">BBC Manchester</a>",
-        "model_replacement_rejected": "fact_lock: 5 октября",
-        "backup_outcome": "no_eligible_backup",
-        "post_check_passed": false
-      },
-      {
-        "line_index": 15,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Уточнение срока подачи апелляции.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждается источником.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-city-charges-live-updates-34705003-e0a051599f2b",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-city-charges-live-updates-34705003",
-        "original_html": "• Срок подачи апелляции Манчестер Сити истекает сегодня после признания клуба виновным в нарушении финансовых правил Премьер-лиги; соперничающие клубы требуют компенсации в размере £800 миллионов. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-city-charges-live-updates-34705003\">MEN Manchester City</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Уточнение количества обвинений.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильное указание количества обвинений.",
+        "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным почти по всем 115 обвинениям, что не соответствует источнику.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
         "plan_slot_id": "football-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-hmrc-verdict-34710418-bb62247dd4a3",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-hmrc-verdict-34710418",
-        "original_html": "• Манчестер Сити подвергается проверке HMRC после признания виновным по 114 из 115 финансовых обвинений Премьер-лиги; депутаты требуют расследования уплаты налогов. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-hmrc-verdict-34710418\">MEN Manchester City</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-city-115-charges-safety-34712361-8f03a82ab11f",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/man-city-115-charges-safety-34712361",
+        "original_html": "• Манчестер Сити признан виновным почти по всем 115 обвинениям Премьер-лиги, включая финансовые нарушения; клуб подтвердил, что будет обжаловать решение. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/man-city-115-charges-safety-34712361\">MEN Manchester City</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 36,
+        "line_index": 24,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Уточнение даты события.",
-        "risk": "date",
+        "reason": "Найджел Фараж не является депутатом, необходимо убрать это утверждение.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неправильная дата события.",
+        "critical_problem": "Указано, что Джошуа Керри обвиняется в подготовке террористических актов против Найджела Фаража, но Найджел Фараж не является депутатом.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "city_watch-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-accused-preparing-acts-terrorism-34710184-fa8ec6aa0940",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-accused-preparing-acts-terrorism-34710184",
+        "original_html": "• 28-летний Джошуа Керри обвиняется в подготовке террористических актов, включая действия против депутата Найджела Фаража; он должен явиться в суд в Вестминстере 7 октября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-accused-preparing-acts-terrorism-34710184\">MEN</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 30,
+        "section": "IT и бизнес",
+        "requested_action": "patch",
+        "reason": "Имя Арта Фрибри должно быть исправлено на Арт Фрибри.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неправильное написание имени одного из основателей.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-06",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cv70d2ege8w6o-d6ccc3fb696f",
-        "original_url_identity": "bbc.com/news/articles/cv70d2ege8w6o",
-        "original_html": "• Давид Прайс, 42 года, из Ливерпуля, попытается установить мировой рекорд по быстрейшему полумарафону среди мужчин с рассеянным склерозом на Манчестерском полумарафоне в воскресенье, 4 октября. <a href=\"https://bbc.co.uk/news/articles/cv70d2ege8w6o\">BBC Manchester</a>",
+        "plan_slot_id": "tech_business-01",
+        "candidate_fingerprint": "url-businesscloud-co-uk-news-childhood-friends-choose-manchester-over-silicon-valley-6a2f23716bbc",
+        "original_url_identity": "businesscloud.co.uk/news/childhood-friends-choose-manchester-over-silicon-valley",
+        "original_html": "• Два 21-летних друга, Джордж Джефферсон и Арт Фрибри, собрали $3 миллиона для своего стартапа в области AI Revnu и выбрали Манчестер вместо Силиконовой долины, отметив доступ к инженерным талантам. <a href=\"https://businesscloud.co.uk/news/childhood-friends-choose-manchester-over-silicon-valley\">BusinessCloud</a>",
         "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 37,
+        "section": "Русскоязычные концерты и стендап UK",
+        "requested_action": "patch",
+        "reason": "Уточнение о том, что информация о месте проведения будет предоставлена позже, чтобы избежать недоразумений.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Отсутствие информации о месте проведения мероприятия.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "russian_events-01",
+        "candidate_fingerprint": "event-event-afisha-london-2026-10-08-afa80e6c8af2",
+        "original_url_identity": "afisha.london/en",
+        "original_html": "• Семинар на русском языке \"Откровенно о сокровенном. Женское тело: время перемен\" запланирован на 8 октября в Лондоне; детали площадки пока не указаны. <a href=\"https://afisha.london/en\">Afisha London</a>",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::уточнение, что они не только арестованы, но и обвиняются.",
+        "group_key": "свежие новости::энди бернэм является мэром манчестера, а не премьер-министром.",
         "actions": [
           {
-            "line_index": 3,
+            "line_index": 5,
             "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Уточнение, что они не только арестованы, но и обвиняются.",
+            "reason": "Энди Бернэм является мэром Манчестера, а не премьер-министром.",
             "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
+            "critical_error": true,
+            "critical_problem": "Энди Бернэм не является премьер-министром, а мэром Манчестера.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cqx29nke55kno-17f687ae8fa5",
-            "original_url_identity": "bbc.com/news/articles/cqx29nke55kno",
-            "original_html": "• Два иранских гражданина, Рахман Салехи, 34 года, из Salford, и Салам Ахмадиан, 36 лет, из Ливерпуля, были арестованы в Манчестере в районе Нортерн Куотер накануне Йом-Кипура. Они обвиняются в подготовке террористического акта против еврейской общины, что вызывает глубокую тревогу среди местных жителей, особенно в свете годовщины атаки на синагогу в Хитон Парке. <a href=\"https://bbc.co.uk/news/articles/cqx29nke55kno\">BBC Manchester</a>",
+            "plan_slot_id": "last_24h-04",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-plan-curb-use-jury-trials-34712568-324dfa9accd2",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/plan-curb-use-jury-trials-34712568",
+            "original_html": "• Премьер-министр Энди Бернэм отменил предложение о сокращении использования судов с участием присяжных, предложенное бывшим премьер-министром Сэром Кииром Стармером. Новый план предполагает направление менее серьезных дел в магистратские суды и лишение права на выбор суда с присяжными для некоторых правонарушений. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/plan-curb-use-jury-trials-34712568\">MEN</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 3,
+            "line_index": 5,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -430,62 +383,30 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::утверждение о признании виновным не подтверждено источником.",
+        "group_key": "общественный транспорт сегодня::добавление актуальной информации о влиянии на сегодняшний день.",
         "actions": [
           {
-            "line_index": 15,
-            "section": "Футбол",
+            "line_index": 12,
+            "section": "Общественный транспорт сегодня",
             "requested_action": "patch",
-            "reason": "Утверждение о признании виновным не подтверждено источником.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-city-charges-live-updates-34705003-e0a051599f2b",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-city-charges-live-updates-34705003",
-            "original_html": "• Срок подачи апелляции Манчестер Сити истекает сегодня после признания клуба виновным в нарушении финансовых правил Премьер-лиги; соперничающие клубы требуют компенсации в размере £800 миллионов. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-city-charges-live-updates-34705003\">MEN Manchester City</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 15,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::томас тухель не является главным тренером сборной англии.",
-        "actions": [
-          {
-            "line_index": 16,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Томас Тухель не является главным тренером сборной Англии.",
-            "risk": "factual",
+            "reason": "Добавление актуальной информации о влиянии на сегодняшний день.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Томас Тухель не является главным тренером сборной Англии.",
+            "critical_problem": "Дата закрытия линии Metrolink не соответствует текущей дате выпуска.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-dressing-room-view-34709282-e85c9c3ab734",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-dressing-room-view-34709282",
-            "original_html": "• Главный тренер сборной Англии Томас Тухель заявил, что будет продолжать вызывать игроков Манчестер Сити, даже если они будут понижены в классе, и отметил, что дело Сити стало горячей темой в сборной. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-dressing-room-view-34709282\">MEN Manchester City</a>",
+            "plan_slot_id": "transport-03",
+            "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-22-no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure-81e5f6dadd29",
+            "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure",
+            "original_html": "• Metrolink: С 19 октября по 1 ноября линия Metrolink будет закрыта, и пассажиры из Алтринчама и Тимперли не получат замещающих автобусов. Им рекомендуется использовать автобус 263 или поезда. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure\">Altrincham Today</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 16,
+            "line_index": 12,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -493,88 +414,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::дата события указана неверно. 4 октября 2026 года — это суббота, а не воскресенье.",
-        "actions": [
-          {
-            "line_index": 36,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Дата события указана неверно. 4 октября 2026 года — это суббота, а не воскресенье.",
-            "risk": "date",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "",
-            "plan_slot_id": "city_watch-06",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cv70d2ege8w6o-d6ccc3fb696f",
-            "original_url_identity": "bbc.com/news/articles/cv70d2ege8w6o",
-            "original_html": "• Давид Прайс, 42 года, из Ливерпуля, попытается установить мировой рекорд по быстрейшему полумарафону среди мужчин с рассеянным склерозом на Манчестерском полумарафоне в воскресенье, 4 октября. <a href=\"https://bbc.co.uk/news/articles/cv70d2ege8w6o\">BBC Manchester</a>",
-            "model_replacement_rejected": "fact_lock: 5 октября",
-            "backup_outcome": "no_eligible_backup",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 36,
-            "passed": false,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "футбол::уточнение срока подачи апелляции.",
+        "group_key": "футбол::уточнение статуса обвинений, чтобы избежать неверного утверждения о виновности.",
         "actions": [
           {
             "line_index": 15,
             "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Уточнение срока подачи апелляции.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждается источником.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-city-charges-live-updates-34705003-e0a051599f2b",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-city-charges-live-updates-34705003",
-            "original_html": "• Срок подачи апелляции Манчестер Сити истекает сегодня после признания клуба виновным в нарушении финансовых правил Премьер-лиги; соперничающие клубы требуют компенсации в размере £800 миллионов. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-city-charges-live-updates-34705003\">MEN Manchester City</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 15,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::уточнение количества обвинений.",
-        "actions": [
-          {
-            "line_index": 17,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Уточнение количества обвинений.",
+            "reason": "Уточнение статуса обвинений, чтобы избежать неверного утверждения о виновности.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неправильное указание количества обвинений.",
+            "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным почти по всем 115 обвинениям, что не соответствует источнику.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
             "plan_slot_id": "football-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-hmrc-verdict-34710418-bb62247dd4a3",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-hmrc-verdict-34710418",
-            "original_html": "• Манчестер Сити подвергается проверке HMRC после признания виновным по 114 из 115 финансовых обвинений Премьер-лиги; депутаты требуют расследования уплаты налогов. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-hmrc-verdict-34710418\">MEN Manchester City</a>",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-city-115-charges-safety-34712361-8f03a82ab11f",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/man-city-115-charges-safety-34712361",
+            "original_html": "• Манчестер Сити признан виновным почти по всем 115 обвинениям Премьер-лиги, включая финансовые нарушения; клуб подтвердил, что будет обжаловать решение. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/man-city-115-charges-safety-34712361\">MEN Manchester City</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -582,7 +438,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 17,
+            "line_index": 15,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -590,23 +446,54 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::уточнение даты события.",
+        "group_key": "городской радар::найджел фараж не является депутатом, необходимо убрать это утверждение.",
         "actions": [
           {
-            "line_index": 36,
+            "line_index": 24,
             "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Уточнение даты события.",
-            "risk": "date",
+            "reason": "Найджел Фараж не является депутатом, необходимо убрать это утверждение.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неправильная дата события.",
+            "critical_problem": "Указано, что Джошуа Керри обвиняется в подготовке террористических актов против Найджела Фаража, но Найджел Фараж не является депутатом.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "city_watch-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-accused-preparing-acts-terrorism-34710184-fa8ec6aa0940",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-accused-preparing-acts-terrorism-34710184",
+            "original_html": "• 28-летний Джошуа Керри обвиняется в подготовке террористических актов, включая действия против депутата Найджела Фаража; он должен явиться в суд в Вестминстере 7 октября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-accused-preparing-acts-terrorism-34710184\">MEN</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 24,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "it и бизнес::имя арта фрибри должно быть исправлено на арт фрибри.",
+        "actions": [
+          {
+            "line_index": 30,
+            "section": "IT и бизнес",
+            "requested_action": "patch",
+            "reason": "Имя Арта Фрибри должно быть исправлено на Арт Фрибри.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильное написание имени одного из основателей.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-06",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cv70d2ege8w6o-d6ccc3fb696f",
-            "original_url_identity": "bbc.com/news/articles/cv70d2ege8w6o",
-            "original_html": "• Давид Прайс, 42 года, из Ливерпуля, попытается установить мировой рекорд по быстрейшему полумарафону среди мужчин с рассеянным склерозом на Манчестерском полумарафоне в воскресенье, 4 октября. <a href=\"https://bbc.co.uk/news/articles/cv70d2ege8w6o\">BBC Manchester</a>",
+            "plan_slot_id": "tech_business-01",
+            "candidate_fingerprint": "url-businesscloud-co-uk-news-childhood-friends-choose-manchester-over-silicon-valley-6a2f23716bbc",
+            "original_url_identity": "businesscloud.co.uk/news/childhood-friends-choose-manchester-over-silicon-valley",
+            "original_html": "• Два 21-летних друга, Джордж Джефферсон и Арт Фрибри, собрали $3 миллиона для своего стартапа в области AI Revnu и выбрали Манчестер вместо Силиконовой долины, отметив доступ к инженерным талантам. <a href=\"https://businesscloud.co.uk/news/childhood-friends-choose-manchester-over-silicon-valley\">BusinessCloud</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -614,9 +501,40 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 36,
+            "line_index": 30,
             "passed": true,
             "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "русскоязычные концерты и стендап uk::уточнение о том, что информация о месте проведения будет предоставлена позже, чтобы избежать недоразумений.",
+        "actions": [
+          {
+            "line_index": 37,
+            "section": "Русскоязычные концерты и стендап UK",
+            "requested_action": "patch",
+            "reason": "Уточнение о том, что информация о месте проведения будет предоставлена позже, чтобы избежать недоразумений.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Отсутствие информации о месте проведения мероприятия.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "russian_events-01",
+            "candidate_fingerprint": "event-event-afisha-london-2026-10-08-afa80e6c8af2",
+            "original_url_identity": "afisha.london/en",
+            "original_html": "• Семинар на русском языке \"Откровенно о сокровенном. Женское тело: время перемен\" запланирован на 8 октября в Лондоне; детали площадки пока не указаны. <a href=\"https://afisha.london/en\">Afisha London</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 37,
+            "passed": true,
+            "detail": "post-check passed"
           }
         ],
         "known_factual_error": true
@@ -629,16 +547,14 @@
       "empty_or_not_better": 0,
       "skipped": 0
     },
-    "enrich_improved": 7,
-    "false_positive_existing_fact": 4,
-    "deterministic_rewrite_rejected": 1,
-    "no_eligible_backup": 1,
+    "enrich_improved": 6,
+    "false_positive_existing_fact": 2,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 46,
-      "matched_lines": 46,
-      "applicable_lines": 0,
-      "unmatched_lines": 3,
+      "checked_lines": 35,
+      "matched_lines": 35,
+      "applicable_lines": 2,
+      "unmatched_lines": 2,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -649,150 +565,135 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 49,
-      "resolved_in_place": 49,
+      "checked_lines": 37,
+      "resolved_in_place": 37,
       "unresolved": 0,
       "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved"
   },
-  "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка 3 требует уточнения статуса обвиняемых для корректного отражения фактов.; Обе строки соответствуют требованиям и содержат актуальную информацию о транспортных изменениях в Gr",
+  "notes": "Строка соответствует всем требованиям: география, факты и контекст инцидента корректны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного указания должности Энди Бернэма.; Проблема с датой в строке 12 требует исправления для актуальности информации.; Ошибка в строке",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 3,
+        "line_index": 5,
         "section": "Свежие новости",
-        "problem": "Текст утверждает, что обвиняемые арестованы, но не упоминает, что они также обвиняются в подготовке террористического акта.",
+        "problem": "Энди Бернэм не является премьер-министром, а мэром Манчестера.",
         "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дата закрытия линии Metrolink не соответствует текущей дате выпуска.",
+        "risk": "date",
         "suggested_action": "repair"
       },
       {
         "line_index": 15,
         "section": "Футбол",
-        "problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждается источником.",
+        "problem": "Текст утверждает, что Манчестер Сити признан виновным почти по всем 115 обвинениям, что не соответствует источнику.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 16,
-        "section": "Футбол",
-        "problem": "Томас Тухель не является главным тренером сборной Англии.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 36,
+        "line_index": 24,
         "section": "Городской радар",
-        "problem": "Неправильная дата события.",
-        "risk": "date",
+        "problem": "Указано, что Джошуа Керри обвиняется в подготовке террористических актов против Найджела Фаража, но Найджел Фараж не является депутатом.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "problem": "Неправильное указание географии для арестованных лиц.",
+        "line_index": 30,
+        "section": "IT и бизнес",
+        "problem": "Неправильное написание имени одного из основателей.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 31,
+        "section": "Business/tech события для тебя",
+        "problem": "Событие проходит онлайн, но указано, что оно для жителей Greater Manchester.",
         "risk": "geo",
         "suggested_action": "repair"
       },
       {
-        "line_index": 15,
-        "section": "Футбол",
-        "problem": "Неправильное указание срока подачи апелляции.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "problem": "Неправильное указание количества обвинений.",
+        "line_index": 37,
+        "section": "Русскоязычные концерты и стендап UK",
+        "problem": "Отсутствие информации о месте проведения мероприятия.",
         "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 36,
-        "section": "Городской радар",
-        "problem": "Неправильное указание даты события.",
-        "risk": "date",
         "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 3,
+        "line_index": 5,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• Два иранских гражданина, Рахман Салехи, 34 года, из Salford, и Салам Ахмадиан, 36 лет, из Ливерпуля, были арестованы и обвиняются в Манчестере в районе Нортерн Куотер накануне Йом-Кипура. Они обвиняются в подготовке террористического акта против еврейской общины, что вызывает глубокую тревогу среди местных жителей, особенно в свете годовщины атаки на синагогу в Хитон Парке.",
-        "reason": "Уточнение, что они не только арестованы, но и обвиняются.",
+        "replacement_text": "• Мэр Манчестера Энди Бернэм отменил предложение о сокращении использования судов с участием присяжных, предложенное бывшим премьер-министром Сэром Кииром Стармером. Новый план предполагает направление менее серьезных дел в магистратские суды и лишение права на выбор суда с присяжными для некоторых правонарушений.",
+        "reason": "Энди Бернэм является мэром Манчестера, а не премьер-министром.",
         "risk": "factual"
+      },
+      {
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
+        "action": "patch",
+        "replacement_text": "• Metrolink: С 19 октября по 1 ноября линия Metrolink будет закрыта, и пассажиры из Алтринчама и Тимперли не получат замещающих автобусов. Им рекомендуется использовать автобус 263 или поезда. Проверьте, есть ли действующие ограничения сегодня.",
+        "reason": "Добавление актуальной информации о влиянии на сегодняшний день.",
+        "risk": "date"
       },
       {
         "line_index": 15,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Срок подачи апелляции Манчестер Сити истекает сегодня после обвинений клуба в нарушении финансовых правил Премьер-лиги; соперничающие клубы требуют компенсации в размере £800 миллионов.",
-        "reason": "Утверждение о признании виновным не подтверждено источником.",
+        "replacement_text": "• Манчестер Сити обвиняется почти по всем 115 обвинениям Премьер-лиги, включая финансовые нарушения; клуб подтвердил, что будет обжаловать решение.",
+        "reason": "Уточнение статуса обвинений, чтобы избежать неверного утверждения о виновности.",
         "risk": "factual"
       },
       {
-        "line_index": 16,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Главный тренер сборной Англии Гарет Саутгейт заявил, что будет продолжать вызывать игроков Манчестер Сити, даже если они будут понижены в классе, и отметил, что дело Сити стало горячей темой в сборной.",
-        "reason": "Томас Тухель не является главным тренером сборной Англии.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 36,
+        "line_index": 24,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Давид Прайс, 42 года, из Ливерпуля, попытается установить мировой рекорд по быстрейшему полумарафону среди мужчин с рассеянным склерозом на Манчестерском полумарафоне в воскресенье, 5 октября.",
-        "reason": "Дата события указана неверно. 4 октября 2026 года — это суббота, а не воскресенье.",
-        "risk": "date"
+        "replacement_text": "• 28-летний Джошуа Керри обвиняется в подготовке террористических актов, включая действия против Найджела Фаража; он должен явиться в суд в Вестминстере 7 октября 2026 года.",
+        "reason": "Найджел Фараж не является депутатом, необходимо убрать это утверждение.",
+        "risk": "factual"
       },
       {
-        "line_index": 3,
-        "section": "Свежие новости",
+        "line_index": 30,
+        "section": "IT и бизнес",
         "action": "patch",
-        "replacement_text": "• Два иранских гражданина, Рахман Салехи, 34 года, из Манчестера, и Салам Ахмадиан, 36 лет, из Ливерпуля, были арестованы в районе Нортерн Куотер накануне Йом-Кипура. Они обвиняются в подготовке террористического акта против еврейской общины, что вызвало обеспокоенность.",
-        "reason": "Уточнение географии арестованных лиц.",
+        "replacement_text": "• Два 21-летних друга, Джордж Джефферсон и Арт Фрибри, собрали $3 миллиона для своего стартапа в области AI Revnu и выбрали Манчестер вместо Силиконовой долины, отметив доступ к инженерным талантам.",
+        "reason": "Имя Арта Фрибри должно быть исправлено на Арт Фрибри.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 31,
+        "section": "Business/tech события для тебя",
+        "action": "patch",
+        "replacement_text": "• Завтра, 5 октября 2026 года, пройдет бесплатный онлайн-семинар 'Starting a Business Confidently'. Семинар охватывает юридические требования, финансирование и основы финансового управления.",
+        "reason": "Событие проходит онлайн и доступно для всех, а не только для жителей Greater Manchester.",
         "risk": "geo"
       },
       {
-        "line_index": 15,
-        "section": "Футбол",
+        "line_index": 37,
+        "section": "Русскоязычные концерты и стендап UK",
         "action": "patch",
-        "replacement_text": "• Срок подачи апелляции Манчестер Сити истекает завтра после признания клуба виновным в нарушении финансовых правил Премьер-лиги; соперничающие клубы требуют компенсации в размере £800 миллионов.",
-        "reason": "Уточнение срока подачи апелляции.",
-        "risk": "date"
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Манчестер Сити подвергается проверке HMRC после признания виновным по 113 из 115 финансовых обвинений Премьер-лиги; депутаты требуют расследования уплаты налогов.",
-        "reason": "Уточнение количества обвинений.",
+        "replacement_text": "• Семинар на русском языке \"Откровенно о сокровенном. Женское тело: время перемен\" запланирован на 8 октября в Лондоне; место проведения будет уточнено позже.",
+        "reason": "Уточнение о том, что информация о месте проведения будет предоставлена позже, чтобы избежать недоразумений.",
         "risk": "factual"
-      },
-      {
-        "line_index": 36,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Давид Прайс, 42 года, из Ливерпуля, попытается установить мировой рекорд по быстрейшему полумарафону среди мужчин с рассеянным склерозом на Манчестерском полумарафоне в воскресенье, 5 октября.",
-        "reason": "Уточнение даты события.",
-        "risk": "date"
       }
     ],
     "warnings": [
-      "Блок 'Выходные в GM' содержит только 6 событий, что является минимально допустимым количеством. Рекомендуется добавить больше событий для улучшения полноты блока.",
-      "Выходные в GM: 11 item(s), potential overrepresentation"
+      "Блок 'Выходные в GM' содержит только 6 событий, что соответствует минимальному количеству, но не превышает его. Это может указывать на недостаточную полноту блока.",
+      "judge reduce failed: parse_failed no parseable JSON"
     ],
-    "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка 3 требует уточнения статуса обвиняемых для корректного отражения фактов.; Обе строки соответствуют требованиям и содержат актуальную информацию о транспортных изменениях в Gr",
+    "notes": "Строка соответствует всем требованиям: география, факты и контекст инцидента корректны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного указания должности Энди Бернэма.; Проблема с датой в строке 12 требует исправления для актуальности информации.; Ошибка в строке",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "ok",
-      "chunk_count": 13,
+      "status": "partial",
+      "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -810,8 +711,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2668,
-          "duration_seconds": 1.278
+          "estimated_tokens": 2679,
+          "duration_seconds": 1.159
         },
         {
           "chunk_id": "chunk-02",
@@ -828,15 +729,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2434,
-          "duration_seconds": 1.158
+          "estimated_tokens": 2433,
+          "duration_seconds": 0.99
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            11
+            9
           ],
           "sections": [
             "Свежие новости"
@@ -846,69 +747,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7158,
-          "duration_seconds": 3.361
+          "estimated_tokens": 6015,
+          "duration_seconds": 2.896
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            12,
-            13
+            10,
+            12
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3226,
-          "duration_seconds": 0.932
+          "estimated_tokens": 3652,
+          "duration_seconds": 2.16
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            14,
-            14
-          ],
-          "sections": [
-            "Что важно сегодня"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2700,
-          "duration_seconds": 0.898
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "ok",
-          "line_range": [
-            15,
-            17
+            13,
+            15
           ],
           "sections": [
             "Футбол"
           ],
           "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3662,
-          "duration_seconds": 2.959
+          "estimated_tokens": 3670,
+          "duration_seconds": 2.459
         },
         {
-          "chunk_id": "chunk-07",
+          "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            18,
-            29
+            16,
+            23
           ],
           "sections": [
             "Выходные в GM"
@@ -918,33 +801,15 @@
           "action_count": 0,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 8045,
-          "duration_seconds": 59.097
+          "estimated_tokens": 6213,
+          "duration_seconds": 1.235
         },
         {
-          "chunk_id": "chunk-08",
+          "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            30,
-            31
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3416,
-          "duration_seconds": 0.813
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            32,
-            36
+            24,
+            29
           ],
           "sections": [
             "Городской радар"
@@ -954,33 +819,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4522,
-          "duration_seconds": 18.448
+          "estimated_tokens": 5343,
+          "duration_seconds": 41.041
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            30,
+            30
+          ],
+          "sections": [
+            "IT и бизнес"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2662,
+          "duration_seconds": 2.015
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            31,
+            31
+          ],
+          "sections": [
+            "Business/tech события для тебя"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2811,
+          "duration_seconds": 4.885
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            37,
-            37
-          ],
-          "sections": [
-            "IT и бизнес"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2668,
-          "duration_seconds": 1.056
-        },
-        {
-          "chunk_id": "chunk-11",
-          "status": "ok",
-          "line_range": [
-            38,
-            40
+            32,
+            33
           ],
           "sections": [
             "Дальние анонсы"
@@ -990,15 +873,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3783,
-          "duration_seconds": 5.341
+          "estimated_tokens": 3335,
+          "duration_seconds": 9.643
         },
         {
-          "chunk_id": "chunk-12",
+          "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            41,
-            48
+            34,
+            36
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -1008,40 +891,40 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6998,
-          "duration_seconds": 32.019
+          "estimated_tokens": 4038,
+          "duration_seconds": 21.155
         },
         {
-          "chunk_id": "chunk-13",
+          "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
-            49,
-            49
+            37,
+            37
           ],
           "sections": [
-            "Крупные концерты вне GM"
+            "Русскоязычные концерты и стендап UK"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2711,
-          "duration_seconds": 4.924
+          "estimated_tokens": 2732,
+          "duration_seconds": 7.132
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "ok",
+        "status": "parse_failed",
         "line_range": [],
         "sections": [],
-        "decision": "repair_required",
-        "critical_error_count": 4,
-        "action_count": 4,
-        "warning_count": 1,
-        "error": "",
-        "estimated_tokens": 10678,
-        "duration_seconds": 28.474
+        "decision": "",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 0,
+        "error": "no parseable JSON",
+        "estimated_tokens": 10178,
+        "duration_seconds": 26.943
       },
       "max_workers": 3,
       "chunk_line_target": 12,
