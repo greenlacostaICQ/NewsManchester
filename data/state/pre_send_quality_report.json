@@ -1,129 +1,117 @@
 {
-  "status": "partial",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 4 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair executor applied 1 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-10-04",
-  "pipeline_run_id": "20261004T080143+0100",
-  "digest_sha256": "8c1663cea261dc80c9b9433b276520b2d1a072b30789d58c5e163bc30860af20",
-  "duration_seconds": 73.238,
+  "run_date_london": "2026-10-05",
+  "pipeline_run_id": "20261005T080154+0100",
+  "digest_sha256": "07b888dab495f9403cdea3f6fa21c574c2e841a231f63a1d46dca94e3c88f8bb",
+  "duration_seconds": 53.678,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 5,
+      "line_index": 3,
       "section": "Свежие новости",
-      "problem": "Энди Бернэм не является премьер-министром, а мэром Манчестера.",
+      "problem": "География события не соответствует контракту geo_scope.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 8,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Время окончания сбоя указано как 08:30, но в source_claim указано 08:00.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 12,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дата закрытия линии Metrolink не соответствует текущей дате выпуска.",
-      "risk": "date",
+      "line_index": 14,
+      "section": "Футбол",
+      "problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждено официальными источниками.",
+      "risk": "factual",
       "suggested_action": "repair"
     },
     {
       "line_index": 15,
       "section": "Футбол",
-      "problem": "Текст утверждает, что Манчестер Сити признан виновным почти по всем 115 обвинениям, что не соответствует источнику.",
+      "problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждено официальными источниками.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 24,
+      "line_index": 17,
       "section": "Городской радар",
-      "problem": "Указано, что Джошуа Керри обвиняется в подготовке террористических актов против Найджела Фаража, но Найджел Фараж не является депутатом.",
+      "problem": "Неверная информация о должности Энди Бернхэма.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 30,
-      "section": "IT и бизнес",
-      "problem": "Неправильное написание имени одного из основателей.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 31,
-      "section": "Business/tech события для тебя",
-      "problem": "Событие проходит онлайн, но указано, что оно для жителей Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 37,
-      "section": "Русскоязычные концерты и стендап UK",
-      "problem": "Отсутствие информации о месте проведения мероприятия.",
-      "risk": "factual",
+      "line_index": 26,
+      "section": "Билеты / Ticket Radar",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
       "suggested_action": "repair"
     }
   ],
   "actions": [
     {
-      "line_index": 5,
+      "line_index": 3,
       "section": "Свежие новости",
+      "action": "strip",
+      "reason": "Событие произошло в Дерби, что не соответствует geo_scope 'gm'.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 8,
+      "section": "Общественный транспорт сегодня",
       "action": "patch",
-      "replacement_text": "• Мэр Манчестера Энди Бернэм отменил предложение о сокращении использования судов с участием присяжных, предложенное бывшим премьер-министром Сэром Кииром Стармером. Новый план предполагает направление менее серьезных дел в магистратские суды и лишение права на выбор суда с присяжными для некоторых правонарушений.",
-      "reason": "Энди Бернэм является мэром Манчестера, а не премьер-министром.",
+      "replacement_text": "• National Rail: линии восстановлены, но сбой в движении продолжается между Манчестер Пикадилли и Реддиш Норт / Гайд Бридж / Сталибридж до 08:00 5 октября 2026 года. Пострадают пассажиры Northern и TransPennine Express.",
+      "reason": "Время окончания сбоя должно быть 08:00, согласно source_claim.",
       "risk": "factual"
     },
     {
-      "line_index": 12,
-      "section": "Общественный транспорт сегодня",
+      "line_index": 14,
+      "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Metrolink: С 19 октября по 1 ноября линия Metrolink будет закрыта, и пассажиры из Алтринчама и Тимперли не получат замещающих автобусов. Им рекомендуется использовать автобус 263 или поезда. Проверьте, есть ли действующие ограничения сегодня.",
-      "reason": "Добавление актуальной информации о влиянии на сегодняшний день.",
-      "risk": "date"
+      "replacement_text": "• Манчестер Сити оспаривает обвинения в нарушении финансовых правил, выдвинутые Премьер-лигой. Клуб подал апелляцию, и теперь его соперники по лиге разделились во мнениях о возможной дисквалификации. Некоторые клубы считают, что отсутствие Сити ослабит лигу, в то время как другие опасаются последствий, связанных с возможным возрождением Европейской суперлиги.",
+      "reason": "Утверждение о признании вины не подтверждено.",
+      "risk": "factual"
     },
     {
       "line_index": 15,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Манчестер Сити обвиняется почти по всем 115 обвинениям Премьер-лиги, включая финансовые нарушения; клуб подтвердил, что будет обжаловать решение.",
-      "reason": "Уточнение статуса обвинений, чтобы избежать неверного утверждения о виновности.",
+      "replacement_text": "• Манчестер Сити и Премьер-лига продолжают трехлетний спор по 115 обвинениям. 4 октября 2026 года трехчленная комиссия рассмотрела дело, и Манчестер Сити подал апелляцию.",
+      "reason": "Утверждение о признании вины не подтверждено.",
       "risk": "factual"
     },
     {
-      "line_index": 24,
+      "line_index": 17,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• 28-летний Джошуа Керри обвиняется в подготовке террористических актов, включая действия против Найджела Фаража; он должен явиться в суд в Вестминстере 7 октября 2026 года.",
-      "reason": "Найджел Фараж не является депутатом, необходимо убрать это утверждение.",
+      "replacement_text": "• Энди Бернхэм завершил свои первые 100 дней в качестве депутата от Makerfield, что не происходило с 1905 года.",
+      "reason": "Энди Бернхэм не является премьер-министром.",
       "risk": "factual"
     },
     {
-      "line_index": 30,
-      "section": "IT и бизнес",
+      "line_index": 26,
+      "section": "Билеты / Ticket Radar",
       "action": "patch",
-      "replacement_text": "• Два 21-летних друга, Джордж Джефферсон и Арт Фрибри, собрали $3 миллиона для своего стартапа в области AI Revnu и выбрали Манчестер вместо Силиконовой долины, отметив доступ к инженерным талантам.",
-      "reason": "Имя Арта Фрибри должно быть исправлено на Арт Фрибри.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 31,
-      "section": "Business/tech события для тебя",
-      "action": "patch",
-      "replacement_text": "• Завтра, 5 октября 2026 года, пройдет бесплатный онлайн-семинар 'Starting a Business Confidently'. Семинар охватывает юридические требования, финансирование и основы финансового управления.",
-      "reason": "Событие проходит онлайн и доступно для всех, а не только для жителей Greater Manchester.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 37,
-      "section": "Русскоязычные концерты и стендап UK",
-      "action": "patch",
-      "replacement_text": "• Семинар на русском языке \"Откровенно о сокровенном. Женское тело: время перемен\" запланирован на 8 октября в Лондоне; место проведения будет уточнено позже.",
-      "reason": "Уточнение о том, что информация о месте проведения будет предоставлена позже, чтобы избежать недоразумений.",
-      "risk": "factual"
+      "replacement_text": "• Lake Malice — 6 октября, Manchester Academy. Билеты и время указаны на официальной странице.",
+      "reason": "Дата события указана неверно. Следует исправить на 6 октября 2026 года.",
+      "risk": "date"
     }
   ],
   "warnings": [
-    "Блок 'Выходные в GM' содержит только 6 событий, что соответствует минимальному количеству, но не превышает его. Это может указывать на недостаточную полноту блока.",
-    "judge reduce failed: parse_failed no parseable JSON"
+    "Секция 'Что важно сегодня' отсутствует, что нарушает продуктовую полноту.",
+    "Секция 'Свежие новости' содержит только 5 элементов, что ниже минимального порога.",
+    "Секция 'Городской радар' содержит только 4 элемента, что ниже минимального порога.",
+    "Секция 'Билеты / Ticket Radar' содержит только 1 элемент, что ниже минимального порога.",
+    "Секция 'Еда, открытия и рынки' отсутствует, что нарушает продуктовую полноту."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -131,82 +119,86 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 7,
-      "Общественный транспорт сегодня": 3,
+      "Свежие новости": 5,
+      "Общественный транспорт сегодня": 6,
       "Футбол": 3,
-      "Выходные в GM": 6,
-      "Городской радар": 6,
-      "IT и бизнес": 1,
+      "Городской радар": 4,
+      "IT и бизнес": 3,
       "Business/tech события для тебя": 1,
-      "Дальние анонсы": 2,
-      "Билеты / Ticket Radar": 3,
+      "Дальние анонсы": 1,
+      "Билеты / Ticket Radar": 1,
       "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
       "Что важно сегодня": 0,
-      "Свежие новости": 7,
+      "Свежие новости": 5,
       "Главная история дня": 1,
-      "Городской радар": 6,
-      "Выходные в GM": 6,
-      "Билеты / Ticket Radar": 3,
+      "Городской радар": 4,
+      "Билеты / Ticket Radar": 1,
       "Русскоязычные концерты и стендап UK": 1,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 1,
       "Футбол": 3
     },
-    "ticket_items": 4,
-    "core_items": 25,
+    "ticket_items": 2,
+    "core_items": 15,
     "writer_quality_counts": {
-      "included_candidates": 38,
-      "rendered_candidates": 35,
+      "included_candidates": 29,
+      "rendered_candidates": 27,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 3,
+      "dropped_low_quality": 2,
       "replaced_from_plan_backup": 0,
-      "removed_with_reason": 3
+      "removed_with_reason": 2
     },
     "source_health_counts": {
-      "ok": 96,
+      "ok": 95,
       "partial": 2,
-      "stale": 9,
+      "stale": 10,
       "empty": 17,
       "failed": 4,
-      "zero_yield": 79,
+      "zero_yield": 87,
       "no_contribution_breakdown": {
         "fetch_failed": 4,
-        "all_rejected": 79,
+        "all_rejected": 87,
         "idle_no_items": 24
       },
       "zero_contribution_by_stage": {
-        "selected": 36,
-        "written": 43,
+        "selected": 35,
+        "written": 52,
         "parsed": 24,
         "fetched": 4
       },
-      "weekend_source_coverage_incidents": 55
+      "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 0 item(s), emergency floor 3",
+      "Свежие новости: 5 item(s), emergency floor 6",
+      "Городской радар: 4 item(s), emergency floor 5",
+      "Билеты / Ticket Radar: 1 item(s), emergency floor 2",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [],
+    "warnings": [
+      "patch for line 8 has unchecked number/date token(s): 08:00",
+      "patch for line 17 has unchecked number/date token(s): 1905"
+    ],
     "can_apply_actions": true,
-    "action_count": 7
+    "action_count": 6
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 35,
-    "matched_lines": 35,
-    "applicable_lines": 2,
-    "unmatched_lines": 2,
+    "checked_lines": 27,
+    "matched_lines": 27,
+    "applicable_lines": 0,
+    "unmatched_lines": 0,
     "critical_omission_count": 0,
     "critical_omissions": [],
     "noncritical_omissions": [],
@@ -218,225 +210,208 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 6,
-    "attempted": 4,
-    "applied": 4,
-    "model_patch_applied": 4,
+    "requested": 5,
+    "attempted": 1,
+    "applied": 1,
+    "model_patch_applied": 0,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 0,
-    "stripped": 0,
+    "stripped": 1,
     "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 6,
-    "resolved_in_place": 6,
+    "resolved": 4,
+    "resolved_in_place": 3,
     "resolved_by_replacement": 0,
-    "resolved_by_removal": 0,
-    "fact_lock_rejected": 0,
-    "enrich_attempted": 6,
+    "resolved_by_removal": 1,
+    "fact_lock_rejected": 1,
+    "enrich_attempted": 5,
     "post_check_errors": [],
     "geo_contract_rejected": [
       {
-        "line_index": 31,
-        "section": "Business/tech события для тебя",
+        "line_index": 3,
+        "section": "Свежие новости",
         "geo_scope": "gm",
-        "reason": "Событие проходит онлайн и доступно для всех, а не только для жителей Greater Manchester.",
+        "reason": "Событие произошло в Дерби, что не соответствует geo_scope 'gm'.",
         "gm_anchor_present": true
       }
     ],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 5,
-        "section": "Свежие новости",
+        "line_index": 8,
+        "section": "Общественный транспорт сегодня",
         "requested_action": "patch",
-        "reason": "Энди Бернэм является мэром Манчестера, а не премьер-министром.",
+        "reason": "Время окончания сбоя должно быть 08:00, согласно source_claim.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Энди Бернэм не является премьер-министром, а мэром Манчестера.",
+        "critical_problem": "Время окончания сбоя указано как 08:30, но в source_claim указано 08:00.",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "last_24h-04",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-plan-curb-use-jury-trials-34712568-324dfa9accd2",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/plan-curb-use-jury-trials-34712568",
-        "original_html": "• Премьер-министр Энди Бернэм отменил предложение о сокращении использования судов с участием присяжных, предложенное бывшим премьер-министром Сэром Кииром Стармером. Новый план предполагает направление менее серьезных дел в магистратские суды и лишение права на выбор суда с присяжными для некоторых правонарушений. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/plan-curb-use-jury-trials-34712568\">MEN</a>",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "transport-01",
+        "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-northern-lines-reopened-disruption-between-manchester-piccadilly-and-reddish-nor-9e3f4bcae41c",
+        "original_url_identity": "nationalrail.co.uk/status-and-disruptions/northern-lines-reopened-disruption-between-manchester-piccadilly-and-reddish-nor",
+        "original_html": "• National Rail: линии восстановлены, но сбой в движении продолжается между Манчестер Пикадилли и Реддиш Норт / Гайд Бридж / Сталибридж до 08:30 5 октября 2026 года. Пострадают пассажиры Northern и TransPennine Express. <a href=\"https://nationalrail.co.uk/status-and-disruptions/northern-lines-reopened-disruption-between-manchester-piccadilly-and-reddish-nor\">National Rail Enquiries</a>",
+        "model_replacement_rejected": "fact_lock: national rail",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
+        "line_index": 14,
+        "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Добавление актуальной информации о влиянии на сегодняшний день.",
-        "risk": "date",
+        "reason": "Утверждение о признании вины не подтверждено.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дата закрытия линии Metrolink не соответствует текущей дате выпуска.",
+        "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждено официальными источниками.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "transport-03",
-        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-22-no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure-81e5f6dadd29",
-        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure",
-        "original_html": "• Metrolink: С 19 октября по 1 ноября линия Metrolink будет закрыта, и пассажиры из Алтринчама и Тимперли не получат замещающих автобусов. Им рекомендуется использовать автобус 263 или поезда. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure\">Altrincham Today</a>",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-premier-league-charges-34715323-e5dc4cd9d0fc",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34715323",
+        "original_html": "• Манчестер Сити признан виновным по 114 из 115 обвинений в нарушении финансовых правил, выдвинутых Премьер-лигой. Клуб подал апелляцию на это решение, и теперь его соперники по лиге разделились во мнениях о возможной дисквалификации. Некоторые клубы считают, что отсутствие Сити ослабит лигу, в то время как другие опасаются последствий, связанных с возможным возрождением Европейской суперлиги. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34715323\">MEN Manchester City</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
         "line_index": 15,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Уточнение статуса обвинений, чтобы избежать неверного утверждения о виновности.",
+        "reason": "Утверждение о признании вины не подтверждено.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным почти по всем 115 обвинениям, что не соответствует источнику.",
+        "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждено официальными источниками.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "football-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-city-115-charges-safety-34712361-8f03a82ab11f",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/man-city-115-charges-safety-34712361",
-        "original_html": "• Манчестер Сити признан виновным почти по всем 115 обвинениям Премьер-лиги, включая финансовые нарушения; клуб подтвердил, что будет обжаловать решение. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/man-city-115-charges-safety-34712361\">MEN Manchester City</a>",
+        "plan_slot_id": "football-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-premier-league-charges-34713870-4bee112d1d4a",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34713870",
+        "original_html": "• Манчестер Сити и Премьер-лига продолжают трехлетний спор по 115 обвинениям. 4 октября 2026 года трехчленная комиссия признала клуб виновным, и Манчестер Сити подал апелляцию. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34713870\">MEN Manchester City</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 24,
+        "line_index": 17,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Найджел Фараж не является депутатом, необходимо убрать это утверждение.",
+        "reason": "Энди Бернхэм не является премьер-министром.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Указано, что Джошуа Керри обвиняется в подготовке террористических актов против Найджела Фаража, но Найджел Фараж не является депутатом.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-accused-preparing-acts-terrorism-34710184-fa8ec6aa0940",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-accused-preparing-acts-terrorism-34710184",
-        "original_html": "• 28-летний Джошуа Керри обвиняется в подготовке террористических актов, включая действия против депутата Найджела Фаража; он должен явиться в суд в Вестминстере 7 октября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-accused-preparing-acts-terrorism-34710184\">MEN</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 30,
-        "section": "IT и бизнес",
-        "requested_action": "patch",
-        "reason": "Имя Арта Фрибри должно быть исправлено на Арт Фрибри.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильное написание имени одного из основателей.",
+        "critical_problem": "Неверная информация о должности Энди Бернхэма.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "tech_business-01",
-        "candidate_fingerprint": "url-businesscloud-co-uk-news-childhood-friends-choose-manchester-over-silicon-valley-6a2f23716bbc",
-        "original_url_identity": "businesscloud.co.uk/news/childhood-friends-choose-manchester-over-silicon-valley",
-        "original_html": "• Два 21-летних друга, Джордж Джефферсон и Арт Фрибри, собрали $3 миллиона для своего стартапа в области AI Revnu и выбрали Манчестер вместо Силиконовой долины, отметив доступ к инженерным талантам. <a href=\"https://businesscloud.co.uk/news/childhood-friends-choose-manchester-over-silicon-valley\">BusinessCloud</a>",
+        "plan_slot_id": "city_watch-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-united-nations-bickershaws-toxic-dump-34709165-708d616c0a72",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/united-nations-bickershaws-toxic-dump-34709165",
+        "original_html": "• Энди Бернхэм завершил свои первые 100 дней в качестве депутата от Makerfield и премьер-министра, что не происходило с 1905 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/united-nations-bickershaws-toxic-dump-34709165\">MEN</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 37,
-        "section": "Русскоязычные концерты и стендап UK",
+        "line_index": 26,
+        "section": "Билеты / Ticket Radar",
         "requested_action": "patch",
-        "reason": "Уточнение о том, что информация о месте проведения будет предоставлена позже, чтобы избежать недоразумений.",
-        "risk": "factual",
+        "reason": "Дата события указана неверно. Следует исправить на 6 октября 2026 года.",
+        "risk": "date",
         "critical_error": true,
-        "critical_problem": "Отсутствие информации о месте проведения мероприятия.",
+        "critical_problem": "Дата события указана неверно.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "russian_events-01",
-        "candidate_fingerprint": "event-event-afisha-london-2026-10-08-afa80e6c8af2",
-        "original_url_identity": "afisha.london/en",
-        "original_html": "• Семинар на русском языке \"Откровенно о сокровенном. Женское тело: время перемен\" запланирован на 8 октября в Лондоне; детали площадки пока не указаны. <a href=\"https://afisha.london/en\">Afisha London</a>",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "ticket_radar-01",
+        "candidate_fingerprint": "event-event-lake-malice-6th-october-2026-2026-10-06-manchester-academy-8541bb3342d8",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13380743/lake-malice-manchester-academy-3-2026-10-06-19-30-00",
+        "original_html": "• <b>Lake Malice</b> — 6 октября, Manchester Academy. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13380743/lake-malice-manchester-academy-3-2026-10-06-19-30-00\">Manchester Academy</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::энди бернэм является мэром манчестера, а не премьер-министром.",
+        "group_key": "общественный транспорт сегодня::время окончания сбоя должно быть 08:00, согласно source_claim.",
         "actions": [
           {
-            "line_index": 5,
-            "section": "Свежие новости",
-            "requested_action": "patch",
-            "reason": "Энди Бернэм является мэром Манчестера, а не премьер-министром.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Энди Бернэм не является премьер-министром, а мэром Манчестера.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "last_24h-04",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-plan-curb-use-jury-trials-34712568-324dfa9accd2",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/plan-curb-use-jury-trials-34712568",
-            "original_html": "• Премьер-министр Энди Бернэм отменил предложение о сокращении использования судов с участием присяжных, предложенное бывшим премьер-министром Сэром Кииром Стармером. Новый план предполагает направление менее серьезных дел в магистратские суды и лишение права на выбор суда с присяжными для некоторых правонарушений. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/plan-curb-use-jury-trials-34712568\">MEN</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 5,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::добавление актуальной информации о влиянии на сегодняшний день.",
-        "actions": [
-          {
-            "line_index": 12,
+            "line_index": 8,
             "section": "Общественный транспорт сегодня",
             "requested_action": "patch",
-            "reason": "Добавление актуальной информации о влиянии на сегодняшний день.",
-            "risk": "date",
+            "reason": "Время окончания сбоя должно быть 08:00, согласно source_claim.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Дата закрытия линии Metrolink не соответствует текущей дате выпуска.",
+            "critical_problem": "Время окончания сбоя указано как 08:30, но в source_claim указано 08:00.",
             "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "transport-03",
-            "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-22-no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure-81e5f6dadd29",
-            "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure",
-            "original_html": "• Metrolink: С 19 октября по 1 ноября линия Metrolink будет закрыта, и пассажиры из Алтринчама и Тимперли не получат замещающих автобусов. Им рекомендуется использовать автобус 263 или поезда. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure\">Altrincham Today</a>",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "transport-01",
+            "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-northern-lines-reopened-disruption-between-manchester-piccadilly-and-reddish-nor-9e3f4bcae41c",
+            "original_url_identity": "nationalrail.co.uk/status-and-disruptions/northern-lines-reopened-disruption-between-manchester-piccadilly-and-reddish-nor",
+            "original_html": "• National Rail: линии восстановлены, но сбой в движении продолжается между Манчестер Пикадилли и Реддиш Норт / Гайд Бридж / Сталибридж до 08:30 5 октября 2026 года. Пострадают пассажиры Northern и TransPennine Express. <a href=\"https://nationalrail.co.uk/status-and-disruptions/northern-lines-reopened-disruption-between-manchester-piccadilly-and-reddish-nor\">National Rail Enquiries</a>",
+            "model_replacement_rejected": "fact_lock: national rail",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 12,
+            "line_index": 8,
             "passed": true,
-            "detail": "post-check passed"
+            "detail": "slot removed and source absent"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::уточнение статуса обвинений, чтобы избежать неверного утверждения о виновности.",
+        "group_key": "футбол::утверждение о признании вины не подтверждено.",
         "actions": [
+          {
+            "line_index": 14,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Утверждение о признании вины не подтверждено.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждено официальными источниками.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-premier-league-charges-34715323-e5dc4cd9d0fc",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34715323",
+            "original_html": "• Манчестер Сити признан виновным по 114 из 115 обвинений в нарушении финансовых правил, выдвинутых Премьер-лигой. Клуб подал апелляцию на это решение, и теперь его соперники по лиге разделились во мнениях о возможной дисквалификации. Некоторые клубы считают, что отсутствие Сити ослабит лигу, в то время как другие опасаются последствий, связанных с возможным возрождением Европейской суперлиги. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34715323\">MEN Manchester City</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          },
           {
             "line_index": 15,
             "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Уточнение статуса обвинений, чтобы избежать неверного утверждения о виновности.",
+            "reason": "Утверждение о признании вины не подтверждено.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным почти по всем 115 обвинениям, что не соответствует источнику.",
+            "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждено официальными источниками.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "football-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-transfer-news-man-city-115-charges-safety-34712361-8f03a82ab11f",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/transfer-news/man-city-115-charges-safety-34712361",
-            "original_html": "• Манчестер Сити признан виновным почти по всем 115 обвинениям Премьер-лиги, включая финансовые нарушения; клуб подтвердил, что будет обжаловать решение. <a href=\"https://manchestereveningnews.co.uk/sport/football/transfer-news/man-city-115-charges-safety-34712361\">MEN Manchester City</a>",
+            "plan_slot_id": "football-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-premier-league-charges-34713870-4bee112d1d4a",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34713870",
+            "original_html": "• Манчестер Сити и Премьер-лига продолжают трехлетний спор по 115 обвинениям. 4 октября 2026 года трехчленная комиссия признала клуб виновным, и Манчестер Сити подал апелляцию. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34713870\">MEN Manchester City</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
+          {
+            "line_index": 14,
+            "passed": true,
+            "detail": "existing fact verified"
+          },
           {
             "line_index": 15,
             "passed": true,
@@ -446,54 +421,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::найджел фараж не является депутатом, необходимо убрать это утверждение.",
+        "group_key": "городской радар::энди бернхэм не является премьер-министром.",
         "actions": [
           {
-            "line_index": 24,
+            "line_index": 17,
             "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Найджел Фараж не является депутатом, необходимо убрать это утверждение.",
+            "reason": "Энди Бернхэм не является премьер-министром.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Указано, что Джошуа Керри обвиняется в подготовке террористических актов против Найджела Фаража, но Найджел Фараж не является депутатом.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-accused-preparing-acts-terrorism-34710184-fa8ec6aa0940",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-accused-preparing-acts-terrorism-34710184",
-            "original_html": "• 28-летний Джошуа Керри обвиняется в подготовке террористических актов, включая действия против депутата Найджела Фаража; он должен явиться в суд в Вестминстере 7 октября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-accused-preparing-acts-terrorism-34710184\">MEN</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 24,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "it и бизнес::имя арта фрибри должно быть исправлено на арт фрибри.",
-        "actions": [
-          {
-            "line_index": 30,
-            "section": "IT и бизнес",
-            "requested_action": "patch",
-            "reason": "Имя Арта Фрибри должно быть исправлено на Арт Фрибри.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неправильное написание имени одного из основателей.",
+            "critical_problem": "Неверная информация о должности Энди Бернхэма.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "tech_business-01",
-            "candidate_fingerprint": "url-businesscloud-co-uk-news-childhood-friends-choose-manchester-over-silicon-valley-6a2f23716bbc",
-            "original_url_identity": "businesscloud.co.uk/news/childhood-friends-choose-manchester-over-silicon-valley",
-            "original_html": "• Два 21-летних друга, Джордж Джефферсон и Арт Фрибри, собрали $3 миллиона для своего стартапа в области AI Revnu и выбрали Манчестер вместо Силиконовой долины, отметив доступ к инженерным талантам. <a href=\"https://businesscloud.co.uk/news/childhood-friends-choose-manchester-over-silicon-valley\">BusinessCloud</a>",
+            "plan_slot_id": "city_watch-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-united-nations-bickershaws-toxic-dump-34709165-708d616c0a72",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/united-nations-bickershaws-toxic-dump-34709165",
+            "original_html": "• Энди Бернхэм завершил свои первые 100 дней в качестве депутата от Makerfield и премьер-министра, что не происходило с 1905 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/united-nations-bickershaws-toxic-dump-34709165\">MEN</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -501,7 +445,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 30,
+            "line_index": 17,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -509,52 +453,72 @@
         "known_factual_error": true
       },
       {
-        "group_key": "русскоязычные концерты и стендап uk::уточнение о том, что информация о месте проведения будет предоставлена позже, чтобы избежать недоразумений.",
+        "group_key": "билеты / ticket radar::дата события указана неверно. следует исправить на 6 октября 2026 года.",
         "actions": [
           {
-            "line_index": 37,
-            "section": "Русскоязычные концерты и стендап UK",
+            "line_index": 26,
+            "section": "Билеты / Ticket Radar",
             "requested_action": "patch",
-            "reason": "Уточнение о том, что информация о месте проведения будет предоставлена позже, чтобы избежать недоразумений.",
-            "risk": "factual",
+            "reason": "Дата события указана неверно. Следует исправить на 6 октября 2026 года.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Отсутствие информации о месте проведения мероприятия.",
+            "critical_problem": "Дата события указана неверно.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "russian_events-01",
-            "candidate_fingerprint": "event-event-afisha-london-2026-10-08-afa80e6c8af2",
-            "original_url_identity": "afisha.london/en",
-            "original_html": "• Семинар на русском языке \"Откровенно о сокровенном. Женское тело: время перемен\" запланирован на 8 октября в Лондоне; детали площадки пока не указаны. <a href=\"https://afisha.london/en\">Afisha London</a>",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "ticket_radar-01",
+            "candidate_fingerprint": "event-event-lake-malice-6th-october-2026-2026-10-06-manchester-academy-8541bb3342d8",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13380743/lake-malice-manchester-academy-3-2026-10-06-19-30-00",
+            "original_html": "• <b>Lake Malice</b> — 6 октября, Manchester Academy. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13380743/lake-malice-manchester-academy-3-2026-10-06-19-30-00\">Manchester Academy</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 37,
+            "line_index": 26,
             "passed": true,
-            "detail": "post-check passed"
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
       }
     ],
     "refetch": {
-      "attempted": 0,
+      "attempted": 1,
       "improved": 0,
-      "failed": 0,
+      "failed": 1,
       "empty_or_not_better": 0,
-      "skipped": 0
+      "skipped": 1,
+      "reports": [
+        {
+          "fingerprint": "url-nationalrail-co-uk-status-and-disruptions-northern-lines-reopened-disruption-between-manchester-piccadilly-and-reddish-nor-9e3f4bcae41c",
+          "title": "Northern: Lines reopened: disruption between Manchester Piccadilly and Reddish North / Guide Bridge / Stalybridge expected until 08:30",
+          "status": "failed",
+          "url": "https://nationalrail.co.uk/status-and-disruptions/northern-lines-reopened-disruption-between-manchester-piccadilly-and-reddish-nor",
+          "error": "RuntimeError: HTTP 404"
+        },
+        {
+          "fingerprint": "event-event-lake-malice-6th-october-2026-2026-10-06-manchester-academy-8541bb3342d8",
+          "title": "Lake Malice - 6th October 2026",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://manchesteracademy.net/order/gateway/13380743/lake-malice-manchester-academy-3-2026-10-06-19-30-00",
+          "candidate_evidence_chars": 1157
+        }
+      ]
     },
-    "enrich_improved": 6,
-    "false_positive_existing_fact": 2,
+    "enrich_improved": 5,
+    "deterministic_rewrite_rejected": 1,
+    "no_eligible_backup": 1,
+    "false_positive_existing_fact": 4,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 35,
-      "matched_lines": 35,
-      "applicable_lines": 2,
-      "unmatched_lines": 2,
+      "checked_lines": 26,
+      "matched_lines": 26,
+      "applicable_lines": 0,
+      "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -565,135 +529,122 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 37,
-      "resolved_in_place": 37,
+      "checked_lines": 26,
+      "resolved_in_place": 26,
       "unresolved": 0,
       "findings": []
     },
     "status": "resolved"
   },
-  "notes": "Строка соответствует всем требованиям: география, факты и контекст инцидента корректны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного указания должности Энди Бернэма.; Проблема с датой в строке 12 требует исправления для актуальности информации.; Ошибка в строке",
+  "notes": "Строка соответствует требованиям: событие произошло в Bury, что входит в Greater Manchester, и содержит все необходимые элементы.; Прогноз погоды соответствует источнику и географическому контракту.; Строка о пропавшей женщине из Дерби нарушает географический контракт GM.; Время окончания сбоя в строке 8 должно быть ис",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 5,
+        "line_index": 3,
         "section": "Свежие новости",
-        "problem": "Энди Бернэм не является премьер-министром, а мэром Манчестера.",
+        "problem": "География события не соответствует контракту geo_scope.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 8,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Время окончания сбоя указано как 08:30, но в source_claim указано 08:00.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дата закрытия линии Metrolink не соответствует текущей дате выпуска.",
-        "risk": "date",
+        "line_index": 14,
+        "section": "Футбол",
+        "problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждено официальными источниками.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
         "line_index": 15,
         "section": "Футбол",
-        "problem": "Текст утверждает, что Манчестер Сити признан виновным почти по всем 115 обвинениям, что не соответствует источнику.",
+        "problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждено официальными источниками.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 24,
+        "line_index": 17,
         "section": "Городской радар",
-        "problem": "Указано, что Джошуа Керри обвиняется в подготовке террористических актов против Найджела Фаража, но Найджел Фараж не является депутатом.",
+        "problem": "Неверная информация о должности Энди Бернхэма.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 30,
-        "section": "IT и бизнес",
-        "problem": "Неправильное написание имени одного из основателей.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 31,
-        "section": "Business/tech события для тебя",
-        "problem": "Событие проходит онлайн, но указано, что оно для жителей Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 37,
-        "section": "Русскоязычные концерты и стендап UK",
-        "problem": "Отсутствие информации о месте проведения мероприятия.",
-        "risk": "factual",
+        "line_index": 26,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
         "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 5,
+        "line_index": 3,
         "section": "Свежие новости",
+        "action": "strip",
+        "reason": "Событие произошло в Дерби, что не соответствует geo_scope 'gm'.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 8,
+        "section": "Общественный транспорт сегодня",
         "action": "patch",
-        "replacement_text": "• Мэр Манчестера Энди Бернэм отменил предложение о сокращении использования судов с участием присяжных, предложенное бывшим премьер-министром Сэром Кииром Стармером. Новый план предполагает направление менее серьезных дел в магистратские суды и лишение права на выбор суда с присяжными для некоторых правонарушений.",
-        "reason": "Энди Бернэм является мэром Манчестера, а не премьер-министром.",
+        "replacement_text": "• National Rail: линии восстановлены, но сбой в движении продолжается между Манчестер Пикадилли и Реддиш Норт / Гайд Бридж / Сталибридж до 08:00 5 октября 2026 года. Пострадают пассажиры Northern и TransPennine Express.",
+        "reason": "Время окончания сбоя должно быть 08:00, согласно source_claim.",
         "risk": "factual"
       },
       {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
+        "line_index": 14,
+        "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Metrolink: С 19 октября по 1 ноября линия Metrolink будет закрыта, и пассажиры из Алтринчама и Тимперли не получат замещающих автобусов. Им рекомендуется использовать автобус 263 или поезда. Проверьте, есть ли действующие ограничения сегодня.",
-        "reason": "Добавление актуальной информации о влиянии на сегодняшний день.",
-        "risk": "date"
+        "replacement_text": "• Манчестер Сити оспаривает обвинения в нарушении финансовых правил, выдвинутые Премьер-лигой. Клуб подал апелляцию, и теперь его соперники по лиге разделились во мнениях о возможной дисквалификации. Некоторые клубы считают, что отсутствие Сити ослабит лигу, в то время как другие опасаются последствий, связанных с возможным возрождением Европейской суперлиги.",
+        "reason": "Утверждение о признании вины не подтверждено.",
+        "risk": "factual"
       },
       {
         "line_index": 15,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Манчестер Сити обвиняется почти по всем 115 обвинениям Премьер-лиги, включая финансовые нарушения; клуб подтвердил, что будет обжаловать решение.",
-        "reason": "Уточнение статуса обвинений, чтобы избежать неверного утверждения о виновности.",
+        "replacement_text": "• Манчестер Сити и Премьер-лига продолжают трехлетний спор по 115 обвинениям. 4 октября 2026 года трехчленная комиссия рассмотрела дело, и Манчестер Сити подал апелляцию.",
+        "reason": "Утверждение о признании вины не подтверждено.",
         "risk": "factual"
       },
       {
-        "line_index": 24,
+        "line_index": 17,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• 28-летний Джошуа Керри обвиняется в подготовке террористических актов, включая действия против Найджела Фаража; он должен явиться в суд в Вестминстере 7 октября 2026 года.",
-        "reason": "Найджел Фараж не является депутатом, необходимо убрать это утверждение.",
+        "replacement_text": "• Энди Бернхэм завершил свои первые 100 дней в качестве депутата от Makerfield, что не происходило с 1905 года.",
+        "reason": "Энди Бернхэм не является премьер-министром.",
         "risk": "factual"
       },
       {
-        "line_index": 30,
-        "section": "IT и бизнес",
+        "line_index": 26,
+        "section": "Билеты / Ticket Radar",
         "action": "patch",
-        "replacement_text": "• Два 21-летних друга, Джордж Джефферсон и Арт Фрибри, собрали $3 миллиона для своего стартапа в области AI Revnu и выбрали Манчестер вместо Силиконовой долины, отметив доступ к инженерным талантам.",
-        "reason": "Имя Арта Фрибри должно быть исправлено на Арт Фрибри.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 31,
-        "section": "Business/tech события для тебя",
-        "action": "patch",
-        "replacement_text": "• Завтра, 5 октября 2026 года, пройдет бесплатный онлайн-семинар 'Starting a Business Confidently'. Семинар охватывает юридические требования, финансирование и основы финансового управления.",
-        "reason": "Событие проходит онлайн и доступно для всех, а не только для жителей Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 37,
-        "section": "Русскоязычные концерты и стендап UK",
-        "action": "patch",
-        "replacement_text": "• Семинар на русском языке \"Откровенно о сокровенном. Женское тело: время перемен\" запланирован на 8 октября в Лондоне; место проведения будет уточнено позже.",
-        "reason": "Уточнение о том, что информация о месте проведения будет предоставлена позже, чтобы избежать недоразумений.",
-        "risk": "factual"
+        "replacement_text": "• Lake Malice — 6 октября, Manchester Academy. Билеты и время указаны на официальной странице.",
+        "reason": "Дата события указана неверно. Следует исправить на 6 октября 2026 года.",
+        "risk": "date"
       }
     ],
     "warnings": [
-      "Блок 'Выходные в GM' содержит только 6 событий, что соответствует минимальному количеству, но не превышает его. Это может указывать на недостаточную полноту блока.",
-      "judge reduce failed: parse_failed no parseable JSON"
+      "Секция 'Что важно сегодня' отсутствует, что нарушает продуктовую полноту.",
+      "Секция 'Свежие новости' содержит только 5 элементов, что ниже минимального порога.",
+      "Секция 'Городской радар' содержит только 4 элемента, что ниже минимального порога.",
+      "Секция 'Билеты / Ticket Radar' содержит только 1 элемент, что ниже минимального порога.",
+      "Секция 'Еда, открытия и рынки' отсутствует, что нарушает продуктовую полноту."
     ],
-    "notes": "Строка соответствует всем требованиям: география, факты и контекст инцидента корректны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного указания должности Энди Бернэма.; Проблема с датой в строке 12 требует исправления для актуальности информации.; Ошибка в строке",
+    "notes": "Строка соответствует требованиям: событие произошло в Bury, что входит в Greater Manchester, и содержит все необходимые элементы.; Прогноз погоды соответствует источнику и географическому контракту.; Строка о пропавшей женщине из Дерби нарушает географический контракт GM.; Время окончания сбоя в строке 8 должно быть ис",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "partial",
-      "chunk_count": 12,
+      "status": "ok",
+      "chunk_count": 11,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -711,8 +662,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2679,
-          "duration_seconds": 1.159
+          "estimated_tokens": 2698,
+          "duration_seconds": 1.863
         },
         {
           "chunk_id": "chunk-02",
@@ -729,15 +680,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2433,
-          "duration_seconds": 0.99
+          "estimated_tokens": 2466,
+          "duration_seconds": 1.156
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            9
+            7
           ],
           "sections": [
             "Свежие новости"
@@ -747,15 +698,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6015,
-          "duration_seconds": 2.896
+          "estimated_tokens": 5015,
+          "duration_seconds": 2.024
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            10,
-            12
+            8,
+            13
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -765,51 +716,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3652,
-          "duration_seconds": 2.16
+          "estimated_tokens": 5318,
+          "duration_seconds": 2.162
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            13,
-            15
+            14,
+            16
           ],
           "sections": [
             "Футбол"
           ],
           "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3670,
-          "duration_seconds": 2.459
+          "estimated_tokens": 3805,
+          "duration_seconds": 3.555
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            16,
-            23
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 6213,
-          "duration_seconds": 1.235
-        },
-        {
-          "chunk_id": "chunk-07",
-          "status": "ok",
-          "line_range": [
-            24,
-            29
+            17,
+            20
           ],
           "sections": [
             "Городской радар"
@@ -819,51 +752,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5343,
-          "duration_seconds": 41.041
+          "estimated_tokens": 4279,
+          "duration_seconds": 1.741
+        },
+        {
+          "chunk_id": "chunk-07",
+          "status": "ok",
+          "line_range": [
+            21,
+            23
+          ],
+          "sections": [
+            "IT и бизнес"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3653,
+          "duration_seconds": 0.849
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            30,
-            30
+            24,
+            24
           ],
           "sections": [
-            "IT и бизнес"
+            "Business/tech события для тебя"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2662,
-          "duration_seconds": 2.015
+          "estimated_tokens": 2811,
+          "duration_seconds": 22.528
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            31,
-            31
-          ],
-          "sections": [
-            "Business/tech события для тебя"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2811,
-          "duration_seconds": 4.885
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            32,
-            33
+            25,
+            25
           ],
           "sections": [
             "Дальние анонсы"
@@ -873,58 +806,58 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3335,
-          "duration_seconds": 9.643
+          "estimated_tokens": 2721,
+          "duration_seconds": 3.219
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            34,
-            36
+            26,
+            26
           ],
           "sections": [
             "Билеты / Ticket Radar"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 4038,
-          "duration_seconds": 21.155
-        },
-        {
-          "chunk_id": "chunk-12",
-          "status": "ok",
-          "line_range": [
-            37,
-            37
-          ],
-          "sections": [
-            "Русскоязычные концерты и стендап UK"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2732,
-          "duration_seconds": 7.132
+          "estimated_tokens": 2779,
+          "duration_seconds": 15.425
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            27,
+            27
+          ],
+          "sections": [
+            "Русскоязычные концерты и стендап UK"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2768,
+          "duration_seconds": 6.208
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
+        "decision": "warn",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 10178,
-        "duration_seconds": 26.943
+        "warning_count": 5,
+        "error": "",
+        "estimated_tokens": 9734,
+        "duration_seconds": 22.555
       },
       "max_workers": 3,
       "chunk_line_target": 12,
