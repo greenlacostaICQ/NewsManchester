@@ -2,51 +2,73 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 7 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair executor applied 5 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-10-06",
-  "pipeline_run_id": "20261006T080157+0100",
-  "digest_sha256": "b35896a6b7a2b7cb4aa417e83edae6ffc307a335222ef64cfd357cb02830beae",
-  "duration_seconds": 67.512,
-  "confidence": 0.85,
+  "run_date_london": "2026-10-07",
+  "pipeline_run_id": "20261007T080200+0100",
+  "digest_sha256": "a7b9c85c02b892b9b05f8385616e79e434f610e0ac48c4bf790f14f111ec40e4",
+  "duration_seconds": 73.773,
+  "confidence": 0.9,
   "critical_errors": [
     {
       "line_index": 1,
       "section": "Главная история дня",
-      "problem": "Имя жертвы раскрыто, что может нарушать её право на анонимность.",
+      "problem": "Текст содержит ошибку в описании событий: мать погибла через 20 месяцев после инцидента, а не сразу.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 3,
+      "section": "Свежие новости",
+      "problem": "Текст вводит в заблуждение, утверждая, что убийца был освобожден полицией после угроз поджога, хотя это произошло до смертельного поджога.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 12,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Дата события не соответствует текущему дню.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 14,
+      "section": "Футбол",
+      "problem": "Количество обвинений указано неверно.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 15,
+      "section": "Футбол",
+      "problem": "Количество обвинений указано неверно.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 18,
+      "section": "Городской радар",
+      "problem": "Неполное освещение обвинений и контекста.",
       "risk": "sensitive",
       "suggested_action": "repair"
     },
     {
-      "line_index": 4,
-      "section": "Свежие новости",
-      "problem": "Некорректное указание места слушания.",
-      "risk": "factual",
+      "line_index": 39,
+      "section": "Крупные концерты вне GM",
+      "problem": "Текст утверждает, что событие проходит сегодня, но это не соответствует фактической дате.",
+      "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 16,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Ошибка географии: Чидл, Стокпорт, не является частью Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 18,
-      "section": "Футбол",
-      "problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не соответствует источнику, который говорит о возможности признания виновным.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 22,
+      "line_index": 21,
       "section": "Городской радар",
-      "problem": "Некорректное представление событий: TalkTalk не обанкротилась, а была куплена BT.",
-      "risk": "factual",
-      "suggested_action": "repair"
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'fatal' (death/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "death"
     }
   ],
   "actions": [
@@ -54,70 +76,62 @@
       "line_index": 1,
       "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• Жертва насилия рассказала, как ей удалось сбежать от своего абьюзера, после того как он был осуждён на 15 лет за изнасилование и другие преступления. Она хочет, чтобы другие знали, что всегда есть выход из подобной ситуации. Жертва пережила физическое и психологическое насилие во время беременности и после родов, и теперь, когда её обидчик за решёткой, она чувствует себя свободной и готова делиться своим опытом, чтобы помочь другим.",
-      "reason": "Удаление имени жертвы для защиты её анонимности.",
-      "risk": "sensitive"
+      "replacement_text": "• В ходе слушаний по делу Зак Болланда, который 13 дней после освобождения убил женщину и четверых детей в результате поджога, выяснилось, что полиция не проверила его криминальное прошлое, несмотря на предупреждение судьи о \"последнем шансе\". В результате этого трагического инцидента, произошедшего в Уокдене, Salford, в 2017 году, погибли четверо детей, а их мать, получившая серьезные ожоги, скончалась через 20 месяцев.",
+      "reason": "Уточнение факта о времени смерти матери.",
+      "risk": "factual"
     },
     {
-      "line_index": 4,
+      "line_index": 3,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• На слушании в Bolton выяснили, что Мишель Пирсон, убитая в результате нападения с использованием бензиновых бомб, неоднократно сообщала о полученных угрозах и ощущении опасности за несколько недель до трагедии. Она обращалась в социальные службы и к местным властям с просьбой о помощи, однако ей отказали в экстренном жилье, несмотря на её заявления о том, что она и её дети находятся под угрозой.",
-      "reason": "Слушание проходило в Bolton, а не в Salford.",
+      "replacement_text": "• Убийца, использовавший огнемет, был освобожден полицией после угроз поджога дома Мишель Пирсон и разбивания окон за несколько недель до смертельного поджога. В ходе слушания в Коронерском суде Bolton стало известно, что Зак Болланд, несмотря на условный срок за другие преступления, вышел на свободу после 12-минутного допроса без комментариев, что вызвало вопросы о действиях правоохранительных органов. Это произошло до смертельного поджога.",
+      "reason": "Уточнение временной последовательности событий.",
       "risk": "factual"
     },
     {
       "line_index": 12,
       "section": "Общественный транспорт сегодня",
-      "action": "keep",
-      "reason": "Информация о изменениях в расписании поездов Northern в районе Манчестера актуальна и соответствует источнику.",
-      "risk": "factual",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 13,
-      "section": "Общественный транспорт сегодня",
-      "action": "keep",
-      "reason": "Сообщение о задержках на линии Metrolink Аштона/Bury соответствует источнику и актуально.",
-      "risk": "factual",
-      "replacement_text": ""
+      "action": "patch",
+      "replacement_text": "• Metrolink: В период закрытия с 19 октября по 1 ноября пассажиры из Алтринчама и Тимперли не получат замещающих автобусов и должны использовать автобус 263 или поезда. Проверьте актуальные изменения на сегодня.",
+      "reason": "Добавление актуальности для сегодняшнего дня.",
+      "risk": "date"
     },
     {
       "line_index": 14,
-      "section": "Общественный транспорт сегодня",
-      "action": "keep",
-      "reason": "Информация о приостановке и возобновлении сервиса Metrolink между Bury и Whitefield соответствует источнику.",
-      "risk": "factual",
-      "replacement_text": ""
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• Манчестер Сити подал апелляцию на решение о виновности по делу о 114 обвинениях. Новый трехчленный состав комиссии рассмотрит решение, но не будет повторно слушать дело.",
+      "reason": "Количество обвинений должно быть 114, а не 115.",
+      "risk": "factual"
     },
     {
       "line_index": 15,
-      "section": "Общественный транспорт сегодня",
-      "action": "keep",
-      "reason": "Сообщение о закрытии Metrolink и отсутствии замещающих автобусов для Алтринча и Тимперли соответствует источнику.",
-      "risk": "factual",
-      "replacement_text": ""
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• Манчестер Сити подал апелляцию на решение независимой комиссии о виновности в 115 нарушениях финансовых правил Премьер-лиги. Премьер-лиговые клубы, как сообщается, согласны на исключение Сити, если апелляция потерпит неудачу.",
+      "reason": "Количество обвинений должно быть 115, а не 114.",
+      "risk": "factual"
     },
     {
       "line_index": 18,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Манчестер Сити обвиняется по 114 из 115 обвинений, выдвинутых против клуба Премьер-лигой, и подал апелляцию; ожидается, что владелец клуба, шейх Мансур, может продать команду, если апелляция не будет успешной.",
-      "reason": "Утверждение о признании виновным не подтверждается источником.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 22,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• 5 октября 2026 года опубликован анализ эксперта по банкротству Молли Монкс из Parker Walsh о последствиях сделки BT по покупке TalkTalk для 2,5 миллионов клиентов, включая вопросы о непрерывности интернета и возврате средств.",
-      "reason": "Уточнение фактов: TalkTalk не обанкротилась, а была куплена BT.",
-      "risk": "factual"
+      "replacement_text": "• В результате расследования The Mill выяснилось, что молодежная организация Educate & Empower не выплатила зарплату сотрудникам, а один из соучредителей обвиняется в оскорблении подростка.",
+      "reason": "Уточнение роли и обвинений для корректного освещения.",
+      "risk": "sensitive"
+    },
+    {
+      "line_index": 39,
+      "section": "Крупные концерты вне GM",
+      "action": "patch",
+      "replacement_text": "• The Beat — тур: 7 октября, O2 Academy Liverpool; 14 октября, O2 Academy Leeds. Концерт в Ливерпуле проходит сегодня.",
+      "reason": "Уточнение, что именно концерт в Ливерпуле проходит сегодня, а не всё событие.",
+      "risk": "date"
     }
   ],
   "warnings": [
-    "В блоке 'Билеты / Ticket Radar' присутствует событие с датой 22 мая 2027 года, что значительно позже текущей даты выпуска. Это может быть неактуально для текущего выпуска.",
-    "Отсутствие блока 'Что важно сегодня' и 'Еда, открытия и рынки' снижает полноту выпуска. Это может повлиять на восприятие читателями актуальности и разнообразия контента."
+    "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога.",
+    "Секция 'Еда, открытия и рынки' отсутствует, что ниже минимального порога."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -126,85 +140,96 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 5,
+      "Общественный транспорт сегодня": 1,
+      "Что важно сегодня": 1,
       "Футбол": 2,
-      "Городской радар": 9,
-      "IT и бизнес": 2,
+      "Городской радар": 7,
+      "IT и бизнес": 4,
       "Business/tech события для тебя": 3,
-      "Билеты / Ticket Radar": 6,
+      "Билеты / Ticket Radar": 9,
+      "Крупные концерты вне GM": 1,
       "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
+      "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 9,
-      "Билеты / Ticket Radar": 6,
+      "Городской радар": 7,
+      "Билеты / Ticket Radar": 9,
       "Русскоязычные концерты и стендап UK": 1,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 3,
       "Футбол": 2
     },
-    "ticket_items": 7,
-    "core_items": 25,
+    "ticket_items": 11,
+    "core_items": 24,
     "writer_quality_counts": {
-      "included_candidates": 40,
-      "rendered_candidates": 39,
+      "included_candidates": 42,
+      "rendered_candidates": 40,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
       "dropped_low_quality": 1,
-      "replaced_from_plan_backup": 0,
+      "replaced_from_plan_backup": 1,
       "removed_with_reason": 1
     },
     "source_health_counts": {
       "ok": 104,
       "partial": 2,
-      "stale": 7,
-      "empty": 11,
-      "failed": 4,
-      "zero_yield": 89,
+      "stale": 5,
+      "empty": 12,
+      "failed": 5,
+      "zero_yield": 83,
       "no_contribution_breakdown": {
-        "fetch_failed": 4,
-        "all_rejected": 89,
+        "fetch_failed": 5,
+        "all_rejected": 83,
         "idle_no_items": 16
       },
       "zero_contribution_by_stage": {
-        "selected": 41,
-        "written": 48,
+        "written": 45,
         "parsed": 16,
-        "fetched": 4
+        "selected": 38,
+        "fetched": 5
       },
       "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
+      "Что важно сегодня: 1 item(s), emergency floor 3",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "source failures: 4"
+      "source failures: 5"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 22 has unchecked number/date token(s): 2,5"
+      "patch for line 1 has unchecked number/date token(s): 13",
+      "patch for line 12 has unchecked number/date token(s): 1"
     ],
     "can_apply_actions": true,
-    "action_count": 8
+    "action_count": 7
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 39,
-    "matched_lines": 39,
-    "applicable_lines": 4,
+    "checked_lines": 40,
+    "matched_lines": 40,
+    "applicable_lines": 3,
     "unmatched_lines": 0,
-    "critical_omission_count": 0,
-    "critical_omissions": [],
+    "critical_omission_count": 1,
+    "critical_omissions": [
+      {
+        "line_index": 21,
+        "source_url_key": "itv.com/news/granada/2026-10-05/mum-and-four-children-petrified-before-fatal-arson-attack-inquest-hears",
+        "concept": "death",
+        "obligation": "who/what",
+        "source_hit": "fatal"
+      }
+    ],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 0,
+    "pulled_for_rework": 1,
     "still_missing": 0
   },
   "repair_executor": {
@@ -212,203 +237,185 @@
     "dry_run": false,
     "fact_lock_version": "v1",
     "requested": 8,
-    "attempted": 7,
-    "applied": 7,
-    "model_patch_applied": 2,
+    "attempted": 5,
+    "applied": 5,
+    "model_patch_applied": 4,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 1,
-    "stripped": 4,
+    "reserve_replacement_used": 0,
+    "stripped": 1,
     "unresolved": 0,
     "blocking_unresolved": 0,
     "resolved": 8,
-    "resolved_in_place": 3,
-    "resolved_by_replacement": 1,
-    "resolved_by_removal": 4,
-    "fact_lock_rejected": 1,
-    "enrich_attempted": 4,
+    "resolved_in_place": 7,
+    "resolved_by_replacement": 0,
+    "resolved_by_removal": 1,
+    "fact_lock_rejected": 0,
+    "enrich_attempted": 8,
     "post_check_errors": [],
-    "geo_contract_rejected": [
-      {
-        "line_index": 16,
-        "section": "Общественный транспорт сегодня",
-        "geo_scope": "gm",
-        "reason": "Ошибка географии: Чидл, Стокпорт, не является частью Greater Manchester.",
-        "gm_anchor_present": true
-      }
-    ],
+    "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
         "line_index": 1,
         "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Удаление имени жертвы для защиты её анонимности.",
-        "risk": "sensitive",
+        "reason": "Уточнение факта о времени смерти матери.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Имя жертвы раскрыто, что может нарушать её право на анонимность.",
+        "critical_problem": "Текст содержит ошибку в описании событий: мать погибла через 20 месяцев после инцидента, а не сразу.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
         "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cq3691dyd4j6o-c97a0fb41eef",
-        "original_url_identity": "bbc.com/news/articles/cq3691dyd4j6o",
-        "original_html": "<b>Ника, жертва насилия, рассказала, как ей удалось сбежать от своего абьюзера, после того как он был осуждён на 15 лет за изнасилование и другие преступления.</b> Она хочет, чтобы другие знали, что всегда есть выход из подобной ситуации. Ника пережила физическое и психологическое насилие во время беременности и после родов, и теперь, когда её обидчик за решёткой, она чувствует себя свободной и готова делиться своим опытом, чтобы помочь другим. <a href=\"https://bbc.co.uk/news/articles/cq3691dyd4j6o\">BBC Manchester</a>",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c3j47vedg7p9o-e8344fe98ff6",
+        "original_url_identity": "bbc.com/news/articles/c3j47vedg7p9o",
+        "original_html": "<b>В ходе слушаний по делу Зак Болланда, который 13 дней после освобождения убил женщину и четверых детей в результате поджога, выяснилось, что полиция не проверила его криминальное прошлое, несмотря на предупреждение судьи о \"последнем шансе\".</b> В результате этого трагического инцидента, произошедшего в Уокдене, Salford, в 2017 году, погибли четверо детей, а их мать, получившая серьезные ожоги, скончалась через 20 месяцев. <a href=\"https://bbc.co.uk/news/articles/c3j47vedg7p9o\">BBC Manchester</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 4,
+        "line_index": 3,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Слушание проходило в Bolton, а не в Salford.",
+        "reason": "Уточнение временной последовательности событий.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Некорректное указание места слушания.",
+        "critical_problem": "Текст вводит в заблуждение, утверждая, что убийца был освобожден полицией после угроз поджога, хотя это произошло до смертельного поджога.",
         "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-michelle-pearson-inquest-petrol-bomb-34720514-acd32da51782",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/michelle-pearson-inquest-petrol-bomb-34720514",
-        "original_html": "• На слушании в Salford выяснили, что Мишель Пирсон, убитая в результате нападения с использованием бензиновых бомб, неоднократно сообщала о полученных угрозах и ощущении опасности за несколько недель до трагедии. Она обращалась в социальные службы и к местным властям с просьбой о помощи, однако ей отказали в экстренном жилье, несмотря на её заявления о том, что она и её дети находятся под угрозой. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/michelle-pearson-inquest-petrol-bomb-34720514\">MEN</a>",
-        "model_replacement_rejected": "fact_lock: bolton",
-        "replacement_fingerprint": "url-aboutmanchester-co-uk-nine-gille-and-marc-sculptures-bring-endangered-wildlife-to-the-heart-of-manchester-70b01ed9aef1",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "last_24h-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-firebomb-killer-released-police-after-34724646-f1f713b80b4f",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/firebomb-killer-released-police-after-34724646",
+        "original_html": "• Убийца, использовавший огнемет, был освобожден полицией после угроз поджога дома Мишель Пирсон и разбивания окон за несколько недель до смертельного поджога. В ходе слушания в Коронерском суде Bolton стало известно, что Зак Болланд, несмотря на условный срок за другие преступления, вышел на свободу после 12-минутного допроса без комментариев, что вызвало вопросы о действиях правоохранительных органов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/firebomb-killer-released-police-after-34724646\">MEN</a>",
         "post_check_passed": true
       },
       {
         "line_index": 12,
         "section": "Общественный транспорт сегодня",
-        "requested_action": "keep",
-        "reason": "Информация о изменениях в расписании поездов Northern в районе Манчестера актуальна и соответствует источнику.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
+        "requested_action": "patch",
+        "reason": "Добавление актуальности для сегодняшнего дня.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события не соответствует текущему дню.",
         "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
         "plan_slot_id": "transport-01",
-        "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-northern-amended-late-night-early-morning-service-in-the-manchester-area-from-mo-34114b180cba",
-        "original_url_identity": "nationalrail.co.uk/status-and-disruptions/northern-amended-late-night-early-morning-service-in-the-manchester-area-from-mo",
-        "original_html": "• National Rail: С 5 по 9 октября 2026 года изменены графики ночных и утренних поездов Northern в районе Манчестера между Манчестерским аэропортом и Блэкпулом, а также между Манчестер Оксфорд Роуд и Ливерпулем Лайм Стрит. Проверьте расписание перед поездкой. <a href=\"https://nationalrail.co.uk/status-and-disruptions/northern-amended-late-night-early-morning-service-in-the-manchester-area-from-mo\">National Rail Enquiries</a>",
-        "keep_rejected": "known_factual_error",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 13,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "keep",
-        "reason": "Сообщение о задержках на линии Metrolink Аштона/Bury соответствует источнику и актуально.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-02",
-        "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-ashton-bury-line-minor-delay-4a2fbcadacd8",
-        "original_url_identity": "tfgm.com/travel-updates/travel-alerts/ashton-bury-line-minor-delay",
-        "original_html": "• Metrolink: на линии Metrolink Аштона/Bury наблюдаются небольшие задержки из-за неисправности трамвая, пассажиры могут столкнуться с дополнительными ожиданиями. <a href=\"https://tfgm.com/travel-updates/travel-alerts/ashton-bury-line-minor-delay\">TfGM</a>",
-        "keep_rejected": "known_factual_error",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
+        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-22-no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure-81e5f6dadd29",
+        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure",
+        "original_html": "• Metrolink: В период закрытия с 19 октября по 1 ноября пассажиры из Алтринчама и Тимперли не получат замещающих автобусов и должны использовать автобус 263 или поезда. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure\">Altrincham Today</a>",
         "post_check_passed": true
       },
       {
         "line_index": 14,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "keep",
-        "reason": "Информация о приостановке и возобновлении сервиса Metrolink между Bury и Whitefield соответствует источнику.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-live-metrolink-service-suspended-due-34720155-ccc65387479d",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/live-metrolink-service-suspended-due-34720155",
-        "original_html": "• Metrolink: сервис Metrolink был приостановлен между Bury и Whitefield из-за предмета на контактной линии, но возобновился 5 октября 2026 года в 16:43. В это время действовало принятие билетов на местные автобусы. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/live-metrolink-service-suspended-due-34720155\">MEN Latest News</a>",
-        "keep_rejected": "known_factual_error",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "keep",
-        "reason": "Сообщение о закрытии Metrolink и отсутствии замещающих автобусов для Алтринча и Тимперли соответствует источнику.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-04",
-        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-22-no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure-81e5f6dadd29",
-        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure",
-        "original_html": "• Metrolink: В период закрытия Metrolink с 19 октября по 1 ноября пассажиры из Алтринча и Тимперли не получат замещающих автобусов и должны использовать автобус 263 или поезда. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure\">Altrincham Today</a>",
-        "keep_rejected": "known_factual_error",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 18,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Утверждение о признании виновным не подтверждается источником.",
+        "reason": "Количество обвинений должно быть 114, а не 115.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не соответствует источнику, который говорит о возможности признания виновным.",
+        "critical_problem": "Количество обвинений указано неверно.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-abu-dhabi-34718177-de8357774c60",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-abu-dhabi-34718177",
-        "original_html": "• Манчестер Сити признан виновным по 114 из 115 обвинений, выдвинутых против клуба Премьер-лигой, и подал апелляцию; ожидается, что владелец клуба, шейх Мансур, может продать команду, если апелляция не будет успешной. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-abu-dhabi-34718177\">MEN Manchester City</a>",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-appeal-thinking-set-34725396-2370958eade2",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-appeal-thinking-set-34725396",
+        "original_html": "• Манчестер Сити подал апелляцию на решение о виновности по делу о 115 обвинениях. Новый трехчленный состав комиссии рассмотрит решение, но не будет повторно слушать дело. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-appeal-thinking-set-34725396\">MEN Manchester City</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 22,
-        "section": "Городской радар",
+        "line_index": 15,
+        "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Уточнение фактов: TalkTalk не обанкротилась, а была куплена BT.",
+        "reason": "Количество обвинений должно быть 115, а не 114.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Некорректное представление событий: TalkTalk не обанкротилась, а была куплена BT.",
+        "critical_problem": "Количество обвинений указано неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "football-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-appeal-34721755-fea741ee7b5d",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-appeal-34721755",
+        "original_html": "• Манчестер Сити подал апелляцию на решение независимой комиссии о виновности в 114 нарушениях финансовых правил Премьер-лиги. Премьер-лиговые клубы, как сообщается, согласны на исключение Сити, если апелляция потерпит неудачу. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-appeal-34721755\">MEN Manchester City</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 18,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Уточнение роли и обвинений для корректного освещения.",
+        "risk": "sensitive",
+        "critical_error": true,
+        "critical_problem": "Неполное освещение обвинений и контекста.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "city_watch-05",
-        "candidate_fingerprint": "url-prolificnorth-co-uk-news-talktalk-collapse-what-does-it-mean-for-customers-0c1bdc6b23f8",
-        "original_url_identity": "prolificnorth.co.uk/news/talktalk-collapse-what-does-it-mean-for-customers",
-        "original_html": "• 5 октября 2026 года опубликован анализ эксперта по банкротству Молли Монкс из Parker Walsh о последствиях краха TalkTalk для 2,5 миллионов клиентов, включая вопросы о непрерывности интернета и возврате средств. <a href=\"https://prolificnorth.co.uk/news/talktalk-collapse-what-does-it-mean-for-customers\">Prolific North Manchester</a>",
+        "plan_slot_id": "city_watch-03",
+        "candidate_fingerprint": "url-manchestermill-co-uk-bribes-a-defamation-lawsuit-and-elf-nicotine-pouches-whats-been-going-on-at-educate-empower-7856ef2d4df4",
+        "original_url_identity": "manchestermill.co.uk/bribes-a-defamation-lawsuit-and-elf-nicotine-pouches-whats-been-going-on-at-educate-empower",
+        "original_html": "• В результате расследования The Mill выяснилось, что молодежная организация Educate & Empower не выплатила зарплату сотрудникам, а один из соучредителей оскорбил подростка. <a href=\"https://manchestermill.co.uk/bribes-a-defamation-lawsuit-and-elf-nicotine-pouches-whats-been-going-on-at-educate-empower\">The Mill</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 39,
+        "section": "Крупные концерты вне GM",
+        "requested_action": "patch",
+        "reason": "Уточнение, что именно концерт в Ливерпуле проходит сегодня, а не всё событие.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Текст утверждает, что событие проходит сегодня, но это не соответствует фактической дате.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "outside_gm_tickets-01",
+        "candidate_fingerprint": "event-event-the-beat-dance-crazed-too-uk-tour-2026-10-07-o2-academy-liverpool-310c6499e802",
+        "original_url_identity": "ticketmaster.co.uk/the-beat-dance-crazed-too-uk-liverpool-07-10-2026/event/3E006371365DDF22",
+        "original_html": "• <b>The Beat</b> — тур: 7 октября, O2 Academy Liverpool; 14 октября, O2 Academy Leeds. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/the-beat-dance-crazed-too-uk-liverpool-07-10-2026/event/3E006371365DDF22\">Ticketmaster</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 21,
+        "section": "Городской радар",
+        "requested_action": "replace",
+        "reason": "critical source fact dropped in translation: 'fatal' (death/who/what) has no Russian rendering in the shipped line",
+        "risk": "translation",
+        "critical_error": true,
+        "critical_problem": "",
+        "completeness_concept": "death",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "city_watch-07",
+        "candidate_fingerprint": "url-itv-com-news-granada-2026-10-05-mum-and-four-children-petrified-before-fatal-arson-attack-inquest-hears-862356870972",
+        "original_url_identity": "itv.com/news/granada/2026-10-05/mum-and-four-children-petrified-before-fatal-arson-attack-inquest-hears",
+        "original_html": "• На коронерском расследовании стало известно, что мать и четверо ее детей были \"парализованы от страха\" перед фатальным поджогом их дома в Уокдене в декабре 2017 года. <a href=\"https://itv.com/news/granada/2026-10-05/mum-and-four-children-petrified-before-fatal-arson-attack-inquest-hears\">ITV Granada Greater Manchester</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::удаление имени жертвы для защиты её анонимности.",
+        "group_key": "главная история дня::уточнение факта о времени смерти матери.",
         "actions": [
           {
             "line_index": 1,
             "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Удаление имени жертвы для защиты её анонимности.",
-            "risk": "sensitive",
+            "reason": "Уточнение факта о времени смерти матери.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Имя жертвы раскрыто, что может нарушать её право на анонимность.",
+            "critical_problem": "Текст содержит ошибку в описании событий: мать погибла через 20 месяцев после инцидента, а не сразу.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
             "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cq3691dyd4j6o-c97a0fb41eef",
-            "original_url_identity": "bbc.com/news/articles/cq3691dyd4j6o",
-            "original_html": "<b>Ника, жертва насилия, рассказала, как ей удалось сбежать от своего абьюзера, после того как он был осуждён на 15 лет за изнасилование и другие преступления.</b> Она хочет, чтобы другие знали, что всегда есть выход из подобной ситуации. Ника пережила физическое и психологическое насилие во время беременности и после родов, и теперь, когда её обидчик за решёткой, она чувствует себя свободной и готова делиться своим опытом, чтобы помочь другим. <a href=\"https://bbc.co.uk/news/articles/cq3691dyd4j6o\">BBC Manchester</a>",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c3j47vedg7p9o-e8344fe98ff6",
+            "original_url_identity": "bbc.com/news/articles/c3j47vedg7p9o",
+            "original_html": "<b>В ходе слушаний по делу Зак Болланда, который 13 дней после освобождения убил женщину и четверых детей в результате поджога, выяснилось, что полиция не проверила его криминальное прошлое, несмотря на предупреждение судьи о \"последнем шансе\".</b> В результате этого трагического инцидента, произошедшего в Уокдене, Salford, в 2017 году, погибли четверо детей, а их мать, получившая серьезные ожоги, скончалась через 20 месяцев. <a href=\"https://bbc.co.uk/news/articles/c3j47vedg7p9o\">BBC Manchester</a>",
             "post_check_passed": true
           }
         ],
@@ -423,32 +430,30 @@
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::слушание проходило в bolton, а не в salford.",
+        "group_key": "свежие новости::уточнение временной последовательности событий.",
         "actions": [
           {
-            "line_index": 4,
+            "line_index": 3,
             "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Слушание проходило в Bolton, а не в Salford.",
+            "reason": "Уточнение временной последовательности событий.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Некорректное указание места слушания.",
+            "critical_problem": "Текст вводит в заблуждение, утверждая, что убийца был освобожден полицией после угроз поджога, хотя это произошло до смертельного поджога.",
             "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-michelle-pearson-inquest-petrol-bomb-34720514-acd32da51782",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/michelle-pearson-inquest-petrol-bomb-34720514",
-            "original_html": "• На слушании в Salford выяснили, что Мишель Пирсон, убитая в результате нападения с использованием бензиновых бомб, неоднократно сообщала о полученных угрозах и ощущении опасности за несколько недель до трагедии. Она обращалась в социальные службы и к местным властям с просьбой о помощи, однако ей отказали в экстренном жилье, несмотря на её заявления о том, что она и её дети находятся под угрозой. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/michelle-pearson-inquest-petrol-bomb-34720514\">MEN</a>",
-            "model_replacement_rejected": "fact_lock: bolton",
-            "replacement_fingerprint": "url-aboutmanchester-co-uk-nine-gille-and-marc-sculptures-bring-endangered-wildlife-to-the-heart-of-manchester-70b01ed9aef1",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-firebomb-killer-released-police-after-34724646-f1f713b80b4f",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/firebomb-killer-released-police-after-34724646",
+            "original_html": "• Убийца, использовавший огнемет, был освобожден полицией после угроз поджога дома Мишель Пирсон и разбивания окон за несколько недель до смертельного поджога. В ходе слушания в Коронерском суде Bolton стало известно, что Зак Болланд, несмотря на условный срок за другие преступления, вышел на свободу после 12-минутного допроса без комментариев, что вызвало вопросы о действиях правоохранительных органов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/firebomb-killer-released-police-after-34724646\">MEN</a>",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_by_replacement",
+        "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 4,
+            "line_index": 3,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -456,159 +461,54 @@
         "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::информация о изменениях в расписании поездов northern в районе манчестера актуальна и соответствует источнику.",
+        "group_key": "общественный транспорт сегодня::добавление актуальности для сегодняшнего дня.",
         "actions": [
           {
             "line_index": 12,
             "section": "Общественный транспорт сегодня",
-            "requested_action": "keep",
-            "reason": "Информация о изменениях в расписании поездов Northern в районе Манчестера актуальна и соответствует источнику.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
+            "requested_action": "patch",
+            "reason": "Добавление актуальности для сегодняшнего дня.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события не соответствует текущему дню.",
             "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
             "plan_slot_id": "transport-01",
-            "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-northern-amended-late-night-early-morning-service-in-the-manchester-area-from-mo-34114b180cba",
-            "original_url_identity": "nationalrail.co.uk/status-and-disruptions/northern-amended-late-night-early-morning-service-in-the-manchester-area-from-mo",
-            "original_html": "• National Rail: С 5 по 9 октября 2026 года изменены графики ночных и утренних поездов Northern в районе Манчестера между Манчестерским аэропортом и Блэкпулом, а также между Манчестер Оксфорд Роуд и Ливерпулем Лайм Стрит. Проверьте расписание перед поездкой. <a href=\"https://nationalrail.co.uk/status-and-disruptions/northern-amended-late-night-early-morning-service-in-the-manchester-area-from-mo\">National Rail Enquiries</a>",
-            "keep_rejected": "known_factual_error",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 12,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::сообщение о задержках на линии metrolink аштона/bury соответствует источнику и актуально.",
-        "actions": [
-          {
-            "line_index": 13,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "keep",
-            "reason": "Сообщение о задержках на линии Metrolink Аштона/Bury соответствует источнику и актуально.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-02",
-            "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-ashton-bury-line-minor-delay-4a2fbcadacd8",
-            "original_url_identity": "tfgm.com/travel-updates/travel-alerts/ashton-bury-line-minor-delay",
-            "original_html": "• Metrolink: на линии Metrolink Аштона/Bury наблюдаются небольшие задержки из-за неисправности трамвая, пассажиры могут столкнуться с дополнительными ожиданиями. <a href=\"https://tfgm.com/travel-updates/travel-alerts/ashton-bury-line-minor-delay\">TfGM</a>",
-            "keep_rejected": "known_factual_error",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 13,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::информация о приостановке и возобновлении сервиса metrolink между bury и whitefield соответствует источнику.",
-        "actions": [
-          {
-            "line_index": 14,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "keep",
-            "reason": "Информация о приостановке и возобновлении сервиса Metrolink между Bury и Whitefield соответствует источнику.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-live-metrolink-service-suspended-due-34720155-ccc65387479d",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/live-metrolink-service-suspended-due-34720155",
-            "original_html": "• Metrolink: сервис Metrolink был приостановлен между Bury и Whitefield из-за предмета на контактной линии, но возобновился 5 октября 2026 года в 16:43. В это время действовало принятие билетов на местные автобусы. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/live-metrolink-service-suspended-due-34720155\">MEN Latest News</a>",
-            "keep_rejected": "known_factual_error",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 14,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::сообщение о закрытии metrolink и отсутствии замещающих автобусов для алтринча и тимперли соответствует источнику.",
-        "actions": [
-          {
-            "line_index": 15,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "keep",
-            "reason": "Сообщение о закрытии Metrolink и отсутствии замещающих автобусов для Алтринча и Тимперли соответствует источнику.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-04",
             "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-09-22-no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure-81e5f6dadd29",
             "original_url_identity": "altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure",
-            "original_html": "• Metrolink: В период закрытия Metrolink с 19 октября по 1 ноября пассажиры из Алтринча и Тимперли не получат замещающих автобусов и должны использовать автобус 263 или поезда. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure\">Altrincham Today</a>",
-            "keep_rejected": "known_factual_error",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
+            "original_html": "• Metrolink: В период закрытия с 19 октября по 1 ноября пассажиры из Алтринчама и Тимперли не получат замещающих автобусов и должны использовать автобус 263 или поезда. <a href=\"https://altrincham.todaynews.co.uk/news/2026/09/22/no-replacement-buses-for-altrincham-and-timperley-during-two-week-tram-closure\">Altrincham Today</a>",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_by_removal",
+        "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 15,
+            "line_index": 12,
             "passed": true,
-            "detail": "slot removed and source absent"
+            "detail": "post-check passed"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::утверждение о признании виновным не подтверждается источником.",
+        "group_key": "футбол::количество обвинений должно быть 114, а не 115.",
         "actions": [
           {
-            "line_index": 18,
+            "line_index": 14,
             "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Утверждение о признании виновным не подтверждается источником.",
+            "reason": "Количество обвинений должно быть 114, а не 115.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не соответствует источнику, который говорит о возможности признания виновным.",
+            "critical_problem": "Количество обвинений указано неверно.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-abu-dhabi-34718177-de8357774c60",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-abu-dhabi-34718177",
-            "original_html": "• Манчестер Сити признан виновным по 114 из 115 обвинений, выдвинутых против клуба Премьер-лигой, и подал апелляцию; ожидается, что владелец клуба, шейх Мансур, может продать команду, если апелляция не будет успешной. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-abu-dhabi-34718177\">MEN Manchester City</a>",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-appeal-thinking-set-34725396-2370958eade2",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-appeal-thinking-set-34725396",
+            "original_html": "• Манчестер Сити подал апелляцию на решение о виновности по делу о 115 обвинениях. Новый трехчленный состав комиссии рассмотрит решение, но не будет повторно слушать дело. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-appeal-thinking-set-34725396\">MEN Manchester City</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -616,7 +516,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 18,
+            "line_index": 14,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -624,32 +524,129 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::уточнение фактов: talktalk не обанкротилась, а была куплена bt.",
+        "group_key": "футбол::количество обвинений должно быть 115, а не 114.",
         "actions": [
           {
-            "line_index": 22,
-            "section": "Городской радар",
+            "line_index": 15,
+            "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Уточнение фактов: TalkTalk не обанкротилась, а была куплена BT.",
+            "reason": "Количество обвинений должно быть 115, а не 114.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Некорректное представление событий: TalkTalk не обанкротилась, а была куплена BT.",
+            "critical_problem": "Количество обвинений указано неверно.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "city_watch-05",
-            "candidate_fingerprint": "url-prolificnorth-co-uk-news-talktalk-collapse-what-does-it-mean-for-customers-0c1bdc6b23f8",
-            "original_url_identity": "prolificnorth.co.uk/news/talktalk-collapse-what-does-it-mean-for-customers",
-            "original_html": "• 5 октября 2026 года опубликован анализ эксперта по банкротству Молли Монкс из Parker Walsh о последствиях краха TalkTalk для 2,5 миллионов клиентов, включая вопросы о непрерывности интернета и возврате средств. <a href=\"https://prolificnorth.co.uk/news/talktalk-collapse-what-does-it-mean-for-customers\">Prolific North Manchester</a>",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-appeal-34721755-fea741ee7b5d",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-appeal-34721755",
+            "original_html": "• Манчестер Сити подал апелляцию на решение независимой комиссии о виновности в 114 нарушениях финансовых правил Премьер-лиги. Премьер-лиговые клубы, как сообщается, согласны на исключение Сити, если апелляция потерпит неудачу. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-appeal-34721755\">MEN Manchester City</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 22,
+            "line_index": 15,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::уточнение роли и обвинений для корректного освещения.",
+        "actions": [
+          {
+            "line_index": 18,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Уточнение роли и обвинений для корректного освещения.",
+            "risk": "sensitive",
+            "critical_error": true,
+            "critical_problem": "Неполное освещение обвинений и контекста.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "city_watch-03",
+            "candidate_fingerprint": "url-manchestermill-co-uk-bribes-a-defamation-lawsuit-and-elf-nicotine-pouches-whats-been-going-on-at-educate-empower-7856ef2d4df4",
+            "original_url_identity": "manchestermill.co.uk/bribes-a-defamation-lawsuit-and-elf-nicotine-pouches-whats-been-going-on-at-educate-empower",
+            "original_html": "• В результате расследования The Mill выяснилось, что молодежная организация Educate & Empower не выплатила зарплату сотрудникам, а один из соучредителей оскорбил подростка. <a href=\"https://manchestermill.co.uk/bribes-a-defamation-lawsuit-and-elf-nicotine-pouches-whats-been-going-on-at-educate-empower\">The Mill</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 18,
             "passed": true,
             "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "крупные концерты вне gm::уточнение, что именно концерт в ливерпуле проходит сегодня, а не всё событие.",
+        "actions": [
+          {
+            "line_index": 39,
+            "section": "Крупные концерты вне GM",
+            "requested_action": "patch",
+            "reason": "Уточнение, что именно концерт в Ливерпуле проходит сегодня, а не всё событие.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Текст утверждает, что событие проходит сегодня, но это не соответствует фактической дате.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "outside_gm_tickets-01",
+            "candidate_fingerprint": "event-event-the-beat-dance-crazed-too-uk-tour-2026-10-07-o2-academy-liverpool-310c6499e802",
+            "original_url_identity": "ticketmaster.co.uk/the-beat-dance-crazed-too-uk-liverpool-07-10-2026/event/3E006371365DDF22",
+            "original_html": "• <b>The Beat</b> — тур: 7 октября, O2 Academy Liverpool; 14 октября, O2 Academy Leeds. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/the-beat-dance-crazed-too-uk-liverpool-07-10-2026/event/3E006371365DDF22\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 39,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::critical source fact dropped in translation: 'fatal' (death/who/what) has no russian rendering in the shipped line",
+        "actions": [
+          {
+            "line_index": 21,
+            "section": "Городской радар",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'fatal' (death/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
+            "critical_error": true,
+            "critical_problem": "",
+            "completeness_concept": "death",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "city_watch-07",
+            "candidate_fingerprint": "url-itv-com-news-granada-2026-10-05-mum-and-four-children-petrified-before-fatal-arson-attack-inquest-hears-862356870972",
+            "original_url_identity": "itv.com/news/granada/2026-10-05/mum-and-four-children-petrified-before-fatal-arson-attack-inquest-hears",
+            "original_html": "• На коронерском расследовании стало известно, что мать и четверо ее детей были \"парализованы от страха\" перед фатальным поджогом их дома в Уокдене в декабре 2017 года. <a href=\"https://itv.com/news/granada/2026-10-05/mum-and-four-children-petrified-before-fatal-arson-attack-inquest-hears\">ITV Granada Greater Manchester</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 21,
+            "passed": true,
+            "detail": "slot removed and source absent"
           }
         ],
         "known_factual_error": true
@@ -660,17 +657,27 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 0
+      "skipped": 1,
+      "reports": [
+        {
+          "fingerprint": "event-event-the-beat-dance-crazed-too-uk-tour-2026-10-07-o2-academy-liverpool-310c6499e802",
+          "title": "The Beat - Dance Crazed Too UK Tour — event 2026-10-07 — public sale 2025-11-28 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/the-beat-dance-crazed-too-uk-liverpool-07-10-2026/event/3E006371365DDF22",
+          "candidate_evidence_chars": 343
+        }
+      ]
     },
-    "enrich_improved": 4,
-    "deterministic_rewrite_rejected": 5,
-    "no_eligible_backup": 4,
-    "false_positive_existing_fact": 1,
+    "enrich_improved": 8,
+    "false_positive_existing_fact": 3,
+    "deterministic_rewrite_rejected": 1,
+    "no_eligible_backup": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 35,
-      "matched_lines": 35,
-      "applicable_lines": 3,
+      "checked_lines": 39,
+      "matched_lines": 39,
+      "applicable_lines": 2,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -682,51 +689,65 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 35,
-      "resolved_in_place": 35,
+      "checked_lines": 39,
+      "resolved_in_place": 39,
       "unresolved": 0,
       "findings": []
     },
     "status": "resolved"
   },
-  "notes": "Имя жертвы удалено для защиты её анонимности.; Прогноз погоды соответствует источнику и географическому охвату.; Ошибка в указании места слушания в строке 4 требует исправления.; Ошибка в географии: Чидл, Стокпорт, не является частью Greater Manchester, требуется исправление.; Ошибка в фактическом утверждении о признан",
+  "notes": "Исправление необходимо для точности описания событий.; Прогноз погоды соответствует данным Met Office и контракту блока.; Уточнение временной последовательности событий в строке 3 необходимо для предотвращения недопонимания.; Дата события не соответствует текущему дню, добавлено указание на проверку актуальности.; Стро",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.85,
+    "confidence": 0.9,
     "critical_errors": [
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "problem": "Имя жертвы раскрыто, что может нарушать её право на анонимность.",
+        "problem": "Текст содержит ошибку в описании событий: мать погибла через 20 месяцев после инцидента, а не сразу.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "problem": "Текст вводит в заблуждение, утверждая, что убийца был освобожден полицией после угроз поджога, хотя это произошло до смертельного поджога.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дата события не соответствует текущему дню.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 14,
+        "section": "Футбол",
+        "problem": "Количество обвинений указано неверно.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 15,
+        "section": "Футбол",
+        "problem": "Количество обвинений указано неверно.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 18,
+        "section": "Городской радар",
+        "problem": "Неполное освещение обвинений и контекста.",
         "risk": "sensitive",
         "suggested_action": "repair"
       },
       {
-        "line_index": 4,
-        "section": "Свежие новости",
-        "problem": "Некорректное указание места слушания.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 16,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Ошибка географии: Чидл, Стокпорт, не является частью Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 18,
-        "section": "Футбол",
-        "problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не соответствует источнику, который говорит о возможности признания виновным.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 22,
-        "section": "Городской радар",
-        "problem": "Некорректное представление событий: TalkTalk не обанкротилась, а была куплена BT.",
-        "risk": "factual",
+        "line_index": 39,
+        "section": "Крупные концерты вне GM",
+        "problem": "Текст утверждает, что событие проходит сегодня, но это не соответствует фактической дате.",
+        "risk": "date",
         "suggested_action": "repair"
       }
     ],
@@ -735,72 +756,68 @@
         "line_index": 1,
         "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• Жертва насилия рассказала, как ей удалось сбежать от своего абьюзера, после того как он был осуждён на 15 лет за изнасилование и другие преступления. Она хочет, чтобы другие знали, что всегда есть выход из подобной ситуации. Жертва пережила физическое и психологическое насилие во время беременности и после родов, и теперь, когда её обидчик за решёткой, она чувствует себя свободной и готова делиться своим опытом, чтобы помочь другим.",
-        "reason": "Удаление имени жертвы для защиты её анонимности.",
-        "risk": "sensitive"
+        "replacement_text": "• В ходе слушаний по делу Зак Болланда, который 13 дней после освобождения убил женщину и четверых детей в результате поджога, выяснилось, что полиция не проверила его криминальное прошлое, несмотря на предупреждение судьи о \"последнем шансе\". В результате этого трагического инцидента, произошедшего в Уокдене, Salford, в 2017 году, погибли четверо детей, а их мать, получившая серьезные ожоги, скончалась через 20 месяцев.",
+        "reason": "Уточнение факта о времени смерти матери.",
+        "risk": "factual"
       },
       {
-        "line_index": 4,
+        "line_index": 3,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• На слушании в Bolton выяснили, что Мишель Пирсон, убитая в результате нападения с использованием бензиновых бомб, неоднократно сообщала о полученных угрозах и ощущении опасности за несколько недель до трагедии. Она обращалась в социальные службы и к местным властям с просьбой о помощи, однако ей отказали в экстренном жилье, несмотря на её заявления о том, что она и её дети находятся под угрозой.",
-        "reason": "Слушание проходило в Bolton, а не в Salford.",
+        "replacement_text": "• Убийца, использовавший огнемет, был освобожден полицией после угроз поджога дома Мишель Пирсон и разбивания окон за несколько недель до смертельного поджога. В ходе слушания в Коронерском суде Bolton стало известно, что Зак Болланд, несмотря на условный срок за другие преступления, вышел на свободу после 12-минутного допроса без комментариев, что вызвало вопросы о действиях правоохранительных органов. Это произошло до смертельного поджога.",
+        "reason": "Уточнение временной последовательности событий.",
         "risk": "factual"
       },
       {
         "line_index": 12,
         "section": "Общественный транспорт сегодня",
-        "action": "keep",
-        "reason": "Информация о изменениях в расписании поездов Northern в районе Манчестера актуальна и соответствует источнику.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 13,
-        "section": "Общественный транспорт сегодня",
-        "action": "keep",
-        "reason": "Сообщение о задержках на линии Metrolink Аштона/Bury соответствует источнику и актуально.",
-        "risk": "factual"
+        "action": "patch",
+        "replacement_text": "• Metrolink: В период закрытия с 19 октября по 1 ноября пассажиры из Алтринчама и Тимперли не получат замещающих автобусов и должны использовать автобус 263 или поезда. Проверьте актуальные изменения на сегодня.",
+        "reason": "Добавление актуальности для сегодняшнего дня.",
+        "risk": "date"
       },
       {
         "line_index": 14,
-        "section": "Общественный транспорт сегодня",
-        "action": "keep",
-        "reason": "Информация о приостановке и возобновлении сервиса Metrolink между Bury и Whitefield соответствует источнику.",
+        "section": "Футбол",
+        "action": "patch",
+        "replacement_text": "• Манчестер Сити подал апелляцию на решение о виновности по делу о 114 обвинениях. Новый трехчленный состав комиссии рассмотрит решение, но не будет повторно слушать дело.",
+        "reason": "Количество обвинений должно быть 114, а не 115.",
         "risk": "factual"
       },
       {
         "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "action": "keep",
-        "reason": "Сообщение о закрытии Metrolink и отсутствии замещающих автобусов для Алтринча и Тимперли соответствует источнику.",
+        "section": "Футбол",
+        "action": "patch",
+        "replacement_text": "• Манчестер Сити подал апелляцию на решение независимой комиссии о виновности в 115 нарушениях финансовых правил Премьер-лиги. Премьер-лиговые клубы, как сообщается, согласны на исключение Сити, если апелляция потерпит неудачу.",
+        "reason": "Количество обвинений должно быть 115, а не 114.",
         "risk": "factual"
       },
       {
         "line_index": 18,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Манчестер Сити обвиняется по 114 из 115 обвинений, выдвинутых против клуба Премьер-лигой, и подал апелляцию; ожидается, что владелец клуба, шейх Мансур, может продать команду, если апелляция не будет успешной.",
-        "reason": "Утверждение о признании виновным не подтверждается источником.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 22,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• 5 октября 2026 года опубликован анализ эксперта по банкротству Молли Монкс из Parker Walsh о последствиях сделки BT по покупке TalkTalk для 2,5 миллионов клиентов, включая вопросы о непрерывности интернета и возврате средств.",
-        "reason": "Уточнение фактов: TalkTalk не обанкротилась, а была куплена BT.",
-        "risk": "factual"
+        "replacement_text": "• В результате расследования The Mill выяснилось, что молодежная организация Educate & Empower не выплатила зарплату сотрудникам, а один из соучредителей обвиняется в оскорблении подростка.",
+        "reason": "Уточнение роли и обвинений для корректного освещения.",
+        "risk": "sensitive"
+      },
+      {
+        "line_index": 39,
+        "section": "Крупные концерты вне GM",
+        "action": "patch",
+        "replacement_text": "• The Beat — тур: 7 октября, O2 Academy Liverpool; 14 октября, O2 Academy Leeds. Концерт в Ливерпуле проходит сегодня.",
+        "reason": "Уточнение, что именно концерт в Ливерпуле проходит сегодня, а не всё событие.",
+        "risk": "date"
       }
     ],
     "warnings": [
-      "В блоке 'Билеты / Ticket Radar' присутствует событие с датой 22 мая 2027 года, что значительно позже текущей даты выпуска. Это может быть неактуально для текущего выпуска.",
-      "Отсутствие блока 'Что важно сегодня' и 'Еда, открытия и рынки' снижает полноту выпуска. Это может повлиять на восприятие читателями актуальности и разнообразия контента."
+      "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога.",
+      "Секция 'Еда, открытия и рынки' отсутствует, что ниже минимального порога."
     ],
-    "notes": "Имя жертвы удалено для защиты её анонимности.; Прогноз погоды соответствует источнику и географическому охвату.; Ошибка в указании места слушания в строке 4 требует исправления.; Ошибка в географии: Чидл, Стокпорт, не является частью Greater Manchester, требуется исправление.; Ошибка в фактическом утверждении о признан",
+    "notes": "Исправление необходимо для точности описания событий.; Прогноз погоды соответствует данным Met Office и контракту блока.; Уточнение временной последовательности событий в строке 3 необходимо для предотвращения недопонимания.; Дата события не соответствует текущему дню, добавлено указание на проверку актуальности.; Стро",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 10,
+      "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -818,8 +835,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2663,
-          "duration_seconds": 3.955
+          "estimated_tokens": 2683,
+          "duration_seconds": 3.269
         },
         {
           "chunk_id": "chunk-02",
@@ -836,8 +853,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2464,
-          "duration_seconds": 1.27
+          "estimated_tokens": 2465,
+          "duration_seconds": 1.144
         },
         {
           "chunk_id": "chunk-03",
@@ -854,51 +871,69 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7305,
-          "duration_seconds": 3.929
+          "estimated_tokens": 7137,
+          "duration_seconds": 3.541
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            16
+            12
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
-          "action_count": 4,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4628,
-          "duration_seconds": 4.066
+          "estimated_tokens": 2652,
+          "duration_seconds": 2.72
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            17,
-            18
+            13,
+            13
           ],
           "sections": [
-            "Футбол"
+            "Что важно сегодня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3155,
-          "duration_seconds": 2.708
+          "estimated_tokens": 2697,
+          "duration_seconds": 1.208
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            19,
-            27
+            14,
+            15
+          ],
+          "sections": [
+            "Футбол"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3145,
+          "duration_seconds": 3.319
+        },
+        {
+          "chunk_id": "chunk-07",
+          "status": "ok",
+          "line_range": [
+            16,
+            22
           ],
           "sections": [
             "Городской радар"
@@ -908,15 +943,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6707,
-          "duration_seconds": 2.88
+          "estimated_tokens": 5937,
+          "duration_seconds": 2.601
         },
         {
-          "chunk_id": "chunk-07",
+          "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            28,
-            29
+            23,
+            26
           ],
           "sections": [
             "IT и бизнес"
@@ -926,15 +961,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3131,
-          "duration_seconds": 2.445
+          "estimated_tokens": 4255,
+          "duration_seconds": 26.903
         },
         {
-          "chunk_id": "chunk-08",
+          "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            30,
-            32
+            27,
+            29
           ],
           "sections": [
             "Business/tech события для тебя"
@@ -944,33 +979,51 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4133,
-          "duration_seconds": 16.641
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            33,
-            38
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 5692,
-          "duration_seconds": 29.954
+          "estimated_tokens": 4246,
+          "duration_seconds": 3.433
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
+            30,
+            38
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 7295,
+          "duration_seconds": 40.673
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
             39,
             39
+          ],
+          "sections": [
+            "Крупные концерты вне GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2726,
+          "duration_seconds": 7.114
+        },
+        {
+          "chunk_id": "chunk-12",
+          "status": "ok",
+          "line_range": [
+            40,
+            40
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
@@ -980,8 +1033,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2797,
-          "duration_seconds": 6.202
+          "estimated_tokens": 2733,
+          "duration_seconds": 4.812
         }
       ],
       "reduce": {
@@ -992,10 +1045,10 @@
         "decision": "warn",
         "critical_error_count": 0,
         "action_count": 0,
-        "warning_count": 1,
+        "warning_count": 2,
         "error": "",
-        "estimated_tokens": 10203,
-        "duration_seconds": 24.539
+        "estimated_tokens": 10512,
+        "duration_seconds": 24.163
       },
       "max_workers": 3,
       "chunk_line_target": 12,
