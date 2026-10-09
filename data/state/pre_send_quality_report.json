@@ -2,136 +2,129 @@
   "status": "partial",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair completed with honest unresolved non-factual findings: operations=0, prose=2",
+  "reason": "pre-send repair completed with honest unresolved non-factual findings: operations=1, prose=1",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-10-08",
-  "pipeline_run_id": "20261008T080202+0100",
-  "digest_sha256": "b4c444daead2c963ace76d5502348ca1e3ce74a5148867c40a2566523cfc1555",
-  "duration_seconds": 115.005,
+  "run_date_london": "2026-10-09",
+  "pipeline_run_id": "20261009T080142+0100",
+  "digest_sha256": "10b6cc837eae91e1b835b1ed94ac540d0ac245776c260277695d67663a799248",
+  "duration_seconds": 98.114,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 3,
-      "section": "Свежие новости",
-      "problem": "Неправильное указание географии события.",
-      "risk": "geo",
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Не указано, что арестованный мужчина в возрасте 60 лет.",
+      "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 14,
-      "section": "Футбол",
-      "problem": "Текст утверждает, что Манчестер Сити признаны виновными, но в источнике указано, что клуб подал апелляцию, что подразумевает, что решение не окончательное.",
+      "line_index": 3,
+      "section": "Свежие новости",
+      "problem": "Неправильное указание причины ареста.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
       "line_index": 16,
-      "section": "Выходные в GM",
-      "problem": "Событие находится в Ланкастере, что не соответствует geo_scope GM.",
-      "risk": "geo",
-      "suggested_action": "strip"
+      "section": "Общественный транспорт сегодня",
+      "problem": "Дата запуска нового маршрута указана неверно. Должно быть с 19 октября по 1 ноября.",
+      "risk": "date",
+      "suggested_action": "repair"
     },
     {
-      "line_index": 28,
+      "line_index": 19,
+      "section": "Футбол",
+      "problem": "Неверное утверждение о признании вины.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 37,
       "section": "Выходные в GM",
       "problem": "Дата события указана неверно.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 29,
-      "section": "Выходные в GM",
-      "problem": "Цена для покупателей указана неверно.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 34,
+      "line_index": 41,
       "section": "Городской радар",
-      "problem": "Неправильное использование термина 'осуждённый'. Зак Болланд был арестован и освобождён полицией, но не осуждён на момент упоминания.",
-      "risk": "factual",
+      "problem": "Не упомянуто, что ясли находятся в центре полицейского расследования.",
+      "risk": "sensitive",
       "suggested_action": "repair"
-    },
-    {
-      "line_index": 61,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дата события указана не полностью, что может ввести в заблуждение.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 13,
-      "section": "Футбол",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "death"
     }
   ],
   "actions": [
     {
+      "line_index": 1,
+      "section": "Главная история дня",
+      "action": "patch",
+      "replacement_text": "• На улице Брингс Драйв в Харвуде, Bolton, был найден мертвый мужчина, и мужчина в возрасте 60 лет арестован по подозрению в убийстве.",
+      "reason": "Уточнение возраста арестованного мужчины для соответствия фактам.",
+      "risk": "factual"
+    },
+    {
       "line_index": 3,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• В Манчестере 7 октября 2026 года в суде на Миншулл-стрит 38-летний Шон Пирс признал себя виновным в сексуальном насилии над женщиной, которую её муж без её ведома на протяжении более 20 лет подвергал наркотическому воздействию и изнасилованию. Мужчина, имя которого не раскрывается для защиты прав жены, обвиняется в том, что пригласил 13 других мужчин для совершения насилия над ней в их доме в Большом Манчестере. Судебный процесс продолжается, и ожидается, что приговор будет вынесен после завершения разбирательства по делу остальных обвиняемых.",
-      "reason": "Уточнение географии события в соответствии с источником.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 14,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Манчестер Сити обвиняются в 114 нарушениях финансовых правил Премьер-лиги, включая использование \"фальшивых\" спонсорских сделок для завышения доходов почти на 900 миллионов фунтов стерлингов с 2009 по 2018 год. Клуб отрицает обвинения и подал апелляцию.",
-      "reason": "Утверждение о виновности требует корректировки, так как клуб подал апелляцию.",
+      "replacement_text": "• В детском саду Mini Fingers в Ирламе, Солфорд, было найдено огнестрельное оружие и значительное количество патронов. Два мужчины арестованы по подозрению в причастности к этому инциденту.",
+      "reason": "Уточнение причины ареста в соответствии с источником.",
       "risk": "factual"
     },
     {
       "line_index": 16,
-      "section": "Выходные в GM",
-      "action": "strip",
-      "reason": "Событие проходит в Ланкастере, что не соответствует требованиям geo_scope GM.",
-      "risk": "geo",
+      "section": "Общественный транспорт сегодня",
+      "action": "patch",
+      "replacement_text": "• TfGM объявил о запуске нового прямого автобусного маршрута между Альтринчемом и Пикадилли каждые 15 минут с 19 октября по 1 ноября в связи с закрытием линии Metrolink.",
+      "reason": "Дата запуска нового маршрута указана неверно.",
+      "risk": "date"
+    },
+    {
+      "line_index": 19,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• Манчестер Сити обвиняется в 114 нарушениях финансовых правил Премьер-лиги и подал апелляцию на это решение.",
+      "reason": "Клуб обвиняется, но не признан виновным.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 20,
+      "section": "Футбол",
+      "action": "keep",
+      "reason": "Строка корректна и соответствует источнику.",
+      "risk": "factual",
       "replacement_text": ""
     },
     {
-      "line_index": 28,
+      "line_index": 37,
       "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• 11 октября в Macron Stadium — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, можно с собакой, есть туалеты. Проверьте дату, время и бронирование перед планированием.",
-      "reason": "Дата события указана неверно, необходимо добавить предупреждение о проверке даты.",
+      "replacement_text": "• 11 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
+      "reason": "Дата события должна быть 11 октября, а не 10 мая.",
       "risk": "date"
     },
     {
-      "line_index": 29,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 11 октября в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный для покупателей.",
-      "reason": "Цена для покупателей указана неверно, вход должен быть свободным.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 34,
+      "line_index": 41,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• На коронерском расследовании стало известно, что Зак Болланд, позже обвинённый в убийстве матери и четырёх детей в результате поджога, был освобождён полицией, несмотря на предупреждение о 'последнем шансе'.",
-      "reason": "Исправление фактической ошибки в описании статуса Зака Болланда на момент события.",
-      "risk": "factual"
+      "replacement_text": "• Ясли Mini Fingers в Ирламе, находящиеся в центре полицейского расследования, закрыты из-за нашествия крыс; приказ о запрете был выдан 2 октября.",
+      "reason": "Добавление информации о полицейском расследовании для полноты и точности.",
+      "risk": "sensitive"
     },
     {
-      "line_index": 61,
+      "line_index": 56,
       "section": "Билеты / Ticket Radar",
       "action": "patch",
-      "replacement_text": "• Westlife The Anniversary World Tour — 23-25 октября, Co-op Live. Билеты и время указаны на официальной странице.",
-      "reason": "Указание полного диапазона дат события для точности.",
-      "risk": "date"
+      "replacement_text": "• Westlife The Anniversary World Tour — 23 октября, Co-op Live. Билеты и время указаны на официальной странице.",
+      "reason": "Исправление перевода названия тура на русский язык.",
+      "risk": "translation"
     }
   ],
   "warnings": [
-    "В разделе 'Business/tech события для тебя' все события соответствуют географическому контракту и содержат необходимую информацию. Однако, плотность информации может быть высокой для некоторых читателей, что может затруднить восприятие.",
-    "В блоке 'Билеты / Ticket Radar' много событий на одну и ту же дату (8 октября), что может создать впечатление перегруженности. Возможно, стоит разнообразить даты или добавить больше информации о каждом событии.",
+    "Секция 'Выходные в GM' содержит только 6 событий, что соответствует минимальному требованию, но не превышает его. Это может ограничить разнообразие и интерес для читателей.",
+    "Исправлен перевод названия тура Westlife на русский язык в строке 56.",
     "judge reduce failed: parse_failed no parseable JSON"
   ],
   "product_completeness": {
@@ -141,281 +134,285 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 1,
+      "Общественный транспорт сегодня": 5,
+      "Что важно сегодня": 2,
       "Футбол": 2,
       "Выходные в GM": 15,
-      "Городской радар": 6,
-      "Еда, открытия и рынки": 2,
-      "IT и бизнес": 4,
-      "Business/tech события для тебя": 3,
-      "Билеты / Ticket Radar": 13
+      "Городской радар": 5,
+      "IT и бизнес": 1,
+      "Билеты / Ticket Radar": 11,
+      "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
+      "Что важно сегодня": 2,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 6,
+      "Городской радар": 5,
       "Выходные в GM": 15,
-      "Билеты / Ticket Radar": 13,
-      "Русскоязычные концерты и стендап UK": 0,
-      "Еда, открытия и рынки": 2,
-      "Business/tech события для тебя": 3,
+      "Билеты / Ticket Radar": 11,
+      "Русскоязычные концерты и стендап UK": 1,
+      "Еда, открытия и рынки": 0,
+      "Business/tech события для тебя": 0,
       "Футбол": 2
     },
-    "ticket_items": 13,
-    "core_items": 39,
+    "ticket_items": 12,
+    "core_items": 35,
     "writer_quality_counts": {
-      "included_candidates": 59,
-      "rendered_candidates": 57,
+      "included_candidates": 56,
+      "rendered_candidates": 53,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
       "dropped_low_quality": 2,
-      "replaced_from_plan_backup": 0,
+      "replaced_from_plan_backup": 1,
       "removed_with_reason": 2
     },
     "source_health_counts": {
-      "ok": 104,
+      "ok": 106,
       "partial": 2,
-      "stale": 8,
+      "stale": 4,
       "empty": 11,
-      "failed": 4,
-      "zero_yield": 74,
+      "failed": 5,
+      "zero_yield": 78,
       "no_contribution_breakdown": {
-        "fetch_failed": 4,
-        "all_rejected": 74,
-        "idle_no_items": 14
+        "fetch_failed": 5,
+        "all_rejected": 78,
+        "idle_no_items": 13
       },
       "zero_contribution_by_stage": {
-        "written": 35,
-        "selected": 39,
-        "parsed": 14,
-        "fetched": 4
+        "selected": 38,
+        "written": 40,
+        "parsed": 13,
+        "fetched": 5
       },
       "weekend_source_coverage_incidents": 47
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
-      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
-      "Еда, открытия и рынки: 2 item(s), emergency floor 3",
-      "source failures: 4"
+      "Что важно сегодня: 2 item(s), emergency floor 3",
+      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
+      "Business/tech события для тебя: 0 item(s), emergency floor 1",
+      "source failures: 5"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 14 has unchecked number/date token(s): 2009, 2018, 900"
+      "patch for line 1 has unchecked number/date token(s): 60",
+      "patch for line 37 has unchecked number/date token(s): 11"
     ],
     "can_apply_actions": true,
-    "action_count": 7
+    "action_count": 8
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 57,
-    "matched_lines": 57,
-    "applicable_lines": 2,
+    "checked_lines": 53,
+    "matched_lines": 53,
+    "applicable_lines": 4,
     "unmatched_lines": 4,
-    "critical_omission_count": 1,
-    "critical_omissions": [
-      {
-        "line_index": 13,
-        "source_url_key": "manchestereveningnews.co.uk/sport/football/sir-alex-ferguson-most-memorable-34698755",
-        "concept": "death",
-        "obligation": "who/what",
-        "source_hit": "death"
-      }
-    ],
+    "critical_omission_count": 0,
+    "critical_omissions": [],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 1,
+    "pulled_for_rework": 0,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 7,
-    "attempted": 3,
+    "requested": 8,
+    "attempted": 4,
     "applied": 3,
-    "model_patch_applied": 1,
+    "model_patch_applied": 2,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 2,
+    "reserve_replacement_used": 1,
     "stripped": 0,
-    "unresolved": 0,
+    "unresolved": 1,
     "blocking_unresolved": 0,
     "resolved": 7,
-    "resolved_in_place": 5,
-    "resolved_by_replacement": 2,
+    "resolved_in_place": 6,
+    "resolved_by_replacement": 1,
     "resolved_by_removal": 0,
     "fact_lock_rejected": 0,
     "enrich_attempted": 7,
     "post_check_errors": [],
-    "geo_contract_rejected": [
-      {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "geo_scope": "gm",
-        "reason": "Уточнение географии события в соответствии с источником.",
-        "gm_anchor_present": true
-      }
-    ],
+    "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 14,
-        "section": "Футбол",
+        "line_index": 1,
+        "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Утверждение о виновности требует корректировки, так как клуб подал апелляцию.",
+        "reason": "Уточнение возраста арестованного мужчины для соответствия фактам.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Текст утверждает, что Манчестер Сити признаны виновными, но в источнике указано, что клуб подал апелляцию, что подразумевает, что решение не окончательное.",
+        "critical_problem": "Не указано, что арестованный мужчина в возрасте 60 лет.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-burnham-34733030-69155c8ec1bb",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-burnham-34733030",
-        "original_html": "• Манчестер Сити признаны виновными в 114 нарушениях финансовых правил Премьер-лиги, включая использование \"фальшивых\" спонсорских сделок для завышения доходов почти на 900 миллионов фунтов стерлингов с 2009 по 2018 год. Клуб отрицает обвинения и подал апелляцию. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-burnham-34733030\">MEN Manchester City</a>",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-double-shock-quiet-bolton-street-34738473-990d6c51f450",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/double-shock-quiet-bolton-street-34738473",
+        "original_html": "<b>На улице Брингс Драйв в Харвуде, Bolton, был найден мертвый мужчина, и другой мужчина арестован по подозрению в убийстве.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/double-shock-quiet-bolton-street-34738473\">MEN</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "requested_action": "patch",
+        "reason": "Уточнение причины ареста в соответствии с источником.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неправильное указание причины ареста.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "last_24h-01",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cqzrd3k802eno-bd241ef92df7",
+        "original_url_identity": "bbc.com/news/articles/cqzrd3k802eno",
+        "original_html": "• В детском саду Mini Fingers в Ирламе, Солфорд, было найдено огнестрельное оружие и значительное количество патронов. Два мужчины арестованы по подозрению в наркопреступлениях. <a href=\"https://bbc.co.uk/news/articles/cqzrd3k802eno\">BBC Manchester</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
         "line_index": 16,
-        "section": "Выходные в GM",
-        "requested_action": "strip",
-        "reason": "Событие проходит в Ланкастере, что не соответствует требованиям geo_scope GM.",
-        "risk": "geo",
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "patch",
+        "reason": "Дата запуска нового маршрута указана неверно.",
+        "risk": "date",
         "critical_error": true,
-        "critical_problem": "Событие находится в Ланкастере, что не соответствует geo_scope GM.",
+        "critical_problem": "Дата запуска нового маршрута указана неверно. Должно быть с 19 октября по 1 ноября.",
         "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "weekend_activities-01",
-        "candidate_fingerprint": "event-event-c-altfocus-photography-2026-10-08-various-venues-across-lancaster-7916da0a686f",
-        "original_url_identity": "manchestersfinest.com/events/lancaster-music-festival",
-        "original_html": "• 9 октября в Various Venues Across Lancaster — c: Altfocus Photography. На площадке: фестиваль, еда, живая музыка. <a href=\"https://manchestersfinest.com/events/lancaster-music-festival\">Manchester&#x27;s Finest Events</a>",
-        "replacement_fingerprint": "event-event-sense-and-sensibility-u-a-new-take-on-jane-austen-s-iconic-novel-starring-daisy-edgar-jone-2026-10-08-home-0ce5cb1cf90b",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "transport-05",
+        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-08-common-sense-prevails-as-altrincham-gets-direct-buses-during-tram-closure-b41833896b59",
+        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/10/08/common-sense-prevails-as-altrincham-gets-direct-buses-during-tram-closure",
+        "original_html": "• TfGM объявил о запуске нового прямого автобусного маршрута между Альтринчемом и Пикадилли каждые 15 минут с 19 октября по 1 ноября в связи с закрытием линии Metrolink. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/08/common-sense-prevails-as-altrincham-gets-direct-buses-during-tram-closure\">Altrincham Today</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 28,
+        "line_index": 19,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Клуб обвиняется, но не признан виновным.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неверное утверждение о признании вины.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-burnham-34733030-69155c8ec1bb",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-burnham-34733030",
+        "original_html": "• Манчестер Сити признан виновным в 114 нарушениях финансовых правил Премьер-лиги и подал апелляцию на это решение. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-burnham-34733030\">MEN Manchester City</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 20,
+        "section": "Футбол",
+        "requested_action": "keep",
+        "reason": "Строка корректна и соответствует источнику.",
+        "risk": "factual",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "football-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-jose-mourinho-man-city-charges-34738212-0c16eb881ded",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/jose-mourinho-man-city-charges-34738212",
+        "original_html": "• Главный тренер Реала Жозе Моуринью пошутил о деле Манчестер Сити, заявив, что ему повезет, если он доживет до окончательного решения. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/jose-mourinho-man-city-charges-34738212\">MEN Manchester City</a>",
+        "keep_rejected": "known_factual_error",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-manchester-united-hero-doubts-michael-34733438-8608d3177138",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 37,
         "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Дата события указана неверно, необходимо добавить предупреждение о проверке даты.",
+        "reason": "Дата события должна быть 11 октября, а не 10 мая.",
         "risk": "date",
         "critical_error": true,
         "critical_problem": "Дата события указана неверно.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-08",
-        "candidate_fingerprint": "event-id-jsonld-event-319317689140-3ad91fa630fd",
-        "original_url_identity": "carbootdirectory.co.uk/listings/bolton-car-boot",
-        "original_html": "• 11 октября в Macron Stadium — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, можно с собакой, есть туалеты. <a href=\"https://carbootdirectory.co.uk/listings/bolton-car-boot\">Bolton Car Boot Sale</a>",
+        "plan_slot_id": "weekend_activities-12",
+        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+        "original_html": "• 11 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 29,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Цена для покупателей указана неверно, вход должен быть свободным.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Цена для покупателей указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-09",
-        "candidate_fingerprint": "event-event-the-big-stockport-car-boot-romiley-2026-10-11-waterside-farm-otterspool-road-romiley-stockport-sk6-3lq-04b48602603d",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
-        "original_html": "• 11 октября в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 34,
+        "line_index": 41,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Исправление фактической ошибки в описании статуса Зака Болланда на момент события.",
-        "risk": "factual",
+        "reason": "Добавление информации о полицейском расследовании для полноты и точности.",
+        "risk": "sensitive",
         "critical_error": true,
-        "critical_problem": "Неправильное использование термина 'осуждённый'. Зак Болланд был арестован и освобождён полицией, но не осуждён на момент упоминания.",
+        "critical_problem": "Не упомянуто, что ясли находятся в центре полицейского расследования.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "url-itv-com-news-granada-2026-10-06-firebomb-killer-released-by-police-despite-last-chance-warning-inquest-hears-c82511d473b4",
-        "original_url_identity": "itv.com/news/granada/2026-10-06/firebomb-killer-released-by-police-despite-last-chance-warning-inquest-hears",
-        "original_html": "• На коронерском расследовании стало известно, что Зак Болланд, позже осуждённый за убийство матери и четырёх детей в результате поджога, был освобождён полицией, несмотря на предупреждение о 'последнем шансе'. <a href=\"https://itv.com/news/granada/2026-10-06/firebomb-killer-released-by-police-despite-last-chance-warning-inquest-hears\">ITV Granada Greater Manchester</a>",
-        "verification": "structured fact already rendered correctly",
+        "method": "model_patch",
+        "plan_slot_id": "city_watch-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-nursery-centre-police-investigation-shut-34735314-9b872ebc87c9",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/nursery-centre-police-investigation-shut-34735314",
+        "original_html": "• Ясли Mini Fingers в Ирламе закрыты из-за нашествия крыс; приказ о запрете был выдан 2 октября. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/nursery-centre-police-investigation-shut-34735314\">MEN</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 61,
+        "line_index": 56,
         "section": "Билеты / Ticket Radar",
         "requested_action": "patch",
-        "reason": "Указание полного диапазона дат события для точности.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана не полностью, что может ввести в заблуждение.",
+        "reason": "Исправление перевода названия тура на русский язык.",
+        "risk": "translation",
+        "critical_error": false,
+        "critical_problem": "",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "ticket_radar-13",
+        "outcome": "unresolved",
+        "method": "",
+        "plan_slot_id": "ticket_radar-11",
         "candidate_fingerprint": "event-event-westlife-the-anniversary-world-tour-fri-23-oct-2026-sun-25-oct-2026-2026-10-23-co-op-live-3a1d3ee59e2e",
         "original_url_identity": "cooplive.com/events/westlife-typc",
-        "original_html": "• <b>Westlife The Anniversary World Tour</b> — 23 октября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/westlife-typc\">Co-op Live</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 13,
-        "section": "Футбол",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
-        "risk": "translation",
-        "critical_error": true,
-        "critical_problem": "",
-        "completeness_concept": "death",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-sir-alex-ferguson-most-memorable-34698755-7fe5a7a2501a",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/sir-alex-ferguson-most-memorable-34698755",
-        "original_html": "• Мемуары Сэра Алекса Фергюсона, \"Игры моей жизни\", выпущены 8 октября 2026 года, рассказывая о 21 матче, которые были для него наиболее значимыми. <a href=\"https://manchestereveningnews.co.uk/sport/football/sir-alex-ferguson-most-memorable-34698755\">MEN Manchester United</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-pep-guardiola-make-man-city-34732692-f3691a872a48",
-        "post_check_passed": true
+        "original_html": "• <b>Westlife The годовщина World Tour</b> — 23 октября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/westlife-typc\">Co-op Live</a>",
+        "model_replacement_rejected": "still_needs_editor",
+        "backup_outcome": "no_eligible_backup",
+        "post_check_passed": false
       }
     ],
     "operations": [
       {
-        "group_key": "футбол::утверждение о виновности требует корректировки, так как клуб подал апелляцию.",
+        "group_key": "главная история дня::уточнение возраста арестованного мужчины для соответствия фактам.",
         "actions": [
           {
-            "line_index": 14,
-            "section": "Футбол",
+            "line_index": 1,
+            "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Утверждение о виновности требует корректировки, так как клуб подал апелляцию.",
+            "reason": "Уточнение возраста арестованного мужчины для соответствия фактам.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Текст утверждает, что Манчестер Сити признаны виновными, но в источнике указано, что клуб подал апелляцию, что подразумевает, что решение не окончательное.",
+            "critical_problem": "Не указано, что арестованный мужчина в возрасте 60 лет.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-burnham-34733030-69155c8ec1bb",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-burnham-34733030",
-            "original_html": "• Манчестер Сити признаны виновными в 114 нарушениях финансовых правил Премьер-лиги, включая использование \"фальшивых\" спонсорских сделок для завышения доходов почти на 900 миллионов фунтов стерлингов с 2009 по 2018 год. Клуб отрицает обвинения и подал апелляцию. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-burnham-34733030\">MEN Manchester City</a>",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-double-shock-quiet-bolton-street-34738473-990d6c51f450",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/double-shock-quiet-bolton-street-34738473",
+            "original_html": "<b>На улице Брингс Драйв в Харвуде, Bolton, был найден мертвый мужчина, и другой мужчина арестован по подозрению в убийстве.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/double-shock-quiet-bolton-street-34738473\">MEN</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 14,
+            "line_index": 1,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -423,31 +420,128 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::событие проходит в ланкастере, что не соответствует требованиям geo_scope gm.",
+        "group_key": "свежие новости::уточнение причины ареста в соответствии с источником.",
+        "actions": [
+          {
+            "line_index": 3,
+            "section": "Свежие новости",
+            "requested_action": "patch",
+            "reason": "Уточнение причины ареста в соответствии с источником.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильное указание причины ареста.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cqzrd3k802eno-bd241ef92df7",
+            "original_url_identity": "bbc.com/news/articles/cqzrd3k802eno",
+            "original_html": "• В детском саду Mini Fingers в Ирламе, Солфорд, было найдено огнестрельное оружие и значительное количество патронов. Два мужчины арестованы по подозрению в наркопреступлениях. <a href=\"https://bbc.co.uk/news/articles/cqzrd3k802eno\">BBC Manchester</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 3,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "общественный транспорт сегодня::дата запуска нового маршрута указана неверно.",
         "actions": [
           {
             "line_index": 16,
-            "section": "Выходные в GM",
-            "requested_action": "strip",
-            "reason": "Событие проходит в Ланкастере, что не соответствует требованиям geo_scope GM.",
-            "risk": "geo",
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "patch",
+            "reason": "Дата запуска нового маршрута указана неверно.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Событие находится в Ланкастере, что не соответствует geo_scope GM.",
+            "critical_problem": "Дата запуска нового маршрута указана неверно. Должно быть с 19 октября по 1 ноября.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "transport-05",
+            "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-08-common-sense-prevails-as-altrincham-gets-direct-buses-during-tram-closure-b41833896b59",
+            "original_url_identity": "altrincham.todaynews.co.uk/news/2026/10/08/common-sense-prevails-as-altrincham-gets-direct-buses-during-tram-closure",
+            "original_html": "• TfGM объявил о запуске нового прямого автобусного маршрута между Альтринчемом и Пикадилли каждые 15 минут с 19 октября по 1 ноября в связи с закрытием линии Metrolink. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/08/common-sense-prevails-as-altrincham-gets-direct-buses-during-tram-closure\">Altrincham Today</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 16,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::клуб обвиняется, но не признан виновным.",
+        "actions": [
+          {
+            "line_index": 19,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Клуб обвиняется, но не признан виновным.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неверное утверждение о признании вины.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-burnham-34733030-69155c8ec1bb",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-burnham-34733030",
+            "original_html": "• Манчестер Сити признан виновным в 114 нарушениях финансовых правил Премьер-лиги и подал апелляцию на это решение. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-burnham-34733030\">MEN Manchester City</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 19,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::строка корректна и соответствует источнику.",
+        "actions": [
+          {
+            "line_index": 20,
+            "section": "Футбол",
+            "requested_action": "keep",
+            "reason": "Строка корректна и соответствует источнику.",
+            "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
             "completeness_concept": "",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "weekend_activities-01",
-            "candidate_fingerprint": "event-event-c-altfocus-photography-2026-10-08-various-venues-across-lancaster-7916da0a686f",
-            "original_url_identity": "manchestersfinest.com/events/lancaster-music-festival",
-            "original_html": "• 9 октября в Various Venues Across Lancaster — c: Altfocus Photography. На площадке: фестиваль, еда, живая музыка. <a href=\"https://manchestersfinest.com/events/lancaster-music-festival\">Manchester&#x27;s Finest Events</a>",
-            "replacement_fingerprint": "event-event-sense-and-sensibility-u-a-new-take-on-jane-austen-s-iconic-novel-starring-daisy-edgar-jone-2026-10-08-home-0ce5cb1cf90b",
+            "plan_slot_id": "football-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-jose-mourinho-man-city-charges-34738212-0c16eb881ded",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/jose-mourinho-man-city-charges-34738212",
+            "original_html": "• Главный тренер Реала Жозе Моуринью пошутил о деле Манчестер Сити, заявив, что ему повезет, если он доживет до окончательного решения. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/jose-mourinho-man-city-charges-34738212\">MEN Manchester City</a>",
+            "keep_rejected": "known_factual_error",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-manchester-united-hero-doubts-michael-34733438-8608d3177138",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 16,
+            "line_index": 20,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -455,23 +549,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::дата события указана неверно, необходимо добавить предупреждение о проверке даты.",
+        "group_key": "выходные в gm::дата события должна быть 11 октября, а не 10 мая.",
         "actions": [
           {
-            "line_index": 28,
+            "line_index": 37,
             "section": "Выходные в GM",
             "requested_action": "patch",
-            "reason": "Дата события указана неверно, необходимо добавить предупреждение о проверке даты.",
+            "reason": "Дата события должна быть 11 октября, а не 10 мая.",
             "risk": "date",
             "critical_error": true,
             "critical_problem": "Дата события указана неверно.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-08",
-            "candidate_fingerprint": "event-id-jsonld-event-319317689140-3ad91fa630fd",
-            "original_url_identity": "carbootdirectory.co.uk/listings/bolton-car-boot",
-            "original_html": "• 11 октября в Macron Stadium — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, можно с собакой, есть туалеты. <a href=\"https://carbootdirectory.co.uk/listings/bolton-car-boot\">Bolton Car Boot Sale</a>",
+            "plan_slot_id": "weekend_activities-12",
+            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+            "original_html": "• 11 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -479,7 +573,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 28,
+            "line_index": 37,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -487,132 +581,68 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::цена для покупателей указана неверно, вход должен быть свободным.",
+        "group_key": "городской радар::добавление информации о полицейском расследовании для полноты и точности.",
         "actions": [
           {
-            "line_index": 29,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Цена для покупателей указана неверно, вход должен быть свободным.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Цена для покупателей указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-09",
-            "candidate_fingerprint": "event-event-the-big-stockport-car-boot-romiley-2026-10-11-waterside-farm-otterspool-road-romiley-stockport-sk6-3lq-04b48602603d",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
-            "original_html": "• 11 октября в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 29,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::исправление фактической ошибки в описании статуса зака болланда на момент события.",
-        "actions": [
-          {
-            "line_index": 34,
+            "line_index": 41,
             "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Исправление фактической ошибки в описании статуса Зака Болланда на момент события.",
-            "risk": "factual",
+            "reason": "Добавление информации о полицейском расследовании для полноты и точности.",
+            "risk": "sensitive",
             "critical_error": true,
-            "critical_problem": "Неправильное использование термина 'осуждённый'. Зак Болланд был арестован и освобождён полицией, но не осуждён на момент упоминания.",
+            "critical_problem": "Не упомянуто, что ясли находятся в центре полицейского расследования.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "url-itv-com-news-granada-2026-10-06-firebomb-killer-released-by-police-despite-last-chance-warning-inquest-hears-c82511d473b4",
-            "original_url_identity": "itv.com/news/granada/2026-10-06/firebomb-killer-released-by-police-despite-last-chance-warning-inquest-hears",
-            "original_html": "• На коронерском расследовании стало известно, что Зак Болланд, позже осуждённый за убийство матери и четырёх детей в результате поджога, был освобождён полицией, несмотря на предупреждение о 'последнем шансе'. <a href=\"https://itv.com/news/granada/2026-10-06/firebomb-killer-released-by-police-despite-last-chance-warning-inquest-hears\">ITV Granada Greater Manchester</a>",
-            "verification": "structured fact already rendered correctly",
+            "method": "model_patch",
+            "plan_slot_id": "city_watch-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-nursery-centre-police-investigation-shut-34735314-9b872ebc87c9",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/nursery-centre-police-investigation-shut-34735314",
+            "original_html": "• Ясли Mini Fingers в Ирламе закрыты из-за нашествия крыс; приказ о запрете был выдан 2 октября. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/nursery-centre-police-investigation-shut-34735314\">MEN</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 34,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::указание полного диапазона дат события для точности.",
-        "actions": [
-          {
-            "line_index": 61,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "patch",
-            "reason": "Указание полного диапазона дат события для точности.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана не полностью, что может ввести в заблуждение.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "ticket_radar-13",
-            "candidate_fingerprint": "event-event-westlife-the-anniversary-world-tour-fri-23-oct-2026-sun-25-oct-2026-2026-10-23-co-op-live-3a1d3ee59e2e",
-            "original_url_identity": "cooplive.com/events/westlife-typc",
-            "original_html": "• <b>Westlife The Anniversary World Tour</b> — 23 октября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/westlife-typc\">Co-op Live</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 61,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::critical source fact dropped in translation: 'death' (death/who/what) has no russian rendering in the shipped line",
-        "actions": [
-          {
-            "line_index": 13,
-            "section": "Футбол",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
-            "risk": "translation",
-            "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "death",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-sir-alex-ferguson-most-memorable-34698755-7fe5a7a2501a",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/sir-alex-ferguson-most-memorable-34698755",
-            "original_html": "• Мемуары Сэра Алекса Фергюсона, \"Игры моей жизни\", выпущены 8 октября 2026 года, рассказывая о 21 матче, которые были для него наиболее значимыми. <a href=\"https://manchestereveningnews.co.uk/sport/football/sir-alex-ferguson-most-memorable-34698755\">MEN Manchester United</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-pep-guardiola-make-man-city-34732692-f3691a872a48",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 13,
+            "line_index": 41,
             "passed": true,
             "detail": "post-check passed"
           }
         ],
         "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::исправление перевода названия тура на русский язык.",
+        "actions": [
+          {
+            "line_index": 56,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Исправление перевода названия тура на русский язык.",
+            "risk": "translation",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "",
+            "plan_slot_id": "ticket_radar-11",
+            "candidate_fingerprint": "event-event-westlife-the-anniversary-world-tour-fri-23-oct-2026-sun-25-oct-2026-2026-10-23-co-op-live-3a1d3ee59e2e",
+            "original_url_identity": "cooplive.com/events/westlife-typc",
+            "original_html": "• <b>Westlife The годовщина World Tour</b> — 23 октября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/westlife-typc\">Co-op Live</a>",
+            "model_replacement_rejected": "still_needs_editor",
+            "backup_outcome": "no_eligible_backup",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 56,
+            "passed": false,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": false
       }
     ],
     "refetch": {
@@ -634,12 +664,13 @@
     },
     "enrich_improved": 6,
     "false_positive_existing_fact": 4,
-    "deterministic_rewrite_rejected": 1,
+    "deterministic_rewrite_rejected": 2,
+    "no_eligible_backup": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 57,
-      "matched_lines": 57,
-      "applicable_lines": 1,
+      "checked_lines": 53,
+      "matched_lines": 53,
+      "applicable_lines": 4,
       "unmatched_lines": 4,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -651,19 +682,12 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 61,
-      "resolved_in_place": 59,
-      "unresolved": 2,
+      "checked_lines": 57,
+      "resolved_in_place": 56,
+      "unresolved": 1,
       "findings": [
         {
-          "line_index": 48,
-          "section": "Business/tech события для тебя",
-          "outcome": "unresolved",
-          "code": "language_policy_defect",
-          "severity": "warning"
-        },
-        {
-          "line_index": 61,
+          "line_index": 56,
           "section": "Билеты / Ticket Radar",
           "outcome": "unresolved",
           "code": "language_policy_defect",
@@ -673,128 +697,129 @@
     },
     "status": "unresolved"
   },
-  "notes": "Строка соответствует требованиям: событие в Bury, GM, и содержит необходимые факты.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена география события в строке 3 для соответствия источнику.; Информация о изменениях в расписании поездов Northern в районе Манчестера корректна и соответствует ис",
+  "notes": "Уточнение возраста арестованного мужчины необходимо для точности информации.; Прогноз погоды соответствует данным Met Office и географическому контракту GM.; Ошибка в строке 3: арест связан с найденным оружием, а не с наркопреступлениями.; Ошибка в дате запуска нового автобусного маршрута требует исправления.; Обе стро",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "problem": "Неправильное указание географии события.",
-        "risk": "geo",
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Не указано, что арестованный мужчина в возрасте 60 лет.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 14,
-        "section": "Футбол",
-        "problem": "Текст утверждает, что Манчестер Сити признаны виновными, но в источнике указано, что клуб подал апелляцию, что подразумевает, что решение не окончательное.",
+        "line_index": 3,
+        "section": "Свежие новости",
+        "problem": "Неправильное указание причины ареста.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
         "line_index": 16,
-        "section": "Выходные в GM",
-        "problem": "Событие находится в Ланкастере, что не соответствует geo_scope GM.",
-        "risk": "geo",
-        "suggested_action": "strip"
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дата запуска нового маршрута указана неверно. Должно быть с 19 октября по 1 ноября.",
+        "risk": "date",
+        "suggested_action": "repair"
       },
       {
-        "line_index": 28,
+        "line_index": 19,
+        "section": "Футбол",
+        "problem": "Неверное утверждение о признании вины.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 37,
         "section": "Выходные в GM",
         "problem": "Дата события указана неверно.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 29,
-        "section": "Выходные в GM",
-        "problem": "Цена для покупателей указана неверно.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 34,
+        "line_index": 41,
         "section": "Городской радар",
-        "problem": "Неправильное использование термина 'осуждённый'. Зак Болланд был арестован и освобождён полицией, но не осуждён на момент упоминания.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 61,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дата события указана не полностью, что может ввести в заблуждение.",
-        "risk": "date",
+        "problem": "Не упомянуто, что ясли находятся в центре полицейского расследования.",
+        "risk": "sensitive",
         "suggested_action": "repair"
       }
     ],
     "actions": [
       {
+        "line_index": 1,
+        "section": "Главная история дня",
+        "action": "patch",
+        "replacement_text": "• На улице Брингс Драйв в Харвуде, Bolton, был найден мертвый мужчина, и мужчина в возрасте 60 лет арестован по подозрению в убийстве.",
+        "reason": "Уточнение возраста арестованного мужчины для соответствия фактам.",
+        "risk": "factual"
+      },
+      {
         "line_index": 3,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• В Манчестере 7 октября 2026 года в суде на Миншулл-стрит 38-летний Шон Пирс признал себя виновным в сексуальном насилии над женщиной, которую её муж без её ведома на протяжении более 20 лет подвергал наркотическому воздействию и изнасилованию. Мужчина, имя которого не раскрывается для защиты прав жены, обвиняется в том, что пригласил 13 других мужчин для совершения насилия над ней в их доме в Большом Манчестере. Судебный процесс продолжается, и ожидается, что приговор будет вынесен после завершения разбирательства по делу остальных обвиняемых.",
-        "reason": "Уточнение географии события в соответствии с источником.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 14,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Манчестер Сити обвиняются в 114 нарушениях финансовых правил Премьер-лиги, включая использование \"фальшивых\" спонсорских сделок для завышения доходов почти на 900 миллионов фунтов стерлингов с 2009 по 2018 год. Клуб отрицает обвинения и подал апелляцию.",
-        "reason": "Утверждение о виновности требует корректировки, так как клуб подал апелляцию.",
+        "replacement_text": "• В детском саду Mini Fingers в Ирламе, Солфорд, было найдено огнестрельное оружие и значительное количество патронов. Два мужчины арестованы по подозрению в причастности к этому инциденту.",
+        "reason": "Уточнение причины ареста в соответствии с источником.",
         "risk": "factual"
       },
       {
         "line_index": 16,
-        "section": "Выходные в GM",
-        "action": "strip",
-        "reason": "Событие проходит в Ланкастере, что не соответствует требованиям geo_scope GM.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 28,
-        "section": "Выходные в GM",
+        "section": "Общественный транспорт сегодня",
         "action": "patch",
-        "replacement_text": "• 11 октября в Macron Stadium — Bolton car boot sale. На площадке: автомобильная барахолка, вход £1, можно с собакой, есть туалеты. Проверьте дату, время и бронирование перед планированием.",
-        "reason": "Дата события указана неверно, необходимо добавить предупреждение о проверке даты.",
+        "replacement_text": "• TfGM объявил о запуске нового прямого автобусного маршрута между Альтринчемом и Пикадилли каждые 15 минут с 19 октября по 1 ноября в связи с закрытием линии Metrolink.",
+        "reason": "Дата запуска нового маршрута указана неверно.",
         "risk": "date"
       },
       {
-        "line_index": 29,
-        "section": "Выходные в GM",
+        "line_index": 19,
+        "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• 11 октября в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный для покупателей.",
-        "reason": "Цена для покупателей указана неверно, вход должен быть свободным.",
+        "replacement_text": "• Манчестер Сити обвиняется в 114 нарушениях финансовых правил Премьер-лиги и подал апелляцию на это решение.",
+        "reason": "Клуб обвиняется, но не признан виновным.",
         "risk": "factual"
       },
       {
-        "line_index": 34,
+        "line_index": 20,
+        "section": "Футбол",
+        "action": "keep",
+        "reason": "Строка корректна и соответствует источнику.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 37,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 11 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
+        "reason": "Дата события должна быть 11 октября, а не 10 мая.",
+        "risk": "date"
+      },
+      {
+        "line_index": 41,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• На коронерском расследовании стало известно, что Зак Болланд, позже обвинённый в убийстве матери и четырёх детей в результате поджога, был освобождён полицией, несмотря на предупреждение о 'последнем шансе'.",
-        "reason": "Исправление фактической ошибки в описании статуса Зака Болланда на момент события.",
-        "risk": "factual"
+        "replacement_text": "• Ясли Mini Fingers в Ирламе, находящиеся в центре полицейского расследования, закрыты из-за нашествия крыс; приказ о запрете был выдан 2 октября.",
+        "reason": "Добавление информации о полицейском расследовании для полноты и точности.",
+        "risk": "sensitive"
       },
       {
-        "line_index": 61,
+        "line_index": 56,
         "section": "Билеты / Ticket Radar",
         "action": "patch",
-        "replacement_text": "• Westlife The Anniversary World Tour — 23-25 октября, Co-op Live. Билеты и время указаны на официальной странице.",
-        "reason": "Указание полного диапазона дат события для точности.",
-        "risk": "date"
+        "replacement_text": "• Westlife The Anniversary World Tour — 23 октября, Co-op Live. Билеты и время указаны на официальной странице.",
+        "reason": "Исправление перевода названия тура на русский язык.",
+        "risk": "translation"
       }
     ],
     "warnings": [
-      "В разделе 'Business/tech события для тебя' все события соответствуют географическому контракту и содержат необходимую информацию. Однако, плотность информации может быть высокой для некоторых читателей, что может затруднить восприятие.",
-      "В блоке 'Билеты / Ticket Radar' много событий на одну и ту же дату (8 октября), что может создать впечатление перегруженности. Возможно, стоит разнообразить даты или добавить больше информации о каждом событии.",
+      "Секция 'Выходные в GM' содержит только 6 событий, что соответствует минимальному требованию, но не превышает его. Это может ограничить разнообразие и интерес для читателей.",
+      "Исправлен перевод названия тура Westlife на русский язык в строке 56.",
       "judge reduce failed: parse_failed no parseable JSON"
     ],
-    "notes": "Строка соответствует требованиям: событие в Bury, GM, и содержит необходимые факты.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена география события в строке 3 для соответствия источнику.; Информация о изменениях в расписании поездов Northern в районе Манчестера корректна и соответствует ис",
+    "notes": "Уточнение возраста арестованного мужчины необходимо для точности информации.; Прогноз погоды соответствует данным Met Office и географическому контракту GM.; Ошибка в строке 3: арест связан с найденным оружием, а не с наркопреступлениями.; Ошибка в дате запуска нового автобусного маршрута требует исправления.; Обе стро",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "partial",
-      "chunk_count": 13,
+      "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -807,13 +832,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2700,
-          "duration_seconds": 1.278
+          "estimated_tokens": 2670,
+          "duration_seconds": 1.856
         },
         {
           "chunk_id": "chunk-02",
@@ -830,8 +855,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2486,
-          "duration_seconds": 1.099
+          "estimated_tokens": 2467,
+          "duration_seconds": 1.014
         },
         {
           "chunk_id": "chunk-03",
@@ -848,51 +873,87 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7286,
-          "duration_seconds": 4.29
+          "estimated_tokens": 7345,
+          "duration_seconds": 2.142
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            12
+            16
           ],
           "sections": [
             "Общественный транспорт сегодня"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 4590,
+          "duration_seconds": 1.912
+        },
+        {
+          "chunk_id": "chunk-05",
+          "status": "ok",
+          "line_range": [
+            17,
+            18
+          ],
+          "sections": [
+            "Что важно сегодня"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2671,
-          "duration_seconds": 0.801
+          "estimated_tokens": 3146,
+          "duration_seconds": 0.872
         },
         {
-          "chunk_id": "chunk-05",
+          "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            13,
-            14
+            19,
+            20
           ],
           "sections": [
             "Футбол"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
-          "action_count": 1,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3178,
-          "duration_seconds": 2.854
+          "estimated_tokens": 3120,
+          "duration_seconds": 1.62
         },
         {
-          "chunk_id": "chunk-06",
+          "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            15,
-            26
+            21,
+            32
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 7381,
+          "duration_seconds": 43.461
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            33,
+            39
           ],
           "sections": [
             "Выходные в GM"
@@ -902,33 +963,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 8055,
-          "duration_seconds": 2.05
+          "estimated_tokens": 6574,
+          "duration_seconds": 21.509
         },
         {
-          "chunk_id": "chunk-07",
+          "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            27,
-            33
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 6106,
-          "duration_seconds": 55.98
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            34,
-            39
+            40,
+            44
           ],
           "sections": [
             "Городской радар"
@@ -938,32 +981,14 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5402,
-          "duration_seconds": 35.597
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            40,
-            41
-          ],
-          "sections": [
-            "Еда, открытия и рынки"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3504,
-          "duration_seconds": 3.105
+          "estimated_tokens": 4585,
+          "duration_seconds": 1.717
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            42,
+            45,
             45
           ],
           "sections": [
@@ -974,62 +999,44 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4160,
-          "duration_seconds": 9.555
+          "estimated_tokens": 2692,
+          "duration_seconds": 3.494
         },
         {
           "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
             46,
-            48
+            56
           ],
           "sections": [
-            "Business/tech события для тебя"
+            "Билеты / Ticket Radar"
           ],
           "decision": "warn",
           "critical_error_count": 0,
-          "action_count": 0,
+          "action_count": 1,
           "warning_count": 1,
           "error": "",
-          "estimated_tokens": 4183,
-          "duration_seconds": 10.186
+          "estimated_tokens": 8430,
+          "duration_seconds": 56.396
         },
         {
           "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
-            49,
-            60
+            57,
+            57
           ],
           "sections": [
-            "Билеты / Ticket Radar"
+            "Русскоязычные концерты и стендап UK"
           ],
-          "decision": "warn",
+          "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 9042,
-          "duration_seconds": 51.517
-        },
-        {
-          "chunk_id": "chunk-13",
-          "status": "ok",
-          "line_range": [
-            61,
-            61
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2644,
-          "duration_seconds": 4.968
+          "estimated_tokens": 2710,
+          "duration_seconds": 5.229
         }
       ],
       "reduce": {
@@ -1042,8 +1049,8 @@
         "action_count": 0,
         "warning_count": 0,
         "error": "no parseable JSON",
-        "estimated_tokens": 11495,
-        "duration_seconds": 31.007
+        "estimated_tokens": 11124,
+        "duration_seconds": 28.974
       },
       "max_workers": 3,
       "chunk_line_target": 12,
