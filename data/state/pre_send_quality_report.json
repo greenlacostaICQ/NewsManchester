@@ -1,93 +1,65 @@
 {
-  "status": "ok",
+  "status": "partial",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair left 2 known factual operation(s) unresolved; delivery continues as degraded",
+  "reason": "pre-send repair executor applied 6 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-10-11",
-  "pipeline_run_id": "20261011T080141+0100",
-  "digest_sha256": "613fade6e0d190081e7cdb39c21e41ceb83efa2d1f4f80f012fee37521730a1a",
-  "duration_seconds": 104.822,
+  "run_date_london": "2026-10-12",
+  "pipeline_run_id": "20261012T080154+0100",
+  "digest_sha256": "1df352b9920de7f5adbca5e07677fc2d0b25afa30f67882c23a9800ebe3c696b",
+  "duration_seconds": 78.426,
   "confidence": 0.9,
   "critical_errors": [
     {
       "line_index": 1,
       "section": "Главная история дня",
-      "problem": "Текст не упоминает, что некоторые арестованные мужчины были задержаны за грабежи, что указано в source_claim.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 4,
-      "section": "Свежие новости",
-      "problem": "Неправильное указание места нахождения детского сада.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 11,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дата начала изменения рейсов указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 16,
-      "section": "Футбол",
-      "problem": "Дата матча указана неверно. 11 октября 2026 года — это суббота, а не воскресенье.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 33,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно. В карточке указана дата 11 октября, но в данных события указана дата 10 мая.",
-      "risk": "date",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 48,
-      "section": "Русскоязычные концерты и стендап UK",
-      "problem": "Событие в Дублине, который не входит в UK.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Неполное предложение, неясность в описании событий.",
+      "problem": "Ошибка в возрасте жертв. В тексте указано, что Джуниор Аджосе и Шериф Талл были убиты, но их возраст не указан. В источнике указано, что Джуниор Аджосе было 36 лет, а Шерифу Таллу 21 год.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
       "line_index": 3,
       "section": "Свежие новости",
-      "problem": "Дублирование информации о закрытии M60.",
-      "risk": "format",
+      "problem": "Указано, что расследование продолжается, но это слушания по делу, а не новое расследование.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 5,
+      "section": "Свежие новости",
+      "problem": "Дата события указана как 12 октября 2026 года, но это воскресенье, что не соответствует календарю.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 12,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Событие происходит вне Greater Manchester.",
+      "risk": "geo",
       "suggested_action": "strip"
     },
     {
       "line_index": 16,
       "section": "Футбол",
-      "problem": "Дата матча указана неверно, 11 октября 2026 года — это суббота, а не воскресенье.",
+      "problem": "Неправильное указание даты события.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 31,
-      "section": "Выходные в GM",
-      "problem": "Дублирование информации о автомобильной барахолке.",
-      "risk": "format",
-      "suggested_action": "strip"
+      "line_index": 19,
+      "section": "Городской радар",
+      "problem": "Неправильное указание места события. Детский сад находится в Salford, а не в Сейле.",
+      "risk": "geo",
+      "suggested_action": "repair"
     },
     {
-      "line_index": 47,
-      "section": "Русскоязычные концерты и стендап UK",
-      "problem": "Дублирование информации о выступлении Кирилла Селегея.",
-      "risk": "format",
+      "line_index": 34,
+      "section": "Дальние анонсы",
+      "problem": "Событие не соответствует географическому контракту.",
+      "risk": "geo",
       "suggested_action": "strip"
     }
   ],
@@ -96,111 +68,94 @@
       "line_index": 1,
       "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• В результате досрочного освобождения около 700 заключённых 1 октября, среди которых было около 50 из Большого Манчестера, восемь мужчин были арестованы за нарушения уголовных приказов, включая случаи домашнего насилия и грабежи. Министерство юстиции отметило, что это решение было принято для борьбы с переполнением тюрем, которые работают на 98,2% своей мощности, и пообещало увеличить финансирование полиции до 18,5 миллиарда фунтов стерлингов.",
-      "reason": "Добавление информации о грабежах для соответствия источнику.",
+      "replacement_text": "• В связи с двойным убийством в Moss Side, произошедшим более шести лет назад, задержан 36-летний мужчина. Он был арестован в Турции и доставлен в Англию, где его встретили сотрудники полиции. По словам детектива Нила Хиггинсона, это задержание подчеркивает стремление полиции к справедливости для семей жертв, 36-летнего Джуниора Аджосе и 21-летнего Шерифа Талла, которые были убиты на вечеринке в ночь на 21 июня 2020 года.",
+      "reason": "Уточнение возраста жертв для соответствия фактам из источника.",
       "risk": "factual"
     },
     {
-      "line_index": 4,
+      "line_index": 3,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• Мужчина из Сейла обвинён в нарушении законов о хранении оружия и наркотиках после того, как пистолет был найден в детском саду Mini Fingers в Ирламе, Салфорд. Кристофер Максвелл, 38 лет, должен был явиться в суд в Манчестере и Салфорде.",
-      "reason": "Указание места нахождения детского сада должно быть исправлено на 'в Ирламе, Салфорд'.",
+      "replacement_text": "• В Болтоне проходят восьминедельные слушания по делу о пожарной атаке, унесшей жизни матери и её четырёх детей в Уолкдене. В ходе слушаний зачитаны свидетельские показания Мишель Пирсон, которая погибла спустя почти два года после нападения, вызванного бензиновыми бомбами в декабре 2017 года. Следствие изучает обстоятельства, предшествовавшие трагедии, и возможность предотвращения подобных инцидентов в будущем.",
+      "reason": "Уточнение, что это слушания, а не новое расследование.",
       "risk": "factual"
     },
     {
-      "line_index": 11,
-      "section": "Общественный транспорт сегодня",
+      "line_index": 5,
+      "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• National Rail: С 12 по 16 октября изменены вечерние и утренние рейсы Northern из/в Манчестер Пикадилли. Пассажирам рекомендуется проверять информацию перед поездкой.",
-      "reason": "Дата начала изменения рейсов должна быть 12 октября, а не 11 октября.",
+      "replacement_text": "• В Чорлтоне задержали мужчину по подозрению в поджоге после того, как в его квартире взорвались окна. Пожар произошел в воскресенье вечером, 11 октября 2026 года, на Барлоу Мур Роуд, где огонь вспыхнул на втором этаже над магазином BBM Bargains. На место прибыли несколько пожарных машин и полицейских, а сам задержанный остается в полиции для дальнейших допросов.",
+      "reason": "Исправление даты на правильную.",
       "risk": "date"
     },
     {
       "line_index": 12,
       "section": "Общественный транспорт сегодня",
-      "action": "keep",
-      "reason": "Информация о сбоях в движении актуальна и соответствует источнику.",
-      "risk": "factual",
+      "action": "strip",
+      "reason": "Сбой на линии между Престоном и Wigan Северным / Bolton не относится к Greater Manchester.",
+      "risk": "geo",
       "replacement_text": ""
     },
     {
       "line_index": 13,
       "section": "Общественный транспорт сегодня",
       "action": "keep",
-      "reason": "Информация о закрытии линии Metrolink и запуске автобусного маршрута соответствует источнику.",
-      "risk": "factual",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 16,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Манчестер Сити вернется к игре впервые после вердикта по 115 обвинениям в Премьер-лиге, встретившись с Ливерпулем на Энфилде в субботу, 11 октября 2026 года.",
-      "reason": "Исправление даты на правильный день недели.",
-      "risk": "date"
-    },
-    {
-      "line_index": 33,
-      "section": "Выходные в GM",
-      "action": "strip",
-      "reason": "Дата события не соответствует фактическим данным, что может ввести читателей в заблуждение.",
-      "risk": "date",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 48,
-      "section": "Русскоязычные концерты и стендап UK",
-      "action": "strip",
-      "reason": "Дублин находится в Ирландии, а не в UK, что нарушает географический контракт раздела.",
+      "reason": "Изменения в расписании поездов Northern до/из Манчестер Пикадилли соответствуют географическому контракту.",
       "risk": "geo",
       "replacement_text": ""
     },
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• В результате досрочного освобождения около 700 заключённых 1 октября, среди которых было около 50 из Большого Манчестера, восемь мужчин были арестованы за нарушения уголовных приказов, включая случаи домашнего насилия. Министерство юстиции отметило, что это р...",
-      "reason": "Необходимо завершить предложение для ясности.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 3,
-      "section": "Свежие новости",
-      "action": "strip",
-      "replacement_text": "",
-      "reason": "Дублирование информации о закрытии M60.",
-      "risk": "format"
+      "line_index": 14,
+      "section": "Общественный транспорт сегодня",
+      "action": "keep",
+      "reason": "Событие связано с Манчестер Пикадилли и соответствует географическому контракту.",
+      "risk": "geo",
+      "replacement_text": ""
     },
     {
       "line_index": 16,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Манчестер Сити вернется к игре впервые после вердикта по 115 обвинениям в Премьер-лиге, встретившись с Ливерпулем на Энфилде в субботу, 11 октября 2026 года.",
-      "reason": "Исправление даты матча.",
+      "replacement_text": "• 11 октября Манчестер Сити одержал победу над Ливерпулем на Анфилде, при этом генеральный директор Ферран Сориано и спортивный директор Уго Виана присутствовали на матче.",
+      "reason": "Дата матча указана неверно, матч состоялся 11 октября.",
       "risk": "date"
     },
     {
-      "line_index": 31,
-      "section": "Выходные в GM",
-      "action": "strip",
-      "replacement_text": "",
-      "reason": "Дублирование информации о автомобильной барахолке.",
-      "risk": "format"
+      "line_index": 17,
+      "section": "Футбол",
+      "action": "keep",
+      "reason": "Информация о подаче апелляции и ожидании новых деталей актуальна и корректна.",
+      "risk": "factual",
+      "replacement_text": ""
     },
     {
-      "line_index": 47,
-      "section": "Русскоязычные концерты и стендап UK",
+      "line_index": 18,
+      "section": "Футбол",
+      "action": "keep",
+      "reason": "Описание поддержки фанатов Манчестер Сити соответствует фактам и не содержит ошибок.",
+      "risk": "factual",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 19,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Кристофер Максвелл, 38 лет, из Сейла, был обвинен в преступлениях с огнестрельным оружием и наркотиками после того, как пистолет был найден в детском саду в Salford, закрытом из-за нашествия крыс.",
+      "reason": "Уточнение географического местоположения события.",
+      "risk": "geo"
+    },
+    {
+      "line_index": 34,
+      "section": "Дальние анонсы",
       "action": "strip",
-      "replacement_text": "",
-      "reason": "Дублирование информации о выступлении Кирилла Селегея.",
-      "risk": "format"
+      "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope 'gm'.",
+      "risk": "geo",
+      "replacement_text": ""
     }
   ],
   "warnings": [
-    "Блок 'Выходные в GM' содержит только 6 событий, что минимально допустимо по контракту. Рекомендуется добавить больше событий для улучшения полноты блока.",
-    "Недостаточное количество элементов в секциях 'Что важно сегодня' и 'Городской радар'.",
-    "Отсутствие блока 'Еда, открытия и рынки'."
+    "Строка 36: текст обрывается на середине предложения, что может вызвать путаницу у читателей.",
+    "judge reduce failed: parse_failed no parseable JSON"
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -208,36 +163,33 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 8,
+      "Свежие новости": 9,
       "Общественный транспорт сегодня": 3,
-      "Что важно сегодня": 2,
+      "Что важно сегодня": 1,
       "Футбол": 3,
-      "Выходные в GM": 11,
-      "Городской радар": 4,
-      "IT и бизнес": 1,
-      "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 6,
-      "Крупные концерты вне GM": 1,
-      "Русскоязычные концерты и стендап UK": 2
+      "Городской радар": 8,
+      "IT и бизнес": 2,
+      "Business/tech события для тебя": 2,
+      "Дальние анонсы": 4,
+      "Билеты / Ticket Radar": 7
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 2,
-      "Свежие новости": 8,
+      "Что важно сегодня": 1,
+      "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 4,
-      "Выходные в GM": 11,
-      "Билеты / Ticket Radar": 6,
-      "Русскоязычные концерты и стендап UK": 2,
+      "Городской радар": 8,
+      "Билеты / Ticket Radar": 7,
+      "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 0,
-      "Business/tech события для тебя": 0,
+      "Business/tech события для тебя": 2,
       "Футбол": 3
     },
-    "ticket_items": 9,
-    "core_items": 30,
+    "ticket_items": 7,
+    "core_items": 25,
     "writer_quality_counts": {
-      "included_candidates": 45,
-      "rendered_candidates": 44,
+      "included_candidates": 42,
+      "rendered_candidates": 41,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
@@ -248,49 +200,46 @@
       "removed_with_reason": 1
     },
     "source_health_counts": {
-      "ok": 101,
+      "ok": 99,
       "partial": 2,
-      "stale": 10,
+      "stale": 11,
       "empty": 12,
       "failed": 4,
-      "zero_yield": 82,
+      "zero_yield": 87,
       "no_contribution_breakdown": {
         "fetch_failed": 4,
-        "all_rejected": 82,
-        "idle_no_items": 18
+        "all_rejected": 87,
+        "idle_no_items": 21
       },
       "zero_contribution_by_stage": {
-        "selected": 41,
-        "written": 41,
-        "parsed": 18,
+        "written": 45,
+        "selected": 42,
+        "parsed": 21,
         "fetched": 4
       },
-      "weekend_source_coverage_incidents": 50
+      "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 2 item(s), emergency floor 3",
-      "Городской радар: 4 item(s), emergency floor 5",
+      "Что важно сегодня: 1 item(s), emergency floor 3",
+      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "Business/tech события для тебя: 0 item(s), emergency floor 1",
       "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 1 has unchecked number/date token(s): 18,5, 98,2",
-      "multiple actions target line 1",
-      "multiple actions target line 16"
+      "patch for line 3 has unchecked number/date token(s): 2017"
     ],
     "can_apply_actions": true,
-    "action_count": 13
+    "action_count": 11
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 44,
-    "matched_lines": 44,
-    "applicable_lines": 2,
-    "unmatched_lines": 4,
+    "checked_lines": 41,
+    "matched_lines": 41,
+    "applicable_lines": 4,
+    "unmatched_lines": 0,
     "critical_omission_count": 0,
     "critical_omissions": [],
     "noncritical_omissions": [],
@@ -302,29 +251,43 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 12,
-    "attempted": 10,
-    "applied": 10,
-    "model_patch_applied": 1,
+    "requested": 8,
+    "attempted": 6,
+    "applied": 6,
+    "model_patch_applied": 2,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 3,
-    "stripped": 6,
-    "unresolved": 2,
-    "blocking_unresolved": 2,
-    "resolved": 10,
-    "resolved_in_place": 3,
-    "resolved_by_replacement": 1,
-    "resolved_by_removal": 6,
-    "fact_lock_rejected": 3,
-    "enrich_attempted": 10,
+    "stripped": 1,
+    "unresolved": 0,
+    "blocking_unresolved": 0,
+    "resolved": 8,
+    "resolved_in_place": 4,
+    "resolved_by_replacement": 3,
+    "resolved_by_removal": 1,
+    "fact_lock_rejected": 1,
+    "enrich_attempted": 6,
     "post_check_errors": [],
     "geo_contract_rejected": [
       {
-        "line_index": 48,
-        "section": "Русскоязычные концерты и стендап UK",
-        "geo_scope": "uk",
-        "reason": "Дублин находится в Ирландии, а не в UK, что нарушает географический контракт раздела.",
-        "gm_anchor_present": false
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
+        "geo_scope": "gm",
+        "reason": "Сбой на линии между Престоном и Wigan Северным / Bolton не относится к Greater Manchester.",
+        "gm_anchor_present": true
+      },
+      {
+        "line_index": 13,
+        "section": "Общественный транспорт сегодня",
+        "geo_scope": "gm",
+        "reason": "Изменения в расписании поездов Northern до/из Манчестер Пикадилли соответствуют географическому контракту.",
+        "gm_anchor_present": true
+      },
+      {
+        "line_index": 14,
+        "section": "Общественный транспорт сегодня",
+        "geo_scope": "gm",
+        "reason": "Событие связано с Манчестер Пикадилли и соответствует географическому контракту.",
+        "gm_anchor_present": true
       }
     ],
     "source_link_metadata_rejected": [],
@@ -333,550 +296,263 @@
         "line_index": 1,
         "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Добавление информации о грабежах для соответствия источнику.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "reserve_replacement",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cm79pdj4x33eo-1a4893d702e7",
-        "original_url_identity": "bbc.com/news/articles/cm79pdj4x33eo",
-        "original_html": "<b>В результате досрочного освобождения около 700 заключённых 1 октября, среди которых было около 50 из Большого Манчестера, восемь мужчин были арестованы за нарушения уголовных приказов, включая случаи домашнего насилия.</b> Министерство юстиции отметило, что это решение было принято для борьбы с переполнением тюрем, которые работают на 98,2% своей мощности, и пообещало увеличить финансирование полиции до 18,5 миллиарда фунтов стерлингов. <a href=\"https://bbc.com/news/articles/cm79pdj4x33eo\">BBC Manchester</a>",
-        "model_replacement_rejected": "fact_lock: 1 октября, 18,5, 98,2%",
-        "replacement_fingerprint": "url-bbc-com-news-articles-c615j3yvx7epo-6c39ce539f98",
-        "post_check_passed": false
-      },
-      {
-        "line_index": 4,
-        "section": "Свежие новости",
-        "requested_action": "patch",
-        "reason": "Указание места нахождения детского сада должно быть исправлено на 'в Ирламе, Салфорд'.",
+        "reason": "Уточнение возраста жертв для соответствия фактам из источника.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неправильное указание места нахождения детского сада.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "last_24h-02",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cmkgknp79y75o-ec611a732505",
-        "original_url_identity": "bbc.com/news/articles/cmkgknp79y75o",
-        "original_html": "• Мужчина из Сейла обвинён в нарушении законов о хранении оружия и наркотиках после того, как пистолет был найден в детском саду Mini Fingers в Ирламе, Салфорд. Кристофер Максвелл, 38 лет, должен был явиться в суд в Манчестере и Салфорде. <a href=\"https://bbc.co.uk/news/articles/cmkgknp79y75o\">BBC Manchester</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 11,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "patch",
-        "reason": "Дата начала изменения рейсов должна быть 12 октября, а не 11 октября.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата начала изменения рейсов указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-01",
-        "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-amended-late-night-early-morning-northern-service-to-from-manchester-piccadilly-63c03dd0b3ff",
-        "original_url_identity": "nationalrail.co.uk/status-and-disruptions/amended-late-night-early-morning-northern-service-to-from-manchester-piccadilly-",
-        "original_html": "• National Rail: С 12 по 16 октября изменены вечерние и утренние рейсы Northern из/в Манчестер Пикадилли. Пассажирам рекомендуется проверять информацию перед поездкой. <a href=\"https://nationalrail.co.uk/status-and-disruptions/amended-late-night-early-morning-northern-service-to-from-manchester-piccadilly-\">National Rail Enquiries</a>",
-        "model_replacement_rejected": "fact_lock: national rail",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "keep",
-        "reason": "Информация о сбоях в движении актуальна и соответствует источнику.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-trains-live-avanti-crosscountry-34745145-af99d29c503b",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchester-trains-live-avanti-crosscountry-34745145",
-        "original_html": "• National Rail: поездки на поездах Avanti West Coast и CrossCountry из Манчестер Пикадилли были отменены и задержаны 10 октября 2026 года из-за заблокированной линии. Ожидаются сбои в движении в течение всего дня. Пассажирам рекомендуется проверить статус своих поездок и использовать альтернативные маршруты, если это необходимо. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchester-trains-live-avanti-crosscountry-34745145\">MEN</a>",
-        "keep_rejected": "known_factual_error",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 13,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "keep",
-        "reason": "Информация о закрытии линии Metrolink и запуске автобусного маршрута соответствует источнику.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-03",
-        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-08-common-sense-prevails-as-altrincham-gets-direct-buses-during-tram-closure-b41833896b59",
-        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/10/08/common-sense-prevails-as-altrincham-gets-direct-buses-during-tram-closure",
-        "original_html": "• Metrolink: В период закрытия линии Metrolink в Алтринхеме с 19 октября по 1 ноября будет запущен новый прямой автобусный маршрут между Алтринхемом и Пикадилли каждые 15 минут с 7:00 до 19:00. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/08/common-sense-prevails-as-altrincham-gets-direct-buses-during-tram-closure\">Altrincham Today</a>",
-        "keep_rejected": "known_factual_error",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 16,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Исправление даты на правильный день недели.",
-        "risk": "date",
-        "critical_error": false,
-        "critical_problem": "",
+        "critical_problem": "Ошибка в возрасте жертв. В тексте указано, что Джуниор Аджосе и Шериф Талл были убиты, но их возраст не указан. В источнике указано, что Джуниор Аджосе было 36 лет, а Шерифу Таллу 21 год.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-guilty-verdict-34727926-a2f180ab5d95",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-guilty-verdict-34727926",
-        "original_html": "• Манчестер Сити вернется к игре впервые после вердикта по 115 обвинениям в Премьер-лиге, встретившись с Ливерпулем на Энфилде в воскресенье, 11 октября 2026 года. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-guilty-verdict-34727926\">MEN Manchester City</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 33,
-        "section": "Выходные в GM",
-        "requested_action": "strip",
-        "reason": "Дата события не соответствует фактическим данным, что может ввести читателей в заблуждение.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно. В карточке указана дата 11 октября, но в данных события указана дата 10 мая.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "weekend_activities-10",
-        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-        "original_html": "• 11 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "requested_action": "patch",
-        "reason": "Необходимо завершить предложение для ясности.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Текст не упоминает, что некоторые арестованные мужчины были задержаны за грабежи, что указано в source_claim.",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "reserve_replacement",
         "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cm79pdj4x33eo-1a4893d702e7",
-        "original_url_identity": "bbc.com/news/articles/cm79pdj4x33eo",
-        "original_html": "<b>В результате досрочного освобождения около 700 заключённых 1 октября, среди которых было около 50 из Большого Манчестера, восемь мужчин были арестованы за нарушения уголовных приказов, включая случаи домашнего насилия.</b> Министерство юстиции отметило, что это решение было принято для борьбы с переполнением тюрем, которые работают на 98,2% своей мощности, и пообещало увеличить финансирование полиции до 18,5 миллиарда фунтов стерлингов. <a href=\"https://bbc.com/news/articles/cm79pdj4x33eo\">BBC Manchester</a>",
-        "model_replacement_rejected": "fact_lock: 1 октября",
-        "replacement_fingerprint": "url-bbc-com-news-articles-cq98zy6gny8eo-555803663cc2",
-        "post_check_passed": false
+        "candidate_fingerprint": "url-bbc-com-news-articles-cvglw0y7p10ro-427571cbeb20",
+        "original_url_identity": "bbc.com/news/articles/cvglw0y7p10ro",
+        "original_html": "<b>В связи с двойным убийством в Moss Side, произошедшим более шести лет назад, задержан 36-летний мужчина.</b> Он был арестован в Турции и доставлен в Англию, где его встретили сотрудники полиции. По словам детектива Нила Хиггинсона, это задержание подчеркивает стремление полиции к справедливости для семей жертв, Джуниора Аджосе и Шерифа Талла, которые были убиты на вечеринке в ночь на 21 июня 2020 года. <a href=\"https://bbc.co.uk/news/articles/cvglw0y7p10ro\">BBC Manchester</a>",
+        "post_check_passed": true
       },
       {
         "line_index": 3,
         "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о закрытии M60.",
-        "risk": "format",
+        "requested_action": "patch",
+        "reason": "Уточнение, что это слушания, а не новое расследование.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дублирование информации о закрытии M60.",
+        "critical_problem": "Указано, что расследование продолжается, но это слушания по делу, а не новое расследование.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "last_24h-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-presents-under-the-christmas-tree-34729300-397cbaa6bd12",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/presents-under-the-christmas-tree-34729300",
+        "original_html": "• В Болтоне продолжается восьминедельное расследование по делу о пожарной атаке, унесшей жизни матери и её четырёх детей в Уолкдене. В ходе слушаний зачитаны свидетельские показания Мишель Пирсон, которая погибла спустя почти два года после нападения, вызванного бензиновыми бомбами в декабре 2017 года. Следствие изучает обстоятельства, предшествовавшие трагедии, и возможность предотвращения подобных инцидентов в будущем. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/presents-under-the-christmas-tree-34729300\">MEN</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 5,
+        "section": "Свежие новости",
+        "requested_action": "patch",
+        "reason": "Исправление даты на правильную.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана как 12 октября 2026 года, но это воскресенье, что не соответствует календарю.",
         "completeness_concept": "",
         "outcome": "resolved_by_replacement",
         "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m60-closed-live-motorway-shut-34747337-972718edc9d9",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/m60-closed-live-motorway-shut-34747337",
-        "original_html": "• M60: дорога закрыта в обоих направлениях на участке между развязками 17 и 18 из-за обновлений на Simister Island. Ожидаются длительные задержки. Объезды обозначены, но планируйте поездки с запасом времени. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/m60-closed-live-motorway-shut-34747337\">MEN</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-people-risking-lives-change-greater-34709032-db13fda7a9f1",
+        "plan_slot_id": "last_24h-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-arrested-for-arson-after-34750084-eb4b7666af38",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-arrested-for-arson-after-34750084",
+        "original_html": "• В Чорлтоне задержали мужчину по подозрению в поджоге после того, как в его квартире взорвались окна. Пожар произошел в воскресенье вечером, 12 октября 2026 года, на Барлоу Мур Роуд, где огонь вспыхнул на втором этаже над магазином BBM Bargains. На место прибыли несколько пожарных машин и полицейских, а сам задержанный остается в полиции для дальнейших допросов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-arrested-for-arson-after-34750084\">MEN</a>",
+        "model_replacement_rejected": "fact_lock: 11 октября 2026",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-carrington-relief-road-hundreds-objections-34740633-ad84334da4de",
         "post_check_passed": true
       },
       {
         "line_index": 16,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Исправление даты матча.",
+        "reason": "Дата матча указана неверно, матч состоялся 11 октября.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата матча указана неверно. 11 октября 2026 года — это суббота, а не воскресенье.",
+        "critical_problem": "Неправильное указание даты события.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
         "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-guilty-verdict-34727926-a2f180ab5d95",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-guilty-verdict-34727926",
-        "original_html": "• Манчестер Сити вернется к игре впервые после вердикта по 115 обвинениям в Премьер-лиге, встретившись с Ливерпулем на Энфилде в воскресенье, 11 октября 2026 года. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-guilty-verdict-34727926\">MEN Manchester City</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-enzo-maresca-makes-ferran-soriano-34749577-a2cc51f0566d",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-makes-ferran-soriano-34749577",
+        "original_html": "• 12 октября Манчестер Сити одержал победу над Ливерпулем на Анфилде, при этом генеральный директор Ферран Сориано и спортивный директор Уго Виана присутствовали на матче. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-makes-ferran-soriano-34749577\">MEN Manchester City</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 31,
-        "section": "Выходные в GM",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о автомобильной барахолке.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о автомобильной барахолке.",
+        "line_index": 17,
+        "section": "Футбол",
+        "requested_action": "keep",
+        "reason": "Информация о подаче апелляции и ожидании новых деталей актуальна и корректна.",
+        "risk": "factual",
+        "critical_error": false,
+        "critical_problem": "",
         "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "weekend_activities-08",
-        "candidate_fingerprint": "event-event-bowlee-car-boot-sale-2026-10-11-bowlee-community-park-middleton-f3a136eee667",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
-        "original_html": "• 11 октября в Bowlee Community Park, Мидлтон — Bowlee car boot sale. На площадке: автомобильная барахолка. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "football-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-punishment-34750026-9f942b977e3b",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-punishment-34750026",
+        "original_html": "• 12 октября Манчестер Сити подал апелляцию на решение независимой комиссии о виновности; новые детали будут опубликованы. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-punishment-34750026\">MEN Manchester City</a>",
+        "keep_rejected": "known_factual_error",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-midfield-selection-new-role-baleba-34739464-b9b7a0319879",
         "post_check_passed": true
       },
       {
-        "line_index": 47,
-        "section": "Русскоязычные концерты и стендап UK",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о выступлении Кирилла Селегея.",
-        "risk": "format",
+        "line_index": 18,
+        "section": "Футбол",
+        "requested_action": "keep",
+        "reason": "Описание поддержки фанатов Манчестер Сити соответствует фактам и не содержит ошибок.",
+        "risk": "factual",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "football-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-bananas-sheikh-mansour-masks-joyous-34749631-7b66e0435a28",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/bananas-sheikh-mansour-masks-joyous-34749631",
+        "original_html": "• 12 октября фанаты Манчестер Сити продемонстрировали поддержку на первом матче после вердикта о виновности, надев маски Шейха Мансура и принесли бананы. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/bananas-sheikh-mansour-masks-joyous-34749631\">MEN Manchester City</a>",
+        "keep_rejected": "known_factual_error",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-neville-sky-sports-man-city-34749567-29a70db0e72d",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 19,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Уточнение географического местоположения события.",
+        "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Дублирование информации о выступлении Кирилла Селегея.",
+        "critical_problem": "Неправильное указание места события. Детский сад находится в Salford, а не в Сейле.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "city_watch-01",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cmkgknp79y75o-ec611a732505",
+        "original_url_identity": "bbc.com/news/articles/cmkgknp79y75o",
+        "original_html": "• Кристофер Максвелл, 38 лет, из Сейла, был обвинен в преступлениях с огнестрельным оружием и наркотиками после того, как пистолет был найден в детском саду, закрытом из-за нашествия крыс. <a href=\"https://bbc.co.uk/news/articles/cmkgknp79y75o\">BBC Manchester</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 34,
+        "section": "Дальние анонсы",
+        "requested_action": "strip",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope 'gm'.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие не соответствует географическому контракту.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "russian_events-01",
-        "candidate_fingerprint": "event-event-18-big-belly-comedy-club-2026-10-18-big-belly-comedy-club-139100ee0acb",
-        "original_url_identity": "eventbrite.co.uk/e/18-big-belly-comedy-club-tickets-1999261527046",
-        "original_html": "• Кирилл Селегей выступит с новой программой в Big Belly Comedy Club в Лондоне 18 октября 2026 года. Двери откроются в 19:00, начало в 19:45, окончание в 21:30. Билеты доступны на Eventbrite. <a href=\"https://eventbrite.co.uk/e/18-big-belly-comedy-club-tickets-1999261527046\">UK Stand-Up Club Eventbrite</a>",
+        "plan_slot_id": "future_announcements-04",
+        "candidate_fingerprint": "event-event-the-prince-experience-endorphinmachine-2026-11-20-o2-academy-2-liverpool-fda36c4b1b4d",
+        "original_url_identity": "ticketmaster.co.uk/the-prince-experience-endorphinmachine-liverpool-20-11-2026/event/3E00644299A13319",
+        "original_html": "• <b>The Prince Experience.. Endorphinmachine</b> — 20 ноября, O2 Academy 2 Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-prince-experience-endorphinmachine-liverpool-20-11-2026/event/3E00644299A13319\">Ticketmaster</a>",
         "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::добавление информации о грабежах для соответствия источнику.",
+        "group_key": "главная история дня::уточнение возраста жертв для соответствия фактам из источника.",
         "actions": [
           {
             "line_index": 1,
             "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Добавление информации о грабежах для соответствия источнику.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "reserve_replacement",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cm79pdj4x33eo-1a4893d702e7",
-            "original_url_identity": "bbc.com/news/articles/cm79pdj4x33eo",
-            "original_html": "<b>В результате досрочного освобождения около 700 заключённых 1 октября, среди которых было около 50 из Большого Манчестера, восемь мужчин были арестованы за нарушения уголовных приказов, включая случаи домашнего насилия.</b> Министерство юстиции отметило, что это решение было принято для борьбы с переполнением тюрем, которые работают на 98,2% своей мощности, и пообещало увеличить финансирование полиции до 18,5 миллиарда фунтов стерлингов. <a href=\"https://bbc.com/news/articles/cm79pdj4x33eo\">BBC Manchester</a>",
-            "model_replacement_rejected": "fact_lock: 1 октября, 18,5, 98,2%",
-            "replacement_fingerprint": "url-bbc-com-news-articles-c615j3yvx7epo-6c39ce539f98",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 1,
-            "passed": false,
-            "detail": "shared prose policy still fails"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::указание места нахождения детского сада должно быть исправлено на 'в ирламе, салфорд'.",
-        "actions": [
-          {
-            "line_index": 4,
-            "section": "Свежие новости",
-            "requested_action": "patch",
-            "reason": "Указание места нахождения детского сада должно быть исправлено на 'в Ирламе, Салфорд'.",
+            "reason": "Уточнение возраста жертв для соответствия фактам из источника.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неправильное указание места нахождения детского сада.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-02",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cmkgknp79y75o-ec611a732505",
-            "original_url_identity": "bbc.com/news/articles/cmkgknp79y75o",
-            "original_html": "• Мужчина из Сейла обвинён в нарушении законов о хранении оружия и наркотиках после того, как пистолет был найден в детском саду Mini Fingers в Ирламе, Салфорд. Кристофер Максвелл, 38 лет, должен был явиться в суд в Манчестере и Салфорде. <a href=\"https://bbc.co.uk/news/articles/cmkgknp79y75o\">BBC Manchester</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 4,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::дата начала изменения рейсов должна быть 12 октября, а не 11 октября.",
-        "actions": [
-          {
-            "line_index": 11,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "patch",
-            "reason": "Дата начала изменения рейсов должна быть 12 октября, а не 11 октября.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата начала изменения рейсов указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-01",
-            "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-amended-late-night-early-morning-northern-service-to-from-manchester-piccadilly-63c03dd0b3ff",
-            "original_url_identity": "nationalrail.co.uk/status-and-disruptions/amended-late-night-early-morning-northern-service-to-from-manchester-piccadilly-",
-            "original_html": "• National Rail: С 12 по 16 октября изменены вечерние и утренние рейсы Northern из/в Манчестер Пикадилли. Пассажирам рекомендуется проверять информацию перед поездкой. <a href=\"https://nationalrail.co.uk/status-and-disruptions/amended-late-night-early-morning-northern-service-to-from-manchester-piccadilly-\">National Rail Enquiries</a>",
-            "model_replacement_rejected": "fact_lock: national rail",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 11,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::информация о сбоях в движении актуальна и соответствует источнику.",
-        "actions": [
-          {
-            "line_index": 12,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "keep",
-            "reason": "Информация о сбоях в движении актуальна и соответствует источнику.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-trains-live-avanti-crosscountry-34745145-af99d29c503b",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchester-trains-live-avanti-crosscountry-34745145",
-            "original_html": "• National Rail: поездки на поездах Avanti West Coast и CrossCountry из Манчестер Пикадилли были отменены и задержаны 10 октября 2026 года из-за заблокированной линии. Ожидаются сбои в движении в течение всего дня. Пассажирам рекомендуется проверить статус своих поездок и использовать альтернативные маршруты, если это необходимо. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchester-trains-live-avanti-crosscountry-34745145\">MEN</a>",
-            "keep_rejected": "known_factual_error",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 12,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::информация о закрытии линии metrolink и запуске автобусного маршрута соответствует источнику.",
-        "actions": [
-          {
-            "line_index": 13,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "keep",
-            "reason": "Информация о закрытии линии Metrolink и запуске автобусного маршрута соответствует источнику.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-03",
-            "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-08-common-sense-prevails-as-altrincham-gets-direct-buses-during-tram-closure-b41833896b59",
-            "original_url_identity": "altrincham.todaynews.co.uk/news/2026/10/08/common-sense-prevails-as-altrincham-gets-direct-buses-during-tram-closure",
-            "original_html": "• Metrolink: В период закрытия линии Metrolink в Алтринхеме с 19 октября по 1 ноября будет запущен новый прямой автобусный маршрут между Алтринхемом и Пикадилли каждые 15 минут с 7:00 до 19:00. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/08/common-sense-prevails-as-altrincham-gets-direct-buses-during-tram-closure\">Altrincham Today</a>",
-            "keep_rejected": "known_factual_error",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 13,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::исправление даты на правильный день недели.",
-        "actions": [
-          {
-            "line_index": 16,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Исправление даты на правильный день недели.",
-            "risk": "date",
-            "critical_error": false,
-            "critical_problem": "",
+            "critical_problem": "Ошибка в возрасте жертв. В тексте указано, что Джуниор Аджосе и Шериф Талл были убиты, но их возраст не указан. В источнике указано, что Джуниор Аджосе было 36 лет, а Шерифу Таллу 21 год.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-guilty-verdict-34727926-a2f180ab5d95",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-guilty-verdict-34727926",
-            "original_html": "• Манчестер Сити вернется к игре впервые после вердикта по 115 обвинениям в Премьер-лиге, встретившись с Ливерпулем на Энфилде в воскресенье, 11 октября 2026 года. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-guilty-verdict-34727926\">MEN Manchester City</a>",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cvglw0y7p10ro-427571cbeb20",
+            "original_url_identity": "bbc.com/news/articles/cvglw0y7p10ro",
+            "original_html": "<b>В связи с двойным убийством в Moss Side, произошедшим более шести лет назад, задержан 36-летний мужчина.</b> Он был арестован в Турции и доставлен в Англию, где его встретили сотрудники полиции. По словам детектива Нила Хиггинсона, это задержание подчеркивает стремление полиции к справедливости для семей жертв, Джуниора Аджосе и Шерифа Талла, которые были убиты на вечеринке в ночь на 21 июня 2020 года. <a href=\"https://bbc.co.uk/news/articles/cvglw0y7p10ro\">BBC Manchester</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 16,
+            "line_index": 1,
             "passed": true,
             "detail": "post-check passed"
           }
         ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "выходные в gm::дата события не соответствует фактическим данным, что может ввести читателей в заблуждение.",
-        "actions": [
-          {
-            "line_index": 33,
-            "section": "Выходные в GM",
-            "requested_action": "strip",
-            "reason": "Дата события не соответствует фактическим данным, что может ввести читателей в заблуждение.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно. В карточке указана дата 11 октября, но в данных события указана дата 10 мая.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "weekend_activities-10",
-            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-            "original_html": "• 11 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 33,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
         "known_factual_error": true
       },
       {
-        "group_key": "главная история дня::необходимо завершить предложение для ясности.",
-        "actions": [
-          {
-            "line_index": 1,
-            "section": "Главная история дня",
-            "requested_action": "patch",
-            "reason": "Необходимо завершить предложение для ясности.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Текст не упоминает, что некоторые арестованные мужчины были задержаны за грабежи, что указано в source_claim.",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "reserve_replacement",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cm79pdj4x33eo-1a4893d702e7",
-            "original_url_identity": "bbc.com/news/articles/cm79pdj4x33eo",
-            "original_html": "<b>В результате досрочного освобождения около 700 заключённых 1 октября, среди которых было около 50 из Большого Манчестера, восемь мужчин были арестованы за нарушения уголовных приказов, включая случаи домашнего насилия.</b> Министерство юстиции отметило, что это решение было принято для борьбы с переполнением тюрем, которые работают на 98,2% своей мощности, и пообещало увеличить финансирование полиции до 18,5 миллиарда фунтов стерлингов. <a href=\"https://bbc.com/news/articles/cm79pdj4x33eo\">BBC Manchester</a>",
-            "model_replacement_rejected": "fact_lock: 1 октября",
-            "replacement_fingerprint": "url-bbc-com-news-articles-cq98zy6gny8eo-555803663cc2",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 1,
-            "passed": false,
-            "detail": "shared prose policy still fails"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::дублирование информации о закрытии m60",
+        "group_key": "свежие новости::уточнение, что это слушания, а не новое расследование.",
         "actions": [
           {
             "line_index": 3,
             "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о закрытии M60.",
-            "risk": "format",
+            "requested_action": "patch",
+            "reason": "Уточнение, что это слушания, а не новое расследование.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Дублирование информации о закрытии M60.",
+            "critical_problem": "Указано, что расследование продолжается, но это слушания по делу, а не новое расследование.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-presents-under-the-christmas-tree-34729300-397cbaa6bd12",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/presents-under-the-christmas-tree-34729300",
+            "original_html": "• В Болтоне продолжается восьминедельное расследование по делу о пожарной атаке, унесшей жизни матери и её четырёх детей в Уолкдене. В ходе слушаний зачитаны свидетельские показания Мишель Пирсон, которая погибла спустя почти два года после нападения, вызванного бензиновыми бомбами в декабре 2017 года. Следствие изучает обстоятельства, предшествовавшие трагедии, и возможность предотвращения подобных инцидентов в будущем. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/presents-under-the-christmas-tree-34729300\">MEN</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 3,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::исправление даты на правильную.",
+        "actions": [
+          {
+            "line_index": 5,
+            "section": "Свежие новости",
+            "requested_action": "patch",
+            "reason": "Исправление даты на правильную.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана как 12 октября 2026 года, но это воскресенье, что не соответствует календарю.",
             "completeness_concept": "",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m60-closed-live-motorway-shut-34747337-972718edc9d9",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/m60-closed-live-motorway-shut-34747337",
-            "original_html": "• M60: дорога закрыта в обоих направлениях на участке между развязками 17 и 18 из-за обновлений на Simister Island. Ожидаются длительные задержки. Объезды обозначены, но планируйте поездки с запасом времени. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/m60-closed-live-motorway-shut-34747337\">MEN</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-people-risking-lives-change-greater-34709032-db13fda7a9f1",
+            "plan_slot_id": "last_24h-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-arrested-for-arson-after-34750084-eb4b7666af38",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-arrested-for-arson-after-34750084",
+            "original_html": "• В Чорлтоне задержали мужчину по подозрению в поджоге после того, как в его квартире взорвались окна. Пожар произошел в воскресенье вечером, 12 октября 2026 года, на Барлоу Мур Роуд, где огонь вспыхнул на втором этаже над магазином BBM Bargains. На место прибыли несколько пожарных машин и полицейских, а сам задержанный остается в полиции для дальнейших допросов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-arrested-for-arson-after-34750084\">MEN</a>",
+            "model_replacement_rejected": "fact_lock: 11 октября 2026",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-carrington-relief-road-hundreds-objections-34740633-ad84334da4de",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 3,
+            "line_index": 5,
             "passed": true,
             "detail": "post-check passed"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "story:tfgm|closed|rochdale|salford|new story|2026 10 11",
-            "visible_count": 0,
-            "passed": true
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::исправление даты матча.",
+        "group_key": "футбол::дата матча указана неверно, матч состоялся 11 октября.",
         "actions": [
           {
             "line_index": 16,
             "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Исправление даты матча.",
+            "reason": "Дата матча указана неверно, матч состоялся 11 октября.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата матча указана неверно. 11 октября 2026 года — это суббота, а не воскресенье.",
+            "critical_problem": "Неправильное указание даты события.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
             "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-guilty-verdict-34727926-a2f180ab5d95",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-guilty-verdict-34727926",
-            "original_html": "• Манчестер Сити вернется к игре впервые после вердикта по 115 обвинениям в Премьер-лиге, встретившись с Ливерпулем на Энфилде в воскресенье, 11 октября 2026 года. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-guilty-verdict-34727926\">MEN Manchester City</a>",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-enzo-maresca-makes-ferran-soriano-34749577-a2cc51f0566d",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-makes-ferran-soriano-34749577",
+            "original_html": "• 12 октября Манчестер Сити одержал победу над Ливерпулем на Анфилде, при этом генеральный директор Ферран Сориано и спортивный директор Уго Виана присутствовали на матче. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-makes-ferran-soriano-34749577\">MEN Manchester City</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -892,110 +568,164 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::дублирование информации о автомобильной барахолке",
+        "group_key": "футбол::информация о подаче апелляции и ожидании новых деталей актуальна и корректна.",
         "actions": [
           {
-            "line_index": 31,
-            "section": "Выходные в GM",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о автомобильной барахолке.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о автомобильной барахолке.",
+            "line_index": 17,
+            "section": "Футбол",
+            "requested_action": "keep",
+            "reason": "Информация о подаче апелляции и ожидании новых деталей актуальна и корректна.",
+            "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
             "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "weekend_activities-08",
-            "candidate_fingerprint": "event-event-bowlee-car-boot-sale-2026-10-11-bowlee-community-park-middleton-f3a136eee667",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
-            "original_html": "• 11 октября в Bowlee Community Park, Мидлтон — Bowlee car boot sale. На площадке: автомобильная барахолка. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "football-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-punishment-34750026-9f942b977e3b",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-punishment-34750026",
+            "original_html": "• 12 октября Манчестер Сити подал апелляцию на решение независимой комиссии о виновности; новые детали будут опубликованы. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-punishment-34750026\">MEN Manchester City</a>",
+            "keep_rejected": "known_factual_error",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-midfield-selection-new-role-baleba-34739464-b9b7a0319879",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_by_removal",
+        "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 31,
+            "line_index": 17,
             "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:bowlee car boot sale|2026-10-11|bowlee community park middleton",
-            "visible_count": 0,
-            "passed": true
+            "detail": "post-check passed"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "русскоязычные концерты и стендап uk::дублирование информации о выступлении кирилла селегея",
+        "group_key": "футбол::описание поддержки фанатов манчестер сити соответствует фактам и не содержит ошибок.",
         "actions": [
           {
-            "line_index": 47,
-            "section": "Русскоязычные концерты и стендап UK",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о выступлении Кирилла Селегея.",
-            "risk": "format",
+            "line_index": 18,
+            "section": "Футбол",
+            "requested_action": "keep",
+            "reason": "Описание поддержки фанатов Манчестер Сити соответствует фактам и не содержит ошибок.",
+            "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "football-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-bananas-sheikh-mansour-masks-joyous-34749631-7b66e0435a28",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/bananas-sheikh-mansour-masks-joyous-34749631",
+            "original_html": "• 12 октября фанаты Манчестер Сити продемонстрировали поддержку на первом матче после вердикта о виновности, надев маски Шейха Мансура и принесли бананы. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/bananas-sheikh-mansour-masks-joyous-34749631\">MEN Manchester City</a>",
+            "keep_rejected": "known_factual_error",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-neville-sky-sports-man-city-34749567-29a70db0e72d",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 18,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::уточнение географического местоположения события.",
+        "actions": [
+          {
+            "line_index": 19,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Уточнение географического местоположения события.",
+            "risk": "geo",
             "critical_error": true,
-            "critical_problem": "Дублирование информации о выступлении Кирилла Селегея.",
+            "critical_problem": "Неправильное указание места события. Детский сад находится в Salford, а не в Сейле.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "city_watch-01",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cmkgknp79y75o-ec611a732505",
+            "original_url_identity": "bbc.com/news/articles/cmkgknp79y75o",
+            "original_html": "• Кристофер Максвелл, 38 лет, из Сейла, был обвинен в преступлениях с огнестрельным оружием и наркотиками после того, как пистолет был найден в детском саду, закрытом из-за нашествия крыс. <a href=\"https://bbc.co.uk/news/articles/cmkgknp79y75o\">BBC Manchester</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 19,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "дальние анонсы::событие проходит в ливерпуле, что не соответствует geo_scope 'gm'.",
+        "actions": [
+          {
+            "line_index": 34,
+            "section": "Дальние анонсы",
+            "requested_action": "strip",
+            "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope 'gm'.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие не соответствует географическому контракту.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "russian_events-01",
-            "candidate_fingerprint": "event-event-18-big-belly-comedy-club-2026-10-18-big-belly-comedy-club-139100ee0acb",
-            "original_url_identity": "eventbrite.co.uk/e/18-big-belly-comedy-club-tickets-1999261527046",
-            "original_html": "• Кирилл Селегей выступит с новой программой в Big Belly Comedy Club в Лондоне 18 октября 2026 года. Двери откроются в 19:00, начало в 19:45, окончание в 21:30. Билеты доступны на Eventbrite. <a href=\"https://eventbrite.co.uk/e/18-big-belly-comedy-club-tickets-1999261527046\">UK Stand-Up Club Eventbrite</a>",
+            "plan_slot_id": "future_announcements-04",
+            "candidate_fingerprint": "event-event-the-prince-experience-endorphinmachine-2026-11-20-o2-academy-2-liverpool-fda36c4b1b4d",
+            "original_url_identity": "ticketmaster.co.uk/the-prince-experience-endorphinmachine-liverpool-20-11-2026/event/3E00644299A13319",
+            "original_html": "• <b>The Prince Experience.. Endorphinmachine</b> — 20 ноября, O2 Academy 2 Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-prince-experience-endorphinmachine-liverpool-20-11-2026/event/3E00644299A13319\">Ticketmaster</a>",
             "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
+            "removal_reason": "fact_lock_failed",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 47,
+            "line_index": 34,
             "passed": true,
             "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:кирилл селегей в лондоне 18 октября big belly comedy club|2026-10-18|big belly comedy club",
-            "visible_count": 0,
-            "passed": true
           }
         ],
         "known_factual_error": true
       }
     ],
     "refetch": {
-      "attempted": 1,
+      "attempted": 0,
       "improved": 0,
-      "failed": 1,
+      "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 0,
+      "skipped": 1,
       "reports": [
         {
-          "fingerprint": "url-nationalrail-co-uk-status-and-disruptions-amended-late-night-early-morning-northern-service-to-from-manchester-piccadilly-63c03dd0b3ff",
-          "title": "Amended late night / early morning Northern service to / from Manchester Piccadilly from Monday 12 to Friday 16 October",
-          "status": "failed",
-          "url": "https://nationalrail.co.uk/status-and-disruptions/amended-late-night-early-morning-northern-service-to-from-manchester-piccadilly-",
-          "error": "RuntimeError: HTTP 404"
+          "fingerprint": "event-event-the-prince-experience-endorphinmachine-2026-11-20-o2-academy-2-liverpool-fda36c4b1b4d",
+          "title": "The Prince Experience... Endorphinmachine — event 2026-11-20 — public sale 2026-02-06 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/the-prince-experience-endorphinmachine-liverpool-20-11-2026/event/3E00644299A13319",
+          "candidate_evidence_chars": 357
         }
       ]
     },
-    "enrich_improved": 10,
-    "deterministic_rewrite_rejected": 5,
+    "enrich_improved": 6,
+    "deterministic_rewrite_rejected": 3,
     "false_positive_existing_fact": 2,
-    "no_eligible_backup": 6,
+    "no_eligible_backup": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 38,
-      "matched_lines": 38,
-      "applicable_lines": 2,
-      "unmatched_lines": 4,
+      "checked_lines": 40,
+      "matched_lines": 40,
+      "applicable_lines": 4,
+      "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -1006,22 +736,14 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 42,
-      "resolved_in_place": 41,
-      "unresolved": 1,
-      "findings": [
-        {
-          "line_index": 1,
-          "section": "Главная история дня",
-          "outcome": "unresolved",
-          "code": "language_policy_defect",
-          "severity": "warning"
-        }
-      ]
+      "checked_lines": 40,
+      "resolved_in_place": 40,
+      "unresolved": 0,
+      "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved"
   },
-  "notes": "Добавьте информацию о грабежах для точности.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного указания места нахождения детского сада.; Ошибка в дате начала изменения рейсов Northern требует исправления.; Обе строки соответствуют требованиям географии и содержат ак",
+  "notes": "Уточнение возраста жертв необходимо для соответствия фактам из источника.; Прогноз погоды соответствует данным Met Office и контракту блока.; Исправлены фактические ошибки в строках 3 и 5. Остальные строки безопасны.; Сбой на линии между Престоном и Wigan Северным / Bolton не относится к GM и должен быть удалён.; Инфор",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
@@ -1029,78 +751,50 @@
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "problem": "Текст не упоминает, что некоторые арестованные мужчины были задержаны за грабежи, что указано в source_claim.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 4,
-        "section": "Свежие новости",
-        "problem": "Неправильное указание места нахождения детского сада.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 11,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дата начала изменения рейсов указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 16,
-        "section": "Футбол",
-        "problem": "Дата матча указана неверно. 11 октября 2026 года — это суббота, а не воскресенье.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 33,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно. В карточке указана дата 11 октября, но в данных события указана дата 10 мая.",
-        "risk": "date",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 48,
-        "section": "Русскоязычные концерты и стендап UK",
-        "problem": "Событие в Дублине, который не входит в UK.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Неполное предложение, неясность в описании событий.",
+        "problem": "Ошибка в возрасте жертв. В тексте указано, что Джуниор Аджосе и Шериф Талл были убиты, но их возраст не указан. В источнике указано, что Джуниор Аджосе было 36 лет, а Шерифу Таллу 21 год.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
         "line_index": 3,
         "section": "Свежие новости",
-        "problem": "Дублирование информации о закрытии M60.",
-        "risk": "format",
+        "problem": "Указано, что расследование продолжается, но это слушания по делу, а не новое расследование.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 5,
+        "section": "Свежие новости",
+        "problem": "Дата события указана как 12 октября 2026 года, но это воскресенье, что не соответствует календарю.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Событие происходит вне Greater Manchester.",
+        "risk": "geo",
         "suggested_action": "strip"
       },
       {
         "line_index": 16,
         "section": "Футбол",
-        "problem": "Дата матча указана неверно, 11 октября 2026 года — это суббота, а не воскресенье.",
+        "problem": "Неправильное указание даты события.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 31,
-        "section": "Выходные в GM",
-        "problem": "Дублирование информации о автомобильной барахолке.",
-        "risk": "format",
-        "suggested_action": "strip"
+        "line_index": 19,
+        "section": "Городской радар",
+        "problem": "Неправильное указание места события. Детский сад находится в Salford, а не в Сейле.",
+        "risk": "geo",
+        "suggested_action": "repair"
       },
       {
-        "line_index": 47,
-        "section": "Русскоязычные концерты и стендап UK",
-        "problem": "Дублирование информации о выступлении Кирилла Селегея.",
-        "risk": "format",
+        "line_index": 34,
+        "section": "Дальние анонсы",
+        "problem": "Событие не соответствует географическому контракту.",
+        "risk": "geo",
         "suggested_action": "strip"
       }
     ],
@@ -1109,113 +803,94 @@
         "line_index": 1,
         "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• В результате досрочного освобождения около 700 заключённых 1 октября, среди которых было около 50 из Большого Манчестера, восемь мужчин были арестованы за нарушения уголовных приказов, включая случаи домашнего насилия и грабежи. Министерство юстиции отметило, что это решение было принято для борьбы с переполнением тюрем, которые работают на 98,2% своей мощности, и пообещало увеличить финансирование полиции до 18,5 миллиарда фунтов стерлингов.",
-        "reason": "Добавление информации о грабежах для соответствия источнику.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 4,
-        "section": "Свежие новости",
-        "action": "patch",
-        "replacement_text": "• Мужчина из Сейла обвинён в нарушении законов о хранении оружия и наркотиках после того, как пистолет был найден в детском саду Mini Fingers в Ирламе, Салфорд. Кристофер Максвелл, 38 лет, должен был явиться в суд в Манчестере и Салфорде.",
-        "reason": "Указание места нахождения детского сада должно быть исправлено на 'в Ирламе, Салфорд'.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 11,
-        "section": "Общественный транспорт сегодня",
-        "action": "patch",
-        "replacement_text": "• National Rail: С 12 по 16 октября изменены вечерние и утренние рейсы Northern из/в Манчестер Пикадилли. Пассажирам рекомендуется проверять информацию перед поездкой.",
-        "reason": "Дата начала изменения рейсов должна быть 12 октября, а не 11 октября.",
-        "risk": "date"
-      },
-      {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
-        "action": "keep",
-        "reason": "Информация о сбоях в движении актуальна и соответствует источнику.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 13,
-        "section": "Общественный транспорт сегодня",
-        "action": "keep",
-        "reason": "Информация о закрытии линии Metrolink и запуске автобусного маршрута соответствует источнику.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 16,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Манчестер Сити вернется к игре впервые после вердикта по 115 обвинениям в Премьер-лиге, встретившись с Ливерпулем на Энфилде в субботу, 11 октября 2026 года.",
-        "reason": "Исправление даты на правильный день недели.",
-        "risk": "date"
-      },
-      {
-        "line_index": 33,
-        "section": "Выходные в GM",
-        "action": "strip",
-        "reason": "Дата события не соответствует фактическим данным, что может ввести читателей в заблуждение.",
-        "risk": "date"
-      },
-      {
-        "line_index": 48,
-        "section": "Русскоязычные концерты и стендап UK",
-        "action": "strip",
-        "reason": "Дублин находится в Ирландии, а не в UK, что нарушает географический контракт раздела.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• В результате досрочного освобождения около 700 заключённых 1 октября, среди которых было около 50 из Большого Манчестера, восемь мужчин были арестованы за нарушения уголовных приказов, включая случаи домашнего насилия. Министерство юстиции отметило, что это р...",
-        "reason": "Необходимо завершить предложение для ясности.",
+        "replacement_text": "• В связи с двойным убийством в Moss Side, произошедшим более шести лет назад, задержан 36-летний мужчина. Он был арестован в Турции и доставлен в Англию, где его встретили сотрудники полиции. По словам детектива Нила Хиггинсона, это задержание подчеркивает стремление полиции к справедливости для семей жертв, 36-летнего Джуниора Аджосе и 21-летнего Шерифа Талла, которые были убиты на вечеринке в ночь на 21 июня 2020 года.",
+        "reason": "Уточнение возраста жертв для соответствия фактам из источника.",
         "risk": "factual"
       },
       {
         "line_index": 3,
         "section": "Свежие новости",
+        "action": "patch",
+        "replacement_text": "• В Болтоне проходят восьминедельные слушания по делу о пожарной атаке, унесшей жизни матери и её четырёх детей в Уолкдене. В ходе слушаний зачитаны свидетельские показания Мишель Пирсон, которая погибла спустя почти два года после нападения, вызванного бензиновыми бомбами в декабре 2017 года. Следствие изучает обстоятельства, предшествовавшие трагедии, и возможность предотвращения подобных инцидентов в будущем.",
+        "reason": "Уточнение, что это слушания, а не новое расследование.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 5,
+        "section": "Свежие новости",
+        "action": "patch",
+        "replacement_text": "• В Чорлтоне задержали мужчину по подозрению в поджоге после того, как в его квартире взорвались окна. Пожар произошел в воскресенье вечером, 11 октября 2026 года, на Барлоу Мур Роуд, где огонь вспыхнул на втором этаже над магазином BBM Bargains. На место прибыли несколько пожарных машин и полицейских, а сам задержанный остается в полиции для дальнейших допросов.",
+        "reason": "Исправление даты на правильную.",
+        "risk": "date"
+      },
+      {
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
         "action": "strip",
-        "replacement_text": "",
-        "reason": "Дублирование информации о закрытии M60.",
-        "risk": "format"
+        "reason": "Сбой на линии между Престоном и Wigan Северным / Bolton не относится к Greater Manchester.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 13,
+        "section": "Общественный транспорт сегодня",
+        "action": "keep",
+        "reason": "Изменения в расписании поездов Northern до/из Манчестер Пикадилли соответствуют географическому контракту.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 14,
+        "section": "Общественный транспорт сегодня",
+        "action": "keep",
+        "reason": "Событие связано с Манчестер Пикадилли и соответствует географическому контракту.",
+        "risk": "geo"
       },
       {
         "line_index": 16,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Манчестер Сити вернется к игре впервые после вердикта по 115 обвинениям в Премьер-лиге, встретившись с Ливерпулем на Энфилде в субботу, 11 октября 2026 года.",
-        "reason": "Исправление даты матча.",
+        "replacement_text": "• 11 октября Манчестер Сити одержал победу над Ливерпулем на Анфилде, при этом генеральный директор Ферран Сориано и спортивный директор Уго Виана присутствовали на матче.",
+        "reason": "Дата матча указана неверно, матч состоялся 11 октября.",
         "risk": "date"
       },
       {
-        "line_index": 31,
-        "section": "Выходные в GM",
-        "action": "strip",
-        "replacement_text": "",
-        "reason": "Дублирование информации о автомобильной барахолке.",
-        "risk": "format"
+        "line_index": 17,
+        "section": "Футбол",
+        "action": "keep",
+        "reason": "Информация о подаче апелляции и ожидании новых деталей актуальна и корректна.",
+        "risk": "factual"
       },
       {
-        "line_index": 47,
-        "section": "Русскоязычные концерты и стендап UK",
+        "line_index": 18,
+        "section": "Футбол",
+        "action": "keep",
+        "reason": "Описание поддержки фанатов Манчестер Сити соответствует фактам и не содержит ошибок.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 19,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Кристофер Максвелл, 38 лет, из Сейла, был обвинен в преступлениях с огнестрельным оружием и наркотиками после того, как пистолет был найден в детском саду в Salford, закрытом из-за нашествия крыс.",
+        "reason": "Уточнение географического местоположения события.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 34,
+        "section": "Дальние анонсы",
         "action": "strip",
-        "replacement_text": "",
-        "reason": "Дублирование информации о выступлении Кирилла Селегея.",
-        "risk": "format"
+        "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope 'gm'.",
+        "risk": "geo"
       }
     ],
     "warnings": [
-      "Блок 'Выходные в GM' содержит только 6 событий, что минимально допустимо по контракту. Рекомендуется добавить больше событий для улучшения полноты блока.",
-      "Недостаточное количество элементов в секциях 'Что важно сегодня' и 'Городской радар'.",
-      "Отсутствие блока 'Еда, открытия и рынки'."
+      "Строка 36: текст обрывается на середине предложения, что может вызвать путаницу у читателей.",
+      "judge reduce failed: parse_failed no parseable JSON"
     ],
-    "notes": "Добавьте информацию о грабежах для точности.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного указания места нахождения детского сада.; Ошибка в дате начала изменения рейсов Northern требует исправления.; Обе строки соответствуют требованиям географии и содержат ак",
+    "notes": "Уточнение возраста жертв необходимо для соответствия фактам из источника.; Прогноз погоды соответствует данным Met Office и контракту блока.; Исправлены фактические ошибки в строках 3 и 5. Остальные строки безопасны.; Сбой на линии между Престоном и Wigan Северным / Bolton не относится к GM и должен быть удалён.; Инфор",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "ok",
-      "chunk_count": 14,
+      "status": "partial",
+      "chunk_count": 11,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -1233,8 +908,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2669,
-          "duration_seconds": 2.6
+          "estimated_tokens": 2656,
+          "duration_seconds": 4.168
         },
         {
           "chunk_id": "chunk-02",
@@ -1251,33 +926,33 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2443,
-          "duration_seconds": 1.241
+          "estimated_tokens": 2471,
+          "duration_seconds": 0.915
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            10
+            11
           ],
           "sections": [
             "Свежие новости"
           ],
           "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6586,
-          "duration_seconds": 1.78
+          "estimated_tokens": 7170,
+          "duration_seconds": 9.078
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            11,
-            13
+            12,
+            14
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -1287,14 +962,14 @@
           "action_count": 3,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3778,
-          "duration_seconds": 2.532
+          "estimated_tokens": 3764,
+          "duration_seconds": 2.277
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            14,
+            15,
             15
           ],
           "sections": [
@@ -1305,8 +980,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3169,
-          "duration_seconds": 0.685
+          "estimated_tokens": 2590,
+          "duration_seconds": 1.043
         },
         {
           "chunk_id": "chunk-06",
@@ -1320,72 +995,36 @@
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
-          "action_count": 1,
+          "action_count": 3,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3723,
-          "duration_seconds": 1.797
+          "estimated_tokens": 3631,
+          "duration_seconds": 3.43
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
             19,
-            30
+            26
           ],
           "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 7396,
-          "duration_seconds": 62.386
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            31,
-            33
-          ],
-          "sections": [
-            "Выходные в GM"
+            "Городской радар"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4052,
-          "duration_seconds": 1.475
+          "estimated_tokens": 6274,
+          "duration_seconds": 2.555
         },
         {
-          "chunk_id": "chunk-09",
+          "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            34,
-            37
-          ],
-          "sections": [
-            "Городской радар"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 4328,
-          "duration_seconds": 16.649
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            38,
-            38
+            27,
+            28
           ],
           "sections": [
             "IT и бизнес"
@@ -1395,94 +1034,76 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2615,
-          "duration_seconds": 0.84
+          "estimated_tokens": 3129,
+          "duration_seconds": 6.593
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            39,
-            39
+            29,
+            30
+          ],
+          "sections": [
+            "Business/tech события для тебя"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3435,
+          "duration_seconds": 11.327
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            31,
+            34
           ],
           "sections": [
             "Дальние анонсы"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2695,
-          "duration_seconds": 5.134
-        },
-        {
-          "chunk_id": "chunk-12",
-          "status": "ok",
-          "line_range": [
-            40,
-            45
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 6021,
-          "duration_seconds": 36.922
-        },
-        {
-          "chunk_id": "chunk-13",
-          "status": "ok",
-          "line_range": [
-            46,
-            46
-          ],
-          "sections": [
-            "Крупные концерты вне GM"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2722,
-          "duration_seconds": 5.96
-        },
-        {
-          "chunk_id": "chunk-14",
-          "status": "ok",
-          "line_range": [
-            47,
-            48
-          ],
-          "sections": [
-            "Русскоязычные концерты и стендап UK"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3414,
-          "duration_seconds": 8.392
+          "estimated_tokens": 4502,
+          "duration_seconds": 20.537
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            35,
+            41
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 6503,
+          "duration_seconds": 30.314
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "ok",
+        "status": "parse_failed",
         "line_range": [],
         "sections": [],
-        "decision": "repair_required",
-        "critical_error_count": 5,
-        "action_count": 5,
-        "warning_count": 2,
-        "error": "",
-        "estimated_tokens": 10888,
-        "duration_seconds": 28.626
+        "decision": "",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 0,
+        "error": "no parseable JSON",
+        "estimated_tokens": 10236,
+        "duration_seconds": 29.021
       },
       "max_workers": 3,
       "chunk_line_target": 12,
