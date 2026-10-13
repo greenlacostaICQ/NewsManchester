@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "run_date_london": "2026-10-12",
-  "created_at_london": "2026-10-12T08:14:23.508160+01:00",
+  "run_date_london": "2026-10-13",
+  "created_at_london": "2026-10-13T08:18:57.121279+01:00",
   "policy": "Every candidate must have selected / reserve / needs_enrichment / drop. Pending dedupe is not a valid final state.",
   "totals": {
-    "selected": 717,
-    "reserve": 78,
-    "needs_enrichment": 4,
-    "drop": 615,
+    "selected": 704,
+    "reserve": 100,
+    "needs_enrichment": 3,
+    "drop": 625,
     "pending": 0
   },
   "pending_dedupe_left": [],
@@ -23,17 +23,47 @@
     },
     "last_24h": {
       "heading": "Свежие новости",
-      "total": 90,
-      "selected": 18,
-      "reserve": 5,
+      "total": 125,
+      "selected": 31,
+      "reserve": 11,
       "needs_enrichment": 0,
-      "drop": 67,
+      "drop": 83,
       "examples": [
         {
-          "verdict": "drop",
-          "title": "Unseen Vivienne Westwood photos show 'born protester'",
+          "verdict": "reserve",
+          "title": "What Manchester's 'super-profit' deal with City owners has paid out so far",
           "source_label": "BBC Manchester",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=planning, anchor=none, tier=filler)."
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "drop",
+          "title": "Public inquiry over Manchester synagogue attack deaths",
+          "source_label": "BBC Manchester",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "reserve",
+          "title": "PC thought murderer was making 'empty threats' before arson attack",
+          "source_label": "BBC Manchester",
+          "reason": "Board rejected: duplicate"
+        },
+        {
+          "verdict": "reserve",
+          "title": "Julie Hesmondhalgh exits Celebrity Traitors 'with head held high'",
+          "source_label": "BBC Manchester",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "drop",
+          "title": "'I choose to live my life with hope', says dad with brain cancer",
+          "source_label": "BBC Manchester",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Police officer hurt after Liverpool-Man City game at Anfield",
+          "source_label": "BBC Manchester",
+          "reason": "Held as same-block backup for recovery."
         },
         {
           "verdict": "drop",
@@ -43,141 +73,156 @@
         },
         {
           "verdict": "drop",
-          "title": "Man arrested after woman seriously hurt in three-car M62 crash",
-          "source_label": "BBC Manchester",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Man arrested in Manchester over £400k illicit cigarette haul",
-          "source_label": "BBC Manchester",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Man, 36, arrested six years on from Moss Side double murder",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
           "title": "Unseen Vivienne Westwood photos show 'born protester'",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+          "source_label": "BBC Manchester",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=planning, anchor=none, tier=filler)."
+        }
+      ]
+    },
+    "transport": {
+      "heading": "Общественный транспорт сегодня",
+      "total": 10,
+      "selected": 3,
+      "reserve": 1,
+      "needs_enrichment": 0,
+      "drop": 6,
+      "examples": [
+        {
+          "verdict": "drop",
+          "title": "Advanced materials testing centre completed",
+          "source_label": "BBC Manchester",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: corrected section routing before translation (section_routing:transport). | Validator: transport item has no passenger movement impact and cannot be shown in Transport or borrowed by another public block."
         },
         {
           "verdict": "drop",
-          "title": "Manchester woman tackling taboos of childlessness and miscarriage",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+          "title": "Major Tram Works - Monday 19 October to Sunday 1 November",
+          "source_label": "TfGM",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: transport alert has no Greater Manchester journey anchor."
         },
         {
           "verdict": "drop",
-          "title": "Macbeth to be staged at Oldham's last nightclub Liquid and Envy",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+          "title": "Besses o' th' Barn tram stop - Lift out of service",
+          "source_label": "TfGM",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: lift/escalator/step-free alert has no service cancellation, diversion, closure or replacement-travel impact."
+        },
+        {
+          "verdict": "drop",
+          "title": "Derker Tram Stop - Lift out of service",
+          "source_label": "TfGM",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: lift/escalator/step-free alert has no service cancellation, diversion, closure or replacement-travel impact."
+        },
+        {
+          "verdict": "drop",
+          "title": "Sale Tram Stop - Lift out of service",
+          "source_label": "TfGM",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Transport for Wales: Amended 06:01 Carmarthen to Manchester Piccadilly service from Tuesday 13 to Friday 16 October",
+          "source_label": "National Rail Enquiries",
+          "reason": "Visible repeat policy allows this item: operational_anchor:service_status. | Validator: transport item has no passenger movement impact and cannot be shown in Transport or borrowed by another public block."
+        },
+        {
+          "verdict": "reserve",
+          "title": "8,000 free books given away on Bee Network today as city asked to 'Take 10 to Read' and help improve your mental health",
+          "source_label": "Manchester Council",
+          "reason": "Held as same-block backup for recovery."
         }
       ]
     },
     "city_watch": {
       "heading": "Городской радар",
-      "total": 76,
-      "selected": 20,
-      "reserve": 20,
-      "needs_enrichment": 2,
-      "drop": 34,
+      "total": 73,
+      "selected": 26,
+      "reserve": 18,
+      "needs_enrichment": 1,
+      "drop": 28,
       "examples": [
         {
           "verdict": "drop",
           "title": "Northern Lights illuminate North West skies with colour",
-          "source_label": "BBC Manchester",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: corrected section routing before translation (section_routing:national_without_gm_demoted). | Validator: editorial_contract rejected item (story_type=planning, anchor=none, tier=filler)."
-        },
-        {
-          "verdict": "drop",
-          "title": "Dangerous driving arrest over woman's A34 crash death",
-          "source_label": "BBC Manchester",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Sale man charged over gun found at rat infested nursery in Salford",
           "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=planning, anchor=none, tier=filler)."
         },
         {
           "verdict": "drop",
-          "title": "Warning to drivers as part of Bury M60 to shut again",
+          "title": "Man arrested in Manchester over £400k illicit cigarette haul",
           "source_label": "BBC Manchester Web",
           "reason": "Cheap pre-enrich duplicate remains suppressed after history checks."
         },
         {
           "verdict": "drop",
-          "title": "Dangerous driving arrest over woman's A34 crash death",
+          "title": "Man arrested after woman seriously hurt in three-car M62 crash",
           "source_label": "BBC Manchester Web",
           "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         },
         {
-          "verdict": "drop",
-          "title": "Teenagers urge government not to scrap UK Youth Parliament",
+          "verdict": "reserve",
+          "title": "Dangerous driving arrest over woman's A34 crash death",
           "source_label": "BBC Manchester Web",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: evidence_text contains paywall stub markers, full text not accessible."
+          "reason": "Held as same-block backup for recovery."
         },
         {
           "verdict": "drop",
-          "title": "New operators could take over Cheshire East markets",
-          "source_label": "BBC Manchester Web",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: story is centred outside Greater Manchester; publisher section chrome was ignored."
+          "title": "Firebomb killer released by police despite ‘last chance' warning, inquest hears",
+          "source_label": "ITV Granada Greater Manchester",
+          "reason": "Curator drop: Старое дело, не актуально."
         },
         {
           "verdict": "drop",
-          "title": "What happens next at Tyldesley's giant ‘cruise ship' warehouses as inquiry into lorry fleet looms?",
-          "source_label": "MEN",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=planning, anchor=none, tier=filler)."
+          "title": "Mum and four children 'petrified' before fatal arson attack in Greater Manchester, inquest hears",
+          "source_label": "ITV Granada Greater Manchester",
+          "reason": "Curator drop: Старое дело, не актуально."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Oldham Council vote in favour of new plan to share responsibilities across the four largest parties",
+          "source_label": "ITV Granada Greater Manchester",
+          "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Mother 'disgusted' as neighbour who attacked her with dumbbell set to be released early from prison",
+          "source_label": "ITV Granada Greater Manchester",
+          "reason": "Held as same-block backup for recovery."
         }
       ]
     },
     "today_focus": {
       "heading": "Что важно сегодня",
-      "total": 3,
-      "selected": 2,
-      "reserve": 1,
+      "total": 1,
+      "selected": 1,
+      "reserve": 0,
       "needs_enrichment": 0,
       "drop": 0,
-      "examples": [
-        {
-          "verdict": "reserve",
-          "title": "Photos show huge delays in Manchester as M60 Simister Island shuts all day",
-          "source_label": "MEN",
-          "reason": "Board rejected: duplicate"
-        }
-      ]
+      "examples": []
     },
     "tech_business": {
       "heading": "IT и бизнес",
-      "total": 17,
-      "selected": 8,
+      "total": 13,
+      "selected": 6,
       "reserve": 2,
       "needs_enrichment": 0,
-      "drop": 7,
+      "drop": 5,
       "examples": [
         {
           "verdict": "drop",
+          "title": "Katie Thistleton and Hacker T Dog to Headline Printworks' Bonfire Night Celebration | About Manchester",
+          "source_label": "About Manchester News",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: corrected section routing before translation (section_routing:it_content). | Validator: soft civic/award/awareness item has no practical reader value for the morning issue."
+        },
+        {
+          "verdict": "reserve",
           "title": "On record: Rochdale's new album celebrates town's music history - Rochdale Borough Council",
           "source_label": "Rochdale Council",
-          "reason": "Curator drop: Чистый PR без новостного повода."
+          "reason": "Board rejected: stale, not_business_tech"
         },
         {
           "verdict": "reserve",
           "title": "Pioneering digital autopsies enhance local coroner's service - Rochdale Borough Council",
           "source_label": "Rochdale Council",
           "reason": "Held as same-block backup for recovery."
-        },
-        {
-          "verdict": "drop",
-          "title": "Manchester Digital celebrate a trio of new hires in its 25th anniversary year | Manchester Digital",
-          "source_label": "Manchester Digital",
-          "reason": "Curator drop: Чистый PR без новостного повода."
         },
         {
           "verdict": "drop",
@@ -202,58 +247,6 @@
           "title": "Prolific North",
           "source_label": "Prolific North Manchester",
           "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Prolific North",
-          "source_label": "Prolific North Manchester",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        }
-      ]
-    },
-    "transport": {
-      "heading": "Общественный транспорт сегодня",
-      "total": 9,
-      "selected": 3,
-      "reserve": 0,
-      "needs_enrichment": 0,
-      "drop": 6,
-      "examples": [
-        {
-          "verdict": "drop",
-          "title": "Besses o' th' Barn tram stop - Lift out of service",
-          "source_label": "TfGM",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: lift/escalator/step-free alert has no service cancellation, diversion, closure or replacement-travel impact."
-        },
-        {
-          "verdict": "drop",
-          "title": "Sale Tram Stop - Lift out of service",
-          "source_label": "TfGM",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Hollinwood Tram Stop - Lift Replacement",
-          "source_label": "TfGM",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: lift/escalator/step-free alert has no service cancellation, diversion, closure or replacement-travel impact."
-        },
-        {
-          "verdict": "drop",
-          "title": "Derker Tram Stop - Lift out of service",
-          "source_label": "TfGM",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Queens Road Tram Stop - Lift out of service",
-          "source_label": "TfGM",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Transport for Wales: Amended 06:01 Carmarthen to Manchester Piccadilly service from Tuesday 13 to Friday 16 October",
-          "source_label": "National Rail Enquiries",
-          "reason": "Visible repeat policy allows this item: operational_anchor:service_status. | Validator: transport item has no passenger movement impact and cannot be shown in Transport or borrowed by another public block."
         }
       ]
     },
@@ -267,19 +260,19 @@
       "examples": [
         {
           "verdict": "reserve",
-          "title": "Rogue roofer sentenced after targeting and defrauding vulnerable residents",
-          "source_label": "Wigan Council",
+          "title": "Common sense prevails as Altrincham gets direct buses during tram closure",
+          "source_label": "Altrincham Today",
           "reason": "Outside DeepSeek ranking board (soft max 90)."
         }
       ]
     },
     "weekend_activities": {
       "heading": "Выходные в GM",
-      "total": 164,
-      "selected": 15,
-      "reserve": 12,
+      "total": 171,
+      "selected": 11,
+      "reserve": 21,
       "needs_enrichment": 1,
-      "drop": 136,
+      "drop": 138,
       "examples": [
         {
           "verdict": "drop",
@@ -291,13 +284,13 @@
           "verdict": "reserve",
           "title": "No booking required",
           "source_label": "HOME",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
+          "reason": "Outside pre-rewrite shortlist for weekend_activities."
         },
         {
           "verdict": "reserve",
           "title": "Honouring Our Communities Art Trail Black Creative Trailblazers Thu 8 Oct 20:00 - Sun 13 Dec 20:00 Arches Windows",
           "source_label": "HOME",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
+          "reason": "Outside pre-rewrite shortlist for weekend_activities."
         },
         {
           "verdict": "drop",
@@ -333,47 +326,17 @@
     },
     "future_announcements": {
       "heading": "Дальние анонсы",
-      "total": 79,
-      "selected": 53,
-      "reserve": 23,
+      "total": 80,
+      "selected": 45,
+      "reserve": 29,
       "needs_enrichment": 0,
-      "drop": 3,
+      "drop": 6,
       "examples": [
         {
           "verdict": "drop",
           "title": "Wellness Wednesdays",
           "source_label": "MediaCity What's On",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Demoted from weekend_activities to future_announcements: recurring event's next weekend occurrence is 5 days out. | Validator: event-like candidate has no concrete upcoming date."
-        },
-        {
-          "verdict": "reserve",
-          "title": "c: Anthony Mooney ©",
-          "source_label": "Manchester's Finest Events",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Takuya Nakamura (Live)",
-          "source_label": "Manchester's Finest Events",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "5 Years of Rollout",
-          "source_label": "Manchester's Finest Events",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Love Is The Answer presents Ben Park",
-          "source_label": "Manchester's Finest Events",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Next page Next page",
-          "source_label": "Manchester's Finest Events",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Demoted from weekend_activities to future_announcements: recurring event's next weekend occurrence is 4 days out. | Validator: event-like candidate has no concrete upcoming date."
         },
         {
           "verdict": "reserve",
@@ -386,16 +349,46 @@
           "title": "Spinningfields Makers Market",
           "source_label": "Pedddle Makers Market",
           "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "First Street Makers Market",
+          "source_label": "Pedddle Makers Market",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Salford Firework Weekend returns to Salford for 2026 | Visit Salford",
+          "source_label": "VisitSalford Events",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "drop",
+          "title": "The SK Lowdown",
+          "source_label": "SK Lowdown Markets",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Demoted from weekend_activities to future_announcements: earliest date 2026-10-25 is 12 days out. | Validator: event quality gate failed (date)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Cat Power brings The Greatest to Albert Hall for 20th anniversary tour",
+          "source_label": "Manchester Wire",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Museum After Hours at Science and Industry Museum",
+          "source_label": "Creative Tourist Manchester",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
         }
       ]
     },
     "ticket_radar": {
       "heading": "Билеты / Ticket Radar",
-      "total": 95,
-      "selected": 74,
+      "total": 94,
+      "selected": 72,
       "reserve": 0,
       "needs_enrichment": 0,
-      "drop": 21,
+      "drop": 22,
       "examples": [
         {
           "verdict": "drop",
@@ -413,19 +406,13 @@
           "verdict": "drop",
           "title": "Fat Freddy's Drop plus very special guest DJ Nightmares On Wax — event 2026-10-17 — public sale 2025-10-28 10:00",
           "source_label": "Ticketmaster Manchester Upcoming",
-          "reason": "Cheap pre-enrich duplicate remains suppressed after history checks."
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         },
         {
           "verdict": "drop",
           "title": "Brandi Carlile - the Human Tour — event 2026-10-18 — public sale 2025-10-31 10:00",
           "source_label": "Ticketmaster Manchester Upcoming",
-          "reason": "Cheap pre-enrich duplicate remains suppressed after history checks."
-        },
-        {
-          "verdict": "drop",
-          "title": "NDR Radiophilharmonie Hannover",
-          "source_label": "Bridgewater Hall",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event quality gate failed (date, district, price_or_free_or_booking)."
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         },
         {
           "verdict": "drop",
@@ -444,16 +431,22 @@
           "title": "Public Building Tour with BSL",
           "source_label": "Bridgewater Hall",
           "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event quality gate failed (date, district, price_or_free_or_booking)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Be Hear Now Open Session - The Bridgewater Hall",
+          "source_label": "Bridgewater Hall",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event quality gate failed (date, district, price_or_free_or_booking)."
         }
       ]
     },
     "outside_gm_tickets": {
       "heading": "Крупные концерты вне GM",
-      "total": 788,
-      "selected": 506,
+      "total": 769,
+      "selected": 493,
       "reserve": 0,
       "needs_enrichment": 0,
-      "drop": 282,
+      "drop": 276,
       "examples": [
         {
           "verdict": "drop",
@@ -501,17 +494,17 @@
           "verdict": "drop",
           "title": "Steve Hackett - Best of Genesis & Solo Gems — event 2026-10-24 — public sale 2025-09-19 10:00",
           "source_label": "Ticketmaster Liverpool Upcoming",
-          "reason": "Cheap pre-enrich duplicate remains suppressed after history checks."
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         }
       ]
     },
     "russian_events": {
       "heading": "Русскоязычные концерты и стендап UK",
-      "total": 21,
+      "total": 22,
       "selected": 7,
       "reserve": 0,
       "needs_enrichment": 0,
-      "drop": 14,
+      "drop": 15,
       "examples": [
         {
           "verdict": "drop",
@@ -533,6 +526,12 @@
         },
         {
           "verdict": "drop",
+          "title": "Baba Yaga's Secret Plan",
+          "source_label": "EventFirst Diaspora",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Russian block: no positive Russian/Ukrainian-language or diaspora evidence; source label alone is not proof."
+        },
+        {
+          "verdict": "drop",
           "title": "Goran Bregovic (London)",
           "source_label": "Kontramarka UK",
           "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Russian block: no positive Russian/Ukrainian-language or diaspora evidence; source label alone is not proof."
@@ -541,7 +540,7 @@
           "verdict": "drop",
           "title": "Afisha London",
           "source_label": "Afisha London",
-          "reason": "Dedupe found a previous publication; final repeat decision is deferred to plan-digest (provisional=same_calendar_item_without_new_reader_moment). LLM-review: Та же страница Afisha London, новых конкретных фактов или событий нет | Validator: event quality gate failed (date)."
+          "reason": "Dedupe found a previous publication; final repeat decision is deferred to plan-digest (provisional=same_calendar_item_without_new_reader_moment). LLM-review: Та же главная страница Afisha London, без новых фактов | Validator: event quality gate failed (date)."
         },
         {
           "verdict": "drop",
@@ -554,34 +553,34 @@
           "title": "Афиша Лондон",
           "source_label": "Afisha London",
           "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Russian block: no positive Russian/Ukrainian-language or diaspora evidence; source label alone is not proof."
-        },
-        {
-          "verdict": "drop",
-          "title": "Афиша Лондон",
-          "source_label": "Afisha London",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Russian block: no positive Russian/Ukrainian-language or diaspora evidence; source label alone is not proof."
         }
       ]
     },
     "openings": {
       "heading": "Еда, открытия и рынки",
-      "total": 8,
+      "total": 9,
       "selected": 2,
       "reserve": 3,
       "needs_enrichment": 1,
-      "drop": 2,
+      "drop": 3,
       "examples": [
         {
-          "verdict": "needs_enrichment",
-          "title": "Food Halls and Markets",
+          "verdict": "drop",
+          "title": "Red Light to re-open in the Northern Quarter",
           "source_label": "Manchester's Finest",
-          "reason": "Event-like candidate has no actionable date after enrichment; hold before model rewrite."
+          "reason": "Semantic cross-day rehash candidate (cos=0.864) of «Red Light is back: Manchester's LGBTQ+ cocktail bar returns with a new Northern Quarter home | About Manchester»; final repeat decision deferred to plan-digest. | Validator: previous publication found on 2026-10-12; plan-digest will make the final repeat decision (provisional=food_repeat_without_comparable_new_fact, anchor=new_phase, ttl=3d). | Validator: food/opening date 2026-10-09 is more than 3 days old."
         },
         {
           "verdict": "reserve",
           "title": "Former Fazenda restaurant reopens as Fogo de Chão after £1m refurbishment",
           "source_label": "Manchester's Finest",
           "reason": "Held as same-block backup for recovery."
+        },
+        {
+          "verdict": "needs_enrichment",
+          "title": "Opening date and food retailers announced for STACK Wigan | About Manchester",
+          "source_label": "About Manchester Food & Drink",
+          "reason": "Event-like candidate has no actionable date after enrichment; hold before model rewrite."
         },
         {
           "verdict": "drop",
@@ -627,7 +626,7 @@
           "verdict": "drop",
           "title": "A Manifesto for the Northern Tech Economy",
           "source_label": "Manchester Digital Events",
-          "reason": "LLM-review: Новое: Manchester Digital выпустила манифест к выборам мэра 2 мая | Professional CV match: held for enrichment (no governing go/consider verdict)."
+          "reason": "LLM-review: Запущен манифест Manchester Digital к выборам мэра 2 мая — новая публикация манифеста | Professional CV match: held for enrichment (no governing go/consider verdict)."
         },
         {
           "verdict": "drop",
@@ -639,13 +638,13 @@
           "verdict": "drop",
           "title": "Mage Camp - for Magento and Adobe Commerce merchants | Manchester Digital",
           "source_label": "Manchester Digital Events",
-          "reason": "Dedupe found a previous publication; final repeat decision is deferred to plan-digest (provisional=same_calendar_item_without_new_reader_moment). LLM-review: Указана конкретная дата и место: 14 октября 2026, Манчестер, две параллельные сессии — без изменения факта карточки, остаётся повтор. | Professional LLM CV match: skip — Неясная стоимость и узкая тематика.."
+          "reason": "Calendar item reached a reader-useful repeat moment. | Professional LLM CV match: skip — Не достаточно релевантно для профиля.."
         },
         {
           "verdict": "drop",
           "title": "MD Members 26 | Manchester Digital",
           "source_label": "Manchester Digital Events",
-          "reason": "Dedupe found a previous publication; final repeat decision is deferred to plan-digest (provisional=same_calendar_item_without_new_reader_moment). LLM-review: Другое событие, не связанное с прошлым заголовком о Queer Up North Digital Archive | Professional CV match: held for enrichment (no governing go/consider verdict)."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional CV match: held for enrichment (no governing go/consider verdict)."
         },
         {
           "verdict": "drop",
@@ -655,73 +654,73 @@
         },
         {
           "verdict": "drop",
-          "title": "Future-proofing your career in the age of AI & Data | Manchester Digital",
+          "title": "Data Decoded MCR 2026 | Manchester Digital",
           "source_label": "Manchester Digital Events",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: motivational human-interest card has no GM action anchor (no event date, no opening/launch, no GM borough)."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional CV match: held for enrichment (no governing go/consider verdict)."
         },
         {
           "verdict": "drop",
-          "title": "Head of Digital Transformation at Companies House | Manchester Digital",
+          "title": "The Data Odyssey: From Isolated Data to Actionable Insight | Manchester Digital",
           "source_label": "Manchester Digital Events",
-          "reason": "Calendar item reached a reader-useful repeat moment. | Professional LLM CV match: held — unknown access needs CV go or strong consider plus full date/place."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Professional LLM CV match: skip — Недостаточная ценность для профиля.."
         }
       ]
     },
     "football": {
       "heading": "Футбол",
-      "total": 28,
-      "selected": 6,
-      "reserve": 11,
+      "total": 29,
+      "selected": 4,
+      "reserve": 14,
       "needs_enrichment": 0,
       "drop": 11,
       "examples": [
         {
           "verdict": "reserve",
-          "title": "I snubbed two Premier League clubs to join Man United - I didn't even know what wage I'd get",
+          "title": "Kobbie Mainoo Meets Clarence Seedorf! | UEFA Champions League",
+          "source_label": "Manchester United",
+          "reason": "Outside pre-rewrite shortlist for football."
+        },
+        {
+          "verdict": "reserve",
+          "title": "I was totally unhappy at Man United - I achieved more in first six months at Atletico",
           "source_label": "MEN Manchester United",
           "reason": "Outside pre-rewrite shortlist for football."
         },
         {
           "verdict": "reserve",
-          "title": "Manchester United agreement reached after Gary Neville has 'seen enough'",
+          "title": "Manchester United thought they had found a star on their last visit to Atletico Madrid",
           "source_label": "MEN Manchester United",
           "reason": "Outside pre-rewrite shortlist for football."
+        },
+        {
+          "verdict": "drop",
+          "title": "Man United nightmare reduced Atletico Madrid icon to tears but he had no regrets",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "How Manchester United should line up vs Atletico Madrid in major Champions League test",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Six players set to miss Atletico Madrid vs Man United after double injury blow",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
           "verdict": "reserve",
-          "title": "Senne Lammens reveals what Michael Carrick has 'hammered' Manchester United for",
+          "title": "What Manchester United fans are talking about shows time is running out for Michael Carrick",
           "source_label": "MEN Manchester United",
           "reason": "Outside pre-rewrite shortlist for football."
         },
         {
           "verdict": "drop",
-          "title": "'Extra spark' - Senne Lammens reacts to Carlos Baleba's Manchester United debut",
+          "title": "Manchester United predicted line-up vs Atletico Madrid as Rashford returns and Baleba starts",
           "source_label": "MEN Manchester United",
           "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Gary Neville 'seen enough' of two Man United players and calls out Michael Carrick footage",
-          "source_label": "MEN Manchester United",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Tottenham star makes worrying Manchester United claim",
-          "source_label": "MEN Manchester United",
-          "reason": "Outside pre-rewrite shortlist for football."
-        },
-        {
-          "verdict": "drop",
-          "title": "Andoni Iraola fumes at Liverpool red card and makes 'best team' claim after Man City humbling",
-          "source_label": "MEN Manchester City",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Fans clash with police outside Anfield after Man City defeat Liverpool",
-          "source_label": "MEN Manchester City",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         }
       ]
     }
