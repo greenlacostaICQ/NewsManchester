@@ -2,121 +2,152 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair left 2 known factual operation(s) unresolved; delivery continues as degraded",
+  "reason": "pre-send repair executor applied 4 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-10-13",
-  "pipeline_run_id": "20261013T080152+0100",
-  "digest_sha256": "a215472841e89bfc3f9484664bcee188f700e84e2b1a2ab9bf66d860a26b67e7",
-  "duration_seconds": 67.87,
-  "confidence": 0.9,
+  "run_date_london": "2026-10-14",
+  "pipeline_run_id": "20261014T080158+0100",
+  "digest_sha256": "c2c89aa13666d852360a95b1f8b1d19ddc5a7035d9a4961ef1bddc7898683823",
+  "duration_seconds": 84.297,
+  "confidence": 0.85,
   "critical_errors": [
     {
-      "line_index": 3,
-      "section": "Свежие новости",
-      "problem": "Неправильное использование слова 'нападение'.",
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Неверное утверждение об обвинении в убийстве.",
       "risk": "factual",
       "suggested_action": "repair"
+    },
+    {
+      "line_index": 10,
+      "section": "Свежие новости",
+      "problem": "Событие не относится к Greater Manchester, а находится в Бакингемшире, что нарушает geo_scope.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 12,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Дата события не соответствует текущему дню или ближайшим дням.",
+      "risk": "date",
+      "suggested_action": "strip"
     },
     {
       "line_index": 16,
       "section": "Футбол",
-      "problem": "Термин 'траведийные крики' не является корректным переводом 'tragedy chanting'.",
-      "risk": "translation",
+      "problem": "Неверное указание должности Энди Бернхэма. Он не является премьер-министром.",
+      "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 23,
+      "line_index": 17,
       "section": "Городской радар",
-      "problem": "Некорректное использование слова \"обвинен\" в отношении Эндрю Бернхэма.",
+      "problem": "Неправильное указание пола полицейского свидетеля.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 3,
-      "section": "Свежие новости",
-      "problem": "Дублирование информации о публичном расследовании по делу о нападении на синагогу.",
-      "risk": "factual",
+      "line_index": 22,
+      "section": "Еда, открытия и рынки",
+      "problem": "Строка не соответствует тематике раздела 'Еда, открытия и рынки'.",
+      "risk": "format",
       "suggested_action": "strip"
     },
     {
-      "line_index": 15,
-      "section": "Футбол",
-      "problem": "Отсутствие контекста о санкциях для Манчестер Сити.",
+      "line_index": 24,
+      "section": "IT и бизнес",
+      "problem": "Текст утверждает, что рейсы отменены из-за ракетной атаки, но источник не подтверждает это.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 18,
-      "section": "Городской радар",
-      "problem": "Недостаточная информация о прекращении рейсов Jet2.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 9,
-      "section": "Свежие новости",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'murdered' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "homicide"
+      "line_index": 27,
+      "section": "Дальние анонсы",
+      "problem": "Событие находится в Blackpool, что не соответствует geo_scope 'gm'.",
+      "risk": "geo",
+      "suggested_action": "strip"
     }
   ],
   "actions": [
     {
-      "line_index": 3,
-      "section": "Свежие новости",
+      "line_index": 1,
+      "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• В Манчестере начато публичное расследование по делу о нападении на синагогу, в результате которого погибли два человека. 2 октября 2025 года, в день Йом Кипур, 66-летний Мелвин Кравиц был убит ножом, а 53-летний Адриан Долби был застрелен полицией, когда пытался защитить двери синагоги от нападавшего Джихада Аль-Шами. Министр внутренних дел Шабана Махмуд заявила, что необходимо полностью понять, что произошло в тот день.",
-      "reason": "Термин 'нападение' может быть неправильно истолкован как нападение на людей, а не на здание.",
+      "replacement_text": "• В Trafford, Манчестер, учитель Майкл Маллинс был сбит и убит автомобилем, за рулем которого находился Симон Ричардсон, который отрицает обвинение в убийстве. Инцидент произошел 20 апреля, и судебный процесс продолжается.",
+      "reason": "Требуется уточнение, что Симон Ричардсон отрицает обвинение в убийстве.",
       "risk": "factual"
+    },
+    {
+      "line_index": 10,
+      "section": "Свежие новости",
+      "action": "strip",
+      "reason": "Событие происходит в Бакингемшире, что не соответствует geo_scope GM.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 12,
+      "section": "Общественный транспорт сегодня",
+      "action": "strip",
+      "reason": "Событие запланировано на 6 декабря 2026 года, что не соответствует текущему дню или ближайшим дням.",
+      "risk": "date",
+      "replacement_text": ""
     },
     {
       "line_index": 16,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Полицейский получил серьезную травму лица при аресте после матча Ливерпуль против Манчестер Сити; произведено 10 арестов, включая пятерых по подозрению в скандировании трагических лозунгов.",
-      "reason": "Корректный перевод 'tragedy chanting' как 'скандирование трагических лозунгов'.",
-      "risk": "translation"
+      "replacement_text": "• Независимый футбольный регулятор Дэвид Коган предупредил мэра Большого Манчестера Энди Бернхэма о своей отставке в случае вмешательства правительства в дело Манчестер Сити.",
+      "reason": "Исправление должности Энди Бернхэма на мэра Большого Манчестера.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 17,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Полицейская свидетельствовала в суде Корнера Bolton, что считала угрозы Зака Болланда \"пустыми\" и не арестовала его до того, как он убил мать и четверых детей в поджоге в Уокдене, Salford, 11 декабря 2017 года.",
+      "reason": "Неправильное указание пола полицейского свидетеля.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 22,
+      "section": "Еда, открытия и рынки",
+      "action": "strip",
+      "reason": "Информация о Лисандро Мартинесе и Манчестер Юнайтед не относится к тематике раздела.",
+      "risk": "format",
+      "replacement_text": ""
     },
     {
       "line_index": 23,
-      "section": "Городской радар",
+      "section": "Еда, открытия и рынки",
+      "action": "keep",
+      "reason": "Информация соответствует тематике раздела и содержит все необходимые детали.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 24,
+      "section": "IT и бизнес",
       "action": "patch",
-      "replacement_text": "• Мэр Большого Манчестера Эндрю Бернхэм подвергся критике от Кэми Баденох за \"разбор\" оригинального соглашения по Brexit после объявления саммита Великобритания-ЕС 20 ноября.",
-      "reason": "Слово \"обвинен\" подразумевает юридическое обвинение, что не соответствует контексту критики.",
+      "replacement_text": "• Авиакомпания Riyadh Air отменяет рейсы между Манчестером и Эр-Риядом. Рейсы RX417 из Манчестера и RX418 из Эр-Рияда, запланированные на 13 октября 2026 года, отменены. Все рейсы в аэропорту имени короля Халида приостановлены до следующей субботы.",
+      "reason": "Утверждение о ракетной атаке не подтверждено источником.",
       "risk": "factual"
     },
     {
-      "line_index": 3,
-      "section": "Свежие новости",
+      "line_index": 27,
+      "section": "Дальние анонсы",
       "action": "strip",
-      "replacement_text": "",
-      "reason": "Дублирование информации о публичном расследовании.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 15,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Манчестер Сити выиграл восемь подряд матчей с момента поражения в Суперкубке, а тренер Энцо Мареска получил похвалу за управление матчами. Клуб может столкнуться с санкциями в этом сезоне, включая возможное снятие очков, но у него есть несколько месяцев, чтобы набрать очки до этого.",
-      "reason": "Добавление контекста о санкциях для Манчестер Сити.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 18,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Jet2 прекращает рейсы из Манчестера на Ла Пальму с 30 октября 2026 года, всего через шесть месяцев после запуска маршрута. Это решение было принято из-за низкого спроса на билеты.",
-      "reason": "Добавление причины прекращения рейсов Jet2.",
-      "risk": "factual"
+      "reason": "Событие не соответствует географическому контракту раздела 'Дальние анонсы', который требует событий в Greater Manchester.",
+      "risk": "geo",
+      "replacement_text": ""
     }
   ],
   "warnings": [
-    "В строке 33 не указана цена билетов, что может снизить практическую пользу для читателей.",
-    "Отсутствие блока 'Что важно сегодня' и 'Еда, открытия и рынки' снижает полноту выпуска."
+    "Секция 'Что важно сегодня' не достигла минимального порога в 3 элемента.",
+    "Секция 'Русскоязычные концерты и стендап UK' полностью отсутствует, что нарушает продуктовый баланс.",
+    "Слишком много элементов в 'Билеты / Ticket Radar', что может доминировать над основными новостями."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -125,46 +156,48 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 3,
-      "Футбол": 3,
-      "Городской радар": 11,
-      "Business/tech события для тебя": 2,
+      "Общественный транспорт сегодня": 1,
+      "Что важно сегодня": 2,
+      "Футбол": 2,
+      "Городской радар": 5,
+      "Еда, открытия и рынки": 2,
+      "IT и бизнес": 2,
+      "Business/tech события для тебя": 1,
       "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 3,
-      "Крупные концерты вне GM": 1,
-      "Русскоязычные концерты и стендап UK": 1
+      "Билеты / Ticket Radar": 12,
+      "Крупные концерты вне GM": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
+      "Что важно сегодня": 2,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 11,
-      "Билеты / Ticket Radar": 3,
-      "Русскоязычные концерты и стендап UK": 1,
-      "Еда, открытия и рынки": 0,
-      "Business/tech события для тебя": 2,
-      "Футбол": 3
+      "Городской радар": 5,
+      "Билеты / Ticket Radar": 12,
+      "Русскоязычные концерты и стендап UK": 0,
+      "Еда, открытия и рынки": 2,
+      "Business/tech события для тебя": 1,
+      "Футбол": 2
     },
-    "ticket_items": 5,
-    "core_items": 27,
+    "ticket_items": 13,
+    "core_items": 23,
     "writer_quality_counts": {
       "included_candidates": 40,
-      "rendered_candidates": 36,
+      "rendered_candidates": 40,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 1,
-      "replaced_from_plan_backup": 3,
-      "removed_with_reason": 1
+      "dropped_low_quality": 0,
+      "replaced_from_plan_backup": 0,
+      "removed_with_reason": 0
     },
     "source_health_counts": {
       "ok": 101,
       "partial": 2,
-      "stale": 6,
-      "empty": 15,
+      "stale": 5,
+      "empty": 16,
       "failed": 4,
       "zero_yield": 87,
       "no_contribution_breakdown": {
@@ -173,355 +206,278 @@
         "idle_no_items": 19
       },
       "zero_contribution_by_stage": {
-        "written": 50,
-        "selected": 37,
+        "written": 47,
+        "selected": 40,
         "parsed": 19,
         "fetched": 4
       },
       "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
-      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
+      "Что важно сегодня: 2 item(s), emergency floor 3",
+      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
+      "Еда, открытия и рынки: 2 item(s), emergency floor 3",
       "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "multiple actions target line 3"
+      "patch for line 17 has unchecked number/date token(s): 2017"
     ],
     "can_apply_actions": true,
-    "action_count": 6
+    "action_count": 9
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 36,
-    "matched_lines": 36,
-    "applicable_lines": 4,
+    "checked_lines": 40,
+    "matched_lines": 40,
+    "applicable_lines": 5,
     "unmatched_lines": 0,
-    "critical_omission_count": 1,
-    "critical_omissions": [
-      {
-        "line_index": 9,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/daughter-of-man-44-murdered-34750374",
-        "concept": "homicide",
-        "obligation": "charge/verdict/victim",
-        "source_hit": "murdered"
-      }
-    ],
+    "critical_omission_count": 0,
+    "critical_omissions": [],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 1,
+    "pulled_for_rework": 0,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 7,
-    "attempted": 7,
-    "applied": 7,
-    "model_patch_applied": 4,
+    "requested": 8,
+    "attempted": 4,
+    "applied": 4,
+    "model_patch_applied": 0,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 2,
-    "stripped": 1,
-    "unresolved": 2,
-    "blocking_unresolved": 2,
-    "resolved": 5,
+    "stripped": 2,
+    "unresolved": 0,
+    "blocking_unresolved": 0,
+    "resolved": 8,
     "resolved_in_place": 4,
-    "resolved_by_replacement": 0,
-    "resolved_by_removal": 1,
-    "fact_lock_rejected": 1,
-    "enrich_attempted": 7,
+    "resolved_by_replacement": 2,
+    "resolved_by_removal": 2,
+    "fact_lock_rejected": 0,
+    "enrich_attempted": 8,
     "post_check_errors": [],
-    "geo_contract_rejected": [],
+    "geo_contract_rejected": [
+      {
+        "line_index": 23,
+        "section": "Еда, открытия и рынки",
+        "geo_scope": "gm",
+        "reason": "Информация соответствует тематике раздела и содержит все необходимые детали.",
+        "gm_anchor_present": true
+      }
+    ],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 3,
-        "section": "Свежие новости",
+        "line_index": 1,
+        "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Термин 'нападение' может быть неправильно истолкован как нападение на людей, а не на здание.",
+        "reason": "Требуется уточнение, что Симон Ричардсон отрицает обвинение в убийстве.",
         "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
+        "critical_error": true,
+        "critical_problem": "Неверное утверждение об обвинении в убийстве.",
         "completeness_concept": "",
-        "outcome": "unresolved",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c9kgjx66d1x7o-27b879504cae",
+        "original_url_identity": "bbc.com/news/articles/c9kgjx66d1x7o",
+        "original_html": "<b>В Trafford, Манчестер, учитель Майкл Маллинс был сбит и убит автомобилем, за рулем которого находился Симон Ричардсон, обвиняемый в убийстве.</b> Инцидент произошел 20 апреля, и судебный процесс продолжается. <a href=\"https://bbc.co.uk/news/articles/c9kgjx66d1x7o\">BBC Manchester</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 10,
+        "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "Событие происходит в Бакингемшире, что не соответствует geo_scope GM.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие не относится к Greater Manchester, а находится в Бакингемшире, что нарушает geo_scope.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
         "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cqgm01mmd49po-6a9abde19762",
-        "original_url_identity": "bbc.com/news/articles/cqgm01mmd49po",
-        "original_html": "• В Манчестере начато публичное расследование по делу о нападении на синагогу, в результате которого погибли два человека. 2 октября 2025 года, в день Йом Кипур, 66-летний Мелвин Кравиц был убит ножом, а 53-летний Адриан Долби был застрелен полицией, когда пытался защитить двери синагоги от нападавшего Джихада Аль-Шами. Министр внутренних дел Шабана Махмуд заявила, что необходимо полностью понять, что произошло в тот день. <a href=\"https://bbc.com/news/articles/cqgm01mmd49po\">BBC Manchester</a>",
-        "model_replacement_rejected": "fact_lock: 2 октября 2025",
-        "replacement_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-12-council-reveals-new-housing-and-multi-storey-parking-vision-for-altrinchams-long-stalled-altair-site-7bea39a782d8",
-        "post_check_passed": false
+        "plan_slot_id": "last_24h-08",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-tiger-attack-victim-william-chapmans-34761187-8a49748aa0b2",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/tiger-attack-victim-william-chapmans-34761187",
+        "original_html": "• Школа, в которой учился жертва нападения тигра Уильям Чапман, выразила глубокую скорбь в связи с его трагической смертью. Jackie Palmer Stage School в Хай Уайкомбе, Бакингемшир, опубликовала трогательное сообщение в социальных сетях, отметив, что Уильям будет \"всегда помнить с большой теплотой\". В школе подчеркнули, что гордились его развитием как личности и артиста, и выразили соболезнования его семье и друзьям в это трудное время. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/tiger-attack-victim-william-chapmans-34761187\">MEN</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-one-homeless-person-dies-every-34707196-b48ce96a7bcd",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "strip",
+        "reason": "Событие запланировано на 6 декабря 2026 года, что не соответствует текущему дню или ближайшим дням.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события не соответствует текущему дню или ближайшим дням.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "transport-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-train-station-close-34756790-0c7288b45c9d",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchester-airport-train-station-close-34756790",
+        "original_html": "• National Rail: станция поездов Манчестерского аэропорта закроется на один день 6 декабря 2026 года в рамках обновления стоимостью 115 миллионов фунтов стерлингов, которое продлится до 2028 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchester-airport-train-station-close-34756790\">MEN</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
       },
       {
         "line_index": 16,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Корректный перевод 'tragedy chanting' как 'скандирование трагических лозунгов'.",
-        "risk": "translation",
+        "reason": "Исправление должности Энди Бернхэма на мэра Большого Манчестера.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Термин 'траведийные крики' не является корректным переводом 'tragedy chanting'.",
+        "critical_problem": "Неверное указание должности Энди Бернхэма. Он не является премьер-министром.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "model_patch",
+        "method": "verified_existing_fact",
         "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-theguardian-com-football-2026-oct-12-police-officer-injured-as-10-arrests-made-at-tense-liverpool-v-manchester-city-match-f0dae5560cc5",
-        "original_url_identity": "theguardian.com/football/2026/oct/12/police-officer-injured-as-10-arrests-made-at-tense-liverpool-v-manchester-city-match",
-        "original_html": "• Полицейский получил серьезную травму лица при аресте после матча Ливерпуль против Манчестер Сити; произведено 10 арестов, включая пятерых по подозрению в траведийных криках. <a href=\"https://theguardian.com/football/2026/oct/12/police-officer-injured-as-10-arrests-made-at-tense-liverpool-v-manchester-city-match\">Guardian Manchester City</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-city-threat-issued-andy-34758902-c0e94bb06d98",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-city-threat-issued-andy-34758902",
+        "original_html": "• Независимый футбольный регулятор Дэвид Коган предупредил премьер-министра Энди Бернхэма о своей отставке в случае вмешательства правительства в дело Манчестер Сити. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-city-threat-issued-andy-34758902\">MEN Manchester City</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 23,
+        "line_index": 17,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Слово \"обвинен\" подразумевает юридическое обвинение, что не соответствует контексту критики.",
+        "reason": "Неправильное указание пола полицейского свидетеля.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Некорректное использование слова \"обвинен\" в отношении Эндрю Бернхэма.",
+        "critical_problem": "Неправильное указание пола полицейского свидетеля.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "city_watch-06",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-andy-burnham-accused-of-unpicking-34755746-13735c38eb7c",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-accused-of-unpicking-34755746",
-        "original_html": "• Мэр Большого Манчестера Эндрю Бернхэм обвинен Кэми Баденох в \"разборе\" оригинального соглашения по Brexit после объявления саммита Великобритания-ЕС 20 ноября. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-accused-of-unpicking-34755746\">MEN</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о публичном расследовании.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильное использование слова 'нападение'.",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cqgm01mmd49po-6a9abde19762",
-        "original_url_identity": "bbc.com/news/articles/cqgm01mmd49po",
-        "original_html": "• В Манчестере начато публичное расследование по делу о нападении на синагогу, в результате которого погибли два человека. 2 октября 2025 года, в день Йом Кипур, 66-летний Мелвин Кравиц был убит ножом, а 53-летний Адриан Долби был застрелен полицией, когда пытался защитить двери синагоги от нападавшего Джихада Аль-Шами. Министр внутренних дел Шабана Махмуд заявила, что необходимо полностью понять, что произошло в тот день. <a href=\"https://bbc.com/news/articles/cqgm01mmd49po\">BBC Manchester</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-chihuahua-bites-man-salford-police-34750916-f66be55cbd50",
-        "post_check_passed": false
-      },
-      {
-        "line_index": 15,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Добавление контекста о санкциях для Манчестер Сити.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Отсутствие контекста о санкциях для Манчестер Сити.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-enzo-maresca-keeps-repeating-same-34754671-81b97cb53fec",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-keeps-repeating-same-34754671",
-        "original_html": "• Манчестер Сити выиграл восемь подряд матчей с момента поражения в Суперкубке, а тренер Энцо Мареска получил похвалу за управление матчами. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-keeps-repeating-same-34754671\">MEN Manchester City</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 18,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Добавление причины прекращения рейсов Jet2.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Недостаточная информация о прекращении рейсов Jet2.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
+        "method": "verified_existing_fact",
         "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-jet2-shuts-manchester-airport-route-34750686-1e885fde6c57",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/jet2-shuts-manchester-airport-route-34750686",
-        "original_html": "• Jet2 прекращает рейсы из Манчестера на Ла Пальму с 30 октября 2026 года, всего через шесть месяцев после запуска маршрута. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/jet2-shuts-manchester-airport-route-34750686\">MEN</a>",
+        "candidate_fingerprint": "url-itv-com-news-granada-2026-10-12-officer-thought-killer-was-making-empty-threats-before-fatal-arson-attack-75ddb5b93772",
+        "original_url_identity": "itv.com/news/granada/2026-10-12/officer-thought-killer-was-making-empty-threats-before-fatal-arson-attack",
+        "original_html": "• Полицейский свидетельствовал в суде Корнера Bolton, что считал угрозы Зака Болланда \"пустыми\" и не арестовал его до того, как он убил мать и четверых детей в поджоге в Уокдене, Salford, 11 декабря 2017 года. <a href=\"https://itv.com/news/granada/2026-10-12/officer-thought-killer-was-making-empty-threats-before-fatal-arson-attack\">ITV Granada Greater Manchester</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 9,
-        "section": "Свежие новости",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'murdered' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
-        "risk": "translation",
+        "line_index": 22,
+        "section": "Еда, открытия и рынки",
+        "requested_action": "strip",
+        "reason": "Информация о Лисандро Мартинесе и Манчестер Юнайтед не относится к тематике раздела.",
+        "risk": "format",
         "critical_error": true,
-        "critical_problem": "",
-        "completeness_concept": "homicide",
+        "critical_problem": "Строка не соответствует тематике раздела 'Еда, открытия и рынки'.",
+        "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "last_24h-07",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-daughter-of-man-44-murdered-34750374-1d4062889e34",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/daughter-of-man-44-murdered-34750374",
-        "original_html": "• Дочь Мохамеда Омара, 44 года, найденного мертвым в Salford, опубликовала трогательную дань уважения, заявив, что 'никто не заслуживает, чтобы его жизнь была отнята'. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/daughter-of-man-44-murdered-34750374\">MEN</a>",
-        "backup_outcome": "backup_chain_exhausted",
+        "plan_slot_id": "openings-01",
+        "candidate_fingerprint": "url-aboutmanchester-co-uk-lisandro-martinez-opens-up-about-manchester-uniteds-struggles-0fc1b7152531",
+        "original_url_identity": "aboutmanchester.co.uk/lisandro-martinez-opens-up-about-manchester-uniteds-struggles",
+        "original_html": "• Лисандро Мартинес раскритиковал амбиции Манчестер Юнайтед и намекнул на проблемы, выходящие за рамки тренера и игроков, после поражения от Атлетико Мадрид 14 октября. <a href=\"https://aboutmanchester.co.uk/lisandro-martinez-opens-up-about-manchester-uniteds-struggles\">About Manchester Food &amp; Drink</a>",
+        "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 24,
+        "section": "IT и бизнес",
+        "requested_action": "patch",
+        "reason": "Утверждение о ракетной атаке не подтверждено источником.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Текст утверждает, что рейсы отменены из-за ракетной атаки, но источник не подтверждает это.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "tech_business-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-passengers-issued-update-34757678-de04fb13db81",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchester-airport-passengers-issued-update-34757678",
+        "original_html": "• Авиакомпания Riyadh Air отменяет рейсы между Манчестером и Эр-Риядом после ракетной атаки на международный аэропорт имени короля Халида. Рейсы RX417 из Манчестера и RX418 из Эр-Рияда, запланированные на 13 октября 2026 года, отменены. Все рейсы в аэропорту имени короля Халида приостановлены до следующей субботы. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchester-airport-passengers-issued-update-34757678\">MEN</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 27,
+        "section": "Дальние анонсы",
+        "requested_action": "strip",
+        "reason": "Событие не соответствует географическому контракту раздела 'Дальние анонсы', который требует событий в Greater Manchester.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие находится в Blackpool, что не соответствует geo_scope 'gm'.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "future_announcements-01",
+        "candidate_fingerprint": "event-event-the-mersey-beatles-2026-11-19-blackpool-opera-house-dac278f06970",
+        "original_url_identity": "ticketmaster.co.uk/the-mersey-beatles-blackpool-19-11-2026/event/1F006371D63675F0",
+        "original_html": "• <b>The Mersey Beatles</b> — 19 ноября, Blackpool Opera House. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-mersey-beatles-blackpool-19-11-2026/event/1F006371D63675F0\">Ticketmaster</a>",
+        "replacement_fingerprint": "event-id-skiddle-com-cdceaf747fb6-578d3d9c3a95",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::термин 'нападение' может быть неправильно истолкован как нападение на людей, а не на здание.",
+        "group_key": "главная история дня::требуется уточнение, что симон ричардсон отрицает обвинение в убийстве.",
         "actions": [
           {
-            "line_index": 3,
-            "section": "Свежие новости",
+            "line_index": 1,
+            "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Термин 'нападение' может быть неправильно истолкован как нападение на людей, а не на здание.",
+            "reason": "Требуется уточнение, что Симон Ричардсон отрицает обвинение в убийстве.",
             "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cqgm01mmd49po-6a9abde19762",
-            "original_url_identity": "bbc.com/news/articles/cqgm01mmd49po",
-            "original_html": "• В Манчестере начато публичное расследование по делу о нападении на синагогу, в результате которого погибли два человека. 2 октября 2025 года, в день Йом Кипур, 66-летний Мелвин Кравиц был убит ножом, а 53-летний Адриан Долби был застрелен полицией, когда пытался защитить двери синагоги от нападавшего Джихада Аль-Шами. Министр внутренних дел Шабана Махмуд заявила, что необходимо полностью понять, что произошло в тот день. <a href=\"https://bbc.com/news/articles/cqgm01mmd49po\">BBC Manchester</a>",
-            "model_replacement_rejected": "fact_lock: 2 октября 2025",
-            "replacement_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-12-council-reveals-new-housing-and-multi-storey-parking-vision-for-altrinchams-long-stalled-altair-site-7bea39a782d8",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 3,
-            "passed": false,
-            "detail": "shared prose policy still fails"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::корректный перевод 'tragedy chanting' как 'скандирование трагических лозунгов'.",
-        "actions": [
-          {
-            "line_index": 16,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Корректный перевод 'tragedy chanting' как 'скандирование трагических лозунгов'.",
-            "risk": "translation",
             "critical_error": true,
-            "critical_problem": "Термин 'траведийные крики' не является корректным переводом 'tragedy chanting'.",
+            "critical_problem": "Неверное утверждение об обвинении в убийстве.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-theguardian-com-football-2026-oct-12-police-officer-injured-as-10-arrests-made-at-tense-liverpool-v-manchester-city-match-f0dae5560cc5",
-            "original_url_identity": "theguardian.com/football/2026/oct/12/police-officer-injured-as-10-arrests-made-at-tense-liverpool-v-manchester-city-match",
-            "original_html": "• Полицейский получил серьезную травму лица при аресте после матча Ливерпуль против Манчестер Сити; произведено 10 арестов, включая пятерых по подозрению в траведийных криках. <a href=\"https://theguardian.com/football/2026/oct/12/police-officer-injured-as-10-arrests-made-at-tense-liverpool-v-manchester-city-match\">Guardian Manchester City</a>",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c9kgjx66d1x7o-27b879504cae",
+            "original_url_identity": "bbc.com/news/articles/c9kgjx66d1x7o",
+            "original_html": "<b>В Trafford, Манчестер, учитель Майкл Маллинс был сбит и убит автомобилем, за рулем которого находился Симон Ричардсон, обвиняемый в убийстве.</b> Инцидент произошел 20 апреля, и судебный процесс продолжается. <a href=\"https://bbc.co.uk/news/articles/c9kgjx66d1x7o\">BBC Manchester</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 16,
+            "line_index": 1,
             "passed": true,
-            "detail": "post-check passed"
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::слово \"обвинен\" подразумевает юридическое обвинение, что не соответствует контексту критики.",
+        "group_key": "свежие новости::событие происходит в бакингемшире, что не соответствует geo_scope gm.",
         "actions": [
           {
-            "line_index": 23,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Слово \"обвинен\" подразумевает юридическое обвинение, что не соответствует контексту критики.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Некорректное использование слова \"обвинен\" в отношении Эндрю Бернхэма.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "city_watch-06",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-andy-burnham-accused-of-unpicking-34755746-13735c38eb7c",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-accused-of-unpicking-34755746",
-            "original_html": "• Мэр Большого Манчестера Эндрю Бернхэм обвинен Кэми Баденох в \"разборе\" оригинального соглашения по Brexit после объявления саммита Великобритания-ЕС 20 ноября. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/andy-burnham-accused-of-unpicking-34755746\">MEN</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 23,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::дублирование информации о публичном расследовании",
-        "actions": [
-          {
-            "line_index": 3,
+            "line_index": 10,
             "section": "Свежие новости",
             "requested_action": "strip",
-            "reason": "Дублирование информации о публичном расследовании.",
-            "risk": "factual",
+            "reason": "Событие происходит в Бакингемшире, что не соответствует geo_scope GM.",
+            "risk": "geo",
             "critical_error": true,
-            "critical_problem": "Неправильное использование слова 'нападение'.",
+            "critical_problem": "Событие не относится к Greater Manchester, а находится в Бакингемшире, что нарушает geo_scope.",
             "completeness_concept": "",
-            "outcome": "unresolved",
+            "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cqgm01mmd49po-6a9abde19762",
-            "original_url_identity": "bbc.com/news/articles/cqgm01mmd49po",
-            "original_html": "• В Манчестере начато публичное расследование по делу о нападении на синагогу, в результате которого погибли два человека. 2 октября 2025 года, в день Йом Кипур, 66-летний Мелвин Кравиц был убит ножом, а 53-летний Адриан Долби был застрелен полицией, когда пытался защитить двери синагоги от нападавшего Джихада Аль-Шами. Министр внутренних дел Шабана Махмуд заявила, что необходимо полностью понять, что произошло в тот день. <a href=\"https://bbc.com/news/articles/cqgm01mmd49po\">BBC Manchester</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-chihuahua-bites-man-salford-police-34750916-f66be55cbd50",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 3,
-            "passed": false,
-            "detail": "shared prose policy still fails"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "topic:incident:manchester public inquiry over manchester synagogue attack deaths|same story rehash|2026 10 12",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::добавление контекста о санкциях для манчестер сити.",
-        "actions": [
-          {
-            "line_index": 15,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Добавление контекста о санкциях для Манчестер Сити.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Отсутствие контекста о санкциях для Манчестер Сити.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-enzo-maresca-keeps-repeating-same-34754671-81b97cb53fec",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-keeps-repeating-same-34754671",
-            "original_html": "• Манчестер Сити выиграл восемь подряд матчей с момента поражения в Суперкубке, а тренер Энцо Мареска получил похвалу за управление матчами. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/enzo-maresca-keeps-repeating-same-34754671\">MEN Manchester City</a>",
+            "plan_slot_id": "last_24h-08",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-tiger-attack-victim-william-chapmans-34761187-8a49748aa0b2",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/tiger-attack-victim-william-chapmans-34761187",
+            "original_html": "• Школа, в которой учился жертва нападения тигра Уильям Чапман, выразила глубокую скорбь в связи с его трагической смертью. Jackie Palmer Stage School в Хай Уайкомбе, Бакингемшир, опубликовала трогательное сообщение в социальных сетях, отметив, что Уильям будет \"всегда помнить с большой теплотой\". В школе подчеркнули, что гордились его развитием как личности и артиста, и выразили соболезнования его семье и друзьям в это трудное время. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/tiger-attack-victim-william-chapmans-34761187\">MEN</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-one-homeless-person-dies-every-34707196-b48ce96a7bcd",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 15,
+            "line_index": 10,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -529,55 +485,24 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::добавление причины прекращения рейсов jet2.",
+        "group_key": "общественный транспорт сегодня::событие запланировано на 6 декабря 2026 года, что не соответствует текущему дню или ближайшим дням.",
         "actions": [
           {
-            "line_index": 18,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Добавление причины прекращения рейсов Jet2.",
-            "risk": "factual",
+            "line_index": 12,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "strip",
+            "reason": "Событие запланировано на 6 декабря 2026 года, что не соответствует текущему дню или ближайшим дням.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Недостаточная информация о прекращении рейсов Jet2.",
+            "critical_problem": "Дата события не соответствует текущему дню или ближайшим дням.",
             "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-jet2-shuts-manchester-airport-route-34750686-1e885fde6c57",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/jet2-shuts-manchester-airport-route-34750686",
-            "original_html": "• Jet2 прекращает рейсы из Манчестера на Ла Пальму с 30 октября 2026 года, всего через шесть месяцев после запуска маршрута. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/jet2-shuts-manchester-airport-route-34750686\">MEN</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 18,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::critical source fact dropped in translation: 'murdered' (homicide/charge/verdict/victim) has no russian rendering in the shipped line",
-        "actions": [
-          {
-            "line_index": 9,
-            "section": "Свежие новости",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'murdered' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
-            "risk": "translation",
-            "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "homicide",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "last_24h-07",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-daughter-of-man-44-murdered-34750374-1d4062889e34",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/daughter-of-man-44-murdered-34750374",
-            "original_html": "• Дочь Мохамеда Омара, 44 года, найденного мертвым в Salford, опубликовала трогательную дань уважения, заявив, что 'никто не заслуживает, чтобы его жизнь была отнята'. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/daughter-of-man-44-murdered-34750374\">MEN</a>",
-            "backup_outcome": "backup_chain_exhausted",
+            "plan_slot_id": "transport-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-train-station-close-34756790-0c7288b45c9d",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchester-airport-train-station-close-34756790",
+            "original_html": "• National Rail: станция поездов Манчестерского аэропорта закроется на один день 6 декабря 2026 года в рамках обновления стоимостью 115 миллионов фунтов стерлингов, которое продлится до 2028 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchester-airport-train-station-close-34756790\">MEN</a>",
+            "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
           }
@@ -585,9 +510,170 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 9,
+            "line_index": 12,
             "passed": true,
             "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::исправление должности энди бернхэма на мэра большого манчестера.",
+        "actions": [
+          {
+            "line_index": 16,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Исправление должности Энди Бернхэма на мэра Большого Манчестера.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неверное указание должности Энди Бернхэма. Он не является премьер-министром.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-city-threat-issued-andy-34758902-c0e94bb06d98",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-city-threat-issued-andy-34758902",
+            "original_html": "• Независимый футбольный регулятор Дэвид Коган предупредил премьер-министра Энди Бернхэма о своей отставке в случае вмешательства правительства в дело Манчестер Сити. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-city-threat-issued-andy-34758902\">MEN Manchester City</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 16,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::неправильное указание пола полицейского свидетеля.",
+        "actions": [
+          {
+            "line_index": 17,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Неправильное указание пола полицейского свидетеля.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильное указание пола полицейского свидетеля.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "city_watch-01",
+            "candidate_fingerprint": "url-itv-com-news-granada-2026-10-12-officer-thought-killer-was-making-empty-threats-before-fatal-arson-attack-75ddb5b93772",
+            "original_url_identity": "itv.com/news/granada/2026-10-12/officer-thought-killer-was-making-empty-threats-before-fatal-arson-attack",
+            "original_html": "• Полицейский свидетельствовал в суде Корнера Bolton, что считал угрозы Зака Болланда \"пустыми\" и не арестовал его до того, как он убил мать и четверых детей в поджоге в Уокдене, Salford, 11 декабря 2017 года. <a href=\"https://itv.com/news/granada/2026-10-12/officer-thought-killer-was-making-empty-threats-before-fatal-arson-attack\">ITV Granada Greater Manchester</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 17,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "еда, открытия и рынки::информация о лисандро мартинесе и манчестер юнайтед не относится к тематике раздела.",
+        "actions": [
+          {
+            "line_index": 22,
+            "section": "Еда, открытия и рынки",
+            "requested_action": "strip",
+            "reason": "Информация о Лисандро Мартинесе и Манчестер Юнайтед не относится к тематике раздела.",
+            "risk": "format",
+            "critical_error": true,
+            "critical_problem": "Строка не соответствует тематике раздела 'Еда, открытия и рынки'.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "openings-01",
+            "candidate_fingerprint": "url-aboutmanchester-co-uk-lisandro-martinez-opens-up-about-manchester-uniteds-struggles-0fc1b7152531",
+            "original_url_identity": "aboutmanchester.co.uk/lisandro-martinez-opens-up-about-manchester-uniteds-struggles",
+            "original_html": "• Лисандро Мартинес раскритиковал амбиции Манчестер Юнайтед и намекнул на проблемы, выходящие за рамки тренера и игроков, после поражения от Атлетико Мадрид 14 октября. <a href=\"https://aboutmanchester.co.uk/lisandro-martinez-opens-up-about-manchester-uniteds-struggles\">About Manchester Food &amp; Drink</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 22,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "it и бизнес::утверждение о ракетной атаке не подтверждено источником.",
+        "actions": [
+          {
+            "line_index": 24,
+            "section": "IT и бизнес",
+            "requested_action": "patch",
+            "reason": "Утверждение о ракетной атаке не подтверждено источником.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Текст утверждает, что рейсы отменены из-за ракетной атаки, но источник не подтверждает это.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "tech_business-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-passengers-issued-update-34757678-de04fb13db81",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchester-airport-passengers-issued-update-34757678",
+            "original_html": "• Авиакомпания Riyadh Air отменяет рейсы между Манчестером и Эр-Риядом после ракетной атаки на международный аэропорт имени короля Халида. Рейсы RX417 из Манчестера и RX418 из Эр-Рияда, запланированные на 13 октября 2026 года, отменены. Все рейсы в аэропорту имени короля Халида приостановлены до следующей субботы. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchester-airport-passengers-issued-update-34757678\">MEN</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 24,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "дальние анонсы::событие не соответствует географическому контракту раздела 'дальние анонсы', который требует событий в greater manchester.",
+        "actions": [
+          {
+            "line_index": 27,
+            "section": "Дальние анонсы",
+            "requested_action": "strip",
+            "reason": "Событие не соответствует географическому контракту раздела 'Дальние анонсы', который требует событий в Greater Manchester.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие находится в Blackpool, что не соответствует geo_scope 'gm'.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "future_announcements-01",
+            "candidate_fingerprint": "event-event-the-mersey-beatles-2026-11-19-blackpool-opera-house-dac278f06970",
+            "original_url_identity": "ticketmaster.co.uk/the-mersey-beatles-blackpool-19-11-2026/event/1F006371D63675F0",
+            "original_html": "• <b>The Mersey Beatles</b> — 19 ноября, Blackpool Opera House. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-mersey-beatles-blackpool-19-11-2026/event/1F006371D63675F0\">Ticketmaster</a>",
+            "replacement_fingerprint": "event-id-skiddle-com-cdceaf747fb6-578d3d9c3a95",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 27,
+            "passed": true,
+            "detail": "post-check passed"
           }
         ],
         "known_factual_error": true
@@ -598,16 +684,26 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 0
+      "skipped": 1,
+      "reports": [
+        {
+          "fingerprint": "event-event-the-mersey-beatles-2026-11-19-blackpool-opera-house-dac278f06970",
+          "title": "The Mersey Beatles — event 2026-11-19 — public sale 2025-11-17 21:50",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/the-mersey-beatles-blackpool-19-11-2026/event/1F006371D63675F0",
+          "candidate_evidence_chars": 345
+        }
+      ]
     },
-    "enrich_improved": 7,
-    "deterministic_rewrite_rejected": 2,
-    "backup_chain_exhausted": 1,
+    "enrich_improved": 8,
+    "false_positive_existing_fact": 4,
+    "no_eligible_backup": 2,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 35,
-      "matched_lines": 35,
-      "applicable_lines": 3,
+      "checked_lines": 38,
+      "matched_lines": 38,
+      "applicable_lines": 5,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -619,128 +715,154 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 35,
-      "resolved_in_place": 34,
-      "unresolved": 1,
-      "findings": [
-        {
-          "line_index": 3,
-          "section": "Свежие новости",
-          "outcome": "unresolved",
-          "code": "language_policy_defect",
-          "severity": "warning"
-        }
-      ]
+      "checked_lines": 38,
+      "resolved_in_place": 38,
+      "unresolved": 0,
+      "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved"
   },
-  "notes": "Строка соответствует требованиям: событие в GM, информация точная и актуальная.; Прогноз погоды соответствует данным Met Office и контракту блока.; Требуется уточнение формулировки для корректного понимания события.; Все строки соответствуют требованиям и содержат актуальную информацию о транспортных изменениях в Great",
+  "notes": "Уточнение обвинения необходимо для точности информации.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка о школе в Бакингемшире нарушает географический контракт и должна быть удалена.; Событие не актуально для текущего дня или ближайших дней, требуется удаление.; Обе строки соответствуют требован",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.9,
+    "confidence": 0.85,
     "critical_errors": [
       {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "problem": "Неправильное использование слова 'нападение'.",
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Неверное утверждение об обвинении в убийстве.",
         "risk": "factual",
         "suggested_action": "repair"
+      },
+      {
+        "line_index": 10,
+        "section": "Свежие новости",
+        "problem": "Событие не относится к Greater Manchester, а находится в Бакингемшире, что нарушает geo_scope.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дата события не соответствует текущему дню или ближайшим дням.",
+        "risk": "date",
+        "suggested_action": "strip"
       },
       {
         "line_index": 16,
         "section": "Футбол",
-        "problem": "Термин 'траведийные крики' не является корректным переводом 'tragedy chanting'.",
-        "risk": "translation",
+        "problem": "Неверное указание должности Энди Бернхэма. Он не является премьер-министром.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 23,
+        "line_index": 17,
         "section": "Городской радар",
-        "problem": "Некорректное использование слова \"обвинен\" в отношении Эндрю Бернхэма.",
+        "problem": "Неправильное указание пола полицейского свидетеля.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "problem": "Дублирование информации о публичном расследовании по делу о нападении на синагогу.",
-        "risk": "factual",
+        "line_index": 22,
+        "section": "Еда, открытия и рынки",
+        "problem": "Строка не соответствует тематике раздела 'Еда, открытия и рынки'.",
+        "risk": "format",
         "suggested_action": "strip"
       },
       {
-        "line_index": 15,
-        "section": "Футбол",
-        "problem": "Отсутствие контекста о санкциях для Манчестер Сити.",
+        "line_index": 24,
+        "section": "IT и бизнес",
+        "problem": "Текст утверждает, что рейсы отменены из-за ракетной атаки, но источник не подтверждает это.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 18,
-        "section": "Городской радар",
-        "problem": "Недостаточная информация о прекращении рейсов Jet2.",
-        "risk": "factual",
-        "suggested_action": "repair"
+        "line_index": 27,
+        "section": "Дальние анонсы",
+        "problem": "Событие находится в Blackpool, что не соответствует geo_scope 'gm'.",
+        "risk": "geo",
+        "suggested_action": "strip"
       }
     ],
     "actions": [
       {
-        "line_index": 3,
-        "section": "Свежие новости",
+        "line_index": 1,
+        "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• В Манчестере начато публичное расследование по делу о нападении на синагогу, в результате которого погибли два человека. 2 октября 2025 года, в день Йом Кипур, 66-летний Мелвин Кравиц был убит ножом, а 53-летний Адриан Долби был застрелен полицией, когда пытался защитить двери синагоги от нападавшего Джихада Аль-Шами. Министр внутренних дел Шабана Махмуд заявила, что необходимо полностью понять, что произошло в тот день.",
-        "reason": "Термин 'нападение' может быть неправильно истолкован как нападение на людей, а не на здание.",
+        "replacement_text": "• В Trafford, Манчестер, учитель Майкл Маллинс был сбит и убит автомобилем, за рулем которого находился Симон Ричардсон, который отрицает обвинение в убийстве. Инцидент произошел 20 апреля, и судебный процесс продолжается.",
+        "reason": "Требуется уточнение, что Симон Ричардсон отрицает обвинение в убийстве.",
         "risk": "factual"
+      },
+      {
+        "line_index": 10,
+        "section": "Свежие новости",
+        "action": "strip",
+        "reason": "Событие происходит в Бакингемшире, что не соответствует geo_scope GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 12,
+        "section": "Общественный транспорт сегодня",
+        "action": "strip",
+        "reason": "Событие запланировано на 6 декабря 2026 года, что не соответствует текущему дню или ближайшим дням.",
+        "risk": "date"
       },
       {
         "line_index": 16,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Полицейский получил серьезную травму лица при аресте после матча Ливерпуль против Манчестер Сити; произведено 10 арестов, включая пятерых по подозрению в скандировании трагических лозунгов.",
-        "reason": "Корректный перевод 'tragedy chanting' как 'скандирование трагических лозунгов'.",
-        "risk": "translation"
+        "replacement_text": "• Независимый футбольный регулятор Дэвид Коган предупредил мэра Большого Манчестера Энди Бернхэма о своей отставке в случае вмешательства правительства в дело Манчестер Сити.",
+        "reason": "Исправление должности Энди Бернхэма на мэра Большого Манчестера.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 17,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Полицейская свидетельствовала в суде Корнера Bolton, что считала угрозы Зака Болланда \"пустыми\" и не арестовала его до того, как он убил мать и четверых детей в поджоге в Уокдене, Salford, 11 декабря 2017 года.",
+        "reason": "Неправильное указание пола полицейского свидетеля.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 22,
+        "section": "Еда, открытия и рынки",
+        "action": "strip",
+        "reason": "Информация о Лисандро Мартинесе и Манчестер Юнайтед не относится к тематике раздела.",
+        "risk": "format"
       },
       {
         "line_index": 23,
-        "section": "Городской радар",
+        "section": "Еда, открытия и рынки",
+        "action": "keep",
+        "reason": "Информация соответствует тематике раздела и содержит все необходимые детали.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 24,
+        "section": "IT и бизнес",
         "action": "patch",
-        "replacement_text": "• Мэр Большого Манчестера Эндрю Бернхэм подвергся критике от Кэми Баденох за \"разбор\" оригинального соглашения по Brexit после объявления саммита Великобритания-ЕС 20 ноября.",
-        "reason": "Слово \"обвинен\" подразумевает юридическое обвинение, что не соответствует контексту критики.",
+        "replacement_text": "• Авиакомпания Riyadh Air отменяет рейсы между Манчестером и Эр-Риядом. Рейсы RX417 из Манчестера и RX418 из Эр-Рияда, запланированные на 13 октября 2026 года, отменены. Все рейсы в аэропорту имени короля Халида приостановлены до следующей субботы.",
+        "reason": "Утверждение о ракетной атаке не подтверждено источником.",
         "risk": "factual"
       },
       {
-        "line_index": 3,
-        "section": "Свежие новости",
+        "line_index": 27,
+        "section": "Дальние анонсы",
         "action": "strip",
-        "replacement_text": "",
-        "reason": "Дублирование информации о публичном расследовании.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 15,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Манчестер Сити выиграл восемь подряд матчей с момента поражения в Суперкубке, а тренер Энцо Мареска получил похвалу за управление матчами. Клуб может столкнуться с санкциями в этом сезоне, включая возможное снятие очков, но у него есть несколько месяцев, чтобы набрать очки до этого.",
-        "reason": "Добавление контекста о санкциях для Манчестер Сити.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 18,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Jet2 прекращает рейсы из Манчестера на Ла Пальму с 30 октября 2026 года, всего через шесть месяцев после запуска маршрута. Это решение было принято из-за низкого спроса на билеты.",
-        "reason": "Добавление причины прекращения рейсов Jet2.",
-        "risk": "factual"
+        "reason": "Событие не соответствует географическому контракту раздела 'Дальние анонсы', который требует событий в Greater Manchester.",
+        "risk": "geo"
       }
     ],
     "warnings": [
-      "В строке 33 не указана цена билетов, что может снизить практическую пользу для читателей.",
-      "Отсутствие блока 'Что важно сегодня' и 'Еда, открытия и рынки' снижает полноту выпуска."
+      "Секция 'Что важно сегодня' не достигла минимального порога в 3 элемента.",
+      "Секция 'Русскоязычные концерты и стендап UK' полностью отсутствует, что нарушает продуктовый баланс.",
+      "Слишком много элементов в 'Билеты / Ticket Radar', что может доминировать над основными новостями."
     ],
-    "notes": "Строка соответствует требованиям: событие в GM, информация точная и актуальная.; Прогноз погоды соответствует данным Met Office и контракту блока.; Требуется уточнение формулировки для корректного понимания события.; Все строки соответствуют требованиям и содержат актуальную информацию о транспортных изменениях в Great",
+    "notes": "Уточнение обвинения необходимо для точности информации.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка о школе в Бакингемшире нарушает географический контракт и должна быть удалена.; Событие не актуально для текущего дня или ближайших дней, требуется удаление.; Обе строки соответствуют требован",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 11,
+      "chunk_count": 13,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -753,13 +875,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2710,
-          "duration_seconds": 2.045
+          "estimated_tokens": 2607,
+          "duration_seconds": 1.835
         },
         {
           "chunk_id": "chunk-02",
@@ -776,8 +898,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2465,
-          "duration_seconds": 2.024
+          "estimated_tokens": 2443,
+          "duration_seconds": 1.264
         },
         {
           "chunk_id": "chunk-03",
@@ -794,33 +916,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7214,
-          "duration_seconds": 3.483
+          "estimated_tokens": 7524,
+          "duration_seconds": 2.602
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            14
+            12
           ],
           "sections": [
             "Общественный транспорт сегодня"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2712,
+          "duration_seconds": 1.74
+        },
+        {
+          "chunk_id": "chunk-05",
+          "status": "ok",
+          "line_range": [
+            13,
+            14
+          ],
+          "sections": [
+            "Что важно сегодня"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3586,
-          "duration_seconds": 0.99
+          "estimated_tokens": 3296,
+          "duration_seconds": 0.752
         },
         {
-          "chunk_id": "chunk-05",
+          "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
             15,
-            17
+            16
           ],
           "sections": [
             "Футбол"
@@ -830,15 +970,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3665,
-          "duration_seconds": 1.925
+          "estimated_tokens": 3125,
+          "duration_seconds": 1.856
         },
         {
-          "chunk_id": "chunk-06",
+          "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            18,
-            28
+            17,
+            21
           ],
           "sections": [
             "Городской радар"
@@ -848,15 +988,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7844,
-          "duration_seconds": 2.642
+          "estimated_tokens": 4672,
+          "duration_seconds": 1.943
         },
         {
-          "chunk_id": "chunk-07",
+          "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            29,
-            30
+            22,
+            23
+          ],
+          "sections": [
+            "Еда, открытия и рынки"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 2,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3395,
+          "duration_seconds": 30.381
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            24,
+            25
+          ],
+          "sections": [
+            "IT и бизнес"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3262,
+          "duration_seconds": 15.728
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            26,
+            26
           ],
           "sections": [
             "Business/tech события для тебя"
@@ -866,51 +1042,51 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3490,
-          "duration_seconds": 24.572
+          "estimated_tokens": 2843,
+          "duration_seconds": 1.073
         },
         {
-          "chunk_id": "chunk-08",
+          "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            31,
-            31
+            27,
+            27
           ],
           "sections": [
             "Дальние анонсы"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2665,
+          "duration_seconds": 6.949
+        },
+        {
+          "chunk_id": "chunk-12",
+          "status": "ok",
+          "line_range": [
+            28,
+            39
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2718,
-          "duration_seconds": 4.035
+          "estimated_tokens": 9661,
+          "duration_seconds": 41.603
         },
         {
-          "chunk_id": "chunk-09",
+          "chunk_id": "chunk-13",
           "status": "ok",
           "line_range": [
-            32,
-            34
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 4092,
-          "duration_seconds": 31.642
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            35,
-            35
+            40,
+            40
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -920,26 +1096,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2722,
-          "duration_seconds": 6.459
-        },
-        {
-          "chunk_id": "chunk-11",
-          "status": "ok",
-          "line_range": [
-            36,
-            36
-          ],
-          "sections": [
-            "Русскоязычные концерты и стендап UK"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2713,
-          "duration_seconds": 5.702
+          "estimated_tokens": 2716,
+          "duration_seconds": 4.966
         }
       ],
       "reduce": {
@@ -947,13 +1105,13 @@
         "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "repair_required",
-        "critical_error_count": 3,
-        "action_count": 3,
-        "warning_count": 1,
+        "decision": "warn",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 3,
         "error": "",
-        "estimated_tokens": 10193,
-        "duration_seconds": 25.698
+        "estimated_tokens": 10618,
+        "duration_seconds": 24.379
       },
       "max_workers": 3,
       "chunk_line_target": 12,
