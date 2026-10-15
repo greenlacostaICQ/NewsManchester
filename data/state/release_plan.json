@@ -2,11 +2,11 @@
   "schema_version": 1,
   "block_policy_version": "2026-08-10.p3",
   "policy_version": 1,
-  "pipeline_run_id": "20261014T080158+0100",
-  "run_date_london": "2026-10-14",
-  "created_at_london": "2026-10-14T08:20:13.238704+01:00",
-  "weekday": 2,
-  "show_weekend": false,
+  "pipeline_run_id": "20261015T080200+0100",
+  "run_date_london": "2026-10-15",
+  "created_at_london": "2026-10-15T08:20:42.014803+01:00",
+  "weekday": 3,
+  "show_weekend": true,
   "policy": "Состав решён один раз. Writer исполняет план, editor правит только слова, pre-send repair executor заменяет слот только его запасным или снимает по кодифицированной причине; verify только сверяет. План неизменяем.",
   "budget": {
     "max_visible_items": 40,
@@ -24,6 +24,7 @@
     "Общественный транспорт сегодня",
     "Что важно сегодня",
     "Футбол",
+    "Выходные в GM",
     "Городской радар",
     "Что важно в ближайшие 7 дней",
     "Еда, открытия и рынки",
@@ -35,15 +36,15 @@
     "Русскоязычные концерты и стендап UK"
   ],
   "lead": {
-    "primary_fingerprint": "url-bbc-com-news-articles-c9kgjx66d1x7o-27b879504cae",
+    "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m60-closed-live-police-incident-34766293-cdd26adee134",
     "understudy_fingerprints": [
-      "url-aboutmanchester-co-uk-young-denton-fundraiser-freddie-completes-snowdon-hike-b8e68ebb6dc0",
-      "url-manchestereveningnews-co-uk-news-greater-manchester-news-appeal-missing-girl-15-last-34760412-a52e0426ad47"
+      "url-bbc-com-news-articles-cme3x9w70lw7o-bd9ae6088ae7",
+      "url-aboutmanchester-co-uk-an-immersive-sound-bath-under-the-moon-in-manchester-05b958656e89"
     ],
     "backup_depth_target": 2,
     "backup_depth_shortfall": 0,
     "promoted_by_plan": false,
-    "title": "Trafford head teacher dragged to his death under car, murder trial told"
+    "title": "M60 closed LIVE in 'police incident' as emergency services descend with huge traffic delays"
   },
   "sections": {
     "Погода": {
@@ -86,7 +87,7 @@
       "required_slots_without_backup_count": 0,
       "required_slots_without_backup": [],
       "planned_sources": [
-        "BBC Manchester"
+        "MEN"
       ],
       "min_sources": 1,
       "expected_shortfall": null
@@ -107,15 +108,13 @@
         "last_24h-08",
         "last_24h-09"
       ],
-      "backups_available": 22,
-      "backups_assigned": 22,
+      "backups_available": 24,
+      "backups_assigned": 24,
       "backups_unassigned": 0,
       "backups_filtered_before_assignment": 0,
       "backup_depth_target": 3,
-      "slots_below_backup_depth_count": 5,
+      "slots_below_backup_depth_count": 3,
       "slots_below_backup_depth": [
-        "last_24h-05",
-        "last_24h-06",
         "last_24h-07",
         "last_24h-08",
         "last_24h-09"
@@ -123,10 +122,9 @@
       "required_slots_without_backup_count": 0,
       "required_slots_without_backup": [],
       "planned_sources": [
-        "Altrincham Today",
-        "MEN",
-        "MEN Latest News",
-        "MEN News Sitemap"
+        "BBC Manchester",
+        "BBC Manchester public safety fallback",
+        "MEN"
       ],
       "min_sources": 2,
       "expected_shortfall": null
@@ -135,9 +133,11 @@
       "block": "transport",
       "min": 0,
       "max": null,
-      "planned": 1,
+      "planned": 3,
       "slots": [
-        "transport-01"
+        "transport-01",
+        "transport-02",
+        "transport-03"
       ],
       "backups_available": 0,
       "backups_assigned": 0,
@@ -146,12 +146,15 @@
       "backup_depth_target": 0,
       "slots_below_backup_depth_count": 0,
       "slots_below_backup_depth": [],
-      "required_slots_without_backup_count": 1,
+      "required_slots_without_backup_count": 3,
       "required_slots_without_backup": [
-        "transport-01"
+        "transport-01",
+        "transport-02",
+        "transport-03"
       ],
       "planned_sources": [
-        "MEN News Sitemap"
+        "BBC Manchester public safety fallback",
+        "National Rail Enquiries"
       ],
       "min_sources": 1,
       "expected_shortfall": null
@@ -160,30 +163,27 @@
       "block": "today_focus",
       "min": 3,
       "max": 5,
-      "planned": 2,
+      "planned": 1,
       "slots": [
-        "today_focus-01",
-        "today_focus-02"
+        "today_focus-01"
       ],
       "backups_available": 0,
       "backups_assigned": 0,
       "backups_unassigned": 0,
       "backups_filtered_before_assignment": 0,
       "backup_depth_target": 3,
-      "slots_below_backup_depth_count": 2,
+      "slots_below_backup_depth_count": 1,
       "slots_below_backup_depth": [
-        "today_focus-01",
-        "today_focus-02"
+        "today_focus-01"
       ],
       "required_slots_without_backup_count": 0,
       "required_slots_without_backup": [],
       "planned_sources": [
-        "MEN",
-        "MEN News Sitemap"
+        "BBC Manchester public safety fallback"
       ],
       "min_sources": 2,
       "expected_shortfall": {
-        "planned": 2,
+        "planned": 1,
         "minimum": 3,
         "reason": "pool_exhausted_after_upstream_gates"
       }
@@ -197,9 +197,9 @@
         "football-01",
         "football-02"
       ],
-      "backups_available": 10,
+      "backups_available": 13,
       "backups_assigned": 4,
-      "backups_unassigned": 6,
+      "backups_unassigned": 9,
       "backups_filtered_before_assignment": 0,
       "backup_depth_target": 2,
       "slots_below_backup_depth_count": 0,
@@ -207,44 +207,106 @@
       "required_slots_without_backup_count": 0,
       "required_slots_without_backup": [],
       "planned_sources": [
-        "MEN Manchester City"
+        "MEN Manchester City",
+        "MEN Manchester United"
       ],
       "min_sources": 1,
+      "expected_shortfall": null
+    },
+    "Выходные в GM": {
+      "block": "weekend_activities",
+      "min": 6,
+      "max": null,
+      "planned": 13,
+      "slots": [
+        "weekend_activities-01",
+        "weekend_activities-02",
+        "weekend_activities-03",
+        "weekend_activities-04",
+        "weekend_activities-05",
+        "weekend_activities-06",
+        "weekend_activities-07",
+        "weekend_activities-08",
+        "weekend_activities-09",
+        "weekend_activities-10",
+        "weekend_activities-11",
+        "weekend_activities-12",
+        "weekend_activities-13"
+      ],
+      "backups_available": 15,
+      "backups_assigned": 15,
+      "backups_unassigned": 0,
+      "backups_filtered_before_assignment": 0,
+      "backup_depth_target": 2,
+      "slots_below_backup_depth_count": 11,
+      "slots_below_backup_depth": [
+        "weekend_activities-03",
+        "weekend_activities-04",
+        "weekend_activities-05",
+        "weekend_activities-06",
+        "weekend_activities-07",
+        "weekend_activities-08",
+        "weekend_activities-09",
+        "weekend_activities-10",
+        "weekend_activities-11",
+        "weekend_activities-12"
+      ],
+      "required_slots_without_backup_count": 0,
+      "required_slots_without_backup": [],
+      "planned_sources": [
+        "Barton Aerodrome Car Boot",
+        "Bolton Car Boot Sale",
+        "Burnage RFC Car Boot Sale",
+        "Campfield Market",
+        "Chorlton Makers Market",
+        "Manchester's Finest Events",
+        "New Smithfield Sunday Market",
+        "Pedddle Makers Market",
+        "Skiddle Manchester Festivals",
+        "The BIG Stockport Car Boot",
+        "The Lowry"
+      ],
+      "min_sources": 2,
       "expected_shortfall": null
     },
     "Городской радар": {
       "block": "city_watch",
       "min": 5,
       "max": 12,
-      "planned": 5,
+      "planned": 7,
       "slots": [
         "city_watch-01",
         "city_watch-02",
         "city_watch-03",
         "city_watch-04",
-        "city_watch-05"
+        "city_watch-05",
+        "city_watch-06",
+        "city_watch-07"
       ],
       "backups_available": 0,
       "backups_assigned": 0,
       "backups_unassigned": 0,
       "backups_filtered_before_assignment": 0,
       "backup_depth_target": 3,
-      "slots_below_backup_depth_count": 5,
+      "slots_below_backup_depth_count": 7,
       "slots_below_backup_depth": [
         "city_watch-01",
         "city_watch-02",
         "city_watch-03",
         "city_watch-04",
-        "city_watch-05"
+        "city_watch-05",
+        "city_watch-06",
+        "city_watch-07"
       ],
       "required_slots_without_backup_count": 0,
       "required_slots_without_backup": [],
       "planned_sources": [
-        "About Manchester News",
-        "BBC Manchester",
+        "BBC Manchester Web",
+        "GMCA",
         "ITV Granada Greater Manchester",
         "MEN",
-        "Prolific North Manchester"
+        "MEN Latest News",
+        "MEN News Sitemap"
       ],
       "min_sources": 2,
       "expected_shortfall": null
@@ -272,58 +334,61 @@
       "block": "openings",
       "min": 3,
       "max": 3,
-      "planned": 2,
+      "planned": 1,
       "slots": [
-        "openings-01",
-        "openings-02"
+        "openings-01"
       ],
       "backups_available": 0,
       "backups_assigned": 0,
       "backups_unassigned": 0,
       "backups_filtered_before_assignment": 0,
       "backup_depth_target": 3,
-      "slots_below_backup_depth_count": 2,
+      "slots_below_backup_depth_count": 1,
       "slots_below_backup_depth": [
-        "openings-01",
-        "openings-02"
+        "openings-01"
       ],
       "required_slots_without_backup_count": 0,
       "required_slots_without_backup": [],
       "planned_sources": [
-        "About Manchester Food & Drink",
         "Manchester's Finest"
       ],
       "min_sources": 2,
       "expected_shortfall": {
-        "planned": 2,
+        "planned": 1,
         "minimum": 3,
-        "reason": "repeat_blocked:exact_fingerprint_already_published; repeat_blocked:new_phase_without_named_fact; rank_recommendation:held_cost_after_quality; backup_ineligible:rejected"
+        "reason": "backup_ineligible:rejected; repeat_blocked:exact_fingerprint_already_published; rank_recommendation:held_cost_after_quality"
       }
     },
     "IT и бизнес": {
       "block": "tech_business",
       "min": 0,
       "max": 5,
-      "planned": 2,
+      "planned": 4,
       "slots": [
         "tech_business-01",
-        "tech_business-02"
+        "tech_business-02",
+        "tech_business-03",
+        "tech_business-04"
       ],
       "backups_available": 0,
       "backups_assigned": 0,
       "backups_unassigned": 0,
       "backups_filtered_before_assignment": 0,
       "backup_depth_target": 2,
-      "slots_below_backup_depth_count": 2,
+      "slots_below_backup_depth_count": 4,
       "slots_below_backup_depth": [
         "tech_business-01",
-        "tech_business-02"
+        "tech_business-02",
+        "tech_business-03",
+        "tech_business-04"
       ],
       "required_slots_without_backup_count": 0,
       "required_slots_without_backup": [],
       "planned_sources": [
-        "MEN Latest News",
-        "MEN News Sitemap"
+        "About Manchester News",
+        "BusinessCloud",
+        "MEN",
+        "Prolific North Manchester"
       ],
       "min_sources": 1,
       "expected_shortfall": null
@@ -332,25 +397,32 @@
       "block": "professional_events",
       "min": 1,
       "max": 4,
-      "planned": 1,
+      "planned": 3,
       "slots": [
-        "professional_events-01"
+        "professional_events-01",
+        "professional_events-02",
+        "professional_events-03"
       ],
       "backups_available": 0,
       "backups_assigned": 0,
       "backups_unassigned": 0,
       "backups_filtered_before_assignment": 0,
       "backup_depth_target": 2,
-      "slots_below_backup_depth_count": 1,
+      "slots_below_backup_depth_count": 3,
       "slots_below_backup_depth": [
-        "professional_events-01"
+        "professional_events-01",
+        "professional_events-02",
+        "professional_events-03"
       ],
-      "required_slots_without_backup_count": 1,
+      "required_slots_without_backup_count": 3,
       "required_slots_without_backup": [
-        "professional_events-01"
+        "professional_events-01",
+        "professional_events-02",
+        "professional_events-03"
       ],
       "planned_sources": [
-        "GM Business Growth Hub Events"
+        "GM Business Growth Hub Events",
+        "GM Chamber Events"
       ],
       "min_sources": 1,
       "expected_shortfall": null
@@ -363,9 +435,9 @@
       "slots": [
         "future_announcements-01"
       ],
-      "backups_available": 4,
+      "backups_available": 2,
       "backups_assigned": 2,
-      "backups_unassigned": 2,
+      "backups_unassigned": 0,
       "backups_filtered_before_assignment": 0,
       "backup_depth_target": 2,
       "slots_below_backup_depth_count": 0,
@@ -373,7 +445,7 @@
       "required_slots_without_backup_count": 0,
       "required_slots_without_backup": [],
       "planned_sources": [
-        "Ticketmaster UK Major Onsale"
+        "Ticketmaster Manchester Onsale"
       ],
       "min_sources": 1,
       "expected_shortfall": null
@@ -382,41 +454,33 @@
       "block": "ticket_radar",
       "min": 2,
       "max": 15,
-      "planned": 12,
+      "planned": 6,
       "slots": [
         "ticket_radar-01",
         "ticket_radar-02",
         "ticket_radar-03",
         "ticket_radar-04",
         "ticket_radar-05",
-        "ticket_radar-06",
-        "ticket_radar-07",
-        "ticket_radar-08",
-        "ticket_radar-09",
-        "ticket_radar-10",
-        "ticket_radar-11",
-        "ticket_radar-12"
+        "ticket_radar-06"
       ],
       "backups_available": 0,
       "backups_assigned": 0,
       "backups_unassigned": 0,
       "backups_filtered_before_assignment": 0,
       "backup_depth_target": 2,
-      "slots_below_backup_depth_count": 12,
+      "slots_below_backup_depth_count": 6,
       "slots_below_backup_depth": [
         "ticket_radar-01",
         "ticket_radar-02",
         "ticket_radar-03",
         "ticket_radar-04",
         "ticket_radar-05",
-        "ticket_radar-06",
-        "ticket_radar-07",
-        "ticket_radar-08",
-        "ticket_radar-09",
-        "ticket_radar-10"
+        "ticket_radar-06"
       ],
-      "required_slots_without_backup_count": 0,
-      "required_slots_without_backup": [],
+      "required_slots_without_backup_count": 1,
+      "required_slots_without_backup": [
+        "ticket_radar-01"
+      ],
       "planned_sources": [
         "Co-op Live",
         "Manchester Academy",
@@ -429,26 +493,18 @@
       "block": "outside_gm_tickets",
       "min": 0,
       "max": 6,
-      "planned": 1,
-      "slots": [
-        "outside_gm_tickets-01"
-      ],
+      "planned": 0,
+      "slots": [],
       "backups_available": 0,
       "backups_assigned": 0,
       "backups_unassigned": 0,
       "backups_filtered_before_assignment": 0,
       "backup_depth_target": 2,
-      "slots_below_backup_depth_count": 1,
-      "slots_below_backup_depth": [
-        "outside_gm_tickets-01"
-      ],
-      "required_slots_without_backup_count": 1,
-      "required_slots_without_backup": [
-        "outside_gm_tickets-01"
-      ],
-      "planned_sources": [
-        "Ticketmaster UK Major Upcoming"
-      ],
+      "slots_below_backup_depth_count": 0,
+      "slots_below_backup_depth": [],
+      "required_slots_without_backup_count": 0,
+      "required_slots_without_backup": [],
+      "planned_sources": [],
       "min_sources": 1,
       "expected_shortfall": null
     },
@@ -472,7 +528,7 @@
       "expected_shortfall": {
         "planned": 0,
         "minimum": 1,
-        "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment; repeat_blocked:calendar_review_not_applicable"
+        "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
       }
     }
   },
@@ -488,373 +544,643 @@
       "must_show": false,
       "selection_reason": "Included for the current digest.",
       "score_snapshot": 182.5,
-      "story_key": "topic:generic:met office weather placeholder for 2026 10 14",
+      "story_key": "topic:generic:met office weather placeholder for 2026 10 15",
       "prose_source": "synthetic",
       "source_label": "Met Office",
-      "title": "Weather placeholder for 2026-10-14"
+      "title": "Weather placeholder for 2026-10-15"
     },
     {
       "slot_id": "last_24h-01",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 1,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-fine-autopay-system-34754552-78896d3bed77",
+      "primary_fingerprint": "url-bbc-com-news-articles-cj75p3wp4266o-b9439c3eacdb",
       "backup_fingerprints": [
-        "url-placenorthwest-co-uk-fec-ramps-up-density-in-old-trafford-as-timeline-housing-mix-firmed-up-0ef97e9013d3",
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-hmo-targeted-latest-salford-window-34757495-0ee986a8ef13",
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-oldham-reform-uk-party-new-34758245-493dc3c77c6b"
+        "url-altrincham-todaynews-co-uk-news-2026-10-14-plans-submitted-for-800-000-gym-and-wellbeing-facilities-at-altrincham-office-building-aa248db44bdf",
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-construction-firm-apologises-after-installing-34759713-642cf2248ccd",
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-travellers-pitches-stay-trafford-theres-34765796-27f814b06ead"
       ],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 210.75,
-      "story_key": "topic:incident:manchester salford salford dad slams crazy manchester airport system as he s hit with 100 fine but they say he ignored important rule|new story|2026 10 14",
+      "score_snapshot": 99212.75,
+      "story_key": "topic:incident:manchester man extradited and charged with john soyoye s murder in moston|charged|2026 10 14",
       "prose_source": "model",
-      "source_label": "MEN",
-      "title": "Salford dad slams 'crazy' Manchester Airport system as he's hit with £100 fine - but they say he ignored 'important rule'"
+      "source_label": "BBC Manchester",
+      "title": "Man extradited and charged with John Soyoye's murder in Moston"
     },
     {
       "slot_id": "last_24h-02",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 2,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-rushed-hospital-serious-injuries-34760380-bef877cd8b81",
+      "primary_fingerprint": "url-bbc-com-news-articles-ckjweq098dedo-582b21643d92",
       "backup_fingerprints": [
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-bolton-council-wrongly-told-neighbours-34759560-2ff96492e813",
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-moment-suspect-placed-cuffs-after-34760007-5015a2da30d9",
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-dramatic-footage-shows-moment-gunmans-34759664-da2cd1f5d15a"
+        "url-oldham-gov-uk-news-article-2966-oldham-to-light-up-with-spectacular-free-programme-of-events-for-autumnwinter-2026-d03a53f95024",
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-brother-fight-amaaz-34763638-c23c23f1de04",
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-seriously-injured-crash-mottram-34765697-a7524cf6e1e7"
       ],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 198.75,
-      "story_key": "story:public safety after incident|chorlton|hulme|man rushed to hospital with serious injuries in hulme crash|rejected|2026 10 13",
+      "score_snapshot": 97188.75,
+      "story_key": "story:michelle pearson|service accountability|bolton|salford|new story|2026 10 14",
       "prose_source": "model",
-      "source_label": "MEN",
-      "title": "Man rushed to hospital with serious injuries in Hulme crash"
+      "source_label": "BBC Manchester",
+      "title": "Possible gang threat to family not reviewed, Walkden fire inquest hears"
     },
     {
       "slot_id": "last_24h-03",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 3,
-      "primary_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-13-plans-resubmitted-for-four-new-family-homes-in-bowdon-a460b5150f95",
+      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-pregnant-woman-33-found-dead-34764859-c1657f7c2264",
       "backup_fingerprints": [
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-suspect-from-beswick-named-after-34756357-948848dac90c",
-        "url-rochdale-gov-uk-news-article-683-fire-festival-set-to-return-to-rochdale-with-spectacular-new-attractions-8a7a40fed173",
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-jewish-leaders-call-for-heaton-34755892-cf73a30ce156"
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-wayfair-appliances-direct-and-golds-34762486-5be52cea194e",
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-salfords-team-gang-drove-by-34765136-27c84db823fc",
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-salford-firm-smells-environment-agency-34761556-407166c1b14e"
       ],
       "required": false,
       "must_show": false,
-      "selection_reason": "Selected in last_24h shortlist before writing.",
-      "score_snapshot": 198.0,
-      "story_key": "story:developer mount crescent ltd|approved|submitted|trafford|approved|2026 10 13",
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 96197.75,
+      "story_key": "topic:incident:manchester pregnant woman 33 was found dead on bathroom floor after being repeatedly stabbed by her partner murder trial told|new story|2026 10 14",
       "prose_source": "model",
-      "source_label": "Altrincham Today",
-      "title": "Plans resubmitted for four new family homes in Bowdon"
+      "source_label": "MEN",
+      "title": "Pregnant woman, 33, was found dead on bathroom floor after being repeatedly stabbed by her partner, murder trial told"
     },
     {
       "slot_id": "last_24h-04",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 4,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bee-network-bus-driver-forgot-34759458-fcbf6befef52",
+      "primary_fingerprint": "url-bbc-com-news-articles-c84g1re377keo-f1545b40c9f2",
       "backup_fingerprints": [
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-beloved-pub-worker-named-pictured-34732581-b04982fd4daf",
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-mr-christmas-manchesters-constant-cheerleader-34760841-1ce78946ed69",
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-cgis-show-how-new-pendleton-34758112-e8acf952ccb5"
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-showman-intellectual-who-made-manchester-34764818-8a31a0273c25",
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-bolton-mp-reveals-her-domestic-34761673-8dcb556b896d",
+        "url-bbc-com-news-articles-c65ynq37jxz1o-ff6f213f1429"
       ],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 197.75,
-      "story_key": "topic:incident:trafford centre salford trafford city centre eccles bee network passengers suffer grave injuries in major incident as driver pleads guilty|new story|2026 10 14",
+      "score_snapshot": 95212.75,
+      "story_key": "topic:incident:manchester trafford stretford witnesses tried to save stretford head teacher dragged to death under car|new story|2026 10 14",
       "prose_source": "model",
-      "source_label": "MEN",
-      "title": "Bee Network passengers suffer 'grave injuries' in major incident as driver pleads guilty"
+      "source_label": "BBC Manchester public safety fallback",
+      "title": "Witnesses tried to save Stretford head teacher dragged to death under car"
     },
     {
       "slot_id": "last_24h-05",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 5,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-gunman-shot-woman-before-barricading-34758899-8ddbc912cfd5",
+      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-unlicenced-teen-taught-himself-drive-34759580-14c76a3fdf5a",
       "backup_fingerprints": [
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-huge-step-forward-50m-haigh-34756811-2a54d450cf0c",
-        "url-bbc-com-news-articles-cwdr8gz06n2go-0d219f398e6a"
+        "url-manchester-gov-uk-news-stories-2026-a-one-off-and-a-giant-tributes-paid-to-long-serving-manchester-councillor-pat-karney-as-his-death-is-announced-c1581c9122ea",
+        "url-aboutmanchester-co-uk-andy-burnham-refutes-suns-allegations-of-cover-up-over-city-meetings-d12082abd9bc",
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-there-no-one-like-pat-34765821-5f053d8b96a5"
       ],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 197.75,
-      "story_key": "topic:incident:salford gunman shot at woman before barricading himself in stranger s house in four hour stand off with armed police|sentenced|2026 10 13",
+      "score_snapshot": 94193.75,
+      "story_key": "topic:incident:manchester unlicensed teen taught himself to drive on youtube ran red lights then killed beloved dad in middleton horror crash|sentenced|2026 10 14",
       "prose_source": "model",
       "source_label": "MEN",
-      "title": "Gunman shot at woman before barricading himself in stranger's house in four-hour stand-off with armed police"
+      "title": "Unlicensed teen taught himself to drive on YouTube, ran red lights, then killed beloved dad in Middleton horror crash"
     },
     {
       "slot_id": "last_24h-06",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 6,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-officer-says-could-arrested-34759989-1f2cc731be16",
+      "primary_fingerprint": "url-bbc-com-news-articles-cq33x1ele6mxo-a51efbe3db82",
       "backup_fingerprints": [
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-screams-heard-firefighters-rush-salford-34758092-e9dff5eb0fee",
-        "url-bbc-com-news-articles-cwj34xrgxxyro-5ae464242d5c"
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-woman-fears-exotic-snake-34752718-995fadd67a2d",
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-andy-burnham-says-man-citys-34763098-d2d161be6f47",
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-industrial-workshop-plan-overgrown-wasteland-34764488-a6ca9d78f878"
       ],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 197.75,
-      "story_key": "topic:incident:bolton salford police officer says he could have arrested walkden fire bomb killer hours before murder|new story|2026 10 13",
+      "score_snapshot": 93198.75,
+      "story_key": "topic:incident:salford hmos targeted as 25 incidents of vandalism in salford linked|new story|2026 10 14",
       "prose_source": "model",
-      "source_label": "MEN",
-      "title": "Police officer says he could have arrested Walkden fire-bomb killer hours before murder"
+      "source_label": "BBC Manchester",
+      "title": "HMOs 'targeted' as 25 incidents of vandalism in Salford linked"
     },
     {
       "slot_id": "last_24h-07",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 7,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-hattersley-serious-incident-live-updates-34759171-fe4550ba61eb",
+      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-arrested-after-police-seize-34766163-949b85e630fa",
       "backup_fingerprints": [
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-accused-murdering-stretford-grammar-34759042-db86dd9a6e19",
-        "url-bbc-com-news-articles-c6y93v1nlegro-02c52ec98b1e"
+        "url-altrincham-todaynews-co-uk-news-2026-10-14-altrincham-ice-rink-owner-reaffirms-long-term-commitment-amid-redevelopment-uncertainty-29a761edd2e4",
+        "url-bbc-com-news-articles-c83vq9vpwwr1o-520ecc5fc88e"
       ],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 197.25,
-      "story_key": "story:public safety after incident|tameside|hattersley serious incident recap as woman taken to hospital following collision with hgv|new story|2026 10 13",
+      "score_snapshot": 92197.75,
+      "story_key": "topic:incident:bolton council bolton man arrested after police seize over 340 000 worth of illegal vapes and drugs at bolton properties|new story|2026 10 14",
       "prose_source": "model",
-      "source_label": "MEN Latest News",
-      "title": "Hattersley serious incident RECAP as woman taken to hospital following 'collision with HGV'"
+      "source_label": "MEN",
+      "title": "Man arrested after police seize over £340,000 worth of illegal vapes and drugs at Bolton properties"
     },
     {
       "slot_id": "last_24h-08",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 8,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-tiger-attack-victim-william-chapmans-34761187-8a49748aa0b2",
+      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-victim-threatened-sledgehammer-terrifying-levenshulme-34766372-b83cbe755db7",
       "backup_fingerprints": [
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-one-homeless-person-dies-every-34707196-b48ce96a7bcd",
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-end-altrinchams-20-year-development-34757862-19a37a8afb89"
+        "url-altrincham-todaynews-co-uk-news-2026-10-14-evening-and-sunday-parking-charges-proposed-for-altrincham-under-new-council-budget-plans-8bab2cff9874",
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-issue-cctv-appeal-after-34766329-49f5e64aecb0"
       ],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 193.75,
-      "story_key": "topic:incident:tiger attack victim william chapman s former school deeply saddened in statement over tragic death|new story|2026 10 14",
+      "score_snapshot": 91161.75,
+      "story_key": "topic:incident:levenshulme victim threatened with sledgehammer in terrifying levenshulme attack as motorbike stolen|new story|2026 10 15",
       "prose_source": "model",
-      "source_label": "MEN News Sitemap",
-      "title": "Tiger attack victim William Chapman's former school 'deeply saddened' in statement over tragic death"
+      "source_label": "MEN",
+      "title": "Victim threatened with sledgehammer in terrifying Levenshulme attack as motorbike stolen"
     },
     {
       "slot_id": "last_24h-09",
       "section": "Свежие новости",
       "block": "last_24h",
       "position": 9,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bolton-councillor-switches-allegiance-just-34759594-9ffbe5fe6c76",
+      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-family-home-smashed-up-severed-34764657-28acf44257b1",
       "backup_fingerprints": [
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-cruel-thief-pretended-befriend-82-34759799-26dc7fbae653",
-        "url-manchestereveningnews-co-uk-news-greater-manchester-news-devastation-bolton-holidaymaker-31-dies-34756460-0d4d0c33e281"
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-fine-autopay-system-34754552-78896d3bed77",
+        "url-manchestereveningnews-co-uk-news-greater-manchester-news-danger-warning-people-told-not-34765837-12533198ef10"
       ],
       "required": false,
       "must_show": false,
-      "selection_reason": "Selected in last_24h shortlist before writing.",
-      "score_snapshot": 192.25,
-      "story_key": "topic:civic:bolton bolton councillor switches allegiance just 10 weeks after being elected|new story|2026 10 13",
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 90183.75,
+      "story_key": "topic:incident:manchester salford family home smashed up and severed pigs head dumped on front porch|new story|2026 10 14",
       "prose_source": "model",
-      "source_label": "MEN Latest News",
-      "title": "Bolton councillor switches allegiance just 10 weeks after being elected"
+      "source_label": "MEN",
+      "title": "Family home smashed up and severed pigs head dumped on front porch"
     },
     {
       "slot_id": "transport-01",
       "section": "Общественный транспорт сегодня",
       "block": "transport",
       "position": 1,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-train-station-close-34756790-0c7288b45c9d",
+      "primary_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-east-midlands-railway-cleared-disruption-between-manchester-piccadilly-and-sheff-958fc3727002",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 223.75,
-      "story_key": "story:northern|manchester airport|manchester airport manchester airport|closed|manchester|announced|2026 10 13",
+      "score_snapshot": 244.5,
+      "story_key": "story:northern|transpennine express|transport|manchester|new story|2026 10 15",
       "prose_source": "synthetic",
-      "source_label": "MEN News Sitemap",
-      "title": "Manchester Airport train station to close for one day as part of £115m upgrade"
+      "source_label": "National Rail Enquiries",
+      "title": "East Midlands Railway: CLEARED: Disruption between Manchester Piccadilly and Sheffield"
+    },
+    {
+      "slot_id": "transport-02",
+      "section": "Общественный транспорт сегодня",
+      "block": "transport",
+      "position": 2,
+      "primary_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-amended-late-night-early-morning-northern-service-to-from-manchester-piccadilly-63c03dd0b3ff",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 237.5,
+      "story_key": "story:northern|transport|manchester|same story new facts|2026 10 15",
+      "prose_source": "synthetic",
+      "source_label": "National Rail Enquiries",
+      "title": "Amended late night / early morning Northern service to / from Manchester Piccadilly from Monday 12 to Friday 16 October"
+    },
+    {
+      "slot_id": "transport-03",
+      "section": "Общественный транспорт сегодня",
+      "block": "transport",
+      "position": 3,
+      "primary_fingerprint": "url-bbc-com-news-articles-cmx2we8jlzn5o-feb07e1c6ef8",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 233.75,
+      "story_key": "story:christopher henry|sentenced|manchester|trafford|sentenced|2026 10 14",
+      "prose_source": "synthetic",
+      "source_label": "BBC Manchester public safety fallback",
+      "title": "Driver on 'autopilot' before bus crashed into Eccles bridge"
     },
     {
       "slot_id": "today_focus-01",
       "section": "Что важно сегодня",
       "block": "today_focus",
       "position": 1,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-water-bosses-update-oldham-road-34757435-1b939de4c32f",
+      "primary_fingerprint": "url-bbc-com-news-articles-cw99z1gjvjvno-c330421f76da",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 99174.75,
-      "story_key": "topic:planning:manchester oldham water bosses update as oldham road turned into lake still closed days after severe flooding|new story|2026 10 13",
+      "score_snapshot": 99194.75,
+      "story_key": "story:bbc|closed|prestwich|new story|2026 10 15",
       "prose_source": "model",
-      "source_label": "MEN News Sitemap",
-      "title": "Water bosses update as Oldham road turned into 'lake' still closed days after severe flooding"
-    },
-    {
-      "slot_id": "today_focus-02",
-      "section": "Что важно сегодня",
-      "block": "today_focus",
-      "position": 2,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-teachers-struggling-bolton-school-vote-34759316-916eb1cf0346",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 98184.75,
-      "story_key": "story:northern|the northern education trust|service accountability|bolton|new story|2026 10 13",
-      "prose_source": "model",
-      "source_label": "MEN",
-      "title": "Teachers at a struggling Bolton school vote for industrial action over changes brought in by academy trust"
+      "source_label": "BBC Manchester public safety fallback",
+      "title": "Long delays as stretch of M60 closed during police incident"
     },
     {
       "slot_id": "football-01",
       "section": "Футбол",
       "block": "football",
       "position": 1,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-lineup-vs-psg-34759451-0e0113375df6",
+      "primary_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-lisandro-martinez-fine-34765051-afebdd5413a7",
       "backup_fingerprints": [
-        "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-fernandes-michael-carrick-34760048-d009d6f85aec",
-        "url-manchestereveningnews-co-uk-sport-football-football-news-man-utd-lisandro-martinez-amad-34761036-053f6856f9d3"
+        "url-manchestereveningnews-co-uk-sport-football-football-news-marc-guehi-explains-what-man-34766189-2822da072411",
+        "url-manchestereveningnews-co-uk-sport-football-football-news-enzo-maresca-apologises-man-city-34766175-2ff0a7a249d7"
       ],
       "required": false,
       "must_show": false,
       "selection_reason": "Selected in football shortlist before writing.",
-      "score_snapshot": 209.75,
-      "story_key": "topic:local_cost:old trafford manchester trafford old trafford man city lineup vs psg predicted as jeremy doku rewarded and nico o reilly starts|event this week|2026 10 14",
+      "score_snapshot": 146.25,
+      "story_key": "topic:local_cost:old trafford manchester trafford old trafford man united latest lisandro martinez sparks internal dispute and manager fined for outburst|same story new facts|2026 10 15",
       "prose_source": "model",
-      "source_label": "MEN Manchester City",
-      "title": "Man City lineup vs PSG predicted as Jeremy Doku rewarded and Nico O'Reilly starts"
+      "source_label": "MEN Manchester United",
+      "title": "Man United latest: Lisandro Martinez sparks internal dispute and manager fined for outburst"
     },
     {
       "slot_id": "football-02",
       "section": "Футбол",
       "block": "football",
       "position": 2,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-city-threat-issued-andy-34758902-c0e94bb06d98",
+      "primary_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-uk-34766303-493f0b38601b",
       "backup_fingerprints": [
-        "url-manchestereveningnews-co-uk-sport-football-poll-you-agree-lisandro-martinezs-34760814-b6cb0d48d9dc",
-        "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-jamie-carragher-34759672-4b519b77986a"
+        "url-manchestereveningnews-co-uk-sport-football-football-news-uk-government-man-city-charges-34766273-687b8959e31e",
+        "url-manchestereveningnews-co-uk-sport-football-football-news-man-utd-arbeloa-fulham-referee-34765948-2753dd7bdfa6"
       ],
       "required": false,
       "must_show": false,
       "selection_reason": "Selected in football shortlist before writing.",
-      "score_snapshot": 146.75,
-      "story_key": "topic:civic:manchester manchester city threat issued to andy burnham by independent football regulator|new story|2026 10 13",
+      "score_snapshot": 143.75,
+      "story_key": "topic:incident:manchester man city charges live uk gov stance independent football regulator claim new sanctions timeline|follow up|2026 10 15",
       "prose_source": "model",
       "source_label": "MEN Manchester City",
-      "title": "Manchester City threat issued to Andy Burnham by Independent Football Regulator"
+      "title": "Man City charges LIVE: UK Gov stance, Independent Football Regulator claim, new sanctions timeline"
+    },
+    {
+      "slot_id": "weekend_activities-01",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 1,
+      "primary_fingerprint": "event-id-skiddle-com-cecb4bc59515-590572568362",
+      "backup_fingerprints": [
+        "event-event-florence-peake-vitalities-discover-a-brand-new-exhibition-in-home-s-main-gallery-2026-10-15-home-9adb551f7915",
+        "event-event-funnyboyz-manchester-presents-benidorm-bingo-2026-10-17-funnyboyz-manchester-ba9d7a5cf47b"
+      ],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 109.75,
+      "story_key": "event:neighbourhood festival|2026 10 17|various venues manchester",
+      "prose_source": "deterministic",
+      "source_label": "Skiddle Manchester Festivals",
+      "title": "Neighbourhood Festival"
+    },
+    {
+      "slot_id": "weekend_activities-02",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 2,
+      "primary_fingerprint": "event-event-first-street-makers-market-2026-10-17-manchester-m15-4fn-04f5beb14da9",
+      "backup_fingerprints": [
+        "event-event-autumn-contemporary-season-lowry-2026-10-15-the-lowry-786dfbe1a187",
+        "event-event-flight-club-manchester-brunch-social-2026-10-17-2f2d9760cc51"
+      ],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 172.0,
+      "story_key": "event:first street makers market|2026 10 17|manchester m15 4fn",
+      "prose_source": "deterministic",
+      "source_label": "Pedddle Makers Market",
+      "title": "First Street Makers Market"
+    },
+    {
+      "slot_id": "weekend_activities-03",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 3,
+      "primary_fingerprint": "event-event-spinningfields-makers-market-2026-10-17-manchester-m3-3ae-514f02db7336",
+      "backup_fingerprints": [
+        "event-event-babies-playtime-what-s-on-2026-10-15-lowry-dbf873eee4c0"
+      ],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 172.0,
+      "story_key": "event:spinningfields makers market|2026 10 17|manchester m3 3ae",
+      "prose_source": "deterministic",
+      "source_label": "Pedddle Makers Market",
+      "title": "Spinningfields Makers Market"
+    },
+    {
+      "slot_id": "weekend_activities-04",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 4,
+      "primary_fingerprint": "event-event-chorlton-makers-market-2026-10-17-chorlton-m21-9pn-4641940f6813",
+      "backup_fingerprints": [
+        "event-event-family-friendly-activities-lowry-2026-10-15-the-lowry-a5c870210419"
+      ],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 168.0,
+      "story_key": "event:chorlton makers market|2026 10 17|chorlton m21 9pn",
+      "prose_source": "deterministic",
+      "source_label": "Pedddle Makers Market",
+      "title": "Chorlton Makers Market"
+    },
+    {
+      "slot_id": "weekend_activities-05",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 5,
+      "primary_fingerprint": "event-id-jsonld-event-a7638d70e5cb-93664b4a93af",
+      "backup_fingerprints": [
+        "event-event-salo-presents-seven-with-cupra-2026-10-16-cupra-city-garage-manchester-fb54ce807924"
+      ],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Structured writer template will produce the visible line.",
+      "score_snapshot": 162.75,
+      "story_key": "event:chorlton makers market|2026 10 17|manchester road and oswald road school car park",
+      "prose_source": "deterministic",
+      "source_label": "Chorlton Makers Market",
+      "title": "Chorlton Makers' Market"
+    },
+    {
+      "slot_id": "weekend_activities-06",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 6,
+      "primary_fingerprint": "event-event-great-northern-contemporary-craft-fair-2026-10-15-victoria-baths-d60110c768a0",
+      "backup_fingerprints": [
+        "event-id-skiddle-com-4911edd31a76-4f22d50317d3"
+      ],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 135.25,
+      "story_key": "event:great northern contemporary craft fair|2026 10 15|victoria baths",
+      "prose_source": "deterministic",
+      "source_label": "Manchester's Finest Events",
+      "title": "Great Northern Contemporary Craft Fair"
+    },
+    {
+      "slot_id": "weekend_activities-07",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 7,
+      "primary_fingerprint": "event-id-jsonld-event-f0a617d656eb-6f333c4e2f23",
+      "backup_fingerprints": [
+        "event-event-next-page-next-page-2026-10-17-manchester-next-e930e916f057"
+      ],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Structured writer template will produce the visible line.",
+      "score_snapshot": 189.0,
+      "story_key": "event:bolton car boot sale|2026 10 18|bolton car boot sale",
+      "prose_source": "deterministic",
+      "source_label": "Bolton Car Boot Sale",
+      "title": "Bolton Car Boot Sale"
+    },
+    {
+      "slot_id": "weekend_activities-08",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 8,
+      "primary_fingerprint": "event-event-the-big-stockport-car-boot-romiley-2026-10-18-waterside-farm-otterspool-road-romiley-stockport-sk6-3lq-f04e9be995ac",
+      "backup_fingerprints": [
+        "event-event-takuya-nakamura-live-2026-10-16-new-century-d030d645c272"
+      ],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Structured writer template will produce the visible line.",
+      "score_snapshot": 185.0,
+      "story_key": "event:the big stockport car boot romiley|2026 10 18|waterside farm otterspool road romiley stockport sk6 3lq",
+      "prose_source": "deterministic",
+      "source_label": "The BIG Stockport Car Boot",
+      "title": "The BIG Stockport Car Boot, Romiley"
+    },
+    {
+      "slot_id": "weekend_activities-09",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 9,
+      "primary_fingerprint": "event-id-jsonld-event-1ebe0c7281c0-bec85d64d713",
+      "backup_fingerprints": [
+        "event-event-love-is-the-answer-presents-ben-park-2026-10-16-stage-radio-c91f7356d742"
+      ],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Structured writer template will produce the visible line.",
+      "score_snapshot": 159.0,
+      "story_key": "event:new smithfield sunday market and car boot|2026 10 18|new smithfield market openshaw manchester m11",
+      "prose_source": "deterministic",
+      "source_label": "New Smithfield Sunday Market",
+      "title": "New Smithfield Sunday Market and Car Boot"
+    },
+    {
+      "slot_id": "weekend_activities-10",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 10,
+      "primary_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+      "backup_fingerprints": [
+        "event-event-badger-in-the-wild-2026-10-16-joshua-brooks-76942ad6a1d9"
+      ],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Structured writer template will produce the visible line.",
+      "score_snapshot": 115.0,
+      "story_key": "event:burnage rfc car boot sale|2026 05 10|burnage rfc",
+      "prose_source": "deterministic",
+      "source_label": "Burnage RFC Car Boot Sale",
+      "title": "Burnage RFC Car Boot Sale"
+    },
+    {
+      "slot_id": "weekend_activities-11",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 11,
+      "primary_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
+      "backup_fingerprints": [
+        "event-event-5-years-of-rollout-2026-10-16-the-bag-factory-24e9ac813e3d"
+      ],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Structured writer template will produce the visible line.",
+      "score_snapshot": 97.5,
+      "story_key": "event:barton aerodrome car boot sale|2026 04 04|",
+      "prose_source": "deterministic",
+      "source_label": "Barton Aerodrome Car Boot",
+      "title": "Barton Aerodrome Car Boot Sale"
+    },
+    {
+      "slot_id": "weekend_activities-12",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 12,
+      "primary_fingerprint": "event-event-campfield-market-manchester-s-new-city-market-2026-10-17-ddda12d8aeca",
+      "backup_fingerprints": [
+        "event-event-electric-shuffle-manchester-brunch-2026-10-17-378ccc8bd1b2"
+      ],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Structured writer template will produce the visible line.",
+      "score_snapshot": 88.25,
+      "story_key": "event:campfield market manchester s new city market|2026 10 17|",
+      "prose_source": "deterministic",
+      "source_label": "Campfield Market",
+      "title": "Campfield Market | Manchester's New City Market"
+    },
+    {
+      "slot_id": "weekend_activities-13",
+      "section": "Выходные в GM",
+      "block": "weekend_activities",
+      "position": 13,
+      "primary_fingerprint": "event-event-woodhill-2026-10-15-lowry-e5c767151de9",
+      "backup_fingerprints": [
+        "event-event-magic-at-the-midland-2026-10-18-4127bfcc4c80"
+      ],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Selected in weekend_activities shortlist before writing.",
+      "score_snapshot": 121.25,
+      "story_key": "event:woodhill|2026 10 15|lowry",
+      "prose_source": "deterministic",
+      "source_label": "The Lowry",
+      "title": "Woodhill"
     },
     {
       "slot_id": "city_watch-01",
       "section": "Городской радар",
       "block": "city_watch",
       "position": 1,
-      "primary_fingerprint": "url-itv-com-news-granada-2026-10-12-officer-thought-killer-was-making-empty-threats-before-fatal-arson-attack-75ddb5b93772",
+      "primary_fingerprint": "url-bbc-com-news-articles-cwdr8gz06n2go-0d219f398e6a",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 99171.0,
-      "story_key": "topic:incident:bolton salford officer thought killer was making empty threats before fatal arson attack in greater manchester|same story new facts|2026 10 12",
+      "score_snapshot": 99182.25,
+      "story_key": "topic:incident:bolton manchester nothing done to keep salford family safe inquest hears|follow up|2026 10 13",
       "prose_source": "model",
-      "source_label": "ITV Granada Greater Manchester",
-      "title": "Officer thought killer was making 'empty threats' before fatal arson attack in Greater Manchester"
+      "source_label": "BBC Manchester Web",
+      "title": "'Nothing' done to keep Salford family safe, inquest hears"
     },
     {
       "slot_id": "city_watch-02",
       "section": "Городской радар",
       "block": "city_watch",
       "position": 2,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-president-zelenskyy-visit-downing-street-34760461-4349a845e0a5",
+      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-jet2-passenger-stunned-airline-cancels-34759103-65c2222eb61d",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 97106.5,
-      "story_key": "topic:generic:men president zelenskyy to visit downing street as burnham doubles down on support of ukraine",
+      "score_snapshot": 98166.75,
+      "story_key": "topic:local_cost:bolton manchester jet2 passenger stunned as airline cancels her holiday and say manchester airport route doesn t exist|same story new facts|2026 10 14",
       "prose_source": "model",
-      "source_label": "MEN",
-      "title": "President Zelenskyy to visit Downing Street as Burnham doubles down on support of Ukraine"
+      "source_label": "MEN News Sitemap",
+      "title": "Jet2 passenger stunned as airline cancels her holiday and say Manchester Airport route doesn't exist"
     },
     {
       "slot_id": "city_watch-03",
       "section": "Городской радар",
       "block": "city_watch",
       "position": 3,
-      "primary_fingerprint": "url-prolificnorth-co-uk-news-second-series-confirmed-for-bbcs-hit-manchester-legal-drama-the-split-up-841aa40d9309",
+      "primary_fingerprint": "url-itv-com-news-granada-2026-10-05-mum-and-four-children-petrified-before-fatal-arson-attack-inquest-hears-862356870972",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
-      "selection_reason": "Selected in city_watch shortlist before writing.",
-      "score_snapshot": 82119.75,
-      "story_key": "story:bbc|prolific north|opened|manchester|same story new facts|2026 10 13",
+      "selection_reason": "Protected item selected before size limits.",
+      "score_snapshot": 96151.75,
+      "story_key": "topic:incident:bolton mum and four children petrified before fatal arson attack in greater manchester inquest hears|follow up|2026 10 05",
       "prose_source": "model",
-      "source_label": "Prolific North Manchester",
-      "title": "Prolific North"
+      "source_label": "ITV Granada Greater Manchester",
+      "title": "Mum and four children 'petrified' before fatal arson attack in Greater Manchester, inquest hears"
     },
     {
       "slot_id": "city_watch-04",
       "section": "Городской радар",
       "block": "city_watch",
       "position": 4,
-      "primary_fingerprint": "url-aboutmanchester-co-uk-networking-in-manchester-do-business-breakfasts-still-work-1932e1ee64f6",
+      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchesters-major-new-hub-34763392-74023a5e10d9",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Selected in city_watch shortlist before writing.",
-      "score_snapshot": 80088.0,
-      "story_key": "story:news|manchester|networking in manchester do business breakfasts still work about manchester|new story|2026 10 13",
+      "score_snapshot": 95096.75,
+      "story_key": "topic:research:greater manchester s major new hub that could bring thousands of jobs is now complete|new story|2026 10 14",
       "prose_source": "model",
-      "source_label": "About Manchester News",
-      "title": "Networking in Manchester: Do Business Breakfasts Still Work? | About Manchester"
+      "source_label": "MEN Latest News",
+      "title": "Greater Manchester's major new hub that could bring thousands of jobs is now complete"
     },
     {
       "slot_id": "city_watch-05",
       "section": "Городской радар",
       "block": "city_watch",
       "position": 5,
-      "primary_fingerprint": "url-bbc-com-news-articles-cm4gvyvxyl1go-427879bae3db",
+      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-two-major-plans-change-face-34761902-cde082a51623",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
-      "selection_reason": "Protected item selected before size limits.",
-      "score_snapshot": 146.5,
-      "story_key": "topic:incident:our memorial garden helps us grieve a cemetery felt too far away|new story|2026 10 14",
+      "selection_reason": "Selected in city_watch shortlist before writing.",
+      "score_snapshot": 92113.5,
+      "story_key": "topic:research:two major plans that will change the face of salford s towns|new story|2026 10 14",
       "prose_source": "model",
-      "source_label": "BBC Manchester",
-      "title": "Our memorial garden helps us grieve - a cemetery felt too far away"
+      "source_label": "MEN News Sitemap",
+      "title": "Two major plans that will change the face of Salford's towns"
+    },
+    {
+      "slot_id": "city_watch-06",
+      "section": "Городской радар",
+      "block": "city_watch",
+      "position": 6,
+      "primary_fingerprint": "url-greatermanchester-ca-gov-uk-news-gmca-statement-on-the-former-mayor-s-meetings-regarding-manchester-city-fc-47c9c39efb79",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Selected in city_watch shortlist before writing.",
+      "score_snapshot": 82174.75,
+      "story_key": "topic:civic:gmca manchester gmca statement on the former mayor s meetings regarding manchester city fc greater manchester combined authority|announced",
+      "prose_source": "model",
+      "source_label": "GMCA",
+      "title": "GMCA statement on the former Mayor's meetings regarding Manchester City FC - Greater Manchester Combined Authority"
+    },
+    {
+      "slot_id": "city_watch-07",
+      "section": "Городской радар",
+      "block": "city_watch",
+      "position": 7,
+      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-a-stay-luxury-northern-quarter-34760299-f19d14991bda",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Selected in city_watch shortlist before writing.",
+      "score_snapshot": 79100.75,
+      "story_key": "topic:research:he visited manchester for a luxury stay but it turned into nothing short of a nightmare|new story|2026 10 15",
+      "prose_source": "model",
+      "source_label": "MEN",
+      "title": "He visited Manchester for a luxury stay but it turned into nothing short of a 'nightmare'"
     },
     {
       "slot_id": "openings-01",
       "section": "Еда, открытия и рынки",
       "block": "openings",
       "position": 1,
-      "primary_fingerprint": "url-aboutmanchester-co-uk-lisandro-martinez-opens-up-about-manchester-uniteds-struggles-0fc1b7152531",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Selected in openings shortlist before writing.",
-      "score_snapshot": 183.0,
-      "story_key": "topic:opening:manchester lisandro mart nez opens up about manchester united s struggles about manchester|new story|2026 10 14",
-      "prose_source": "model",
-      "source_label": "About Manchester Food & Drink",
-      "title": "Lisandro Martínez opens up about Manchester United's struggles | About Manchester"
-    },
-    {
-      "slot_id": "openings-02",
-      "section": "Еда, открытия и рынки",
-      "block": "openings",
-      "position": 2,
       "primary_fingerprint": "event-event-bottega-by-san-carlo-to-reopen-at-selfridges-manchester-following-refurbishment-2026-10-15-selfridges-manchester-01e0c4f18d59",
       "backup_fingerprints": [],
       "required": false,
@@ -871,275 +1197,227 @@
       "section": "IT и бизнес",
       "block": "tech_business",
       "position": 1,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-passengers-issued-update-34757678-de04fb13db81",
+      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-self-driving-cars-coming-manchester-34763732-6f38b08bd5d6",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Selected in tech_business shortlist before writing.",
-      "score_snapshot": 99144.75,
-      "story_key": "topic:incident:manchester manchester airport passengers issued update as flights cancelled|cancelled|2026 10 13",
+      "score_snapshot": 99142.75,
+      "story_key": "topic:planning:manchester self driving cars are coming to manchester under new plans from uber|announced|2026 10 14",
       "prose_source": "model",
-      "source_label": "MEN News Sitemap",
-      "title": "Manchester Airport passengers issued update as flights cancelled"
+      "source_label": "MEN",
+      "title": "Self-driving cars are coming to Manchester under new plans from Uber"
     },
     {
       "slot_id": "tech_business-02",
       "section": "IT и бизнес",
       "block": "tech_business",
       "position": 2,
-      "primary_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-iran-targeting-jewish-communities-uk-34757361-a496934d0097",
+      "primary_fingerprint": "url-aboutmanchester-co-uk-police-issue-warning-over-scam-calls-across-greater-manchester-2f3adcb3f01b",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Selected in tech_business shortlist before writing.",
-      "score_snapshot": 96114.25,
-      "story_key": "topic:incident:manchester iran is targeting jewish communities in uk with hybrid campaign says mi5 boss|new story|2026 10 13",
+      "score_snapshot": 98118.75,
+      "story_key": "topic:incident:police issue warning over scam calls across greater manchester about manchester|new story|2026 10 14",
       "prose_source": "model",
-      "source_label": "MEN Latest News",
-      "title": "Iran is targeting Jewish communities in UK with 'hybrid campaign' says MI5 boss"
+      "source_label": "About Manchester News",
+      "title": "Police issue warning over scam calls across Greater Manchester | About Manchester"
+    },
+    {
+      "slot_id": "tech_business-03",
+      "section": "IT и бизнес",
+      "block": "tech_business",
+      "position": 3,
+      "primary_fingerprint": "url-businesscloud-co-uk-news-software-built-in-stoke-and-manchester-wins-five-more-years-in-the-netherlands-104af9e7079b",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Selected in tech_business shortlist before writing.",
+      "score_snapshot": 96135.25,
+      "story_key": "story:service accountability|manchester|software built in stoke and manchester wins five more years in the netherlands|new story|2026 10 14",
+      "prose_source": "model",
+      "source_label": "BusinessCloud",
+      "title": "Software built in Stoke and Manchester wins five more years in the Netherlands"
+    },
+    {
+      "slot_id": "tech_business-04",
+      "section": "IT и бизнес",
+      "block": "tech_business",
+      "position": 4,
+      "primary_fingerprint": "url-prolificnorth-co-uk-news-door-drops-go-digital-with-deliver-my-leaflets-platform-launch-3e275735958d",
+      "backup_fingerprints": [],
+      "required": false,
+      "must_show": false,
+      "selection_reason": "Selected in tech_business shortlist before writing.",
+      "score_snapshot": 95144.75,
+      "story_key": "topic:local_cost:manchester prolific north|same story new facts|2026 10 14",
+      "prose_source": "model",
+      "source_label": "Prolific North Manchester",
+      "title": "Prolific North"
     },
     {
       "slot_id": "professional_events-01",
       "section": "Business/tech события для тебя",
       "block": "professional_events",
       "position": 1,
-      "primary_fingerprint": "event-event-funding-strategy-investor-pitching-workshop-series-2026-10-14-manchester-city-centre-887e45d2a433",
+      "primary_fingerprint": "event-event-internationaltrade-jacksonville-uk-trade-mission-retail-and-brand-summit-thursday-15-oct-9-2026-10-15-a4c48f8af92d",
       "backup_fingerprints": [],
       "required": true,
       "must_show": true,
       "selection_reason": "Selected in professional_events shortlist before writing.",
-      "score_snapshot": 1116.0,
-      "story_key": "event:funding strategy investor pitching workshop series|2026 10 14|manchester city centre",
+      "score_snapshot": 1084.0,
+      "story_key": "event:internationaltrade jacksonville uk trade mission retail and brand summit thursday 15 oct 9|2026 10 15|",
+      "prose_source": "deterministic",
+      "source_label": "GM Chamber Events",
+      "title": "#internationaltrade Jacksonville UK Trade Mission: Retail and Brand Summit Thursday 15 Oct 9:30am - 1:30pm"
+    },
+    {
+      "slot_id": "professional_events-02",
+      "section": "Business/tech события для тебя",
+      "block": "professional_events",
+      "position": 2,
+      "primary_fingerprint": "event-event-women-in-business-networking-without-fear-2026-10-15-fire-up-co-working-space-rochdale-e1c253bf9e92",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Selected in professional_events shortlist before writing.",
+      "score_snapshot": 605.0,
+      "story_key": "event:women in business networking without fear|2026 10 15|fire up co working space rochdale",
       "prose_source": "deterministic",
       "source_label": "GM Business Growth Hub Events",
-      "title": "Funding Strategy & Investor Pitching — Workshop Series"
+      "title": "Women in Business - Networking Without Fear"
+    },
+    {
+      "slot_id": "professional_events-03",
+      "section": "Business/tech события для тебя",
+      "block": "professional_events",
+      "position": 3,
+      "primary_fingerprint": "event-event-leaders-annual-general-meeting-friday-16-oct-8-30am-9-30am-2026-10-16-30883cbb36e3",
+      "backup_fingerprints": [],
+      "required": true,
+      "must_show": true,
+      "selection_reason": "Selected in professional_events shortlist before writing.",
+      "score_snapshot": 554.0,
+      "story_key": "event:leaders annual general meeting friday 16 oct 8 30am 9 30am|2026 10 16|manchester",
+      "prose_source": "deterministic",
+      "source_label": "GM Chamber Events",
+      "title": "#leaders Annual General Meeting Friday 16 Oct 8:30am - 9:30am"
     },
     {
       "slot_id": "future_announcements-01",
       "section": "Дальние анонсы",
       "block": "future_announcements",
       "position": 1,
-      "primary_fingerprint": "event-event-the-mersey-beatles-2026-11-19-blackpool-opera-house-dac278f06970",
+      "primary_fingerprint": "event-event-squeeze-plus-very-special-guest-billy-bragg-2026-11-23-o2-apollo-manchester-5bc8e2cff49c",
       "backup_fingerprints": [
-        "event-id-skiddle-com-cdceaf747fb6-578d3d9c3a95",
-        "event-event-welcome-to-stockport-council-2026-10-30-wilmslow-station-wilmslow-54aa104f1f91"
+        "event-id-skiddle-com-9303661569c8-eb1e6e903443",
+        "event-event-museum-after-hours-at-science-and-industry-museum-2026-10-29-science-and-industry-museum-b7b096b35ad2"
       ],
       "required": false,
       "must_show": false,
       "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 5.75,
-      "story_key": "event:the mersey beatles|2026 11 19|blackpool opera house",
+      "score_snapshot": 19.75,
+      "story_key": "event:squeeze plus very special guest billy bragg|2026 11 23|o2 apollo manchester",
       "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Onsale",
-      "title": "The Mersey Beatles — event 2026-11-19 — public sale 2025-11-17 21:50"
+      "source_label": "Ticketmaster Manchester Onsale",
+      "title": "Squeeze plus Very Special Guest Billy Bragg — event 2026-11-23 — public sale 2025-11-28 09:30"
     },
     {
       "slot_id": "ticket_radar-01",
       "section": "Билеты / Ticket Radar",
       "block": "ticket_radar",
       "position": 1,
-      "primary_fingerprint": "event-event-mico-1st-february-2027-2027-02-01-manchester-academy-2489c340a062",
+      "primary_fingerprint": "event-event-masego-fix-your-face-tour-2026-10-15-o2-apollo-manchester-54c024f02e39",
       "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
+      "required": true,
+      "must_show": true,
       "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 480.0,
-      "story_key": "event:mico 1st february 2027|2027 02 01|manchester academy",
+      "score_snapshot": 961.0,
+      "story_key": "ticket:masego:o2 apollo manchester:2026-10-15",
       "prose_source": "deterministic",
-      "source_label": "Manchester Academy",
-      "title": "MICO - 1st February 2027"
+      "source_label": "Ticketmaster Manchester Upcoming",
+      "title": "Masego - Fix Your Face Tour — event 2026-10-15 — public sale 2026-06-12 10:00"
     },
     {
       "slot_id": "ticket_radar-02",
       "section": "Билеты / Ticket Radar",
       "block": "ticket_radar",
       "position": 2,
-      "primary_fingerprint": "event-event-heaven-17-perform-penthouse-and-pavement-2026-10-14-o2-ritz-manchester-034050045b38",
+      "primary_fingerprint": "event-event-baby-dave-15th-october-2026-2026-10-15-manchester-academy-34c828fb41ee",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 401.0,
-      "story_key": "event:heaven 17 perform penthouse and pavement|2026 10 14|o2 ritz manchester",
+      "score_snapshot": 291.0,
+      "story_key": "event:baby dave 15th october 2026|2026 10 15|manchester academy",
       "prose_source": "deterministic",
-      "source_label": "Ticketmaster Manchester Upcoming",
-      "title": "Heaven 17 perform Penthouse and Pavement — event 2026-10-14 — public sale 2026-05-01 10:00"
+      "source_label": "Manchester Academy",
+      "title": "Baby Dave - 15th October 2026"
     },
     {
       "slot_id": "ticket_radar-03",
       "section": "Билеты / Ticket Radar",
       "block": "ticket_radar",
       "position": 3,
-      "primary_fingerprint": "event-event-the-clockworks-14th-october-2026-2026-10-14-manchester-academy-6bd625cab22d",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 291.0,
-      "story_key": "event:the clockworks 14th october 2026|2026 10 14|manchester academy",
-      "prose_source": "deterministic",
-      "source_label": "Manchester Academy",
-      "title": "The Clockworks - 14th October 2026"
-    },
-    {
-      "slot_id": "ticket_radar-04",
-      "section": "Билеты / Ticket Radar",
-      "block": "ticket_radar",
-      "position": 4,
-      "primary_fingerprint": "event-event-master-peace-26th-february-2027-2027-02-26-manchester-academy-f26ac352de64",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 270.0,
-      "story_key": "event:master peace 26th february 2027|2027 02 26|manchester academy",
-      "prose_source": "deterministic",
-      "source_label": "Manchester Academy",
-      "title": "Master Peace - 26th February 2027"
-    },
-    {
-      "slot_id": "ticket_radar-05",
-      "section": "Билеты / Ticket Radar",
-      "block": "ticket_radar",
-      "position": 5,
-      "primary_fingerprint": "event-event-kris-barras-band-14th-october-2026-2026-10-14-manchester-academy-f20b12dc9af1",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 41.0,
-      "story_key": "event:kris barras band 14th october 2026|2026 10 14|manchester academy",
-      "prose_source": "deterministic",
-      "source_label": "Manchester Academy",
-      "title": "Kris Barras Band - 14th October 2026"
-    },
-    {
-      "slot_id": "ticket_radar-06",
-      "section": "Билеты / Ticket Radar",
-      "block": "ticket_radar",
-      "position": 6,
       "primary_fingerprint": "event-event-president-barack-obama-an-evening-with-president-barack-obama-presented-by-seat-unique-thu-2026-10-15-co-op-live-1b2965ea7d63",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 40.0,
+      "score_snapshot": 41.0,
       "story_key": "event:president barack obama an evening with president barack obama presented by seat unique thu|2026 10 15|co op live",
       "prose_source": "deterministic",
       "source_label": "Co-op Live",
       "title": "President Barack Obama An Evening With President Barack Obama, presented by Seat Unique Thu 15 Oct 2026 Multiple times"
     },
     {
-      "slot_id": "ticket_radar-07",
+      "slot_id": "ticket_radar-04",
       "section": "Билеты / Ticket Radar",
       "block": "ticket_radar",
-      "position": 7,
+      "position": 4,
       "primary_fingerprint": "event-event-alpha-wolf-15th-october-2026-2026-10-15-manchester-academy-142c1e010cdf",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 40.0,
+      "score_snapshot": 41.0,
       "story_key": "event:alpha wolf 15th october 2026|2026 10 15|manchester academy",
       "prose_source": "deterministic",
       "source_label": "Manchester Academy",
       "title": "Alpha Wolf - 15th October 2026"
     },
     {
-      "slot_id": "ticket_radar-08",
+      "slot_id": "ticket_radar-05",
       "section": "Билеты / Ticket Radar",
       "block": "ticket_radar",
-      "position": 8,
+      "position": 5,
       "primary_fingerprint": "event-event-jimeoin-ballyhoo-15th-october-2026-2026-10-15-manchester-academy-a70d27632499",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 40.0,
+      "score_snapshot": 41.0,
       "story_key": "event:jimeoin ballyhoo 15th october 2026|2026 10 15|manchester academy",
       "prose_source": "deterministic",
       "source_label": "Manchester Academy",
       "title": "Jimeoin: Ballyhoo! - 15th October 2026"
     },
     {
-      "slot_id": "ticket_radar-09",
+      "slot_id": "ticket_radar-06",
       "section": "Билеты / Ticket Radar",
       "block": "ticket_radar",
-      "position": 9,
-      "primary_fingerprint": "event-event-j-cole-the-fall-off-tour-wed-28-oct-2026-thu-29-oct-2026-2026-10-28-co-op-live-bc5fd1ccf36b",
+      "position": 6,
+      "primary_fingerprint": "event-event-the-wanted-2-0-16th-october-2026-2026-10-16-manchester-academy-9ff638378079",
       "backup_fingerprints": [],
       "required": false,
       "must_show": false,
       "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 27.0,
-      "story_key": "event:j cole the fall off tour wed 28 oct 2026 thu 29 oct 2026|2026 10 28|co op live",
-      "prose_source": "deterministic",
-      "source_label": "Co-op Live",
-      "title": "J. Cole The Fall-Off Tour Wed 28 Oct 2026 - Thu 29 Oct 2026"
-    },
-    {
-      "slot_id": "ticket_radar-10",
-      "section": "Билеты / Ticket Radar",
-      "block": "ticket_radar",
-      "position": 10,
-      "primary_fingerprint": "event-event-hollywood-undead-eu-uk-2027-26th-february-2027-2027-02-26-manchester-academy-13a5690e8e05",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 20.0,
-      "story_key": "event:hollywood undead eu uk 2027 26th february 2027|2027 02 26|manchester academy",
+      "score_snapshot": 40.0,
+      "story_key": "event:the wanted 2 0 16th october 2026|2026 10 16|manchester academy",
       "prose_source": "deterministic",
       "source_label": "Manchester Academy",
-      "title": "Hollywood Undead EU/UK 2027 - 26th February 2027"
-    },
-    {
-      "slot_id": "ticket_radar-11",
-      "section": "Билеты / Ticket Radar",
-      "block": "ticket_radar",
-      "position": 11,
-      "primary_fingerprint": "event-event-an-evening-with-black-flag-1st-june-2027-2027-06-01-manchester-academy-cd6a4a5e0d73",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 20.0,
-      "story_key": "event:an evening with black flag 1st june 2027|2027 06 01|manchester academy",
-      "prose_source": "deterministic",
-      "source_label": "Manchester Academy",
-      "title": "An Evening With Black Flag - 1st June 2027"
-    },
-    {
-      "slot_id": "ticket_radar-12",
-      "section": "Билеты / Ticket Radar",
-      "block": "ticket_radar",
-      "position": 12,
-      "primary_fingerprint": "event-event-crook-on-the-wall-21st-august-2027-2027-08-21-manchester-academy-459eb6bbde41",
-      "backup_fingerprints": [],
-      "required": false,
-      "must_show": false,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 20.0,
-      "story_key": "event:crook on the wall 21st august 2027|2027 08 21|manchester academy",
-      "prose_source": "deterministic",
-      "source_label": "Manchester Academy",
-      "title": "CROOK ON THE WALL - 21st August 2027"
-    },
-    {
-      "slot_id": "outside_gm_tickets-01",
-      "section": "Крупные концерты вне GM",
-      "block": "outside_gm_tickets",
-      "position": 1,
-      "primary_fingerprint": "event-event-the-beat-dance-crazed-too-uk-tour-2026-10-14-o2-academy-leeds-7a47ed096d94",
-      "backup_fingerprints": [],
-      "required": true,
-      "must_show": true,
-      "selection_reason": "Structured writer template will produce the visible line.",
-      "score_snapshot": 961.0,
-      "story_key": "ticket:the beat:o2 academy leeds:2026-10-14",
-      "prose_source": "deterministic",
-      "source_label": "Ticketmaster UK Major Upcoming",
-      "title": "The Beat - Dance Crazed Too UK Tour — event 2026-10-14 — public sale 2025-11-28 10:00"
+      "title": "The Wanted 2.0 - 16th October 2026"
     }
   ],
   "today_focus_board": {
@@ -1148,26 +1426,104 @@
     "from_city_watch": 0
   },
   "ticket_notability": {
-    "stamped": 912,
-    "artists": 355,
+    "stamped": 896,
+    "artists": 350,
     "preexisting_tier_conflicts": {}
   },
   "out_sample": [
     {
-      "fingerprint": "url-bbc-com-news-articles-c62keg74dvxjo-cf8abdcb7943",
-      "title": "What Manchester's 'super-profit' deal with City owners has paid out so far",
+      "fingerprint": "url-bbc-com-news-articles-cw99z1gjvjvno-c330421f76da",
+      "title": "Long delays as stretch of M60 closed during police incident",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-bbc-com-news-articles-c84g1re377keo-f1545b40c9f2",
+      "title": "Witnesses tried to save Stretford head teacher dragged to death under car",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-bbc-com-news-articles-cmkgkrgnpp97o-36fff7f2d57e",
+      "title": "Jewish leaders call for Fontaines D.C. gigs to be cancelled",
       "section": "Свежие новости",
       "reason": "contract_drop:editorial_filler"
     },
     {
-      "fingerprint": "url-bbc-com-news-articles-cqgm01mmd49po-6a9abde19762",
-      "title": "Public inquiry over Manchester synagogue attack deaths",
+      "fingerprint": "url-bbc-com-news-articles-cmx2we8jlzn5o-feb07e1c6ef8",
+      "title": "Driver on 'autopilot' before bus crashed into Eccles bridge",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-bbc-com-news-articles-cwj34xrgxxyro-5ae464242d5c",
+      "title": "Mural remembers anti-crime campaigner who lost son to gun crime",
       "section": "Городской радар",
       "reason": "repeat_blocked:exact_fingerprint_already_published"
     },
     {
+      "fingerprint": "url-bbc-com-news-articles-cvlyd3z1g8d8o-8f2cc8426262",
+      "title": "Antoine Semenyo 'froze' after alleged racist abuse at Anfield, court told",
+      "section": "Свежие новости",
+      "reason": "backup_ineligible:rejected"
+    },
+    {
+      "fingerprint": "url-bbc-com-news-articles-c65ynq37jxz1o-ff6f213f1429",
+      "title": "'Some think endometriosis is just a bad period, but it's so much worse'",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-bbc-com-news-articles-cw99z1gjvjvno-c330421f76da",
+      "title": "Long delays as stretch of M60 closed during police incident",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-bbc-com-news-articles-cme3x9w70lw7o-bd9ae6088ae7",
+      "title": "The Wanted: Late Tom Parker 'always there', says bandmate",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-bbc-com-news-articles-cj75p3wp4266o-b9439c3eacdb",
+      "title": "Man extradited and charged with John Soyoye's murder in Moston",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-bbc-com-news-articles-ckjweq098dedo-582b21643d92",
+      "title": "Possible gang threat to family not reviewed, Walkden fire inquest hears",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-bbc-com-news-articles-c84g1re377keo-f1545b40c9f2",
+      "title": "Witnesses tried to save Stretford head teacher dragged to death under car",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-bbc-com-news-articles-cq33x1ele6mxo-a51efbe3db82",
+      "title": "HMOs 'targeted' as 25 incidents of vandalism in Salford linked",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
       "fingerprint": "url-bbc-com-news-articles-c6y93v1nlegro-02c52ec98b1e",
-      "title": "Pat Karney: Tributes to Manchester political giant",
+      "title": "Andy Burnham's tribute to Manchester politics 'giant' Pat Karney",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-bbc-com-news-articles-cmkgkrgnpp97o-36fff7f2d57e",
+      "title": "Jewish leaders call for Fontaines D.C. gigs to be cancelled",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-bbc-com-news-articles-cmx2we8jlzn5o-feb07e1c6ef8",
+      "title": "Driver on 'autopilot' before bus crashed into Eccles bridge",
       "section": "Свежие новости",
       "reason": "cheap_same_run_duplicate"
     },
@@ -1184,376 +1540,370 @@
       "reason": "cheap_same_run_duplicate"
     },
     {
-      "fingerprint": "url-bbc-com-news-articles-c9kgjx66d1x7o-27b879504cae",
-      "title": "Trafford head teacher dragged to his death under car, murder trial told",
+      "fingerprint": "url-bbc-com-news-articles-c83vq9vpwwr1o-520ecc5fc88e",
+      "title": "Burnham had two hospitality dinners with Man City chairman, deleted records show",
       "section": "Свежие новости",
       "reason": "cheap_same_run_duplicate"
     },
     {
-      "fingerprint": "url-bbc-com-news-articles-cwdr8gz06n2go-0d219f398e6a",
-      "title": "'Nothing' done to keep Salford family safe, inquest hears",
+      "fingerprint": "url-bbc-com-news-articles-cvlyd3z1g8d8o-8f2cc8426262",
+      "title": "Antoine Semenyo 'froze' after alleged racist abuse at Anfield, court told",
       "section": "Свежие новости",
       "reason": "cheap_same_run_duplicate"
     },
     {
-      "fingerprint": "url-bbc-com-news-articles-c62keg74dvxjo-cf8abdcb7943",
-      "title": "What Manchester's 'super-profit' deal with City owners has paid out so far",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-bbc-com-news-articles-cqgm01mmd49po-6a9abde19762",
-      "title": "Public inquiry over Manchester synagogue attack deaths",
-      "section": "Городской радар",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-bbc-com-news-articles-cm4gvyvxyl1go-427879bae3db",
-      "title": "Our memorial garden helps us grieve - a cemetery felt too far away",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-bbc-com-news-articles-c6lyen88dwdno-4ca37833ca08",
-      "title": "Julie Hesmondhalgh exits Celebrity Traitors 'with head held high'",
-      "section": "Городской радар",
-      "reason": "contract_drop:editorial_filler"
-    },
-    {
-      "fingerprint": "url-bbc-com-news-articles-cr86zp8qn0w5o-1ce003adeac0",
-      "title": "Red squirrel project opens £250k community grant",
-      "section": "Городской радар",
-      "reason": "repeat_blocked:exact_fingerprint_unchanged_evidence"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-builder-says-its-trap-one-34759177-9bf3adab720c",
-      "title": "Builder says 'it's a trap' as one Oldham bus lane camera hits him with double fine - with 4,200 others affected",
-      "section": "Общественный транспорт сегодня",
-      "reason": "backup_ineligible:rejected"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-hope-metrolink-commuters-bosses-reveal-34759397-7bdc6ee437ec",
-      "title": "Hope for Metrolink commuters as bosses reveal 2027 tram closure plans",
-      "section": "Что важно в ближайшие 7 дней",
-      "reason": "event_timing:event has no usable venue"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-how-4000-holes-blackburn-lancashire-34718527-1d30dbc3be20",
-      "title": "How '4,000 holes in Blackburn, Lancashire' are protecting us against wildfires",
-      "section": "Свежие новости",
-      "reason": "backup_ineligible:rejected"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-builder-says-its-trap-one-34759177-9bf3adab720c",
-      "title": "Builder says 'it's a trap' as one Oldham bus lane camera hits him with double fine - with 4,200 others affected",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-fine-autopay-system-34754552-78896d3bed77",
-      "title": "Salford dad slams 'crazy' Manchester Airport system as he's hit with £100 fine - but they say he ignored 'important rule",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bee-network-bus-driver-forgot-34759458-fcbf6befef52",
-      "title": "Bee Network passengers suffer 'grave injuries' in major incident as driver pleads guilty",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-how-4000-holes-blackburn-lancashire-34718527-1d30dbc3be20",
-      "title": "How '4,000 holes in Blackburn, Lancashire' are protecting us against wildfires",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-one-homeless-person-dies-every-34707196-b48ce96a7bcd",
-      "title": "One homeless person dies every week on Greater Manchester's streets",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mr-christmas-manchesters-constant-cheerleader-34760841-1ce78946ed69",
-      "title": "Mr Christmas and Manchester's constant cheerleader - farewell to a city legend as Pat Karney dies aged 78",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-president-zelenskyy-visit-downing-street-34760461-4349a845e0a5",
-      "title": "President Zelenskyy to visit Downing Street as Burnham doubles down on support of Ukraine",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-long-serving-manchester-councillor-pat-34760665-433886fe3775",
-      "title": "Manchester legend Pat Karney dies aged 78 - latest tributes to 'true Mancunian' and 'force of nature'",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-appeal-missing-girl-15-last-34760412-a52e0426ad47",
-      "title": "Appeal for missing girl, 15, last seen in Harpurhey",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-teachers-struggling-bolton-school-vote-34759316-916eb1cf0346",
-      "title": "Teachers at a struggling Bolton school vote for industrial action over changes brought in by academy trust",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-cruel-thief-pretended-befriend-82-34759799-26dc7fbae653",
-      "title": "Cruel thief pretended to befriend 82-year-old before launching 'unforgiveable' attack",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-hmo-targeted-latest-salford-window-34757495-0ee986a8ef13",
-      "title": "'HMO' targeted in latest Salford window and graffiti attack is actually a family home",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-jewish-leaders-call-for-heaton-34755892-cf73a30ce156",
-      "title": "Jewish leaders call for Heaton Park gigs by Fontaines D.C. to be cancelled",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-moment-suspect-placed-cuffs-after-34760007-5015a2da30d9",
-      "title": "Moment suspect placed in cuffs after reports of attempts to open car doors in Bolton",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-gunman-shot-woman-before-barricading-34758899-8ddbc912cfd5",
-      "title": "Gunman shot at woman before barricading himself in stranger's house in four-hour stand-off with armed police",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-dramatic-footage-shows-moment-gunmans-34759664-da2cd1f5d15a",
-      "title": "Dramatic footage shows moment gunman's four-hour stand-off ends as armed cop screams orders",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bolton-council-wrongly-told-neighbours-34759560-2ff96492e813",
-      "title": "Bolton council wrongly told neighbours they couldn't object to 80-home green belt estate plans",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-cgis-show-how-new-pendleton-34758112-e8acf952ccb5",
-      "title": "CGIs show how new Pendleton Lidl could look",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-end-altrinchams-20-year-development-34757862-19a37a8afb89",
-      "title": "An end to Altrincham's 20-year development saga could be in sight",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-officer-says-could-arrested-34759989-1f2cc731be16",
-      "title": "Police officer says he could have arrested Walkden fire-bomb killer hours before murder",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-long-serving-manchester-councillor-pat-34760665-433886fe3775",
-      "title": "Manchester legend Pat Karney dies aged 78 - latest tributes to 'true Mancunian' and 'force of nature'",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-builder-says-its-trap-one-34759177-9bf3adab720c",
-      "title": "Builder says 'it's a trap' as one Oldham bus lane camera hits him with double fine - with 4,200 others affected",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bee-network-bus-driver-forgot-34759458-fcbf6befef52",
-      "title": "Bee Network passengers suffer 'grave injuries' in major incident as driver pleads guilty",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mr-christmas-manchesters-constant-cheerleader-34760841-1ce78946ed69",
-      "title": "Mr Christmas and Manchester's constant cheerleader - farewell to a city legend as Pat Karney dies aged 78",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-fine-autopay-system-34754552-78896d3bed77",
-      "title": "Salford dad slams 'crazy' Manchester Airport system as he's hit with £100 fine - but they say he ignored 'important rule",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-how-4000-holes-blackburn-lancashire-34718527-1d30dbc3be20",
-      "title": "How '4,000 holes in Blackburn, Lancashire' are protecting us against wildfires",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-one-homeless-person-dies-every-34707196-b48ce96a7bcd",
-      "title": "One homeless person dies every week on Greater Manchester's streets",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-president-zelenskyy-visit-downing-street-34760461-4349a845e0a5",
-      "title": "President Zelenskyy to visit Downing Street as Burnham doubles down on support of Ukraine",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-hattersley-serious-incident-live-updates-34759171-fe4550ba61eb",
-      "title": "Hattersley serious incident RECAP as woman taken to hospital following 'collision with HGV'",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-appeal-missing-girl-15-last-34760412-a52e0426ad47",
-      "title": "Appeal for missing girl, 15, last seen in Harpurhey",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-rushed-hospital-serious-injuries-34760380-bef877cd8b81",
-      "title": "Man rushed to hospital with serious injuries in Hulme crash",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-teachers-struggling-bolton-school-vote-34759316-916eb1cf0346",
-      "title": "Teachers at a struggling Bolton school vote for industrial action over changes brought in by academy trust",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-cruel-thief-pretended-befriend-82-34759799-26dc7fbae653",
-      "title": "Cruel thief pretended to befriend 82-year-old before launching 'unforgiveable' attack",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-hmo-targeted-latest-salford-window-34757495-0ee986a8ef13",
-      "title": "'HMO' targeted in latest Salford window and graffiti attack is actually a family home",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-jewish-leaders-call-for-heaton-34755892-cf73a30ce156",
-      "title": "Jewish leaders call for Heaton Park gigs by Fontaines D.C. to be cancelled",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-moment-suspect-placed-cuffs-after-34760007-5015a2da30d9",
-      "title": "Moment suspect placed in cuffs after reports of attempts to open car doors in Bolton",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-gunman-shot-woman-before-barricading-34758899-8ddbc912cfd5",
-      "title": "Gunman shot at woman before barricading himself in stranger's house in four-hour stand-off with armed police",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-dramatic-footage-shows-moment-gunmans-34759664-da2cd1f5d15a",
-      "title": "Dramatic footage shows moment gunman's four-hour stand-off ends as armed cop screams orders",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-officer-says-could-arrested-34759989-1f2cc731be16",
-      "title": "Police officer says he could have arrested Walkden fire-bomb killer hours before murder",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bolton-council-wrongly-told-neighbours-34759560-2ff96492e813",
-      "title": "Bolton council wrongly told neighbours they couldn't object to 80-home green belt estate plans",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-cgis-show-how-new-pendleton-34758112-e8acf952ccb5",
-      "title": "CGIs show how new Pendleton Lidl could look",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-end-altrinchams-20-year-development-34757862-19a37a8afb89",
-      "title": "An end to Altrincham's 20-year development saga could be in sight",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bolton-councillor-switches-allegiance-just-34759594-9ffbe5fe6c76",
-      "title": "Bolton councillor switches allegiance just 10 weeks after being elected",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-accused-murdering-stretford-grammar-34759042-db86dd9a6e19",
-      "title": "Man accused of murdering Stretford Grammar headteacher knowingly dragged him under car for more than a mile after hittin",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-oldham-reform-uk-party-new-34758245-493dc3c77c6b",
-      "title": "Oldham Reform UK party has a new leader as he's made a promise",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-screams-heard-firefighters-rush-salford-34758092-e9dff5eb0fee",
-      "title": "'Screams' heard as firefighters rush to Salford house fire",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-iran-targeting-jewish-communities-uk-34757361-a496934d0097",
-      "title": "Iran is targeting Jewish communities in UK with 'hybrid campaign' says MI5 boss",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-stretford-dad-who-thought-needed-34756559-e3c0c311477c",
-      "title": "Stretford dad who thought he needed a dentist given 18 months to live",
-      "section": "Свежие новости",
-      "reason": "contract_drop:optional_news_in_top_section"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-suspect-from-beswick-named-after-34756357-948848dac90c",
-      "title": "Suspect from Beswick named after police probe into UK drugs importation",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-update-from-yorkshire-wildlife-34756270-12114ebdfa56",
-      "title": "Yorkshire Wildlife Park update after man killed by tiger 'while visiting park alone'",
+      "fingerprint": "url-bbc-com-news-articles-cvrlyj3r41lgo-0c9b219bc77a",
+      "title": "Plan for 58 homes at site of Bosley mill explosion that killed four",
       "section": "Свежие новости",
       "reason": "non_gm_regional"
     },
     {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-customers-of-fashion-house-hobbs-34755783-7f594caf49f8",
-      "title": "Fashion retailer behind Hobbs, Phase Eight and Whistles hit by 'cybersecurity incident'",
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-warning-issued-fraudsters-impersonating-police-34764682-6b97e504f56f",
+      "title": "Warning issued as fraudsters impersonating police officers in 'incredibly sophisticated' crime",
+      "section": "IT и бизнес",
+      "reason": "rank_recommendation:board_rejected"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-irlam-residents-frustrated-struggle-driveways-34762372-6020c67b8ebd",
+      "title": "Irlam residents frustrated as they struggle to get off driveways",
+      "section": "Свежие новости",
+      "reason": "backup_ineligible:rejected"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-victim-threatened-sledgehammer-terrifying-levenshulme-34766372-b83cbe755db7",
+      "title": "Victim threatened with sledgehammer in terrifying Levenshulme attack as motorbike stolen",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-issue-cctv-appeal-after-34766329-49f5e64aecb0",
+      "title": "Police issue CCTV appeal after Superdrug door damaged in 'altercation' near Piccadilly Gardens",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-pat-karney-local-people-harpurhey-34765739-1d40e566bd9a",
+      "title": "'Pat Karney was all for the local people': Harpurhey residents pay tribute after beloved councillor dies",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m60-closed-live-police-incident-34766293-cdd26adee134",
+      "title": "M60 closed LIVE in 'police incident' as emergency services descend with huge traffic delays",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-area-home-worst-34765910-96ca41ae5442",
+      "title": "This Greater Manchester area is home to some of the worst roads in the country",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-a-stay-luxury-northern-quarter-34760299-f19d14991bda",
+      "title": "He visited Manchester for a luxury stay but it turned into nothing short of a 'nightmare'",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-brother-fight-amaaz-34763638-c23c23f1de04",
+      "title": "Another chapter in the story of Manchester Airport thug locked up over violent brawl",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-arrested-after-police-seize-34766163-949b85e630fa",
+      "title": "Man arrested after police seize over £340,000 worth of illegal vapes and drugs at Bolton properties",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-there-no-one-like-pat-34765821-5f053d8b96a5",
+      "title": "'There was no one like Pat Karney and there never will be again'",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-travellers-pitches-stay-trafford-theres-34765796-27f814b06ead",
+      "title": "Travellers' pitches to stay in Trafford as 'there's no place else for them to go'",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-danger-warning-people-told-not-34765837-12533198ef10",
+      "title": "Danger warning as people told not to enter parts of Manchester Town Hall",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-seriously-injured-crash-mottram-34765697-a7524cf6e1e7",
+      "title": "Man seriously injured in crash on Mottram Moor as air ambulance lands",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-motorcyclist-followed-mile-long-trail-34764952-c65337a415bd",
+      "title": "Motorcyclist followed 'mile-long trail of blood' to find critically injured Stretford Grammar School headteacher moments",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-warning-issued-fraudsters-impersonating-police-34764682-6b97e504f56f",
+      "title": "Warning issued as fraudsters impersonating police officers in 'incredibly sophisticated' crime",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-salfords-team-gang-drove-by-34765136-27c84db823fc",
+      "title": "Salford's A-Team gang 'drove by' Walkden house weeks before tragic fire-bombing, inquest hears",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-irlam-residents-frustrated-struggle-driveways-34762372-6020c67b8ebd",
+      "title": "Irlam residents frustrated as they struggle to get off driveways",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-pregnant-woman-33-found-dead-34764859-c1657f7c2264",
+      "title": "Pregnant woman, 33, was found dead on bathroom floor after being repeatedly stabbed by her partner, murder trial told",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-unlicenced-teen-taught-himself-drive-34759580-14c76a3fdf5a",
+      "title": "Unlicensed teen taught himself to drive on YouTube, ran red lights, then killed beloved dad in Middleton horror crash",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-showman-intellectual-who-made-manchester-34764818-8a31a0273c25",
+      "title": "The showman and intellectual who made Manchester what it is today",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-family-home-smashed-up-severed-34764657-28acf44257b1",
+      "title": "Family home smashed up and severed pigs head dumped on front porch",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-industrial-workshop-plan-overgrown-wasteland-34764488-a6ca9d78f878",
+      "title": "Industrial workshop plan for ‘overgrown wasteland' site close to homes in Leigh",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m60-closed-live-police-incident-34766293-cdd26adee134",
+      "title": "M60 closed LIVE in 'police incident' as emergency services descend with huge traffic delays",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-victim-threatened-sledgehammer-terrifying-levenshulme-34766372-b83cbe755db7",
+      "title": "Victim threatened with sledgehammer in terrifying Levenshulme attack as motorbike stolen",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-issue-cctv-appeal-after-34766329-49f5e64aecb0",
+      "title": "Police issue CCTV appeal after Superdrug door damaged in 'altercation' near Piccadilly Gardens",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-a-stay-luxury-northern-quarter-34760299-f19d14991bda",
+      "title": "He visited Manchester for a luxury stay but it turned into nothing short of a 'nightmare'",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-pat-karney-local-people-harpurhey-34765739-1d40e566bd9a",
+      "title": "'Pat Karney was all for the local people': Harpurhey residents pay tribute after beloved councillor dies",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-brother-fight-amaaz-34763638-c23c23f1de04",
+      "title": "Another chapter in the story of Manchester Airport thug locked up over violent brawl",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-area-home-worst-34765910-96ca41ae5442",
+      "title": "This Greater Manchester area is home to some of the worst roads in the country",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-motorcyclist-followed-mile-long-trail-34764952-c65337a415bd",
+      "title": "Motorcyclist followed 'mile-long trail of blood' to find critically injured Stretford Grammar School headteacher moments",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-arrested-after-police-seize-34766163-949b85e630fa",
+      "title": "Man arrested after police seize over £340,000 worth of illegal vapes and drugs at Bolton properties",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-unlicenced-teen-taught-himself-drive-34759580-14c76a3fdf5a",
+      "title": "Unlicensed teen taught himself to drive on YouTube, ran red lights, then killed beloved dad in Middleton horror crash",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-there-no-one-like-pat-34765821-5f053d8b96a5",
+      "title": "'There was no one like Pat Karney and there never will be again'",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-travellers-pitches-stay-trafford-theres-34765796-27f814b06ead",
+      "title": "Travellers' pitches to stay in Trafford as 'there's no place else for them to go'",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-danger-warning-people-told-not-34765837-12533198ef10",
+      "title": "Danger warning as people told not to enter parts of Manchester Town Hall",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-extradited-uk-charged-murder-34765741-116fddd6e37a",
+      "title": "Man extradited to UK and charged with murder of John Soyoye in Moston",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-seriously-injured-crash-mottram-34765697-a7524cf6e1e7",
+      "title": "Man seriously injured in crash on Mottram Moor as air ambulance lands",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-warning-issued-fraudsters-impersonating-police-34764682-6b97e504f56f",
+      "title": "Warning issued as fraudsters impersonating police officers in 'incredibly sophisticated' crime",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-salfords-team-gang-drove-by-34765136-27c84db823fc",
+      "title": "Salford's A-Team gang 'drove by' Walkden house weeks before tragic fire-bombing, inquest hears",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-irlam-residents-frustrated-struggle-driveways-34762372-6020c67b8ebd",
+      "title": "Irlam residents frustrated as they struggle to get off driveways",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-pregnant-woman-33-found-dead-34764859-c1657f7c2264",
+      "title": "Pregnant woman, 33, was found dead on bathroom floor after being repeatedly stabbed by her partner, murder trial told",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-self-driving-cars-coming-manchester-34763732-6f38b08bd5d6",
+      "title": "Self-driving cars are coming to Manchester under new plans from Uber",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-showman-intellectual-who-made-manchester-34764818-8a31a0273c25",
+      "title": "The showman and intellectual who made Manchester what it is today",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-family-home-smashed-up-severed-34764657-28acf44257b1",
+      "title": "Family home smashed up and severed pigs head dumped on front porch",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-industrial-workshop-plan-overgrown-wasteland-34764488-a6ca9d78f878",
+      "title": "Industrial workshop plan for ‘overgrown wasteland' site close to homes in Leigh",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchesters-major-new-hub-34763392-74023a5e10d9",
+      "title": "Greater Manchester's major new hub that could bring thousands of jobs is now complete",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-woman-fears-exotic-snake-34752718-995fadd67a2d",
+      "title": "Dog faces £8k surgery after it's 'bitten by exotic snake' in Manchester park",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-andy-burnham-says-man-citys-34763098-d2d161be6f47",
+      "title": "Andy Burnham says Man City's owners 'didn't raise Premier League charges with me'",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-wayfair-appliances-direct-and-golds-34762486-5be52cea194e",
+      "title": "Wayfair, Appliances Direct and Gold's Gym fined £6m for 'misleading sales tactics' with customers due refunds",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-cctv-images-released-after-man-34763014-28c44d6b89e9",
+      "title": "CCTV images released after man sexually assaults woman on Manchester train",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-prime-minister-andy-burnham-honours-34762564-63ac9251783b",
+      "title": "Andy Burnham honours Manchester legend Pat Karney as 'tireless champion for the people' after his death",
+      "section": "Свежие новости",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-raid-suspected-oldham-brothel-34762722-eb2dac592248",
+      "title": "Police raid suspected Oldham brothel after 'years' of intelligence with two arrested",
+      "section": "Свежие новости",
+      "reason": "backup_ineligible:rejected"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-oldham-reform-uk-party-new-34758245-493dc3c77c6b",
+      "title": "Oldham Reform UK party has a new leader and he's made a promise",
       "section": "Городской радар",
       "reason": "repeat_blocked:exact_fingerprint_already_published"
     },
     {
-      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-tragedy-woman-30-who-competed-34754962-92c70730cc83",
-      "title": "Tragedy as woman, 30, who competed with friends for best tan dies after skin cancer diagnosis",
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-devastation-bolton-holidaymaker-31-dies-34756460-0d4d0c33e281",
+      "title": "Devastation as Bolton holidaymaker, 31, dies suddenly on four-day break in Morocco",
       "section": "Городской радар",
       "reason": "repeat_blocked:exact_fingerprint_already_published"
+    },
+    {
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-airport-hand-luggage-liquid-34761547-c0f03a0e557f",
+      "title": "Manchester Airport hand luggage liquid rules ahead of October half term",
+      "section": "Свежие новости",
+      "reason": "contract_drop:editorial_filler"
+    },
+    {
+      "fingerprint": "url-itv-com-news-granada-2026-10-12-officer-thought-killer-was-making-empty-threats-before-fatal-arson-attack-75ddb5b93772",
+      "title": "Officer thought killer was making 'empty threats' before fatal arson attack in Greater Manchester",
+      "section": "Городской радар",
+      "reason": "repeat_blocked:exact_fingerprint_unchanged_evidence"
+    },
+    {
+      "fingerprint": "url-itv-com-news-granada-2026-10-06-firebomb-killer-released-by-police-despite-last-chance-warning-inquest-hears-c82511d473b4",
+      "title": "Firebomb killer released by police despite ‘last chance' warning, inquest hears",
+      "section": "Городской радар",
+      "reason": "repeat_blocked:exact_fingerprint_unchanged_evidence"
     },
     {
       "fingerprint": "url-itv-com-news-granada-2026-09-17-oldham-council-vote-to-share-responsibilities-across-the-four-largest-parties-aad069317d14",
@@ -1592,22 +1942,22 @@
       "reason": "backup_ineligible:stale"
     },
     {
-      "fingerprint": "url-aboutmanchester-co-uk-lisandro-martinez-opens-up-about-manchester-uniteds-struggles-0fc1b7152531",
-      "title": "Lisandro Martínez opens up about Manchester United's struggles | About Manchester",
-      "section": "Свежие новости",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "url-aboutmanchester-co-uk-new-beat-network-map-to-support-grassroots-music-venues-and-connect-audiences-with-gigs-launched-b84c12aa86d7",
-      "title": "New ‘Beat Network' map to support grassroots music venues and connect audiences with gigs launched | About Manchester",
-      "section": "Свежие новости",
-      "reason": "contract_drop:optional_news_in_top_section"
-    },
-    {
-      "fingerprint": "url-aboutmanchester-co-uk-eno-announces-details-of-einstein-on-the-beach-other-greater-manchester-projects-2714d532c95e",
-      "title": "ENO announces details of Einstein on the Beach & other Greater Manchester projects | About Manchester",
+      "fingerprint": "url-placenorthwest-co-uk-fec-ramps-up-density-in-old-trafford-as-timeline-housing-mix-firmed-up-0ef97e9013d3",
+      "title": "FEC ramps up density in Old Trafford as timeline, housing mix firmed up",
       "section": "Городской радар",
-      "reason": "contract_drop:editorial_contract:day_out_guide"
+      "reason": "repeat_blocked:exact_fingerprint_already_published"
+    },
+    {
+      "fingerprint": "url-placenorthwest-co-uk-job-listings-senior-development-and-regeneration-manager-3-cf569cf7b24f",
+      "title": "Senior Development & Regeneration Manager - Place North West",
+      "section": "Городской радар",
+      "reason": "repeat_blocked:exact_fingerprint_already_published"
+    },
+    {
+      "fingerprint": "url-aboutmanchester-co-uk-driverless-taxis-heading-to-manchester-24cd200636cb",
+      "title": "Driverless taxis heading to Manchester | About Manchester",
+      "section": "Общественный транспорт сегодня",
+      "reason": "backup_ineligible:rejected"
     },
     {
       "fingerprint": "url-manchestermill-co-uk-uom-academic-co-authored-paper-linked-to-chinese-espionage-80e8c60c6bb0",
@@ -1646,6 +1996,12 @@
       "reason": "repeat_blocked:exact_fingerprint_unchanged_evidence"
     },
     {
+      "fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-13-plans-resubmitted-for-four-new-family-homes-in-bowdon-a460b5150f95",
+      "title": "Plans resubmitted for four new family homes in Bowdon",
+      "section": "Городской радар",
+      "reason": "repeat_blocked:exact_fingerprint_unchanged_evidence"
+    },
+    {
       "fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-12-timperley-care-providers-team-up-for-dementia-event-6ae343fa8b51",
       "title": "Timperley care providers team up for dementia event",
       "section": "Городской радар",
@@ -1670,21 +2026,15 @@
       "reason": "event_timing:event has no usable venue"
     },
     {
-      "fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-07-spooky-town-trail-to-take-over-altrincham-this-halloween-ef07ea7e0391",
-      "title": "Spooky town trail to take over Altrincham this Halloween",
-      "section": "Городской радар",
-      "reason": "repeat_blocked:exact_fingerprint_already_published"
-    },
-    {
-      "fingerprint": "url-bbc-com-news-articles-c9kgjx66d1x7o-27b879504cae",
-      "title": "Trafford head teacher dragged to his death under car, murder trial told",
+      "fingerprint": "url-bbc-com-news-articles-cj75p3wp4266o-b9439c3eacdb",
+      "title": "Man extradited and charged with John Soyoye's murder in Moston",
       "section": "Свежие новости",
       "reason": "cheap_same_run_duplicate"
     },
     {
-      "fingerprint": "url-bbc-com-news-articles-cqgm01mmd49po-6a9abde19762",
-      "title": "Public inquiry over Manchester synagogue attack deaths",
-      "section": "Городской радар",
+      "fingerprint": "url-bbc-com-news-articles-cwj34xrgxxyro-5ae464242d5c",
+      "title": "Mural remembers anti-crime campaigner who lost son to gun crime",
+      "section": "Свежие новости",
       "reason": "cheap_same_run_duplicate"
     },
     {
@@ -1702,8 +2052,8 @@
     {
       "fingerprint": "url-manchester-gov-uk-news-stories-2026-8000-free-books-given-away-on-bee-network-today-as-city-asked-to-take-10-to-read-and-help-improve-your-mental-heal-49c37a8ec384",
       "title": "8,000 free books given away on Bee Network today as city asked to 'Take 10 to Read' and help improve your mental health",
-      "section": "Общественный транспорт сегодня",
-      "reason": "backup_ineligible:stale"
+      "section": "Городской радар",
+      "reason": "rank_recommendation:board_rejected"
     },
     {
       "fingerprint": "url-manchester-gov-uk-news-stories-2026-motion-tabled-to-celebrate-centenary-of-womens-voting-equality-78faa837317a",
@@ -1712,10 +2062,10 @@
       "reason": "contract_drop:editorial_filler"
     },
     {
-      "fingerprint": "url-manchester-gov-uk-news-stories-2026-council-leader-responds-to-terror-suspect-arrests-this-week-e6eef6751026",
-      "title": "Council Leader responds to terror suspect arrests this week",
+      "fingerprint": "url-stockport-gov-uk-news-stockport-council-issues-safety-advice-over-counterfeit-squishy-toys-1056790a4bf0",
+      "title": "29 September 2026 Stockport Council issues safety advice over counterfeit ‘squishy' toys Alert issued over Squishy Dumpl",
       "section": "Городской радар",
-      "reason": "repeat_blocked:exact_fingerprint_unchanged_evidence"
+      "reason": "contract_drop:editorial_filler"
     },
     {
       "fingerprint": "url-oldham-gov-uk-news-article-2959-northern-roots-opens-a-major-new-green-space-for-oldham-welcomes-first-visitors-d6d670bf3a15",
@@ -1730,10 +2080,10 @@
       "reason": "repeat_blocked:exact_fingerprint_unchanged_evidence"
     },
     {
-      "fingerprint": "url-rochdale-gov-uk-news-article-679-pioneering-digital-autopsies-enhance-local-coroner-s-service-b09407726f10",
-      "title": "Pioneering digital autopsies enhance local coroner's service - Rochdale Borough Council",
-      "section": "IT и бизнес",
-      "reason": "repeat_blocked:exact_fingerprint_unchanged_evidence"
+      "fingerprint": "url-rochdale-gov-uk-news-article-684-inspiring-cared-for-children-achievements-recognised-by-council-fbcf1b05c17c",
+      "title": "Inspiring cared for children achievements recognised by council - Rochdale Borough Council",
+      "section": "Городской радар",
+      "reason": "contract_drop:editorial_contract:no_news_anchor"
     },
     {
       "fingerprint": "url-bolton-gov-uk-news-article-2127-week-of-action-as-one-third-of-pension-credits-go-unclaimed-8fc800c53e4b",
@@ -1772,22 +2122,28 @@
       "reason": "repeat_blocked:exact_fingerprint_unchanged_evidence"
     },
     {
-      "fingerprint": "event-event-after-interaction-explorations-in-co-creation-a-presentation-of-a-new-work-by-artist-belsh-2026-09-18-home-d4fe6768c5e4",
-      "title": "No booking required",
-      "section": "Выходные в GM",
-      "reason": "repeat_blocked:exact_fingerprint_already_published"
-    },
-    {
       "fingerprint": "event-event-honouring-our-communities-art-trail-black-creative-trailblazers-2026-10-08-home-f2d9b8636054",
       "title": "Honouring Our Communities Art Trail Black Creative Trailblazers Thu 8 Oct 20:00 - Sun 13 Dec 20:00 Arches Windows",
       "section": "Выходные в GM",
       "reason": "repeat_blocked:exact_fingerprint_already_published"
     },
     {
-      "fingerprint": "event-event-sense-and-sensibility-u-a-new-take-on-jane-austen-s-iconic-novel-starring-daisy-edgar-jone-2026-10-14-home-1e86dcc85984",
-      "title": "Sense and Sensibility (U) A new take on Jane Austen's iconic novel starring Daisy Edgar-Jones and Esmé Creed-Miles. Fri ",
+      "fingerprint": "event-event-digger-15-tom-cruise-stars-as-eccentric-oil-barron-on-a-mission-to-save-the-world-in-aleja-2026-10-15-home-2f93872fc142",
+      "title": "Digger (15) Tom Cruise stars as eccentric oil barron on a mission to save the world in Alejandro G. Iñárritu's satirical",
       "section": "Выходные в GM",
       "reason": "outside_current_weekend"
+    },
+    {
+      "fingerprint": "event-event-lowry-youth-dance-project-project-1-2026-10-15-lowry-8b82f2276342",
+      "title": "Lowry Youth Dance Project - Project 1",
+      "section": "Выходные в GM",
+      "reason": "outside_current_weekend"
+    },
+    {
+      "fingerprint": "url-contactmcr-com-support-us-bda1415d6bb6",
+      "title": "Contact Theatre",
+      "section": "Выходные в GM",
+      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
     },
     {
       "fingerprint": "url-phm-org-uk-events-new-secret-society-skeleton-activity-5ce0fc2276e1",
@@ -1814,46 +2170,10 @@
       "reason": "cheap_same_run_duplicate"
     },
     {
-      "fingerprint": "event-event-suddenly-real-posters-2026-10-14-altogether-otherwise-b95fed01d80d",
-      "title": "Suddenly Real Posters",
-      "section": "Выходные в GM",
-      "reason": "outside_current_weekend"
-    },
-    {
-      "fingerprint": "event-event-an-italian-dinner-with-tenuta-foresto-2026-10-14-isca-wines-33569a8ac5d1",
-      "title": "An Italian Dinner with Tenuta Foresto",
-      "section": "Выходные в GM",
-      "reason": "outside_current_weekend"
-    },
-    {
       "fingerprint": "event-event-dahlia-stereo-sessions-gia-fu-2026-10-15-dahlia-stereo-a9e3187e664b",
       "title": "Dahlia Stereo sessions: Gia Fu",
       "section": "Выходные в GM",
       "reason": "outside_current_weekend"
-    },
-    {
-      "fingerprint": "event-event-takuya-nakamura-live-2026-10-16-new-century-d030d645c272",
-      "title": "Takuya Nakamura (Live)",
-      "section": "Выходные в GM",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
-    },
-    {
-      "fingerprint": "event-event-5-years-of-rollout-2026-10-16-the-bag-factory-24e9ac813e3d",
-      "title": "5 Years of Rollout",
-      "section": "Выходные в GM",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
-    },
-    {
-      "fingerprint": "event-event-love-is-the-answer-presents-ben-park-2026-10-16-stage-radio-c91f7356d742",
-      "title": "Love Is The Answer presents Ben Park",
-      "section": "Выходные в GM",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
-    },
-    {
-      "fingerprint": "event-event-next-page-next-page-2026-10-16-manchester-next-355221ed7c09",
-      "title": "Next page Next page",
-      "section": "Выходные в GM",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
     },
     {
       "fingerprint": "event-event-westlife-the-anniversary-world-tour-fri-23-oct-2026-sun-25-oct-2026-2026-10-23-co-op-live-3a1d3ee59e2e",
@@ -1864,6 +2184,12 @@
     {
       "fingerprint": "event-event-the-strokes-special-guests-fat-white-family-alex-cameron-mon-26-oct-2026-multiple-times-2026-10-26-co-op-live-000c9fa44a9b",
       "title": "The Strokes Special Guests: Fat White Family & Alex Cameron Mon 26 Oct 2026 Multiple times",
+      "section": "Билеты / Ticket Radar",
+      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
+    },
+    {
+      "fingerprint": "event-event-j-cole-the-fall-off-tour-wed-28-oct-2026-thu-29-oct-2026-2026-10-28-co-op-live-bc5fd1ccf36b",
+      "title": "J. Cole The Fall-Off Tour Wed 28 Oct 2026 - Thu 29 Oct 2026",
       "section": "Билеты / Ticket Radar",
       "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
     },
@@ -1883,7 +2209,7 @@
       "fingerprint": "event-event-milos-2027-03-22-rncm-concert-hall-f8db3edfaf4b",
       "title": "Milos — event 2027-03-22 — public sale 2025-06-13 10:00",
       "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 159 day(s) away"
+      "reason": "event_timing:nearest dated occurrence is 158 day(s) away"
     },
     {
       "fingerprint": "event-event-the-tumbling-paddies-2026-11-14-o2-ritz-manchester-081684acdea6",
@@ -1956,12 +2282,6 @@
       "title": "Miss Americana - A Tribute to Taylor Swift — event 2026-11-15 — public sale 2025-11-14 10:00",
       "section": "Дальние анонсы",
       "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
-    },
-    {
-      "fingerprint": "event-event-warren-zeiders-2026-10-14-manchester-academy-e50064614c45",
-      "title": "Warren Zeiders — event 2026-10-14 — public sale 2025-11-14 10:00",
-      "section": "Дальние анонсы",
-      "reason": "event_timing:near-term leisure is not a future announcement"
     },
     {
       "fingerprint": "event-event-soil-2026-11-07-o2-ritz-manchester-3131f4b1e4ed",
@@ -2069,7 +2389,7 @@
       "fingerprint": "event-event-toyah-toyah-s-christmas-party-2026-12-04-the-tung-auditorium-419dcdc2610c",
       "title": "TOYAH - Toyah's Christmas Party — event 2026-12-04 — public sale 2025-12-10 10:00",
       "section": "Дальние анонсы",
-      "reason": "event_timing:nearest dated occurrence is 51 day(s) away"
+      "reason": "event_timing:nearest dated occurrence is 50 day(s) away"
     },
     {
       "fingerprint": "event-event-definitely-mightbe-a-tribute-to-oasis-2026-11-07-o2-academy-liverpool-dc6042aaba9e",
@@ -2114,36 +2434,6 @@
       "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
     },
     {
-      "fingerprint": "event-event-the-clockworks-2026-10-14-manchester-academy-3-e9526177934e",
-      "title": "The Clockworks — event 2026-10-14 — public sale 2026-02-27 10:00",
-      "section": "Билеты / Ticket Radar",
-      "reason": "ticket_watch:Manchester Academy 3: дата на этой неделе"
-    },
-    {
-      "fingerprint": "event-event-jude-york-2026-10-14-night-and-day-a3681b18f237",
-      "title": "Jude York — event 2026-10-14 — public sale 2026-06-26 10:00",
-      "section": "Билеты / Ticket Radar",
-      "reason": "ticket_watch:концерт в Greater Manchester на этой неделе"
-    },
-    {
-      "fingerprint": "event-event-warren-zeiders-2026-10-14-manchester-academy-e50064614c45",
-      "title": "Warren Zeiders — event 2026-10-14 — public sale 2025-11-14 10:00",
-      "section": "Билеты / Ticket Radar",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "event-event-we-love-wednesdays-2026-10-14-o2-ritz-manchester-564e053d01f5",
-      "title": "We Love Wednesdays — event 2026-10-14 — public sale 2026-08-09 17:00",
-      "section": "Билеты / Ticket Radar",
-      "reason": "ticket_watch:концерт в Greater Manchester на этой неделе"
-    },
-    {
-      "fingerprint": "event-event-masego-fix-your-face-tour-2026-10-15-o2-apollo-manchester-54c024f02e39",
-      "title": "Masego - Fix Your Face Tour — event 2026-10-15 — public sale 2026-06-12 10:00",
-      "section": "Билеты / Ticket Radar",
-      "reason": "ticket_watch:O2 Apollo Manchester: дата на этой неделе"
-    },
-    {
       "fingerprint": "event-event-alpha-wolf-2026-10-15-manchester-academy-2-992cef03408d",
       "title": "Alpha Wolf — event 2026-10-15 — public sale 2026-04-02 10:00",
       "section": "Билеты / Ticket Radar",
@@ -2165,31 +2455,31 @@
       "fingerprint": "event-event-gurriers-2026-10-16-manchester-new-century-hall-a294c0a82070",
       "title": "Gurriers — event 2026-10-16 — public sale 2026-05-22 10:00",
       "section": "Билеты / Ticket Radar",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
+      "reason": "ticket_watch:Manchester New Century Hall: дата на этой неделе"
     },
     {
       "fingerprint": "event-event-alice-cooper-devil-on-my-shoulder-book-tour-2026-10-16-opera-house-manchester-61bd238a399c",
       "title": "Alice Cooper Devil on My Shoulder Book Tour — event 2026-10-16 — public sale 2026-03-13 10:00",
       "section": "Билеты / Ticket Radar",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
+      "reason": "ticket_watch:концерт в Greater Manchester на этой неделе"
     },
     {
       "fingerprint": "event-event-uche-yara-bodyscanner-tour-26-2026-10-16-soup-b884f0eeb238",
       "title": "UCHE YARA - BODYSCANNER Tour 26 — event 2026-10-16 — public sale 2026-06-17 11:00",
       "section": "Билеты / Ticket Radar",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
+      "reason": "ticket_watch:концерт в Greater Manchester на этой неделе"
     },
     {
       "fingerprint": "event-event-alison-moyet-2026-10-16-o2-apollo-manchester-43c9d800663b",
       "title": "Alison Moyet — event 2026-10-16 — public sale 2026-03-13 10:00",
       "section": "Билеты / Ticket Radar",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
+      "reason": "ticket_watch:O2 Apollo Manchester: дата на этой неделе"
     },
     {
       "fingerprint": "event-event-mercury-rev-all-is-dream-25th-anniversary-tour-2026-10-16-o2-ritz-manchester-d8fb7defaa27",
       "title": "Mercury Rev - All is Dream 25th Anniversary Tour — event 2026-10-16 — public sale 2025-11-28 10:00",
       "section": "Билеты / Ticket Radar",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
+      "reason": "ticket_watch:концерт в Greater Manchester на этой неделе"
     },
     {
       "fingerprint": "event-event-khalid-it-s-always-summer-somewhere-tour-2026-10-16-manchester-academy-c7ce71b3a48b",
@@ -2207,13 +2497,7 @@
       "fingerprint": "event-event-whp-teletech-presents-doof-hannah-laing-2026-10-16-depot-mayfield-20b89d85ef35",
       "title": "WHP + Teletech presents DOOF - Hannah Laing — event 2026-10-16 — public sale 2026-07-03 12:00",
       "section": "Билеты / Ticket Radar",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
-    },
-    {
-      "fingerprint": "event-event-neighbourhood-festival-2026-2026-10-17-various-manchester-venues-201cf7e7a35e",
-      "title": "Neighbourhood Festival 2026 — event 2026-10-17 — public sale 2026-03-13 10:00",
-      "section": "Билеты / Ticket Radar",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
+      "reason": "ticket_watch:концерт в Greater Manchester на этой неделе"
     },
     {
       "fingerprint": "event-event-fat-freddy-s-drop-plus-very-special-guest-dj-nightmares-on-wax-2026-10-17-o2-apollo-manchester-012243ee89c4",
@@ -2224,12 +2508,6 @@
     {
       "fingerprint": "event-event-courtney-barnett-2026-10-17-aviva-studios-the-hall-dc89ba6a821c",
       "title": "Courtney Barnett — event 2026-10-17 — public sale 2026-04-10 10:00",
-      "section": "Билеты / Ticket Radar",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
-    },
-    {
-      "fingerprint": "event-event-skai-isyourgod-event-moved-to-boundary-manchester-2026-10-17-o2-ritz-manchester-7a23e9dc8044",
-      "title": "SKAI ISYOURGOD - Event moved to Boundary Manchester — event 2026-10-17 — public sale 2026-06-05 10:00",
       "section": "Билеты / Ticket Radar",
       "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
     },
@@ -2288,10 +2566,40 @@
       "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
     },
     {
-      "fingerprint": "event-event-blossoms-album-launch-show-2026-10-14-o2-academy-liverpool-9eae7a9f7d5f",
-      "title": "Blossoms - Album Launch Show — event 2026-10-14",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
+      "fingerprint": "event-event-brandon-flowers-2026-10-20-o2-apollo-manchester-579968711e47",
+      "title": "Brandon Flowers — event 2026-10-20 — public sale 2026-07-03 10:00",
+      "section": "Билеты / Ticket Radar",
+      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
+    },
+    {
+      "fingerprint": "event-event-steve-hackett-best-of-genesis-solo-gems-2026-10-20-bridgewater-hall-9f3b859ac1ea",
+      "title": "Steve Hackett - Best of Genesis & Solo Gems — event 2026-10-20 — public sale 2025-09-19 10:00",
+      "section": "Билеты / Ticket Radar",
+      "reason": "cheap_same_run_duplicate"
+    },
+    {
+      "fingerprint": "event-event-melanie-c-2026-10-21-o2-ritz-manchester-fcf7faef0d2d",
+      "title": "Melanie C — event 2026-10-21 — public sale 2026-03-20 10:00",
+      "section": "Билеты / Ticket Radar",
+      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
+    },
+    {
+      "fingerprint": "event-event-allie-x-2026-10-21-manchester-academy-3-86e26c72da07",
+      "title": "Allie X — event 2026-10-21 — public sale 2026-04-30 09:00",
+      "section": "Билеты / Ticket Radar",
+      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
+    },
+    {
+      "fingerprint": "event-event-we-love-wednesdays-2026-10-21-o2-ritz-manchester-74092a2a054c",
+      "title": "We Love Wednesdays — event 2026-10-21 — public sale 2026-08-09 17:00",
+      "section": "Билеты / Ticket Radar",
+      "reason": "ticket_watch:концерт в Greater Manchester на этой неделе"
+    },
+    {
+      "fingerprint": "event-event-benjamin-steer-2026-10-22-manchester-gorilla-65b4bffa099a",
+      "title": "Benjamin Steer — event 2026-10-22 — public sale 2026-06-26 10:00",
+      "section": "Билеты / Ticket Radar",
+      "reason": "ticket_watch:концерт в Greater Manchester на этой неделе"
     },
     {
       "fingerprint": "event-event-casper-walsh-hustler-boogie-tour-2026-10-15-o2-academy-2-liverpool-fc4b6243d98e",
@@ -2303,103 +2611,82 @@
       "fingerprint": "event-event-jamie-mcintyre-2026-10-16-liverpool-jacaranda-bd4e590ae934",
       "title": "Jamie McIntyre — event 2026-10-16 — public sale 2026-05-29 10:00",
       "section": "Крупные концерты вне GM",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
     },
     {
       "fingerprint": "event-event-transvision-vamp-2026-10-16-o2-academy-liverpool-702b21f7ca90",
       "title": "Transvision Vamp — event 2026-10-16 — public sale 2026-02-27 10:00",
       "section": "Крупные концерты вне GM",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
     },
     {
       "fingerprint": "event-event-girl-in-the-year-above-2026-10-16-arts-club-liverpool-loft-07455fe4bd53",
       "title": "Girl In The Year Above — event 2026-10-16 — public sale 2026-07-10 10:00",
       "section": "Крупные концерты вне GM",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
+      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
     },
     {
       "fingerprint": "event-event-morgan-wallen-tribute-uk-2026-10-17-o2-academy-2-liverpool-8d459d698bb5",
       "title": "Morgan Wallen Tribute UK — event 2026-10-17 — public sale 2026-05-21 10:00",
       "section": "Крупные концерты вне GM",
       "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
-    },
-    {
-      "fingerprint": "event-event-nirvana-uk-2026-10-17-o2-academy-liverpool-d1949c32f51f",
-      "title": "Nirvana UK — event 2026-10-17 — public sale 2026-01-30 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "event-event-beaux-2026-10-18-arts-club-liverpool-loft-312e543f14fc",
-      "title": "beaux — event 2026-10-18 — public sale 2026-05-29 12:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
-    },
-    {
-      "fingerprint": "event-event-the-proclaimers-2026-10-18-liverpool-philharmonic-hall-4a2c74e96355",
-      "title": "The Proclaimers — event 2026-10-18 — public sale 2025-11-28 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "cheap_same_run_duplicate"
-    },
-    {
-      "fingerprint": "event-event-saint-clair-2026-10-21-liverpool-jacaranda-219cdccd5b91",
-      "title": "Saint Clair — event 2026-10-21 — public sale 2026-07-31 10:00",
-      "section": "Крупные концерты вне GM",
-      "reason": "ticket_watch:концерт вне Greater Manchester на этой неделе"
-    },
-    {
-      "fingerprint": "event-event-the-mary-wallopers-2026-10-22-liverpool-olympia-6f6564dd57d7",
-      "title": "The Mary Wallopers — event 2026-10-22 — public sale 2026-06-12 09:30",
-      "section": "Крупные концерты вне GM",
-      "reason": "repeat_blocked:same_calendar_item_without_new_reader_moment"
     }
   ],
   "totals": {
-    "slots": 39,
-    "public_slots": 40,
+    "slots": 51,
+    "public_slots": 52,
     "lead_slots": 1,
-    "backups_assigned": 30,
-    "out": 933,
-    "demoted_to_backup": 22,
+    "backups_assigned": 47,
+    "out": 926,
+    "demoted_to_backup": 24,
     "canonical_url_duplicates_demoted": 0
   },
   "a_tier_conservation": {
-    "recognised": 1,
+    "recognised": 2,
     "recognised_artists": 1,
-    "recognised_rows": 1,
+    "recognised_rows": 4,
     "eligible": 1,
     "planned": 1,
-    "calendar_blocked": 0,
+    "calendar_blocked": 1,
     "ineligible": 0,
     "missing_from_plan": [],
     "physical_event_outcomes": [
       {
-        "physical_event": "ticket:the beat:o2 academy leeds:2026-10-14",
+        "physical_event": "ticket:masego:blue note london:2026-10-21",
+        "status": "calendar_blocked",
+        "representative_fingerprint": "",
+        "reason": "calendar_blocked:repeat_blocked:same_calendar_item_without_new_reader_moment"
+      },
+      {
+        "physical_event": "ticket:masego:o2 apollo manchester:2026-10-15",
         "status": "planned",
-        "representative_fingerprint": "event-event-the-beat-dance-crazed-too-uk-tour-2026-10-14-o2-academy-leeds-7a47ed096d94",
+        "representative_fingerprint": "event-event-masego-fix-your-face-tour-2026-10-15-o2-apollo-manchester-54c024f02e39",
         "reason": "must_show_before_timing_watch_cap_repeat"
       }
     ],
     "identity": {
       "recognised_artists": 1,
       "recognised_physical_events": [
-        "ticket:the beat:o2 academy leeds:2026-10-14"
+        "ticket:masego:blue note london:2026-10-21",
+        "ticket:masego:o2 apollo manchester:2026-10-15"
       ],
       "eligible_events": 1,
       "collapsed_rows": 0,
       "tour_cards": 0,
       "physical_representative_fingerprints": {
-        "ticket:the beat:o2 academy leeds:2026-10-14": "event-event-the-beat-dance-crazed-too-uk-tour-2026-10-14-o2-academy-leeds-7a47ed096d94"
+        "ticket:masego:o2 apollo manchester:2026-10-15": "event-event-masego-fix-your-face-tour-2026-10-15-o2-apollo-manchester-54c024f02e39"
       }
     },
     "policy": "Conservation is counted by physical A-tier event (owner + venue + date), Technical source duplicates collapse before timing/watch/cap/repeat; another real date or venue remains canonical; merged source rows list every represented date on their single artist card."
   },
   "warnings": [
-    "«Общественный транспорт сегодня»: обязательных слотов без запасного — 1 при 0 пригодных запасных.",
-    "Недобор в «Что важно сегодня»: 2/3 — pool_exhausted_after_upstream_gates",
-    "Недобор в «Еда, открытия и рынки»: 2/3 — repeat_blocked:exact_fingerprint_already_published; repeat_blocked:new_phase_without_named_fact; rank_recommendation:held_cost_after_quality; backup_ineligible:",
-    "«Business/tech события для тебя»: обязательных слотов без запасного — 1 при 0 пригодных запасных.",
-    "«Крупные концерты вне GM»: обязательных слотов без запасного — 1 при 0 пригодных запасных.",
-    "Недобор в «Русскоязычные концерты и стендап UK»: 0/1 — repeat_blocked:same_calendar_item_without_new_reader_moment; repeat_blocked:calendar_review_not_applicable"
+    "«Общественный транспорт сегодня»: обязательных слотов без запасного — 3 при 0 пригодных запасных.",
+    "Недобор в «Что важно сегодня»: 1/3 — pool_exhausted_after_upstream_gates",
+    "«Что важно сегодня»: источников в плане 1/2.",
+    "Недобор в «Еда, открытия и рынки»: 1/3 — backup_ineligible:rejected; repeat_blocked:exact_fingerprint_already_published; rank_recommendation:held_cost_after_quality",
+    "«Еда, открытия и рынки»: источников в плане 1/2.",
+    "«Business/tech события для тебя»: обязательных слотов без запасного — 3 при 0 пригодных запасных.",
+    "«Билеты / Ticket Radar»: обязательных слотов без запасного — 1 при 0 пригодных запасных.",
+    "Недобор в «Русскоязычные концерты и стендап UK»: 0/1 — repeat_blocked:same_calendar_item_without_new_reader_moment"
   ]
 }
