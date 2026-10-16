@@ -2,217 +2,249 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 8 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-10-15",
-  "pipeline_run_id": "20261015T080200+0100",
-  "digest_sha256": "a82a56db9d7032c9b7f4a7ac68adeb71f7f1109deea398968d8318ae9ffb9f39",
-  "duration_seconds": 107.189,
+  "run_date_london": "2026-10-16",
+  "pipeline_run_id": "20261016T080150+0100",
+  "digest_sha256": "72e9a11b863660c1bac5573cad65700a75afff79e3d991446183af23789c8670",
+  "duration_seconds": 132.941,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 6,
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Текст не упоминает, что Алиша Самуэльс была найдена с ножевыми ранениями, что является важной деталью инцидента.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 7,
       "section": "Свежие новости",
-      "problem": "Событие произошло в Лимме, Чешир, что не соответствует geo_scope GM.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 14,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Неправильное количество пострадавших в аварии автобуса.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 16,
-      "section": "Футбол",
-      "problem": "Неверная информация о тренере. Майкл Каррик не является тренером Манчестер Юнайтед.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 29,
-      "section": "Выходные в GM",
-      "problem": "Некорректная информация о стоимости входа.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 31,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно. В карточке указана дата 18 октября, но в данных события указана дата начала 10 мая 2026 года.",
+      "problem": "Дата события указана неверно.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
+      "line_index": 20,
+      "section": "Выходные в GM",
+      "problem": "Некорректное название события.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 28,
+      "section": "Выходные в GM",
+      "problem": "Дублирование информации о Chorlton Makers' Market.",
+      "risk": "format",
+      "suggested_action": "strip"
+    },
+    {
       "line_index": 32,
       "section": "Выходные в GM",
-      "problem": "Дата события указана неверно. В карточке указана дата 17 октября, но в данных события указана дата начала 4 апреля 2026 года.",
+      "problem": "Дата события указана неверно.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
       "line_index": 34,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 35,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 44,
       "section": "Городской радар",
-      "problem": "Текст не упоминает, что полицейский не считал, что существует риск пожара.",
+      "problem": "Неправильное использование термина 'осужден'.",
+      "risk": "legal",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 54,
+      "section": "Билеты / Ticket Radar",
+      "problem": "Время начала события указано неверно.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 46,
-      "section": "Business/tech события для тебя",
-      "problem": "Событие проходит в Лондоне, что нарушает географический контракт блока.",
-      "risk": "geo",
+      "line_index": 64,
+      "section": "Билеты / Ticket Radar",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
       "suggested_action": "strip"
     },
     {
-      "line_index": 49,
-      "section": "Дальние анонсы",
-      "problem": "Не указано участие Billy Bragg, что может ввести в заблуждение о составе мероприятия.",
-      "risk": "factual",
+      "line_index": 66,
+      "section": "Русскоязычные концерты и стендап UK",
+      "problem": "Дата начала события указана как 10 ноября, но в source_claim дата начала указана как 11 ноября.",
+      "risk": "date",
       "suggested_action": "repair"
+    },
+    {
+      "line_index": 4,
+      "section": "Свежие новости",
+      "problem": "Дублирование информации о смерти Алиши Самуэлс.",
+      "risk": "factual",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 4,
+      "section": "Свежие новости",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'stabbing' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "weapon_violence"
+    },
+    {
+      "line_index": 9,
+      "section": "Свежие новости",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "death"
+    },
+    {
+      "line_index": 50,
+      "section": "IT и бизнес",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'upskirt' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "sexual_offence"
     }
   ],
   "actions": [
     {
-      "line_index": 6,
+      "line_index": 1,
+      "section": "Главная история дня",
+      "action": "patch",
+      "replacement_text": "• В результате инцидента на Dorking Avenue в районе Newton Heath, где в 02:00 BST полиция отреагировала на \"беспорядки\", была найдена с ножевыми ранениями и убита 26-летняя Алиша Самуэльс. На данный момент задержан 25-летний мужчина по подозрению в её убийстве, а также 61-летний мужчина и 38-летняя женщина, которые подозреваются в содействии преступнику. Полиция призывает свидетелей или тех, кто имеет информацию, обратиться за помощью. Детектив инспектор Пол Костелло выразил соболезнования семье жертвы и отметил, что расследование продолжается.",
+      "reason": "Добавление информации о ножевых ранениях для полноты и точности описания инцидента.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 7,
       "section": "Свежие новости",
-      "action": "strip",
-      "reason": "Событие произошло в Лимме, Чешир, что не соответствует geo_scope GM.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 14,
-      "section": "Общественный транспорт сегодня",
       "action": "patch",
-      "replacement_text": "• Автобусы: вынесен приговор — водитель автобуса, который врезался в низкий мост в Экклсе, серьезно ранив 15 человек, был приговорен к двум годам и восьми месяцам условно, 14 октября 2026 года.",
-      "reason": "Количество пострадавших в аварии автобуса должно быть 15, а не трое.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 16,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Манчестер Юнайтед проиграл Атлетико Мадрид со счетом 0-2. Лисандро Мартинес раскритиковал руководство клуба, а тренер Эрик тен Хаг был оштрафован за высказывания.",
-      "reason": "Исправление фактической ошибки о тренере Манчестер Юнайтед.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 17,
-      "section": "Футбол",
-      "action": "keep",
-      "reason": "Информация о Манчестер Сити соответствует фактам и не требует изменений.",
-      "risk": "factual",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 29,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 18 октября в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный для покупателей, £10 для продавцов.",
-      "reason": "Уточнение стоимости входа для продавцов.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 31,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 10 мая — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
-      "reason": "Дата события в карточке не соответствует данным события.",
+      "replacement_text": "• В субботу, 10 октября 2026 года, на открытом дне колледжа Xaverian в Рашолме произошла стычка с участием трёх молодых людей, не являющихся студентами. Полиция прибыла на место около 13:10, никто не пострадал, оружие не использовалось. Колледж опроверг слухи, заявив, что инцидент не отражает реальную ситуацию.",
+      "reason": "Дата события указана неверно.",
       "risk": "date"
+    },
+    {
+      "line_index": 20,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 17 октября 2026 года в центре Манчестера пройдет музыкальный фестиваль Neighbourhood Festival 2026, который начнется в 12:00 и соберет более 80 артистов, включая хедлайнеров Keo и Red Rum Club.",
+      "reason": "Исправление названия события на корректное.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 28,
+      "section": "Выходные в GM",
+      "action": "strip",
+      "reason": "Дублирование информации о Chorlton Makers' Market.",
+      "risk": "format",
+      "replacement_text": ""
     },
     {
       "line_index": 32,
       "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• 4 апреля — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
-      "reason": "Дата события в карточке не соответствует данным события.",
+      "replacement_text": "• 11 октября в Bowlee Community Park, Middleton — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей около £2.50.",
+      "reason": "Дата события должна быть 11 октября, а не 18 октября.",
       "risk": "date"
     },
     {
       "line_index": 34,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• На коронерском расследовании в Bolton полицейский признал, что \"ничего\" не было сделано для защиты Мишель Пирсон и ее четырех детей перед фатальным поджогом в Уокдене, Salford, в декабре 2017 года. Полицейский не считал, что существует риск пожара. Четыре ребенка погибли; Мишель умерла в 2019 году.",
-      "reason": "Добавление важной детали о том, что полицейский не считал, что существует риск пожара.",
-      "risk": "factual"
+      "section": "Выходные в GM",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Событие не актуально, так как дата указана неверно и относится к прошлому.",
+      "risk": "date"
     },
     {
-      "line_index": 42,
-      "section": "IT и бизнес",
-      "action": "keep",
-      "reason": "Информация о планах Uber по испытанию беспилотных автомобилей в Манчестере соответствует источнику и географическому контракту.",
-      "risk": "factual",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 43,
-      "section": "IT и бизнес",
-      "action": "keep",
-      "reason": "Предупреждение полиции о мошенниках актуально и соответствует источнику.",
-      "risk": "factual",
-      "replacement_text": ""
+      "line_index": 35,
+      "section": "Выходные в GM",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Событие не актуально, так как дата указана неверно и относится к прошлому.",
+      "risk": "date"
     },
     {
       "line_index": 44,
-      "section": "IT и бизнес",
-      "action": "keep",
-      "reason": "Информация о продлении лицензии программного обеспечения соответствует источнику и географическому контракту.",
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Мать, помогавшая разоблачить педофила, учителя Абусали Рахмана, была ключевым свидетелем в его деле, после чего он был признан виновным.",
+      "reason": "Использование термина 'осужден' может быть юридически некорректным, если речь идет о признании вины, а не о вынесении приговора.",
+      "risk": "legal"
+    },
+    {
+      "line_index": 54,
+      "section": "Билеты / Ticket Radar",
+      "action": "patch",
+      "replacement_text": "• Сегодня в 18:00 в Opera House Manchester пройдет тур Alice Cooper: Devil on My Shoulder, где он расскажет о своей автобиографии.",
+      "reason": "Время начала события должно быть 18:00, согласно данным источника.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 64,
+      "section": "Билеты / Ticket Radar",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дата события указана как 21 августа 2027 года, что не соответствует текущему периоду.",
+      "risk": "date"
+    },
+    {
+      "line_index": 66,
+      "section": "Русскоязычные концерты и стендап UK",
+      "action": "patch",
+      "replacement_text": "• Василь Байдак проведет стендап-шоу с 11 ноября по 13 декабря 2026 года на площадке 'Empty Space' в Манчестере, билеты стоят £40.",
+      "reason": "Исправление даты начала события на 11 ноября в соответствии с source_claim.",
+      "risk": "date"
+    },
+    {
+      "line_index": 4,
+      "section": "Свежие новости",
+      "action": "strip",
+      "reason": "Дублирование информации о смерти Алиши Самуэлс.",
       "risk": "factual",
       "replacement_text": ""
     },
     {
-      "line_index": 45,
-      "section": "IT и бизнес",
-      "action": "patch",
-      "replacement_text": "• Манчестерская компания LDM запустила платформу Deliver My Leaflets для онлайн-планирования и заказа рекламных листовок; на 23 сентября 2026 года зарегистрировано более 140 пользователей.",
-      "reason": "Уточнение количества пользователей для соответствия источнику.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 46,
-      "section": "Business/tech события для тебя",
+      "line_index": 21,
+      "section": "Выходные в GM",
       "action": "strip",
-      "reason": "Событие проходит в Лондоне, что нарушает географический контракт блока.",
-      "risk": "geo",
+      "reason": "Дублирование информации о фестивале Neighbourhood.",
+      "risk": "factual",
       "replacement_text": ""
     },
     {
-      "line_index": 47,
-      "section": "Business/tech события для тебя",
-      "action": "keep",
-      "reason": "Событие соответствует географическому контракту блока.",
-      "risk": "geo",
+      "line_index": 28,
+      "section": "Выходные в GM",
+      "action": "strip",
+      "reason": "Дублирование информации о Chorlton Makers' Market.",
+      "risk": "factual",
       "replacement_text": ""
     },
     {
-      "line_index": 48,
-      "section": "Business/tech события для тебя",
-      "action": "keep",
-      "reason": "Событие соответствует географическому контракту блока.",
-      "risk": "geo",
+      "line_index": 64,
+      "section": "Билеты / Ticket Radar",
+      "action": "strip",
+      "reason": "Дата события в прошлом.",
+      "risk": "date",
       "replacement_text": ""
-    },
-    {
-      "line_index": 49,
-      "section": "Дальние анонсы",
-      "action": "patch",
-      "replacement_text": "• Squeeze и специальный гость Billy Bragg — 23 ноября, O2 Apollo Manchester. Билеты и время указаны на официальной странице.",
-      "reason": "Уточнение состава участников мероприятия.",
-      "risk": "factual"
     }
   ],
-  "warnings": [
-    "Уточнено количество пользователей платформы Deliver My Leaflets для соответствия источнику.",
-    "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога.",
-    "Секция 'Русскоязычные концерты и стендап UK' отсутствует, что ниже минимального порога.",
-    "Секция 'Еда, открытия и рынки' содержит только 1 элемент, что ниже минимального порога."
-  ],
+  "warnings": [],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
     "scope": "input_before_pre_send_judge",
@@ -223,64 +255,64 @@
       "Общественный транспорт сегодня": 3,
       "Что важно сегодня": 1,
       "Футбол": 2,
-      "Выходные в GM": 13,
-      "Городской радар": 7,
+      "Выходные в GM": 15,
+      "Городской радар": 12,
       "Еда, открытия и рынки": 1,
-      "IT и бизнес": 4,
+      "IT и бизнес": 1,
       "Business/tech события для тебя": 3,
-      "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 6
+      "Билеты / Ticket Radar": 11,
+      "Крупные концерты вне GM": 1,
+      "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
       "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 7,
-      "Выходные в GM": 13,
-      "Билеты / Ticket Radar": 6,
-      "Русскоязычные концерты и стендап UK": 0,
+      "Городской радар": 12,
+      "Выходные в GM": 15,
+      "Билеты / Ticket Radar": 11,
+      "Русскоязычные концерты и стендап UK": 1,
       "Еда, открытия и рынки": 1,
       "Business/tech события для тебя": 3,
       "Футбол": 2
     },
-    "ticket_items": 6,
-    "core_items": 38,
+    "ticket_items": 13,
+    "core_items": 45,
     "writer_quality_counts": {
-      "included_candidates": 52,
-      "rendered_candidates": 52,
+      "included_candidates": 63,
+      "rendered_candidates": 62,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
       "dropped_low_quality": 0,
-      "replaced_from_plan_backup": 0,
+      "replaced_from_plan_backup": 1,
       "removed_with_reason": 0
     },
     "source_health_counts": {
-      "ok": 103,
+      "ok": 106,
       "partial": 2,
       "stale": 5,
-      "empty": 15,
+      "empty": 13,
       "failed": 4,
-      "zero_yield": 75,
+      "zero_yield": 67,
       "no_contribution_breakdown": {
         "fetch_failed": 4,
-        "all_rejected": 75,
-        "idle_no_items": 17
+        "all_rejected": 67,
+        "idle_no_items": 18
       },
       "zero_contribution_by_stage": {
-        "written": 40,
-        "selected": 35,
-        "parsed": 17,
+        "written": 29,
+        "selected": 38,
+        "parsed": 18,
         "fetched": 4
       },
-      "weekend_source_coverage_incidents": 50
+      "weekend_source_coverage_incidents": 48
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 1 item(s), emergency floor 3",
-      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 1 item(s), emergency floor 3",
       "source failures: 4"
     ]
@@ -288,627 +320,850 @@
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 32 has unchecked number/date token(s): 9:00",
-      "patch for line 34 has unchecked number/date token(s): 2019",
-      "patch for line 45 has unchecked number/date token(s): 140"
+      "patch for line 7 has unchecked number/date token(s): 13:10",
+      "patch for line 20 has unchecked number/date token(s): 80",
+      "multiple actions target line 28",
+      "multiple actions target line 64"
     ],
     "can_apply_actions": true,
-    "action_count": 16
+    "action_count": 15
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 52,
-    "matched_lines": 52,
-    "applicable_lines": 5,
-    "unmatched_lines": 3,
-    "critical_omission_count": 0,
-    "critical_omissions": [],
+    "checked_lines": 62,
+    "matched_lines": 62,
+    "applicable_lines": 7,
+    "unmatched_lines": 4,
+    "critical_omission_count": 3,
+    "critical_omissions": [
+      {
+        "line_index": 4,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/newton-heath-fatal-stabbing-victim-34771725",
+        "concept": "weapon_violence",
+        "obligation": "who/what",
+        "source_hit": "stabbing"
+      },
+      {
+        "line_index": 9,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/screams-heard-cars-smashed-young-34770981",
+        "concept": "death",
+        "obligation": "who/what",
+        "source_hit": "death"
+      },
+      {
+        "line_index": 50,
+        "source_url_key": "bbc.com/news/articles/ck79p174x3d3o",
+        "concept": "sexual_offence",
+        "obligation": "charge/verdict/victim",
+        "source_hit": "upskirt"
+      }
+    ],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 0,
+    "pulled_for_rework": 3,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 12,
-    "attempted": 8,
-    "applied": 8,
-    "model_patch_applied": 4,
+    "requested": 17,
+    "attempted": 12,
+    "applied": 11,
+    "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 1,
-    "stripped": 3,
-    "unresolved": 0,
-    "blocking_unresolved": 0,
-    "resolved": 11,
+    "reserve_replacement_used": 6,
+    "stripped": 4,
+    "unresolved": 1,
+    "blocking_unresolved": 1,
+    "resolved": 14,
     "resolved_in_place": 7,
-    "resolved_by_replacement": 1,
+    "resolved_by_replacement": 4,
     "resolved_by_removal": 3,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 10,
+    "enrich_attempted": 17,
     "post_check_errors": [],
-    "geo_contract_rejected": [
-      {
-        "line_index": 42,
-        "section": "IT и бизнес",
-        "geo_scope": "gm",
-        "reason": "Информация о планах Uber по испытанию беспилотных автомобилей в Манчестере соответствует источнику и географическому контракту.",
-        "gm_anchor_present": true
-      },
-      {
-        "line_index": 44,
-        "section": "IT и бизнес",
-        "geo_scope": "gm",
-        "reason": "Информация о продлении лицензии программного обеспечения соответствует источнику и географическому контракту.",
-        "gm_anchor_present": true
-      },
-      {
-        "line_index": 47,
-        "section": "Business/tech события для тебя",
-        "geo_scope": "gm",
-        "reason": "Событие соответствует географическому контракту блока.",
-        "gm_anchor_present": true
-      },
-      {
-        "line_index": 48,
-        "section": "Business/tech события для тебя",
-        "geo_scope": "gm",
-        "reason": "Событие соответствует географическому контракту блока.",
-        "gm_anchor_present": true
-      }
-    ],
+    "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 6,
-        "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Событие произошло в Лимме, Чешир, что не соответствует geo_scope GM.",
-        "risk": "geo",
+        "line_index": 1,
+        "section": "Главная история дня",
+        "requested_action": "patch",
+        "reason": "Добавление информации о ножевых ранениях для полноты и точности описания инцидента.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Событие произошло в Лимме, Чешир, что не соответствует geo_scope GM.",
+        "critical_problem": "Текст не упоминает, что Алиша Самуэльс была найдена с ножевыми ранениями, что является важной деталью инцидента.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cke8r2ne766do-e51b3ff399ac",
+        "original_url_identity": "bbc.com/news/articles/cke8r2ne766do",
+        "original_html": "<b>В результате инцидента на Dorking Avenue в районе Newton Heath, где в 02:00 BST полиция отреагировала на \"беспорядки\", была убита 26-летняя Алиша Самуэльс.</b> На данный момент задержан 25-летний мужчина по подозрению в её убийстве, а также 61-летний мужчина и 38-летняя женщина, которые подозреваются в содействии преступнику. Полиция призывает свидетелей или тех, кто имеет информацию, обратиться за помощью. Детектив инспектор Пол Костелло выразил соболезнования семье жертвы и отметил, что расследование продолжается. <a href=\"https://bbc.com/news/articles/cke8r2ne766do\">BBC Manchester</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 7,
+        "section": "Свежие новости",
+        "requested_action": "patch",
+        "reason": "Дата события указана неверно.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "last_24h-05",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-xaverian-college-statement-police-34772489-a7e46cd984d4",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-xaverian-college-statement-police-34772489",
+        "original_html": "• В субботу, 10 октября 2026 года, на открытом дне колледжа Xaverian в Рашолме произошла стычка с участием трёх молодых людей, не являющихся студентами. Полиция прибыла на место около 13:10, никто не пострадал, оружие не использовалось. Колледж опроверг слухи, заявив, что инцидент не отражает реальную ситуацию. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-xaverian-college-statement-police-34772489\">MEN</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 20,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Исправление названия события на корректное.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Некорректное название события.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-02",
+        "candidate_fingerprint": "event-event-c-anthony-mooney-2026-10-17-da52caf07926",
+        "original_url_identity": "manchestersfinest.com/events/neighbourhood-festival-2026",
+        "original_html": "• 17 октября 2026 года в центре Манчестера пройдет музыкальный фестиваль Neighbourhood Festival 2026, который начнется в 12:00 и соберет более 80 артистов, включая хедлайнеров Keo и Red Rum Club. <a href=\"https://manchestersfinest.com/events/neighbourhood-festival-2026\">Manchester's Finest Events</a>",
+        "verification": "judge correction matches the existing visible facts",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 28,
+        "section": "Выходные в GM",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о Chorlton Makers' Market.",
+        "risk": "format",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "reserve_replacement",
+        "plan_slot_id": "weekend_activities-08",
+        "candidate_fingerprint": "event-id-jsonld-event-a7638d70e5cb-93664b4a93af",
+        "original_url_identity": "chorlton.coop/event/chorlton-makers-market/2026-10-17",
+        "original_html": "• 17 октября в Manchester Road and Oswald Road School Car Park — Chorlton Makers' Market. На площадке: рынок, ремесленные товары, еда, живая музыка. <a href=\"https://chorlton.coop/event/chorlton-makers-market/2026-10-17\">Chorlton Makers Market</a>",
+        "replacement_fingerprint": "event-event-the-uprising-15-as-war-burns-across-england-an-army-of-rebels-must-face-the-king-s-might-2026-10-16-home-499ffdc89bc6",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 32,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 11 октября, а не 18 октября.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-11",
+        "candidate_fingerprint": "event-event-bowlee-car-boot-sale-2026-10-11-bowlee-community-park-middleton-f3a136eee667",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
+        "original_html": "• 18 октября в Bowlee Community Park, Middleton — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей около £2.50. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 34,
+        "section": "Выходные в GM",
+        "requested_action": "strip",
+        "reason": "Событие не актуально, так как дата указана неверно и относится к прошлому.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "weekend_activities-13",
+        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+        "original_html": "• 18 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+        "replacement_fingerprint": "event-event-jeans-and-a-nice-top-2026-10-17-new-century-66968f2884f2",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 35,
+        "section": "Выходные в GM",
+        "requested_action": "strip",
+        "reason": "Событие не актуально, так как дата указана неверно и относится к прошлому.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "weekend_activities-14",
+        "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+        "original_html": "• 17 октября — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+        "replacement_fingerprint": "event-event-electric-shuffle-manchester-brunch-2026-10-17-378ccc8bd1b2",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 44,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Использование термина 'осужден' может быть юридически некорректным, если речь идет о признании вины, а не о вынесении приговора.",
+        "risk": "legal",
+        "critical_error": true,
+        "critical_problem": "Неправильное использование термина 'осужден'.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "city_watch-08",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mum-who-helped-unmask-paedophile-34771038-12b05f3acf50",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mum-who-helped-unmask-paedophile-34771038",
+        "original_html": "• Мать, помогавшая разоблачить педофила, учителя Абусали Рахмана, была ключевым свидетелем в его деле, после чего он был осужден. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mum-who-helped-unmask-paedophile-34771038\">MEN</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 54,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "patch",
+        "reason": "Время начала события должно быть 18:00, согласно данным источника.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Время начала события указано неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "ticket_radar-01",
+        "candidate_fingerprint": "event-event-alice-cooper-devil-on-my-shoulder-book-tour-2026-10-16-opera-house-manchester-61bd238a399c",
+        "original_url_identity": "ticketmaster.co.uk/alice-cooper-devil-on-my-shoulder-manchester-16-10-2026/event/36006465DF9B6722",
+        "original_html": "• Сегодня в 19:30 в Opera House Manchester пройдет тур Alice Cooper: Devil on My Shoulder, где он расскажет о своей автобиографии. <a href=\"https://ticketmaster.co.uk/alice-cooper-devil-on-my-shoulder-manchester-16-10-2026/event/36006465DF9B6722\">Ticketmaster</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 64,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "strip",
+        "reason": "Дата события указана как 21 августа 2027 года, что не соответствует текущему периоду.",
+        "risk": "date",
+        "critical_error": false,
+        "critical_problem": "",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "last_24h-04",
-        "candidate_fingerprint": "url-bbc-com-news-articles-c84g1re377keo-f1545b40c9f2",
-        "original_url_identity": "bbc.com/news/articles/c84g1re377keo",
-        "original_html": "• В Лимме, Чешир, 20 апреля, свидетели пытались спасти 56-летнего директора школы Майкла Маллинса, который был сбит автомобилем и тащился по дороге. Мотоциклист Эндрю Бизант-Робертс заметил след крови и нашел пострадавшего на обочине, после чего начался судебный процесс против Симона Ричардсона, обвиняемого в убийстве Маллинса, который, по версии следствия, знал о том, что его автомобиль задел велосипедиста и уехал с места происшествия. <a href=\"https://bbc.com/news/articles/c84g1re377keo\">BBC Manchester</a>",
-        "backup_outcome": "backup_chain_exhausted",
-        "removal_reason": "fact_lock_failed",
+        "plan_slot_id": "ticket_radar-11",
+        "candidate_fingerprint": "event-event-crook-on-the-wall-21st-august-2027-2027-08-21-manchester-academy-459eb6bbde41",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00",
+        "original_html": "• <b>CROOK ON THE WALL</b> — 21 августа, Manchester Academy; цена £10.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00\">Manchester Academy</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "unrenderable_line",
         "post_check_passed": true
       },
       {
-        "line_index": 14,
-        "section": "Общественный транспорт сегодня",
+        "line_index": 66,
+        "section": "Русскоязычные концерты и стендап UK",
         "requested_action": "patch",
-        "reason": "Количество пострадавших в аварии автобуса должно быть 15, а не трое.",
-        "risk": "factual",
+        "reason": "Исправление даты начала события на 11 ноября в соответствии с source_claim.",
+        "risk": "date",
         "critical_error": true,
-        "critical_problem": "Неправильное количество пострадавших в аварии автобуса.",
+        "critical_problem": "Дата начала события указана как 10 ноября, но в source_claim дата начала указана как 11 ноября.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "transport-03",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cmx2we8jlzn5o-feb07e1c6ef8",
-        "original_url_identity": "bbc.com/news/articles/cmx2we8jlzn5o",
-        "original_html": "• Автобусы: вынесен приговор — водитель автобуса, который врезался в низкий мост в Экклсе, серьезно ранив троих человек, был приговорен к двум годам и восьми месяцам условно, 14 октября 2026 года. <a href=\"https://bbc.com/news/articles/cmx2we8jlzn5o\">BBC Manchester</a>",
+        "plan_slot_id": "russian_events-01",
+        "candidate_fingerprint": "event-event-2026-11-10-empty-space-price-40-booking-https-mticket-f1d205730598",
+        "original_url_identity": "mticket.uk/ru/manchester/vasil-bajdak-stendap-4529.html",
+        "original_html": "• Василь Байдак проведет стендап-шоу с 10 ноября по 13 декабря 2026 года на площадке 'Empty Space' в Манчестере, билеты стоят £40. <a href=\"https://mticket.uk/ru/manchester/vasil-bajdak-stendap-4529.html\">MTicket Russian Concerts</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 16,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Исправление фактической ошибки о тренере Манчестер Юнайтед.",
+        "line_index": 4,
+        "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о смерти Алиши Самуэлс.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неверная информация о тренере. Майкл Каррик не является тренером Манчестер Юнайтед.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-lisandro-martinez-fine-34765051-afebdd5413a7",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-lisandro-martinez-fine-34765051",
-        "original_html": "• Манчестер Юнайтед проиграл Атлетико Мадрид со счетом 0-2. Лисандро Мартинес раскритиковал руководство клуба, а тренер Майкл Каррик был оштрафован за высказывания. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-lisandro-martinez-fine-34765051\">MEN Manchester United</a>",
-        "verification": "structured fact already rendered correctly",
+        "critical_problem": "Дублирование информации о смерти Алиши Самуэлс.",
+        "completeness_concept": "weapon_violence",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-newton-heath-fatal-stabbing-victim-34771725-50bb90ad3485",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/newton-heath-fatal-stabbing-victim-34771725",
+        "original_html": "• В Ньютон-Хите, на улице Доркинг,часов ночи 15 октября 2026 года, была смертельно ранена 26-летняя Алиша Самуэлс. Полиция начала расследование убийства и задержала троих подозреваемых. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/newton-heath-fatal-stabbing-victim-34771725\">MEN</a>",
+        "replacement_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-15-the-art-of-switching-off-how-clay-and-more-is-bringing-creativity-and-community-together-at-altrincham-mark-11fac6752e04",
         "post_check_passed": true
       },
       {
-        "line_index": 17,
-        "section": "Футбол",
-        "requested_action": "keep",
-        "reason": "Информация о Манчестер Сити соответствует фактам и не требует изменений.",
+        "line_index": 21,
+        "section": "Выходные в GM",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о фестивале Neighbourhood.",
         "risk": "factual",
         "critical_error": false,
         "critical_problem": "",
         "completeness_concept": "",
         "outcome": "resolved_by_replacement",
         "method": "reserve_replacement",
-        "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-uk-34766303-493f0b38601b",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-uk-34766303",
-        "original_html": "• Апелляция Манчестер Сити по 114 предполагаемым нарушениям финансовых правил Премьер-лиги продолжается. Возможные санкции включают штрафы и исключение из лиги. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-uk-34766303\">MEN Manchester City</a>",
-        "keep_rejected": "known_factual_error",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-uk-government-man-city-charges-34766273-687b8959e31e",
+        "plan_slot_id": "weekend_activities-03",
+        "candidate_fingerprint": "event-id-skiddle-com-cecb4bc59515-590572568362",
+        "original_url_identity": "skiddle.com/festivals/neighbourhood",
+        "original_html": "• Фестиваль Neighbourhood пройдет 17 октября 2026 года на различных площадках Манчестера. <a href=\"https://skiddle.com/festivals/neighbourhood\">Skiddle Manchester Festivals</a>",
+        "replacement_fingerprint": "event-id-skiddle-com-4911edd31a76-4f22d50317d3",
         "post_check_passed": true
       },
       {
-        "line_index": 29,
+        "line_index": 28,
         "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Уточнение стоимости входа для продавцов.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Некорректная информация о стоимости входа.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "weekend_activities-08",
-        "candidate_fingerprint": "event-event-the-big-stockport-car-boot-romiley-2026-10-18-waterside-farm-otterspool-road-romiley-stockport-sk6-3lq-f04e9be995ac",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
-        "original_html": "• 18 октября в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 31,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события в карточке не соответствует данным события.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно. В карточке указана дата 18 октября, но в данных события указана дата начала 10 мая 2026 года.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-10",
-        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-        "original_html": "• 18 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 32,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события в карточке не соответствует данным события.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно. В карточке указана дата 17 октября, но в данных события указана дата начала 4 апреля 2026 года.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-11",
-        "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
-        "original_html": "• 17 октября — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 34,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Добавление важной детали о том, что полицейский не считал, что существует риск пожара.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Текст не упоминает, что полицейский не считал, что существует риск пожара.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cwdr8gz06n2go-0d219f398e6a",
-        "original_url_identity": "bbc.com/news/articles/cwdr8gz06n2go",
-        "original_html": "• На коронерском расследовании в Bolton полицейский признал, что \"ничего\" не было сделано для защиты Мишель Пирсон и ее четырех детей перед фатальным поджогом в Уокдене, Salford, в декабре 2017 года. Четыре ребенка погибли; Мишель умерла в 2019 году. <a href=\"https://bbc.co.uk/news/articles/cwdr8gz06n2go\">BBC Manchester</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 43,
-        "section": "IT и бизнес",
-        "requested_action": "keep",
-        "reason": "Предупреждение полиции о мошенниках актуально и соответствует источнику.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "tech_business-02",
-        "candidate_fingerprint": "url-aboutmanchester-co-uk-police-issue-warning-over-scam-calls-across-greater-manchester-2f3adcb3f01b",
-        "original_url_identity": "aboutmanchester.co.uk/police-issue-warning-over-scam-calls-across-greater-manchester",
-        "original_html": "• Полиция Большого Манчестера предупреждает о мошенниках, выдающих себя за полицейских, чтобы получить личные данные и информацию о криптовалюте. <a href=\"https://aboutmanchester.co.uk/police-issue-warning-over-scam-calls-across-greater-manchester\">About Manchester News</a>",
-        "keep_rejected": "known_factual_error",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 45,
-        "section": "IT и бизнес",
-        "requested_action": "patch",
-        "reason": "Уточнение количества пользователей для соответствия источнику.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "tech_business-04",
-        "candidate_fingerprint": "url-prolificnorth-co-uk-news-door-drops-go-digital-with-deliver-my-leaflets-platform-launch-3e275735958d",
-        "original_url_identity": "prolificnorth.co.uk/news/door-drops-go-digital-with-deliver-my-leaflets-platform-launch",
-        "original_html": "• Манчестерская компания LDM запустила платформу Deliver My Leaflets для онлайн-планирования и заказа рекламных листовок; на 23 сентября 2026 года зарегистрировано 144 пользователя. <a href=\"https://prolificnorth.co.uk/news/door-drops-go-digital-with-deliver-my-leaflets-platform-launch\">Prolific North Manchester</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 46,
-        "section": "Business/tech события для тебя",
         "requested_action": "strip",
-        "reason": "Событие проходит в Лондоне, что нарушает географический контракт блока.",
-        "risk": "geo",
+        "reason": "Дублирование информации о Chorlton Makers' Market.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Событие проходит в Лондоне, что нарушает географический контракт блока.",
+        "critical_problem": "Дублирование информации о Chorlton Makers' Market.",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "removed",
+        "plan_slot_id": "weekend_activities-08",
+        "candidate_fingerprint": "event-id-jsonld-event-a7638d70e5cb-93664b4a93af",
+        "original_url_identity": "chorlton.coop/event/chorlton-makers-market/2026-10-17",
+        "original_html": "• 17 октября в Manchester Road and Oswald Road School Car Park — Chorlton Makers' Market. На площадке: рынок, ремесленные товары, еда, живая музыка. <a href=\"https://chorlton.coop/event/chorlton-makers-market/2026-10-17\">Chorlton Makers Market</a>",
+        "backup_outcome": "backup_chain_exhausted",
+        "removal_reason": "duplicate_after_plan",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 64,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "strip",
+        "reason": "Дата события в прошлом.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "professional_events-01",
-        "candidate_fingerprint": "event-event-internationaltrade-jacksonville-uk-trade-mission-retail-and-brand-summit-thursday-15-oct-9-2026-10-15-a4c48f8af92d",
-        "original_url_identity": "gmchamber.co.uk/events/jacksonville-uk-trade-mission-retail-and-brand-summit",
-        "original_html": "• Сегодня, 15 октября 2026 года, в Fulham FC в Лондоне проходит \"Jacksonville UK Trade Mission: Retail and Brand Summit\" с 9:30 до 13:30, вход свободный для старших руководителей розничной торговли и брендов из США и Великобритании. <a href=\"https://gmchamber.co.uk/events/jacksonville-uk-trade-mission-retail-and-brand-summit\">GM Chamber Events</a>",
+        "plan_slot_id": "ticket_radar-11",
+        "candidate_fingerprint": "event-event-crook-on-the-wall-21st-august-2027-2027-08-21-manchester-academy-459eb6bbde41",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00",
+        "original_html": "• <b>CROOK ON THE WALL</b> — 21 августа, Manchester Academy; цена £10.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00\">Manchester Academy</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 49,
-        "section": "Дальние анонсы",
-        "requested_action": "patch",
-        "reason": "Уточнение состава участников мероприятия.",
-        "risk": "factual",
+        "line_index": 9,
+        "section": "Свежие новости",
+        "requested_action": "replace",
+        "reason": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
+        "risk": "translation",
         "critical_error": true,
-        "critical_problem": "Не указано участие Billy Bragg, что может ввести в заблуждение о составе мероприятия.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "future_announcements-01",
-        "candidate_fingerprint": "event-event-squeeze-plus-very-special-guest-billy-bragg-2026-11-23-o2-apollo-manchester-5bc8e2cff49c",
-        "original_url_identity": "ticketmaster.co.uk/squeeze-plus-very-special-guest-billy-manchester-23-11-2026/event/36006374B4BE7A45",
-        "original_html": "• <b>Squeeze</b> — 23 ноября, O2 Apollo Manchester. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/squeeze-plus-very-special-guest-billy-manchester-23-11-2026/event/36006374B4BE7A45\">Ticketmaster</a>",
+        "critical_problem": "",
+        "completeness_concept": "death",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-07",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-screams-heard-cars-smashed-young-34770981-17b97b27e603",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/screams-heard-cars-smashed-young-34770981",
+        "original_html": "• В Ньютон-Хите жители слышали крики и видели, как машины были повреждены, прежде чем молодая женщина была найдена с ножевым ранением. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/screams-heard-cars-smashed-young-34770981\">MEN</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-pensioner-admits-raping-woman-drugged-34770709-b86576bb8bdf",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 50,
+        "section": "IT и бизнес",
+        "requested_action": "replace",
+        "reason": "critical source fact dropped in translation: 'upskirt' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
+        "risk": "translation",
+        "critical_error": true,
+        "critical_problem": "",
+        "completeness_concept": "sexual_offence",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "tech_business-01",
+        "candidate_fingerprint": "url-bbc-com-news-articles-ck79p174x3d3o-8cfe714d3c23",
+        "original_url_identity": "bbc.com/news/articles/ck79p174x3d3o",
+        "original_html": "• Бывший учитель Абусали Рахман, 37 лет, из Солфорда, приговорён к шести годам тюрьмы за съёмку более 100 фотографий под юбками школьниц и создание сексуализированных изображений с использованием ИИ. <a href=\"https://bbc.co.uk/news/articles/ck79p174x3d3o\">BBC Manchester</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::событие произошло в лимме, чешир, что не соответствует geo_scope gm.",
+        "group_key": "главная история дня::добавление информации о ножевых ранениях для полноты и точности описания инцидента.",
         "actions": [
           {
-            "line_index": 6,
+            "line_index": 1,
+            "section": "Главная история дня",
+            "requested_action": "patch",
+            "reason": "Добавление информации о ножевых ранениях для полноты и точности описания инцидента.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Текст не упоминает, что Алиша Самуэльс была найдена с ножевыми ранениями, что является важной деталью инцидента.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cke8r2ne766do-e51b3ff399ac",
+            "original_url_identity": "bbc.com/news/articles/cke8r2ne766do",
+            "original_html": "<b>В результате инцидента на Dorking Avenue в районе Newton Heath, где в 02:00 BST полиция отреагировала на \"беспорядки\", была убита 26-летняя Алиша Самуэльс.</b> На данный момент задержан 25-летний мужчина по подозрению в её убийстве, а также 61-летний мужчина и 38-летняя женщина, которые подозреваются в содействии преступнику. Полиция призывает свидетелей или тех, кто имеет информацию, обратиться за помощью. Детектив инспектор Пол Костелло выразил соболезнования семье жертвы и отметил, что расследование продолжается. <a href=\"https://bbc.com/news/articles/cke8r2ne766do\">BBC Manchester</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 1,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::дата события указана неверно.",
+        "actions": [
+          {
+            "line_index": 7,
             "section": "Свежие новости",
+            "requested_action": "patch",
+            "reason": "Дата события указана неверно.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "last_24h-05",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-xaverian-college-statement-police-34772489-a7e46cd984d4",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-xaverian-college-statement-police-34772489",
+            "original_html": "• В субботу, 10 октября 2026 года, на открытом дне колледжа Xaverian в Рашолме произошла стычка с участием трёх молодых людей, не являющихся студентами. Полиция прибыла на место около 13:10, никто не пострадал, оружие не использовалось. Колледж опроверг слухи, заявив, что инцидент не отражает реальную ситуацию. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-xaverian-college-statement-police-34772489\">MEN</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 7,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::исправление названия события на корректное.",
+        "actions": [
+          {
+            "line_index": 20,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Исправление названия события на корректное.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Некорректное название события.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-02",
+            "candidate_fingerprint": "event-event-c-anthony-mooney-2026-10-17-da52caf07926",
+            "original_url_identity": "manchestersfinest.com/events/neighbourhood-festival-2026",
+            "original_html": "• 17 октября 2026 года в центре Манчестера пройдет музыкальный фестиваль Neighbourhood Festival 2026, который начнется в 12:00 и соберет более 80 артистов, включая хедлайнеров Keo и Red Rum Club. <a href=\"https://manchestersfinest.com/events/neighbourhood-festival-2026\">Manchester's Finest Events</a>",
+            "verification": "judge correction matches the existing visible facts",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 20,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дублирование информации о chorlton makers' market",
+        "actions": [
+          {
+            "line_index": 28,
+            "section": "Выходные в GM",
             "requested_action": "strip",
-            "reason": "Событие произошло в Лимме, Чешир, что не соответствует geo_scope GM.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Событие произошло в Лимме, Чешир, что не соответствует geo_scope GM.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "last_24h-04",
-            "candidate_fingerprint": "url-bbc-com-news-articles-c84g1re377keo-f1545b40c9f2",
-            "original_url_identity": "bbc.com/news/articles/c84g1re377keo",
-            "original_html": "• В Лимме, Чешир, 20 апреля, свидетели пытались спасти 56-летнего директора школы Майкла Маллинса, который был сбит автомобилем и тащился по дороге. Мотоциклист Эндрю Бизант-Робертс заметил след крови и нашел пострадавшего на обочине, после чего начался судебный процесс против Симона Ричардсона, обвиняемого в убийстве Маллинса, который, по версии следствия, знал о том, что его автомобиль задел велосипедиста и уехал с места происшествия. <a href=\"https://bbc.com/news/articles/c84g1re377keo\">BBC Manchester</a>",
-            "backup_outcome": "backup_chain_exhausted",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 6,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::количество пострадавших в аварии автобуса должно быть 15, а не трое.",
-        "actions": [
-          {
-            "line_index": 14,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "patch",
-            "reason": "Количество пострадавших в аварии автобуса должно быть 15, а не трое.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неправильное количество пострадавших в аварии автобуса.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "transport-03",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cmx2we8jlzn5o-feb07e1c6ef8",
-            "original_url_identity": "bbc.com/news/articles/cmx2we8jlzn5o",
-            "original_html": "• Автобусы: вынесен приговор — водитель автобуса, который врезался в низкий мост в Экклсе, серьезно ранив троих человек, был приговорен к двум годам и восьми месяцам условно, 14 октября 2026 года. <a href=\"https://bbc.com/news/articles/cmx2we8jlzn5o\">BBC Manchester</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 14,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::исправление фактической ошибки о тренере манчестер юнайтед.",
-        "actions": [
-          {
-            "line_index": 16,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Исправление фактической ошибки о тренере Манчестер Юнайтед.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неверная информация о тренере. Майкл Каррик не является тренером Манчестер Юнайтед.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-lisandro-martinez-fine-34765051-afebdd5413a7",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-lisandro-martinez-fine-34765051",
-            "original_html": "• Манчестер Юнайтед проиграл Атлетико Мадрид со счетом 0-2. Лисандро Мартинес раскритиковал руководство клуба, а тренер Майкл Каррик был оштрафован за высказывания. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-lisandro-martinez-fine-34765051\">MEN Manchester United</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 16,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::информация о манчестер сити соответствует фактам и не требует изменений.",
-        "actions": [
-          {
-            "line_index": 17,
-            "section": "Футбол",
-            "requested_action": "keep",
-            "reason": "Информация о Манчестер Сити соответствует фактам и не требует изменений.",
-            "risk": "factual",
+            "reason": "Дублирование информации о Chorlton Makers' Market.",
+            "risk": "format",
             "critical_error": false,
             "critical_problem": "",
             "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "reserve_replacement",
+            "plan_slot_id": "weekend_activities-08",
+            "candidate_fingerprint": "event-id-jsonld-event-a7638d70e5cb-93664b4a93af",
+            "original_url_identity": "chorlton.coop/event/chorlton-makers-market/2026-10-17",
+            "original_html": "• 17 октября в Manchester Road and Oswald Road School Car Park — Chorlton Makers' Market. На площадке: рынок, ремесленные товары, еда, живая музыка. <a href=\"https://chorlton.coop/event/chorlton-makers-market/2026-10-17\">Chorlton Makers Market</a>",
+            "replacement_fingerprint": "event-event-the-uprising-15-as-war-burns-across-england-an-army-of-rebels-must-face-the-king-s-might-2026-10-16-home-499ffdc89bc6",
+            "post_check_passed": false
+          },
+          {
+            "line_index": 28,
+            "section": "Выходные в GM",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о Chorlton Makers' Market.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о Chorlton Makers' Market.",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "removed",
+            "plan_slot_id": "weekend_activities-08",
+            "candidate_fingerprint": "event-id-jsonld-event-a7638d70e5cb-93664b4a93af",
+            "original_url_identity": "chorlton.coop/event/chorlton-makers-market/2026-10-17",
+            "original_html": "• 17 октября в Manchester Road and Oswald Road School Car Park — Chorlton Makers' Market. На площадке: рынок, ремесленные товары, еда, живая музыка. <a href=\"https://chorlton.coop/event/chorlton-makers-market/2026-10-17\">Chorlton Makers Market</a>",
+            "backup_outcome": "backup_chain_exhausted",
+            "removal_reason": "duplicate_after_plan",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 28,
+            "passed": false,
+            "detail": "final line missing"
+          },
+          {
+            "line_index": 28,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "ticket:chorlton makers market|2026-10-17|manchester road and oswald road school car park",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата события должна быть 11 октября, а не 18 октября.",
+        "actions": [
+          {
+            "line_index": 32,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 11 октября, а не 18 октября.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-11",
+            "candidate_fingerprint": "event-event-bowlee-car-boot-sale-2026-10-11-bowlee-community-park-middleton-f3a136eee667",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale",
+            "original_html": "• 18 октября в Bowlee Community Park, Middleton — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей около £2.50. <a href=\"https://manchester-rocks.co.uk/things-to-do/bowlee-car-boot-sale\">Bowlee Car Boot Sale</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 32,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::событие не актуально, так как дата указана неверно и относится к прошлому.",
+        "actions": [
+          {
+            "line_index": 34,
+            "section": "Выходные в GM",
+            "requested_action": "strip",
+            "reason": "Событие не актуально, так как дата указана неверно и относится к прошлому.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-uk-34766303-493f0b38601b",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-uk-34766303",
-            "original_html": "• Апелляция Манчестер Сити по 114 предполагаемым нарушениям финансовых правил Премьер-лиги продолжается. Возможные санкции включают штрафы и исключение из лиги. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-uk-34766303\">MEN Manchester City</a>",
-            "keep_rejected": "known_factual_error",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-uk-government-man-city-charges-34766273-687b8959e31e",
+            "plan_slot_id": "weekend_activities-13",
+            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+            "original_html": "• 18 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+            "replacement_fingerprint": "event-event-jeans-and-a-nice-top-2026-10-17-new-century-66968f2884f2",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 35,
+            "section": "Выходные в GM",
+            "requested_action": "strip",
+            "reason": "Событие не актуально, так как дата указана неверно и относится к прошлому.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "weekend_activities-14",
+            "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+            "original_html": "• 17 октября — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+            "replacement_fingerprint": "event-event-electric-shuffle-manchester-brunch-2026-10-17-378ccc8bd1b2",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 17,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::уточнение стоимости входа для продавцов.",
-        "actions": [
-          {
-            "line_index": 29,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Уточнение стоимости входа для продавцов.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Некорректная информация о стоимости входа.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "weekend_activities-08",
-            "candidate_fingerprint": "event-event-the-big-stockport-car-boot-romiley-2026-10-18-waterside-farm-otterspool-road-romiley-stockport-sk6-3lq-f04e9be995ac",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley",
-            "original_html": "• 18 октября в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный. <a href=\"https://manchester-rocks.co.uk/things-to-do/the-big-stockport-car-boot-romiley\">The BIG Stockport Car Boot</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 29,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дата события в карточке не соответствует данным события.",
-        "actions": [
-          {
-            "line_index": 31,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события в карточке не соответствует данным события.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно. В карточке указана дата 18 октября, но в данных события указана дата начала 10 мая 2026 года.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-10",
-            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-            "original_html": "• 18 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 32,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события в карточке не соответствует данным события.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно. В карточке указана дата 17 октября, но в данных события указана дата начала 4 апреля 2026 года.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-11",
-            "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
-            "original_html": "• 17 октября — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 31,
-            "passed": true,
-            "detail": "existing fact verified"
-          },
-          {
-            "line_index": 32,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::добавление важной детали о том, что полицейский не считал, что существует риск пожара.",
-        "actions": [
-          {
             "line_index": 34,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "line_index": 35,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::использование термина 'осужден' может быть юридически некорректным, если речь идет о признании вины, а не о вынесении приговора.",
+        "actions": [
+          {
+            "line_index": 44,
             "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Добавление важной детали о том, что полицейский не считал, что существует риск пожара.",
+            "reason": "Использование термина 'осужден' может быть юридически некорректным, если речь идет о признании вины, а не о вынесении приговора.",
+            "risk": "legal",
+            "critical_error": true,
+            "critical_problem": "Неправильное использование термина 'осужден'.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "city_watch-08",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mum-who-helped-unmask-paedophile-34771038-12b05f3acf50",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mum-who-helped-unmask-paedophile-34771038",
+            "original_html": "• Мать, помогавшая разоблачить педофила, учителя Абусали Рахмана, была ключевым свидетелем в его деле, после чего он был осужден. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mum-who-helped-unmask-paedophile-34771038\">MEN</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 44,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::время начала события должно быть 18:00, согласно данным источника.",
+        "actions": [
+          {
+            "line_index": 54,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Время начала события должно быть 18:00, согласно данным источника.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Текст не упоминает, что полицейский не считал, что существует риск пожара.",
+            "critical_problem": "Время начала события указано неверно.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cwdr8gz06n2go-0d219f398e6a",
-            "original_url_identity": "bbc.com/news/articles/cwdr8gz06n2go",
-            "original_html": "• На коронерском расследовании в Bolton полицейский признал, что \"ничего\" не было сделано для защиты Мишель Пирсон и ее четырех детей перед фатальным поджогом в Уокдене, Salford, в декабре 2017 года. Четыре ребенка погибли; Мишель умерла в 2019 году. <a href=\"https://bbc.co.uk/news/articles/cwdr8gz06n2go\">BBC Manchester</a>",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "ticket_radar-01",
+            "candidate_fingerprint": "event-event-alice-cooper-devil-on-my-shoulder-book-tour-2026-10-16-opera-house-manchester-61bd238a399c",
+            "original_url_identity": "ticketmaster.co.uk/alice-cooper-devil-on-my-shoulder-manchester-16-10-2026/event/36006465DF9B6722",
+            "original_html": "• Сегодня в 19:30 в Opera House Manchester пройдет тур Alice Cooper: Devil on My Shoulder, где он расскажет о своей автобиографии. <a href=\"https://ticketmaster.co.uk/alice-cooper-devil-on-my-shoulder-manchester-16-10-2026/event/36006465DF9B6722\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 34,
+            "line_index": 54,
             "passed": true,
-            "detail": "post-check passed"
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "it и бизнес::предупреждение полиции о мошенниках актуально и соответствует источнику.",
+        "group_key": "билеты / ticket radar::дата события указана как 21 августа 2027 года, что не соответствует текущему периоду.",
         "actions": [
           {
-            "line_index": 43,
-            "section": "IT и бизнес",
-            "requested_action": "keep",
-            "reason": "Предупреждение полиции о мошенниках актуально и соответствует источнику.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "tech_business-02",
-            "candidate_fingerprint": "url-aboutmanchester-co-uk-police-issue-warning-over-scam-calls-across-greater-manchester-2f3adcb3f01b",
-            "original_url_identity": "aboutmanchester.co.uk/police-issue-warning-over-scam-calls-across-greater-manchester",
-            "original_html": "• Полиция Большого Манчестера предупреждает о мошенниках, выдающих себя за полицейских, чтобы получить личные данные и информацию о криптовалюте. <a href=\"https://aboutmanchester.co.uk/police-issue-warning-over-scam-calls-across-greater-manchester\">About Manchester News</a>",
-            "keep_rejected": "known_factual_error",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 43,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "it и бизнес::уточнение количества пользователей для соответствия источнику.",
-        "actions": [
-          {
-            "line_index": 45,
-            "section": "IT и бизнес",
-            "requested_action": "patch",
-            "reason": "Уточнение количества пользователей для соответствия источнику.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "tech_business-04",
-            "candidate_fingerprint": "url-prolificnorth-co-uk-news-door-drops-go-digital-with-deliver-my-leaflets-platform-launch-3e275735958d",
-            "original_url_identity": "prolificnorth.co.uk/news/door-drops-go-digital-with-deliver-my-leaflets-platform-launch",
-            "original_html": "• Манчестерская компания LDM запустила платформу Deliver My Leaflets для онлайн-планирования и заказа рекламных листовок; на 23 сентября 2026 года зарегистрировано 144 пользователя. <a href=\"https://prolificnorth.co.uk/news/door-drops-go-digital-with-deliver-my-leaflets-platform-launch\">Prolific North Manchester</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 45,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "business/tech события для тебя::событие проходит в лондоне, что нарушает географический контракт блока.",
-        "actions": [
-          {
-            "line_index": 46,
-            "section": "Business/tech события для тебя",
+            "line_index": 64,
+            "section": "Билеты / Ticket Radar",
             "requested_action": "strip",
-            "reason": "Событие проходит в Лондоне, что нарушает географический контракт блока.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Событие проходит в Лондоне, что нарушает географический контракт блока.",
+            "reason": "Дата события указана как 21 августа 2027 года, что не соответствует текущему периоду.",
+            "risk": "date",
+            "critical_error": false,
+            "critical_problem": "",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "professional_events-01",
-            "candidate_fingerprint": "event-event-internationaltrade-jacksonville-uk-trade-mission-retail-and-brand-summit-thursday-15-oct-9-2026-10-15-a4c48f8af92d",
-            "original_url_identity": "gmchamber.co.uk/events/jacksonville-uk-trade-mission-retail-and-brand-summit",
-            "original_html": "• Сегодня, 15 октября 2026 года, в Fulham FC в Лондоне проходит \"Jacksonville UK Trade Mission: Retail and Brand Summit\" с 9:30 до 13:30, вход свободный для старших руководителей розничной торговли и брендов из США и Великобритании. <a href=\"https://gmchamber.co.uk/events/jacksonville-uk-trade-mission-retail-and-brand-summit\">GM Chamber Events</a>",
+            "plan_slot_id": "ticket_radar-11",
+            "candidate_fingerprint": "event-event-crook-on-the-wall-21st-august-2027-2027-08-21-manchester-academy-459eb6bbde41",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00",
+            "original_html": "• <b>CROOK ON THE WALL</b> — 21 августа, Manchester Academy; цена £10.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00\">Manchester Academy</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "unrenderable_line",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 64,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "русскоязычные концерты и стендап uk::исправление даты начала события на 11 ноября в соответствии с source_claim.",
+        "actions": [
+          {
+            "line_index": 66,
+            "section": "Русскоязычные концерты и стендап UK",
+            "requested_action": "patch",
+            "reason": "Исправление даты начала события на 11 ноября в соответствии с source_claim.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата начала события указана как 10 ноября, но в source_claim дата начала указана как 11 ноября.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "russian_events-01",
+            "candidate_fingerprint": "event-event-2026-11-10-empty-space-price-40-booking-https-mticket-f1d205730598",
+            "original_url_identity": "mticket.uk/ru/manchester/vasil-bajdak-stendap-4529.html",
+            "original_html": "• Василь Байдак проведет стендап-шоу с 10 ноября по 13 декабря 2026 года на площадке 'Empty Space' в Манчестере, билеты стоят £40. <a href=\"https://mticket.uk/ru/manchester/vasil-bajdak-stendap-4529.html\">MTicket Russian Concerts</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 66,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::дублирование информации о смерти алиши самуэлс",
+        "actions": [
+          {
+            "line_index": 4,
+            "section": "Свежие новости",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о смерти Алиши Самуэлс.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о смерти Алиши Самуэлс.",
+            "completeness_concept": "weapon_violence",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-newton-heath-fatal-stabbing-victim-34771725-50bb90ad3485",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/newton-heath-fatal-stabbing-victim-34771725",
+            "original_html": "• В Ньютон-Хите, на улице Доркинг,часов ночи 15 октября 2026 года, была смертельно ранена 26-летняя Алиша Самуэлс. Полиция начала расследование убийства и задержала троих подозреваемых. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/newton-heath-fatal-stabbing-victim-34771725\">MEN</a>",
+            "replacement_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-15-the-art-of-switching-off-how-clay-and-more-is-bringing-creativity-and-community-together-at-altrincham-mark-11fac6752e04",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 4,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "story:alisha samuels it|closed|named||new story|2026 10 15",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дублирование информации о фестивале neighbourhood",
+        "actions": [
+          {
+            "line_index": 21,
+            "section": "Выходные в GM",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о фестивале Neighbourhood.",
+            "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "weekend_activities-03",
+            "candidate_fingerprint": "event-id-skiddle-com-cecb4bc59515-590572568362",
+            "original_url_identity": "skiddle.com/festivals/neighbourhood",
+            "original_html": "• Фестиваль Neighbourhood пройдет 17 октября 2026 года на различных площадках Манчестера. <a href=\"https://skiddle.com/festivals/neighbourhood\">Skiddle Manchester Festivals</a>",
+            "replacement_fingerprint": "event-id-skiddle-com-4911edd31a76-4f22d50317d3",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 21,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "ticket:neighbourhood festival|2026-10-17|various venues manchester",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::дата события в прошлом.",
+        "actions": [
+          {
+            "line_index": 64,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "strip",
+            "reason": "Дата события в прошлом.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "ticket_radar-11",
+            "candidate_fingerprint": "event-event-crook-on-the-wall-21st-august-2027-2027-08-21-manchester-academy-459eb6bbde41",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00",
+            "original_html": "• <b>CROOK ON THE WALL</b> — 21 августа, Manchester Academy; цена £10.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00\">Manchester Academy</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -917,7 +1172,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 46,
+            "line_index": 64,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -925,65 +1180,106 @@
         "known_factual_error": true
       },
       {
-        "group_key": "дальние анонсы::уточнение состава участников мероприятия.",
+        "group_key": "свежие новости::critical source fact dropped in translation: 'death' (death/who/what) has no russian rendering in the shipped line",
         "actions": [
           {
-            "line_index": 49,
-            "section": "Дальние анонсы",
-            "requested_action": "patch",
-            "reason": "Уточнение состава участников мероприятия.",
-            "risk": "factual",
+            "line_index": 9,
+            "section": "Свежие новости",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
             "critical_error": true,
-            "critical_problem": "Не указано участие Billy Bragg, что может ввести в заблуждение о составе мероприятия.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "future_announcements-01",
-            "candidate_fingerprint": "event-event-squeeze-plus-very-special-guest-billy-bragg-2026-11-23-o2-apollo-manchester-5bc8e2cff49c",
-            "original_url_identity": "ticketmaster.co.uk/squeeze-plus-very-special-guest-billy-manchester-23-11-2026/event/36006374B4BE7A45",
-            "original_html": "• <b>Squeeze</b> — 23 ноября, O2 Apollo Manchester. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/squeeze-plus-very-special-guest-billy-manchester-23-11-2026/event/36006374B4BE7A45\">Ticketmaster</a>",
+            "critical_problem": "",
+            "completeness_concept": "death",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-07",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-screams-heard-cars-smashed-young-34770981-17b97b27e603",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/screams-heard-cars-smashed-young-34770981",
+            "original_html": "• В Ньютон-Хите жители слышали крики и видели, как машины были повреждены, прежде чем молодая женщина была найдена с ножевым ранением. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/screams-heard-cars-smashed-young-34770981\">MEN</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-pensioner-admits-raping-woman-drugged-34770709-b86576bb8bdf",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 49,
+            "line_index": 9,
             "passed": true,
             "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "it и бизнес::critical source fact dropped in translation: 'upskirt' (sexual_offence/charge/verdict/victim) has no russian rendering in the shipped line",
+        "actions": [
+          {
+            "line_index": 50,
+            "section": "IT и бизнес",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'upskirt' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
+            "risk": "translation",
+            "critical_error": true,
+            "critical_problem": "",
+            "completeness_concept": "sexual_offence",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "tech_business-01",
+            "candidate_fingerprint": "url-bbc-com-news-articles-ck79p174x3d3o-8cfe714d3c23",
+            "original_url_identity": "bbc.com/news/articles/ck79p174x3d3o",
+            "original_html": "• Бывший учитель Абусали Рахман, 37 лет, из Солфорда, приговорён к шести годам тюрьмы за съёмку более 100 фотографий под юбками школьниц и создание сексуализированных изображений с использованием ИИ. <a href=\"https://bbc.co.uk/news/articles/ck79p174x3d3o\">BBC Manchester</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 50,
+            "passed": true,
+            "detail": "slot removed and source absent"
           }
         ],
         "known_factual_error": true
       }
     ],
     "refetch": {
-      "attempted": 0,
+      "attempted": 1,
       "improved": 0,
       "failed": 0,
-      "empty_or_not_better": 0,
+      "empty_or_not_better": 1,
       "skipped": 1,
       "reports": [
         {
-          "fingerprint": "event-event-squeeze-plus-very-special-guest-billy-bragg-2026-11-23-o2-apollo-manchester-5bc8e2cff49c",
-          "title": "Squeeze plus Very Special Guest Billy Bragg — event 2026-11-23 — public sale 2025-11-28 09:30",
+          "fingerprint": "event-event-alice-cooper-devil-on-my-shoulder-book-tour-2026-10-16-opera-house-manchester-61bd238a399c",
+          "title": "Alice Cooper Devil on My Shoulder Book Tour — event 2026-10-16 — public sale 2026-03-13 10:00",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/squeeze-plus-very-special-guest-billy-manchester-23-11-2026/event/36006374B4BE7A45",
-          "candidate_evidence_chars": 343
+          "url": "https://ticketmaster.co.uk/alice-cooper-devil-on-my-shoulder-manchester-16-10-2026/event/36006465DF9B6722",
+          "candidate_evidence_chars": 377
+        },
+        {
+          "fingerprint": "event-id-skiddle-com-cecb4bc59515-590572568362",
+          "title": "Neighbourhood Festival",
+          "status": "empty",
+          "url": "https://skiddle.com/festivals/neighbourhood",
+          "chars": 0
         }
       ]
     },
-    "enrich_improved": 10,
+    "enrich_improved": 17,
+    "false_positive_existing_fact": 6,
+    "no_eligible_backup": 3,
     "backup_chain_exhausted": 1,
-    "false_positive_existing_fact": 4,
     "deterministic_rewrite_rejected": 2,
-    "no_eligible_backup": 2,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 49,
-      "matched_lines": 49,
+      "checked_lines": 59,
+      "matched_lines": 59,
       "applicable_lines": 4,
-      "unmatched_lines": 3,
+      "unmatched_lines": 4,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -994,215 +1290,255 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 52,
-      "resolved_in_place": 52,
-      "unresolved": 0,
-      "findings": []
+      "checked_lines": 63,
+      "resolved_in_place": 62,
+      "unresolved": 1,
+      "findings": [
+        {
+          "line_index": 59,
+          "section": "Билеты / Ticket Radar",
+          "outcome": "unresolved",
+          "code": "language_policy_defect",
+          "severity": "warning"
+        }
+      ]
     },
-    "status": "resolved"
+    "status": "unresolved"
   },
-  "notes": "Строка соответствует требованиям: инцидент на M60 в Greater Manchester, актуальная информация о дорожных ограничениях.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка о событии в Лимме, Чешир, нарушает географический контракт GM.; Исправлено количество пострадавших в аварии автобуса в Экклсе.; С",
+  "notes": "Добавление информации о ножевых ранениях необходимо для точности описания инцидента.; Прогноз погоды соответствует источнику и географическому охвату. Ошибок нет.; Ошибка в дате события в строке 7 требует исправления перед отправкой.; Все строки соответствуют требованиям и содержат актуальную информацию о транспортных ",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 6,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Текст не упоминает, что Алиша Самуэльс была найдена с ножевыми ранениями, что является важной деталью инцидента.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 7,
         "section": "Свежие новости",
-        "problem": "Событие произошло в Лимме, Чешир, что не соответствует geo_scope GM.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 14,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Неправильное количество пострадавших в аварии автобуса.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 16,
-        "section": "Футбол",
-        "problem": "Неверная информация о тренере. Майкл Каррик не является тренером Манчестер Юнайтед.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 29,
-        "section": "Выходные в GM",
-        "problem": "Некорректная информация о стоимости входа.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 31,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно. В карточке указана дата 18 октября, но в данных события указана дата начала 10 мая 2026 года.",
+        "problem": "Дата события указана неверно.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
+        "line_index": 20,
+        "section": "Выходные в GM",
+        "problem": "Некорректное название события.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 28,
+        "section": "Выходные в GM",
+        "problem": "Дублирование информации о Chorlton Makers' Market.",
+        "risk": "format",
+        "suggested_action": "strip"
+      },
+      {
         "line_index": 32,
         "section": "Выходные в GM",
-        "problem": "Дата события указана неверно. В карточке указана дата 17 октября, но в данных события указана дата начала 4 апреля 2026 года.",
+        "problem": "Дата события указана неверно.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
         "line_index": 34,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 35,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 44,
         "section": "Городской радар",
-        "problem": "Текст не упоминает, что полицейский не считал, что существует риск пожара.",
+        "problem": "Неправильное использование термина 'осужден'.",
+        "risk": "legal",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 54,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Время начала события указано неверно.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 46,
-        "section": "Business/tech события для тебя",
-        "problem": "Событие проходит в Лондоне, что нарушает географический контракт блока.",
-        "risk": "geo",
+        "line_index": 64,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
         "suggested_action": "strip"
       },
       {
-        "line_index": 49,
-        "section": "Дальние анонсы",
-        "problem": "Не указано участие Billy Bragg, что может ввести в заблуждение о составе мероприятия.",
-        "risk": "factual",
+        "line_index": 66,
+        "section": "Русскоязычные концерты и стендап UK",
+        "problem": "Дата начала события указана как 10 ноября, но в source_claim дата начала указана как 11 ноября.",
+        "risk": "date",
         "suggested_action": "repair"
+      },
+      {
+        "line_index": 4,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о смерти Алиши Самуэлс.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 21,
+        "section": "Выходные в GM",
+        "problem": "Дублирование информации о фестивале Neighbourhood.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 28,
+        "section": "Выходные в GM",
+        "problem": "Дублирование информации о Chorlton Makers' Market.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 64,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Дата события в прошлом.",
+        "risk": "date",
+        "suggested_action": "strip"
       }
     ],
     "actions": [
       {
-        "line_index": 6,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "action": "patch",
+        "replacement_text": "• В результате инцидента на Dorking Avenue в районе Newton Heath, где в 02:00 BST полиция отреагировала на \"беспорядки\", была найдена с ножевыми ранениями и убита 26-летняя Алиша Самуэльс. На данный момент задержан 25-летний мужчина по подозрению в её убийстве, а также 61-летний мужчина и 38-летняя женщина, которые подозреваются в содействии преступнику. Полиция призывает свидетелей или тех, кто имеет информацию, обратиться за помощью. Детектив инспектор Пол Костелло выразил соболезнования семье жертвы и отметил, что расследование продолжается.",
+        "reason": "Добавление информации о ножевых ранениях для полноты и точности описания инцидента.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 7,
         "section": "Свежие новости",
-        "action": "strip",
-        "reason": "Событие произошло в Лимме, Чешир, что не соответствует geo_scope GM.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 14,
-        "section": "Общественный транспорт сегодня",
         "action": "patch",
-        "replacement_text": "• Автобусы: вынесен приговор — водитель автобуса, который врезался в низкий мост в Экклсе, серьезно ранив 15 человек, был приговорен к двум годам и восьми месяцам условно, 14 октября 2026 года.",
-        "reason": "Количество пострадавших в аварии автобуса должно быть 15, а не трое.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 16,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Манчестер Юнайтед проиграл Атлетико Мадрид со счетом 0-2. Лисандро Мартинес раскритиковал руководство клуба, а тренер Эрик тен Хаг был оштрафован за высказывания.",
-        "reason": "Исправление фактической ошибки о тренере Манчестер Юнайтед.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "action": "keep",
-        "reason": "Информация о Манчестер Сити соответствует фактам и не требует изменений.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 29,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 18 октября в Waterside Farm, Otterspool Road, Romiley, Stockport, SK6 3LQ — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный для покупателей, £10 для продавцов.",
-        "reason": "Уточнение стоимости входа для продавцов.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 31,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 10 мая — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
-        "reason": "Дата события в карточке не соответствует данным события.",
+        "replacement_text": "• В субботу, 10 октября 2026 года, на открытом дне колледжа Xaverian в Рашолме произошла стычка с участием трёх молодых людей, не являющихся студентами. Полиция прибыла на место около 13:10, никто не пострадал, оружие не использовалось. Колледж опроверг слухи, заявив, что инцидент не отражает реальную ситуацию.",
+        "reason": "Дата события указана неверно.",
         "risk": "date"
+      },
+      {
+        "line_index": 20,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 17 октября 2026 года в центре Манчестера пройдет музыкальный фестиваль Neighbourhood Festival 2026, который начнется в 12:00 и соберет более 80 артистов, включая хедлайнеров Keo и Red Rum Club.",
+        "reason": "Исправление названия события на корректное.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 28,
+        "section": "Выходные в GM",
+        "action": "strip",
+        "reason": "Дублирование информации о Chorlton Makers' Market.",
+        "risk": "format"
       },
       {
         "line_index": 32,
         "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• 4 апреля — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
-        "reason": "Дата события в карточке не соответствует данным события.",
+        "replacement_text": "• 11 октября в Bowlee Community Park, Middleton — Bowlee car boot sale. На площадке: автомобильная барахолка, парковка для покупателей около £2.50.",
+        "reason": "Дата события должна быть 11 октября, а не 18 октября.",
         "risk": "date"
       },
       {
         "line_index": 34,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• На коронерском расследовании в Bolton полицейский признал, что \"ничего\" не было сделано для защиты Мишель Пирсон и ее четырех детей перед фатальным поджогом в Уокдене, Salford, в декабре 2017 года. Полицейский не считал, что существует риск пожара. Четыре ребенка погибли; Мишель умерла в 2019 году.",
-        "reason": "Добавление важной детали о том, что полицейский не считал, что существует риск пожара.",
-        "risk": "factual"
+        "section": "Выходные в GM",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Событие не актуально, так как дата указана неверно и относится к прошлому.",
+        "risk": "date"
       },
       {
-        "line_index": 42,
-        "section": "IT и бизнес",
-        "action": "keep",
-        "reason": "Информация о планах Uber по испытанию беспилотных автомобилей в Манчестере соответствует источнику и географическому контракту.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 43,
-        "section": "IT и бизнес",
-        "action": "keep",
-        "reason": "Предупреждение полиции о мошенниках актуально и соответствует источнику.",
-        "risk": "factual"
+        "line_index": 35,
+        "section": "Выходные в GM",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Событие не актуально, так как дата указана неверно и относится к прошлому.",
+        "risk": "date"
       },
       {
         "line_index": 44,
-        "section": "IT и бизнес",
-        "action": "keep",
-        "reason": "Информация о продлении лицензии программного обеспечения соответствует источнику и географическому контракту.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 45,
-        "section": "IT и бизнес",
+        "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Манчестерская компания LDM запустила платформу Deliver My Leaflets для онлайн-планирования и заказа рекламных листовок; на 23 сентября 2026 года зарегистрировано более 140 пользователей.",
-        "reason": "Уточнение количества пользователей для соответствия источнику.",
+        "replacement_text": "• Мать, помогавшая разоблачить педофила, учителя Абусали Рахмана, была ключевым свидетелем в его деле, после чего он был признан виновным.",
+        "reason": "Использование термина 'осужден' может быть юридически некорректным, если речь идет о признании вины, а не о вынесении приговора.",
+        "risk": "legal"
+      },
+      {
+        "line_index": 54,
+        "section": "Билеты / Ticket Radar",
+        "action": "patch",
+        "replacement_text": "• Сегодня в 18:00 в Opera House Manchester пройдет тур Alice Cooper: Devil on My Shoulder, где он расскажет о своей автобиографии.",
+        "reason": "Время начала события должно быть 18:00, согласно данным источника.",
         "risk": "factual"
       },
       {
-        "line_index": 46,
-        "section": "Business/tech события для тебя",
+        "line_index": 64,
+        "section": "Билеты / Ticket Radar",
         "action": "strip",
-        "reason": "Событие проходит в Лондоне, что нарушает географический контракт блока.",
-        "risk": "geo"
+        "replacement_text": "",
+        "reason": "Дата события указана как 21 августа 2027 года, что не соответствует текущему периоду.",
+        "risk": "date"
       },
       {
-        "line_index": 47,
-        "section": "Business/tech события для тебя",
-        "action": "keep",
-        "reason": "Событие соответствует географическому контракту блока.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 48,
-        "section": "Business/tech события для тебя",
-        "action": "keep",
-        "reason": "Событие соответствует географическому контракту блока.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 49,
-        "section": "Дальние анонсы",
+        "line_index": 66,
+        "section": "Русскоязычные концерты и стендап UK",
         "action": "patch",
-        "replacement_text": "• Squeeze и специальный гость Billy Bragg — 23 ноября, O2 Apollo Manchester. Билеты и время указаны на официальной странице.",
-        "reason": "Уточнение состава участников мероприятия.",
+        "replacement_text": "• Василь Байдак проведет стендап-шоу с 11 ноября по 13 декабря 2026 года на площадке 'Empty Space' в Манчестере, билеты стоят £40.",
+        "reason": "Исправление даты начала события на 11 ноября в соответствии с source_claim.",
+        "risk": "date"
+      },
+      {
+        "line_index": 4,
+        "section": "Свежие новости",
+        "action": "strip",
+        "reason": "Дублирование информации о смерти Алиши Самуэлс.",
         "risk": "factual"
+      },
+      {
+        "line_index": 21,
+        "section": "Выходные в GM",
+        "action": "strip",
+        "reason": "Дублирование информации о фестивале Neighbourhood.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 28,
+        "section": "Выходные в GM",
+        "action": "strip",
+        "reason": "Дублирование информации о Chorlton Makers' Market.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 64,
+        "section": "Билеты / Ticket Radar",
+        "action": "strip",
+        "reason": "Дата события в прошлом.",
+        "risk": "date"
       }
     ],
-    "warnings": [
-      "Уточнено количество пользователей платформы Deliver My Leaflets для соответствия источнику.",
-      "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога.",
-      "Секция 'Русскоязычные концерты и стендап UK' отсутствует, что ниже минимального порога.",
-      "Секция 'Еда, открытия и рынки' содержит только 1 элемент, что ниже минимального порога."
-    ],
-    "notes": "Строка соответствует требованиям: инцидент на M60 в Greater Manchester, актуальная информация о дорожных ограничениях.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка о событии в Лимме, Чешир, нарушает географический контракт GM.; Исправлено количество пострадавших в аварии автобуса в Экклсе.; С",
+    "warnings": [],
+    "notes": "Добавление информации о ножевых ранениях необходимо для точности описания инцидента.; Прогноз погоды соответствует источнику и географическому охвату. Ошибок нет.; Ошибка в дате события в строке 7 требует исправления перед отправкой.; Все строки соответствуют требованиям и содержат актуальную информацию о транспортных ",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 14,
+      "chunk_count": 15,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -1215,13 +1551,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2712,
-          "duration_seconds": 1.281
+          "estimated_tokens": 2694,
+          "duration_seconds": 2.78
         },
         {
           "chunk_id": "chunk-02",
@@ -1238,8 +1574,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2483,
-          "duration_seconds": 0.863
+          "estimated_tokens": 2466,
+          "duration_seconds": 1.142
         },
         {
           "chunk_id": "chunk-03",
@@ -1256,8 +1592,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7223,
-          "duration_seconds": 2.031
+          "estimated_tokens": 7044,
+          "duration_seconds": 2.266
         },
         {
           "chunk_id": "chunk-04",
@@ -1269,13 +1605,13 @@
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3598,
-          "duration_seconds": 2.667
+          "estimated_tokens": 3533,
+          "duration_seconds": 1.008
         },
         {
           "chunk_id": "chunk-05",
@@ -1292,8 +1628,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2625,
-          "duration_seconds": 1.74
+          "estimated_tokens": 2693,
+          "duration_seconds": 1.156
         },
         {
           "chunk_id": "chunk-06",
@@ -1305,13 +1641,13 @@
           "sections": [
             "Футбол"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 2,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3162,
-          "duration_seconds": 1.927
+          "estimated_tokens": 3182,
+          "duration_seconds": 0.933
         },
         {
           "chunk_id": "chunk-07",
@@ -1324,37 +1660,37 @@
             "Выходные в GM"
           ],
           "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7707,
-          "duration_seconds": 72.099
+          "estimated_tokens": 7242,
+          "duration_seconds": 44.04
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
             30,
-            33
+            36
           ],
           "sections": [
             "Выходные в GM"
           ],
           "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
+          "critical_error_count": 3,
+          "action_count": 3,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4641,
-          "duration_seconds": 3.009
+          "estimated_tokens": 6576,
+          "duration_seconds": 3.199
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            34,
-            40
+            37,
+            48
           ],
           "sections": [
             "Городской радар"
@@ -1364,15 +1700,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6025,
-          "duration_seconds": 54.574
+          "estimated_tokens": 8522,
+          "duration_seconds": 70.18
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            41,
-            41
+            49,
+            49
           ],
           "sections": [
             "Еда, открытия и рынки"
@@ -1382,80 +1718,98 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2830,
-          "duration_seconds": 1.006
+          "estimated_tokens": 2786,
+          "duration_seconds": 3.176
         },
         {
           "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            42,
-            45
+            50,
+            50
           ],
           "sections": [
             "IT и бизнес"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 4,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 4225,
-          "duration_seconds": 9.292
-        },
-        {
-          "chunk_id": "chunk-12",
-          "status": "ok",
-          "line_range": [
-            46,
-            48
-          ],
-          "sections": [
-            "Business/tech события для тебя"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 3,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 4190,
-          "duration_seconds": 9.337
-        },
-        {
-          "chunk_id": "chunk-13",
-          "status": "ok",
-          "line_range": [
-            49,
-            49
-          ],
-          "sections": [
-            "Дальние анонсы"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2726,
-          "duration_seconds": 5.237
-        },
-        {
-          "chunk_id": "chunk-14",
-          "status": "ok",
-          "line_range": [
-            50,
-            55
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5836,
-          "duration_seconds": 12.263
+          "estimated_tokens": 2653,
+          "duration_seconds": 6.024
+        },
+        {
+          "chunk_id": "chunk-12",
+          "status": "ok",
+          "line_range": [
+            51,
+            53
+          ],
+          "sections": [
+            "Business/tech события для тебя"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 4171,
+          "duration_seconds": 9.322
+        },
+        {
+          "chunk_id": "chunk-13",
+          "status": "ok",
+          "line_range": [
+            54,
+            64
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 8552,
+          "duration_seconds": 68.005
+        },
+        {
+          "chunk_id": "chunk-14",
+          "status": "ok",
+          "line_range": [
+            65,
+            65
+          ],
+          "sections": [
+            "Крупные концерты вне GM"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2768,
+          "duration_seconds": 1.014
+        },
+        {
+          "chunk_id": "chunk-15",
+          "status": "ok",
+          "line_range": [
+            66,
+            66
+          ],
+          "sections": [
+            "Русскоязычные концерты и стендап UK"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2766,
+          "duration_seconds": 6.498
         }
       ],
       "reduce": {
@@ -1463,13 +1817,13 @@
         "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "warn",
-        "critical_error_count": 0,
-        "action_count": 0,
-        "warning_count": 3,
+        "decision": "repair_required",
+        "critical_error_count": 4,
+        "action_count": 4,
+        "warning_count": 0,
         "error": "",
-        "estimated_tokens": 11511,
-        "duration_seconds": 26.533
+        "estimated_tokens": 11901,
+        "duration_seconds": 27.311
       },
       "max_workers": 3,
       "chunk_line_target": 12,
