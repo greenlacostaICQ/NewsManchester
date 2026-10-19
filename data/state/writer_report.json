@@ -1,57 +1,58 @@
 {
-  "pipeline_run_id": "20261018T080146+0100",
-  "run_at_london": "2026-10-18T08:24:14.360101+01:00",
-  "run_date_london": "2026-10-18",
+  "pipeline_run_id": "20261019T080144+0100",
+  "run_at_london": "2026-10-19T08:22:49.504726+01:00",
+  "run_date_london": "2026-10-19",
   "stage_status": "complete",
   "empty_plan": false,
   "errors": [],
-  "warnings": [],
+  "warnings": [
+    "2 plan slot(s) removed with coded reason — см. plan_execution_report.json."
+  ],
   "quality_counts": {
-    "included_candidates": 45,
-    "rendered_candidates": 43,
+    "included_candidates": 42,
+    "rendered_candidates": 39,
     "blocked_for_quality": 0,
     "held_for_editorial_quality": 0,
     "dropped_missing_draft_line": 0,
     "dropped_ticket_not_selected": 0,
     "dropped_english_passthrough": 0,
-    "dropped_low_quality": 0,
+    "dropped_low_quality": 2,
     "replaced_from_plan_backup": 1,
-    "removed_with_reason": 0
+    "removed_with_reason": 2
   },
   "section_counts": {
     "Погода": 1,
     "Главная история дня": 1,
     "Свежие новости": 9,
-    "Общественный транспорт сегодня": 6,
-    "Что важно сегодня": 0,
+    "Общественный транспорт сегодня": 7,
+    "Что важно сегодня": 1,
     "Футбол": 2,
-    "Выходные в GM": 6,
-    "Городской радар": 7,
+    "Городской радар": 10,
     "Что важно в ближайшие 7 дней": 0,
     "Еда, открытия и рынки": 0,
-    "IT и бизнес": 2,
+    "IT и бизнес": 1,
     "Business/tech события для тебя": 1,
     "Дальние анонсы": 1,
-    "Билеты / Ticket Radar": 3,
-    "Крупные концерты вне GM": 3,
-    "Русскоязычные концерты и стендап UK": 1
+    "Билеты / Ticket Radar": 4,
+    "Крупные концерты вне GM": 1,
+    "Русскоязычные концерты и стендап UK": 0
   },
-  "visible_item_count": 43,
+  "visible_item_count": 39,
   "plan_execution": {
-    "slots_total": 43,
-    "shown": 42,
+    "slots_total": 41,
+    "shown": 38,
     "replaced": 1,
-    "removed": 0,
+    "removed": 2,
     "repair_attempts_used": 6
   },
   "candidate_resolution": {
-    "input_rows": 1379,
-    "unique_fingerprints": 1140,
-    "duplicate_rows": 239,
+    "input_rows": 1377,
+    "unique_fingerprints": 1132,
+    "duplicate_rows": 245,
     "policy": "strongest_selected_enriched_row_per_fingerprint"
   },
   "controlled_enrichment": {
-    "model_enriched": 2,
+    "model_enriched": 5,
     "model_attempts": 6,
     "model_cap": "shared_plan_execution_budget",
     "short_but_complete": 0,
@@ -60,8 +61,8 @@
   "a_tier_ticket_trace": {
     "counts": {
       "total": 6,
-      "rendered": 3,
-      "not_rendered": 3,
+      "rendered": 1,
+      "not_rendered": 5,
       "blocked_by_repeat_policy": 0
     },
     "items": [
@@ -97,7 +98,7 @@
         "tier": "A",
         "notability_signal": "youtube_plus_independent_signal",
         "include": true,
-        "status": "rendered",
+        "status": "not_rendered",
         "drop_reasons": [],
         "calendar_repeat_review": {}
       },
@@ -121,7 +122,7 @@
         "tier": "A",
         "notability_signal": "wikidata_sitelinks+multi_source",
         "include": true,
-        "status": "rendered",
+        "status": "not_rendered",
         "drop_reasons": [],
         "calendar_repeat_review": {}
       },
@@ -141,23 +142,23 @@
   },
   "dropped_candidates": [
     {
-      "fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-need-worried-enzo-maresca-gives-34780347-474916973f75",
-      "title": "'Need to be worried' - Enzo Maresca gives verdict on his Man City players",
-      "category": "football",
-      "primary_block": "football",
+      "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bomb-squad-called-residential-street-34782907-5220f1776d2c",
+      "title": "Bomb squad called to Heald Green street after 'harmful chemicals' discovered",
+      "category": "media_layer",
+      "primary_block": "last_24h",
       "is_lead": false,
       "reasons": [
         "draft_line for long-format category needs ≥2 sentences (got 1).",
-        "football record item needs the key number when source carries one."
+        "draft_line contains number(s) not present in candidate evidence: 40."
       ],
-      "slot_id": "football-01",
+      "slot_id": "last_24h-03",
       "recovery_trace": [
         {
           "step": "final_replacement",
           "outcome": "attempted",
           "missing_facts": [
             "draft_line for long-format category needs ≥2 sentences (got 1).",
-            "football record item needs the key number when source carries one."
+            "draft_line contains number(s) not present in candidate evidence: 40."
           ]
         },
         {
@@ -165,44 +166,92 @@
           "outcome": "attempted",
           "missing_facts": [
             "draft_line for long-format category needs ≥2 sentences (got 1).",
-            "football record item needs the key number when source carries one."
+            "draft_line contains number(s) not present in candidate evidence: 40."
           ]
         },
         {
           "step": "must_show_model_recovery",
           "outcome": "held",
           "missing_facts": [
-            "football record item needs the key number when source carries one."
+            "draft_line contains number(s) not present in candidate evidence: 40."
           ]
         }
       ]
     },
     {
-      "fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-poll-would-you-rest-erling-34780736-b442c0e3c16c",
-      "title": "POLL: Would you rest Erling Haaland vs AEK Athens in the Champions League?",
-      "category": "football",
-      "primary_block": "football",
+      "fingerprint": "url-tfgm-com-travel-updates-travel-alerts-amended-late-night-northern-service-to-from-manchester-piccadilly-from-monday-19-6d2294bceaed",
+      "title": "Amended late night Northern service to / from Manchester Piccadilly from Monday 19 to Thursday 22 October",
+      "category": "transport",
+      "primary_block": "transport",
       "is_lead": false,
       "reasons": [
-        "draft_line for long-format category needs ≥2 sentences (got 1).",
-        "football record item needs the key number when source carries one."
+        "draft_line is too short to be a self-contained item."
       ],
-      "slot_id": "football-01",
+      "slot_id": "transport-02",
       "recovery_trace": [
         {
           "step": "final_replacement",
           "outcome": "attempted",
           "missing_facts": [
-            "draft_line for long-format category needs ≥2 sentences (got 1).",
-            "football record item needs the key number when source carries one."
+            "draft_line is too short to be a self-contained item."
+          ]
+        },
+        {
+          "step": "final_replacement",
+          "outcome": "held",
+          "missing_facts": [
+            "draft_line prose defect [repair]:empty_generic_ending:. Проверьте маршрут и время отправления перед выходом.."
           ]
         },
         {
           "step": "must_show_model_recovery",
           "outcome": "attempted",
           "missing_facts": [
-            "draft_line for long-format category needs ≥2 sentences (got 1).",
-            "football record item needs the key number when source carries one."
+            "draft_line is too short to be a self-contained item."
+          ]
+        },
+        {
+          "step": "must_show_model_recovery",
+          "outcome": "held",
+          "missing_facts": [
+            "skipped_shared_budget"
+          ]
+        }
+      ]
+    },
+    {
+      "fingerprint": "url-nationalrail-co-uk-status-and-disruptions-amended-late-night-early-morning-transpennine-express-service-between-manchester-c086cb669cb6",
+      "title": "Amended late night / early morning TransPennine Express service between Manchester Airport and Sheffield from Monday 19 to Friday 23 October",
+      "category": "transport",
+      "primary_block": "transport",
+      "is_lead": false,
+      "reasons": [
+        "draft_line prose defect [error]:bad_editorial_prose:проверьте время.",
+        "draft_line prose defect [repair]:empty_generic_ending:; проверьте время отправления перед поездкой.."
+      ],
+      "slot_id": "transport-03",
+      "recovery_trace": [
+        {
+          "step": "final_replacement",
+          "outcome": "attempted",
+          "missing_facts": [
+            "draft_line prose defect [error]:bad_editorial_prose:проверьте время.",
+            "draft_line prose defect [repair]:empty_generic_ending:; проверьте время отправления перед поездкой.."
+          ]
+        },
+        {
+          "step": "final_replacement",
+          "outcome": "held",
+          "missing_facts": [
+            "draft_line prose defect [repair]:empty_generic_ending:. Проверьте маршрут и время отправления перед выходом.."
+          ]
+        },
+        {
+          "step": "must_show_model_recovery",
+          "outcome": "attempted",
+          "missing_facts": [
+            "draft_line prose defect [error]:bad_editorial_prose:проверьте время.",
+            "draft_line prose defect [repair]:empty_generic_ending:; проверьте время отправления перед поездкой.."
           ]
         },
         {
@@ -216,98 +265,90 @@
     }
   ],
   "rendered_candidate_fingerprints": [
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-tragedy-man-dies-stockport-town-34779036-0c81fb18044d",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-tragic-death-woman-flesh-eating-34777366-0d83c16d39b0",
     "url-weather-metoffice-gov-uk-forecast-gcw2hzs1u-4760ce9bdcae",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-arndale-centre-live-armed-34779924-b86f5ec6ce8b",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-concerns-grow-missing-boy-12-34780481-49fb9eda7421",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-reveal-40-reports-of-34778963-0abdd50f5907",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-inside-salfords-hmo-crime-problem-34777584-fb8a4deae33d",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-arrested-after-liquid-thrown-34779256-4601a2a04da3",
-    "url-aboutmanchester-co-uk-ruling-over-hopwood-hall-may-not-be-the-end-of-the-legal-process-0d63c806f566",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-extremist-who-ran-taliban-recruiting-34778723-d3eb3cf96064",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-every-ofsted-school-inspection-report-34778042-cdeafc27208f",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-millions-councils-made-manchester-airport-34776906-d29e1d1cd19e",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-elderly-passenger-injured-metrolink-tram-34779446-1a69fb5e5b09",
-    "url-nationalrail-co-uk-status-and-disruptions-amended-late-night-early-morning-transpennine-express-service-between-manchester-c086cb669cb6",
-    "url-nationalrail-co-uk-status-and-disruptions-northern-buses-replace-trains-between-manchester-victoria-and-rochdale-on-sunday-63ee0a15032b",
-    "url-nationalrail-co-uk-status-and-disruptions-northern-no-trains-to-from-salford-central-on-sunday-18-october-51d4fe237404",
+    "url-bbc-com-news-articles-cm0qkl7zn4v3o-4190029c115c",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-tragedy-man-dies-prestwich-house-34781826-4b4092d5b537",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-care-service-makes-34776102-54f50417ec64",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-totally-reckless-gmp-cop-caused-34772812-320cb025253c",
+    "url-bbc-com-news-articles-cvde83z1p6e9o-5c229dda22a8",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-search-launched-three-missing-boys-34781101-5cc4cf7d943e",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-appeal-witnesses-after-woman-34781772-3a35b987612a",
+    "url-bbc-com-news-articles-c64g1zkz12k7o-74d6933d150f",
+    "url-bbc-com-news-articles-cmx239n1822yo-546d0aa9c15a",
+    "url-tfgm-com-travel-updates-travel-alerts-amended-early-morning-transpennine-express-service-to-from-manchester-victoria-o-0e48b03c4669",
+    "url-nationalrail-co-uk-status-and-disruptions-amended-early-morning-transpennine-express-service-to-from-manchester-victoria-o-4ff33f820020",
+    "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
     "url-bbc-com-news-articles-cqvgrpmljjvko-9edeabc591b6",
-    "url-altrincham-todaynews-co-uk-news-2026-10-15-altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around-9fca3677f398",
-    "url-manchestereveningnews-co-uk-sport-football-were-still-man-city-even-34780102-7f7c4b77ca75",
-    "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-appeal-34780882-e6388b63f728",
-    "event-event-florence-peake-vitalities-discover-a-brand-new-exhibition-in-home-s-main-gallery-2026-10-18-home-1fbc3a7275b1",
-    "event-id-jsonld-event-f0a617d656eb-6f333c4e2f23",
-    "event-id-jsonld-event-e3d24d824036-b577376693f7",
-    "event-id-jsonld-event-1ebe0c7281c0-bec85d64d713",
-    "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-    "event-event-between-the-covers-live-celebrating-agatha-christie-2026-10-18-lowry-45928a5c256b",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-three-metrolink-lines-close-two-34781536-5208c3b7ca38",
+    "url-aboutmanchester-co-uk-four-kilometres-of-metrolink-track-to-be-replaced-as-major-tram-disruption-for-next-two-weeks-cf216d287d1e",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-elderly-passenger-injured-metrolink-tram-34779446-1a69fb5e5b09",
     "url-manchestereveningnews-co-uk-news-greater-manchester-news-m56-traffic-live-police-shut-34780741-75fc10ed9752",
-    "url-bbc-com-news-articles-cwj0lmjp6855o-d219c43390a2",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-emergency-services-storm-prestwich-street-34780696-9078828ce382",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-next-steps-historic-hopwood-hall-34777240-5cfe5811e04d",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-legacy-mr-manchester-pat-karney-34774188-54f3e457aa57",
-    "url-altrincham-todaynews-co-uk-news-2026-10-15-police-appeal-after-10-000-air-conditioning-units-stolen-from-altrincham-opticians-9be8fd0d024f",
-    "url-altrincham-todaynews-co-uk-news-2026-10-17-popular-chorlton-indian-restaurant-sai-spice-opens-at-charlie-browns-in-hale-9911cafe22fc",
+    "url-manchestereveningnews-co-uk-sport-football-michael-carrick-something-vs-leeds-34781763-ca9568cf0be7",
+    "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-appeal-34783284-7cdf04e06fdc",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-wigan-infirmary-gets-47m-boost-34780878-7ae88330c663",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-reveal-40-reports-of-34778963-0abdd50f5907",
+    "url-itv-com-news-granada-2026-10-15-upskirting-supply-teacher-who-abused-trust-jailed-for-six-years-2f7e9741896b",
+    "url-aboutmanchester-co-uk-woman-pushed-out-of-van-in-burnage-b682984ea1b2",
+    "url-bbc-com-news-articles-c9y7l07x23ryo-3e3d1146dd29",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-the-first-five-years-life-34777511-420317904018",
+    "url-bbc-com-news-articles-c6vgx7xgrzl2o-62bfe5e00af9",
+    "url-bdaily-co-uk-articles-2026-10-18-venus-legal-strengthens-litigation-team-4a148671abd1",
+    "url-bdaily-co-uk-articles-2026-10-18-bradley-hall-appoints-associate-director-88d3e9a4e4a7",
+    "url-aboutmanchester-co-uk-lab-grown-diamond-reports-what-manchester-buyers-need-to-know-d67f2acc962d",
     "url-businesscloud-co-uk-news-50m-backed-summize-recruits-brightflag-co-founder-e4d840e21252",
-    "url-bbc-com-news-articles-c6n9r10prprjo-30e4a34960b4",
-    "event-event-internationaltrade-unlocking-opportunities-with-slovenia-tuesday-20-oct-9-30am-1-30pm-2026-10-20-old-trafford-df06fdf6b700",
-    "event-event-bellowhead-2026-11-12-bridgewater-hall-0a16bd5b75c0",
-    "event-event-james-blake-trying-times-tour-2026-10-25-manchester-new-century-hall-ed109f449983",
-    "event-event-collectorcon-18th-october-2026-2026-10-18-manchester-academy-0aca7a2844b4",
-    "event-event-crook-on-the-wall-21st-august-2027-2027-08-21-manchester-academy-459eb6bbde41",
-    "event-event-alice-cooper-devil-on-my-shoulder-book-tour-2026-10-19-pavilion-theatre-glasgow-fa066dfa8e91",
-    "event-event-masego-2026-10-21-blue-note-london-24955474e904",
-    "event-event-the-beat-dance-crazed-too-uk-tour-2026-10-25-o2-academy-bournemouth-f9e10f4faf8d",
-    "event-event-2026-11-01-manchester-academy-ab284b59641e"
+    "event-event-newmembers-discover-the-chamber-tuesday-20-oct-10am-11-45am-2026-10-20-manchester-1787cbf773a4",
+    "event-event-little-angels-big-bad-and-back-tour-2026-11-24-o2-academy-liverpool-d9e13c275339",
+    "event-event-brandon-flowers-2026-10-20-o2-apollo-manchester-579968711e47",
+    "event-event-steve-hackett-image-20-october-2026-2026-10-20-bridgewater-hall-f3cd839418fd",
+    "event-event-ezhel-20th-october-2026-2026-10-20-manchester-academy-70f74f171ce6",
+    "event-event-the-strokes-special-guests-fat-white-family-alex-cameron-mon-26-oct-2026-multiple-times-2026-10-26-co-op-live-000c9fa44a9b",
+    "event-event-alice-cooper-devil-on-my-shoulder-book-tour-2026-10-19-pavilion-theatre-glasgow-fa066dfa8e91"
   ],
   "rendered_section_by_fingerprint": {
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-tragedy-man-dies-stockport-town-34779036-0c81fb18044d": "Главная история дня",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-tragic-death-woman-flesh-eating-34777366-0d83c16d39b0": "Главная история дня",
     "url-weather-metoffice-gov-uk-forecast-gcw2hzs1u-4760ce9bdcae": "Погода",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-arndale-centre-live-armed-34779924-b86f5ec6ce8b": "Свежие новости",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-concerns-grow-missing-boy-12-34780481-49fb9eda7421": "Свежие новости",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-reveal-40-reports-of-34778963-0abdd50f5907": "Свежие новости",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-inside-salfords-hmo-crime-problem-34777584-fb8a4deae33d": "Свежие новости",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-arrested-after-liquid-thrown-34779256-4601a2a04da3": "Свежие новости",
-    "url-aboutmanchester-co-uk-ruling-over-hopwood-hall-may-not-be-the-end-of-the-legal-process-0d63c806f566": "Свежие новости",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-extremist-who-ran-taliban-recruiting-34778723-d3eb3cf96064": "Свежие новости",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-every-ofsted-school-inspection-report-34778042-cdeafc27208f": "Свежие новости",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-millions-councils-made-manchester-airport-34776906-d29e1d1cd19e": "Свежие новости",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-elderly-passenger-injured-metrolink-tram-34779446-1a69fb5e5b09": "Общественный транспорт сегодня",
-    "url-nationalrail-co-uk-status-and-disruptions-amended-late-night-early-morning-transpennine-express-service-between-manchester-c086cb669cb6": "Общественный транспорт сегодня",
-    "url-nationalrail-co-uk-status-and-disruptions-northern-buses-replace-trains-between-manchester-victoria-and-rochdale-on-sunday-63ee0a15032b": "Общественный транспорт сегодня",
-    "url-nationalrail-co-uk-status-and-disruptions-northern-no-trains-to-from-salford-central-on-sunday-18-october-51d4fe237404": "Общественный транспорт сегодня",
+    "url-bbc-com-news-articles-cm0qkl7zn4v3o-4190029c115c": "Свежие новости",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-tragedy-man-dies-prestwich-house-34781826-4b4092d5b537": "Свежие новости",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-care-service-makes-34776102-54f50417ec64": "Свежие новости",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-totally-reckless-gmp-cop-caused-34772812-320cb025253c": "Свежие новости",
+    "url-bbc-com-news-articles-cvde83z1p6e9o-5c229dda22a8": "Свежие новости",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-search-launched-three-missing-boys-34781101-5cc4cf7d943e": "Свежие новости",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-appeal-witnesses-after-woman-34781772-3a35b987612a": "Свежие новости",
+    "url-bbc-com-news-articles-c64g1zkz12k7o-74d6933d150f": "Свежие новости",
+    "url-bbc-com-news-articles-cmx239n1822yo-546d0aa9c15a": "Свежие новости",
+    "url-tfgm-com-travel-updates-travel-alerts-amended-early-morning-transpennine-express-service-to-from-manchester-victoria-o-0e48b03c4669": "Общественный транспорт сегодня",
+    "url-nationalrail-co-uk-status-and-disruptions-amended-early-morning-transpennine-express-service-to-from-manchester-victoria-o-4ff33f820020": "Общественный транспорт сегодня",
+    "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0": "Общественный транспорт сегодня",
     "url-bbc-com-news-articles-cqvgrpmljjvko-9edeabc591b6": "Общественный транспорт сегодня",
-    "url-altrincham-todaynews-co-uk-news-2026-10-15-altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around-9fca3677f398": "Общественный транспорт сегодня",
-    "url-manchestereveningnews-co-uk-sport-football-were-still-man-city-even-34780102-7f7c4b77ca75": "Футбол",
-    "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-appeal-34780882-e6388b63f728": "Футбол",
-    "event-event-florence-peake-vitalities-discover-a-brand-new-exhibition-in-home-s-main-gallery-2026-10-18-home-1fbc3a7275b1": "Выходные в GM",
-    "event-id-jsonld-event-f0a617d656eb-6f333c4e2f23": "Выходные в GM",
-    "event-id-jsonld-event-e3d24d824036-b577376693f7": "Выходные в GM",
-    "event-id-jsonld-event-1ebe0c7281c0-bec85d64d713": "Выходные в GM",
-    "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b": "Выходные в GM",
-    "event-event-between-the-covers-live-celebrating-agatha-christie-2026-10-18-lowry-45928a5c256b": "Выходные в GM",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-m56-traffic-live-police-shut-34780741-75fc10ed9752": "Городской радар",
-    "url-bbc-com-news-articles-cwj0lmjp6855o-d219c43390a2": "Городской радар",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-emergency-services-storm-prestwich-street-34780696-9078828ce382": "Городской радар",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-next-steps-historic-hopwood-hall-34777240-5cfe5811e04d": "Городской радар",
-    "url-manchestereveningnews-co-uk-news-greater-manchester-news-legacy-mr-manchester-pat-karney-34774188-54f3e457aa57": "Городской радар",
-    "url-altrincham-todaynews-co-uk-news-2026-10-15-police-appeal-after-10-000-air-conditioning-units-stolen-from-altrincham-opticians-9be8fd0d024f": "Городской радар",
-    "url-altrincham-todaynews-co-uk-news-2026-10-17-popular-chorlton-indian-restaurant-sai-spice-opens-at-charlie-browns-in-hale-9911cafe22fc": "Городской радар",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-three-metrolink-lines-close-two-34781536-5208c3b7ca38": "Общественный транспорт сегодня",
+    "url-aboutmanchester-co-uk-four-kilometres-of-metrolink-track-to-be-replaced-as-major-tram-disruption-for-next-two-weeks-cf216d287d1e": "Общественный транспорт сегодня",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-elderly-passenger-injured-metrolink-tram-34779446-1a69fb5e5b09": "Общественный транспорт сегодня",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-m56-traffic-live-police-shut-34780741-75fc10ed9752": "Что важно сегодня",
+    "url-manchestereveningnews-co-uk-sport-football-michael-carrick-something-vs-leeds-34781763-ca9568cf0be7": "Футбол",
+    "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-appeal-34783284-7cdf04e06fdc": "Футбол",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-wigan-infirmary-gets-47m-boost-34780878-7ae88330c663": "Городской радар",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-reveal-40-reports-of-34778963-0abdd50f5907": "Городской радар",
+    "url-itv-com-news-granada-2026-10-15-upskirting-supply-teacher-who-abused-trust-jailed-for-six-years-2f7e9741896b": "Городской радар",
+    "url-aboutmanchester-co-uk-woman-pushed-out-of-van-in-burnage-b682984ea1b2": "Городской радар",
+    "url-bbc-com-news-articles-c9y7l07x23ryo-3e3d1146dd29": "Городской радар",
+    "url-manchestereveningnews-co-uk-news-greater-manchester-news-the-first-five-years-life-34777511-420317904018": "Городской радар",
+    "url-bbc-com-news-articles-c6vgx7xgrzl2o-62bfe5e00af9": "Городской радар",
+    "url-bdaily-co-uk-articles-2026-10-18-venus-legal-strengthens-litigation-team-4a148671abd1": "Городской радар",
+    "url-bdaily-co-uk-articles-2026-10-18-bradley-hall-appoints-associate-director-88d3e9a4e4a7": "Городской радар",
+    "url-aboutmanchester-co-uk-lab-grown-diamond-reports-what-manchester-buyers-need-to-know-d67f2acc962d": "Городской радар",
     "url-businesscloud-co-uk-news-50m-backed-summize-recruits-brightflag-co-founder-e4d840e21252": "IT и бизнес",
-    "url-bbc-com-news-articles-c6n9r10prprjo-30e4a34960b4": "IT и бизнес",
-    "event-event-internationaltrade-unlocking-opportunities-with-slovenia-tuesday-20-oct-9-30am-1-30pm-2026-10-20-old-trafford-df06fdf6b700": "Business/tech события для тебя",
-    "event-event-bellowhead-2026-11-12-bridgewater-hall-0a16bd5b75c0": "Дальние анонсы",
-    "event-event-james-blake-trying-times-tour-2026-10-25-manchester-new-century-hall-ed109f449983": "Билеты / Ticket Radar",
-    "event-event-collectorcon-18th-october-2026-2026-10-18-manchester-academy-0aca7a2844b4": "Билеты / Ticket Radar",
-    "event-event-crook-on-the-wall-21st-august-2027-2027-08-21-manchester-academy-459eb6bbde41": "Билеты / Ticket Radar",
-    "event-event-alice-cooper-devil-on-my-shoulder-book-tour-2026-10-19-pavilion-theatre-glasgow-fa066dfa8e91": "Крупные концерты вне GM",
-    "event-event-masego-2026-10-21-blue-note-london-24955474e904": "Крупные концерты вне GM",
-    "event-event-the-beat-dance-crazed-too-uk-tour-2026-10-25-o2-academy-bournemouth-f9e10f4faf8d": "Крупные концерты вне GM",
-    "event-event-2026-11-01-manchester-academy-ab284b59641e": "Русскоязычные концерты и стендап UK"
+    "event-event-newmembers-discover-the-chamber-tuesday-20-oct-10am-11-45am-2026-10-20-manchester-1787cbf773a4": "Business/tech события для тебя",
+    "event-event-little-angels-big-bad-and-back-tour-2026-11-24-o2-academy-liverpool-d9e13c275339": "Дальние анонсы",
+    "event-event-brandon-flowers-2026-10-20-o2-apollo-manchester-579968711e47": "Билеты / Ticket Radar",
+    "event-event-steve-hackett-image-20-october-2026-2026-10-20-bridgewater-hall-f3cd839418fd": "Билеты / Ticket Radar",
+    "event-event-ezhel-20th-october-2026-2026-10-20-manchester-academy-70f74f171ce6": "Билеты / Ticket Radar",
+    "event-event-the-strokes-special-guests-fat-white-family-alex-cameron-mon-26-oct-2026-multiple-times-2026-10-26-co-op-live-000c9fa44a9b": "Билеты / Ticket Radar",
+    "event-event-alice-cooper-devil-on-my-shoulder-book-tour-2026-10-19-pavilion-theatre-glasgow-fa066dfa8e91": "Крупные концерты вне GM"
   },
   "lead": {
-    "planned_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-tragedy-man-dies-stockport-town-34779036-0c81fb18044d",
+    "planned_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-tragic-death-woman-flesh-eating-34777366-0d83c16d39b0",
     "rendered": true
   },
-  "writer_seconds": 10.64
+  "writer_seconds": 10.68
 }

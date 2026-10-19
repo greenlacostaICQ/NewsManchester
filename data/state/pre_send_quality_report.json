@@ -1,5 +1,5 @@
 {
-  "status": "ok",
+  "status": "partial",
   "decision": "warn",
   "can_send": true,
   "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
@@ -7,197 +7,116 @@
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-10-18",
-  "pipeline_run_id": "20261018T080146+0100",
-  "digest_sha256": "4282a0a0434d4f6a9ae9ab1235a20886213cb25dfd41739740568b2214c8c341",
-  "duration_seconds": 90.957,
+  "run_date_london": "2026-10-19",
+  "pipeline_run_id": "20261019T080144+0100",
+  "digest_sha256": "39f9a75d859c13bcbd6352c4a37a4791bc295ef821a2841ecd76de2cd39a6a21",
+  "duration_seconds": 80.256,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Текст содержит противоречие: сначала говорится о подозрительном падении, затем утверждается, что полиция не считает обстоятельства подозрительными.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 6,
+      "line_index": 8,
       "section": "Свежие новости",
-      "problem": "Дублирование информации о волне вандализма в Salford.",
-      "risk": "factual",
-      "suggested_action": "strip"
+      "problem": "Дата события указана неверно. 18 октября 2026 года — это воскресенье, а не суббота.",
+      "risk": "date",
+      "suggested_action": "repair"
     },
     {
-      "line_index": 17,
+      "line_index": 12,
       "section": "Общественный транспорт сегодня",
-      "problem": "Дата начала ремонтных работ указана неверно.",
+      "problem": "Некорректное указание даты.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 18,
+      "line_index": 20,
       "section": "Футбол",
-      "problem": "Текст утверждает, что клуб был признан виновным, что не соответствует источнику, где говорится о предполагаемых нарушениях.",
+      "problem": "Неверное утверждение о роли Майкла Каррика в Манчестер Юнайтед.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 28,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно. Указана дата 18 октября, но в данных события указана дата 10 мая.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 33,
+      "line_index": 27,
       "section": "Городской радар",
-      "problem": "Неверное указание роли 'boy' в контексте смерти Пэта Карни.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 37,
-      "section": "IT и бизнес",
-      "problem": "Несоответствие разделу",
-      "risk": "format",
+      "problem": "Событие происходит в Линкольншире, что выходит за пределы географического охвата GM.",
+      "risk": "geo",
       "suggested_action": "strip"
     },
     {
-      "line_index": 38,
-      "section": "Business/tech события для тебя",
-      "problem": "Дата события указана неверно: 20 октября — это вторник, а не четверг.",
-      "risk": "date",
-      "suggested_action": "repair"
+      "line_index": 34,
+      "section": "Дальние анонсы",
+      "problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
+      "risk": "geo",
+      "suggested_action": "strip"
     },
     {
-      "line_index": 42,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дата события указана как 21 августа, что уже прошло. Это не соответствует текущей дате выпуска.",
+      "line_index": 39,
+      "section": "Крупные концерты вне GM",
+      "problem": "Некорректное указание даты события.",
       "risk": "date",
-      "suggested_action": "strip"
+      "suggested_action": "repair"
     },
     {
       "line_index": 3,
       "section": "Свежие новости",
-      "problem": "Дублирование информации о вандализме в Salford.",
-      "risk": "factual",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 16,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дублирование информации о закрытии линии Metrolink в Алтринхаме.",
-      "risk": "factual",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 18,
-      "section": "Футбол",
-      "problem": "Дублирование информации о финансовых нарушениях Манчестер Сити.",
-      "risk": "factual",
-      "suggested_action": "strip"
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'killed' (death/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "death"
     }
   ],
   "actions": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• Мужчина погиб в центре Stockport после падения с высоты на Chestergate; полиция не считает обстоятельства подозрительными.",
-      "reason": "Устранение противоречия в описании инцидента.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 6,
+      "line_index": 8,
       "section": "Свежие новости",
-      "action": "strip",
-      "replacement_text": "",
-      "reason": "Дублирование информации о волне вандализма в Salford.",
-      "risk": "factual"
+      "action": "patch",
+      "replacement_text": "• Полиция разыскивает троих пропавших мальчиков, возрастом 12 и 13 лет, которые в последний раз были замечены на остановке Metrolink в Stretford в воскресенье вечером, 18 октября 2026 года, в 18:50. Полиция выражает серьезную озабоченность и просит общественность помочь в их поисках.",
+      "reason": "Исправление даты на правильный день недели.",
+      "risk": "date"
     },
     {
-      "line_index": 17,
+      "line_index": 12,
       "section": "Общественный транспорт сегодня",
       "action": "patch",
-      "replacement_text": "• Metrolink: линия Metrolink в Алтринчаме закроется на две недели с понедельника 19 октября для проведения ремонтных работ; пассажиры должны проверить маршруты, так как будет запущен прямой автобусный маршрут между Алтринчем и Манчестер Пикадилли.",
-      "reason": "Дата начала ремонтных работ указана неверно.",
+      "replacement_text": "• TransPennine Express: утренние рейсы из/в Manchester Victoria изменены 19 октября; проверьте расписание перед поездкой.",
+      "reason": "Указана некорректная дата, необходимо уточнить информацию о рейсах.",
       "risk": "date"
     },
     {
-      "line_index": 18,
+      "line_index": 20,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Болельщики Манчестер Сити проявили стойкость на первом домашнем матче после того, как клуб был обвинён в 114 нарушениях финансовых правил.",
-      "reason": "Уточнение формулировки: клуб обвинён, но не признан виновным.",
+      "replacement_text": "• Майкл Каррик изменил тактику, что помогло Манчестер Юнайтед сыграть вничью 1-1 с Лидсом в Премьер-лиге. Его эмоциональная реакция на гол показала, под каким давлением он находится.",
+      "reason": "Утверждение о роли Майкла Каррика в Манчестер Юнайтед не соответствует фактам.",
       "risk": "factual"
     },
     {
-      "line_index": 28,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 10 мая — автомобильная барахолка Burnage RFC. Вход свободный, подходит для всей семьи.",
-      "reason": "Дата события в тексте не соответствует дате в данных события.",
-      "risk": "date"
-    },
-    {
-      "line_index": 33,
+      "line_index": 27,
       "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Умер депутат совета Пэт Карни, известный как 'Мистер Манчестер', в возрасте 78 лет. Он запомнится своей борьбой за права ЛГБТ, поддержкой Харпурхи и ролью 'Мистера Рождества'.",
-      "reason": "Неверное указание роли 'boy' в контексте смерти Пэта Карни.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 37,
-      "section": "IT и бизнес",
       "action": "strip",
-      "reason": "Новость о саде на железнодорожной станции не соответствует тематике раздела 'IT и бизнес'.",
-      "risk": "format",
+      "reason": "Событие не соответствует географическому охвату GM.",
+      "risk": "geo",
       "replacement_text": ""
     },
     {
-      "line_index": 38,
-      "section": "Business/tech события для тебя",
+      "line_index": 34,
+      "section": "Дальние анонсы",
+      "action": "strip",
+      "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 39,
+      "section": "Крупные концерты вне GM",
       "action": "patch",
-      "replacement_text": "• #internationaltrade Unlocking Opportunities with Slovenia Tuesday 20 Oct 9:30am - 1:30pm — 20 октября, Old Trafford. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь.",
-      "reason": "Дата события указана неверно: 20 октября — это вторник, а не четверг.",
+      "replacement_text": "• Alice Cooper Devil on My Shoulder Book Tour — тур: 19 октября, Pavilion Theatre Glasgow; 20 октября, University of Wolverhampton at The Civic Hall.",
+      "reason": "Указание, что событие проходит сегодня, неверно, так как дата начала тура совпадает с текущей датой.",
       "risk": "date"
-    },
-    {
-      "line_index": 42,
-      "section": "Билеты / Ticket Radar",
-      "action": "strip",
-      "reason": "Дата события в прошлом, информация неактуальна.",
-      "risk": "date",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 5,
-      "section": "Свежие новости",
-      "action": "strip",
-      "reason": "Дублирование информации о вандализме в Salford.",
-      "risk": "factual",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 16,
-      "section": "Общественный транспорт сегодня",
-      "action": "strip",
-      "reason": "Дублирование информации о закрытии линии Metrolink в Алтринхаме.",
-      "risk": "factual",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 18,
-      "section": "Футбол",
-      "action": "strip",
-      "reason": "Дублирование информации о финансовых нарушениях Манчестер Сити.",
-      "risk": "factual",
-      "replacement_text": ""
     }
   ],
   "warnings": [
-    "Отсутствие блока 'Что важно сегодня' и 'Еда, открытия и рынки' снижает полноту выпуска."
+    "В блоке 'Билеты / Ticket Radar' все события указаны на одну и ту же дату — 20 октября. Это может создать впечатление, что выбор ограничен, хотя это может быть случайностью. Проверьте разнообразие дат в других частях выпуска.",
+    "judge reduce failed: parse_failed no parseable JSON"
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -206,66 +125,65 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 6,
+      "Общественный транспорт сегодня": 7,
+      "Что важно сегодня": 1,
       "Футбол": 2,
-      "Выходные в GM": 6,
-      "Городской радар": 7,
-      "IT и бизнес": 2,
+      "Городской радар": 10,
+      "IT и бизнес": 1,
       "Business/tech события для тебя": 1,
       "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 3,
-      "Крупные концерты вне GM": 3,
-      "Русскоязычные концерты и стендап UK": 1
+      "Билеты / Ticket Radar": 4,
+      "Крупные концерты вне GM": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
+      "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 7,
-      "Выходные в GM": 6,
-      "Билеты / Ticket Radar": 3,
-      "Русскоязычные концерты и стендап UK": 1,
+      "Городской радар": 10,
+      "Билеты / Ticket Radar": 4,
+      "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 1,
       "Футбол": 2
     },
-    "ticket_items": 7,
-    "core_items": 27,
+    "ticket_items": 5,
+    "core_items": 25,
     "writer_quality_counts": {
-      "included_candidates": 45,
-      "rendered_candidates": 43,
+      "included_candidates": 42,
+      "rendered_candidates": 39,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 0,
+      "dropped_low_quality": 2,
       "replaced_from_plan_backup": 1,
-      "removed_with_reason": 0
+      "removed_with_reason": 2
     },
     "source_health_counts": {
-      "ok": 106,
+      "ok": 107,
       "partial": 2,
-      "stale": 6,
-      "empty": 12,
+      "stale": 7,
+      "empty": 10,
       "failed": 4,
-      "zero_yield": 81,
+      "zero_yield": 80,
       "no_contribution_breakdown": {
         "fetch_failed": 4,
-        "all_rejected": 81,
-        "idle_no_items": 24
+        "all_rejected": 80,
+        "idle_no_items": 25
       },
       "zero_contribution_by_stage": {
-        "written": 46,
+        "written": 45,
+        "parsed": 25,
         "selected": 35,
-        "parsed": 24,
         "fetched": 4
       },
-      "weekend_source_coverage_incidents": 55
+      "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
+      "Что важно сегодня: 1 item(s), emergency floor 3",
+      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "source failures: 4"
     ]
@@ -273,376 +191,201 @@
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 33 has unchecked number/date token(s): 78",
-      "multiple actions target line 18"
+      "patch for line 8 has unchecked number/date token(s): 13, 18:50"
     ],
     "can_apply_actions": true,
-    "action_count": 12
+    "action_count": 6
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 43,
-    "matched_lines": 43,
+    "checked_lines": 39,
+    "matched_lines": 39,
     "applicable_lines": 4,
-    "unmatched_lines": 3,
-    "critical_omission_count": 0,
-    "critical_omissions": [],
+    "unmatched_lines": 0,
+    "critical_omission_count": 1,
+    "critical_omissions": [
+      {
+        "line_index": 3,
+        "source_url_key": "bbc.com/news/articles/cm0qkl7zn4v3o",
+        "concept": "death",
+        "obligation": "who/what",
+        "source_hit": "killed"
+      }
+    ],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 0,
+    "pulled_for_rework": 1,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 13,
-    "attempted": 9,
-    "applied": 9,
-    "model_patch_applied": 2,
+    "requested": 7,
+    "attempted": 4,
+    "applied": 4,
+    "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 1,
-    "stripped": 6,
+    "reserve_replacement_used": 2,
+    "stripped": 1,
     "unresolved": 1,
     "blocking_unresolved": 1,
-    "resolved": 11,
-    "resolved_in_place": 5,
+    "resolved": 6,
+    "resolved_in_place": 4,
     "resolved_by_replacement": 1,
-    "resolved_by_removal": 5,
+    "resolved_by_removal": 1,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 13,
+    "enrich_attempted": 7,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
+        "line_index": 8,
+        "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Устранение противоречия в описании инцидента.",
-        "risk": "factual",
+        "reason": "Исправление даты на правильный день недели.",
+        "risk": "date",
         "critical_error": true,
-        "critical_problem": "Текст содержит противоречие: сначала говорится о подозрительном падении, затем утверждается, что полиция не считает обстоятельства подозрительными.",
+        "critical_problem": "Дата события указана неверно. 18 октября 2026 года — это воскресенье, а не суббота.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-tragedy-man-dies-stockport-town-34779036-0c81fb18044d",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/tragedy-man-dies-stockport-town-34779036",
-        "original_html": "<b>Мужчина погиб в центре Stockport после подозрительного падения с высоты на Chestergate; полиция не считает обстоятельства подозрительными.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/tragedy-man-dies-stockport-town-34779036\">MEN</a>",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "last_24h-06",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-search-launched-three-missing-boys-34781101-5cc4cf7d943e",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/search-launched-three-missing-boys-34781101",
+        "original_html": "• Полиция разыскивает троих пропавших мальчиков, возрастом 12 и 13 лет, которые в последний раз были замечены на остановке Metrolink в Stretford в субботу вечером, 18 октября 2026 года, в 18:50. Полиция выражает серьезную озабоченность и просит общественность помочь в их поисках. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/search-launched-three-missing-boys-34781101\">MEN Latest News</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 6,
-        "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о волне вандализма в Salford.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о волне вандализма в Salford.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "last_24h-04",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-inside-salfords-hmo-crime-problem-34777584-fb8a4deae33d",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/inside-salfords-hmo-crime-problem-34777584",
-        "original_html": "• В Salford произошла волна вандализма, которая потрясла жителей, включая семью из Литл Хултона, чье окно было разбито кирпичом 13 октября 2026 года. Полиция сообщила, что атаки нацелены на HMO, но семья утверждает, что их дом не является HMO. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/inside-salfords-hmo-crime-problem-34777584\">MEN</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 17,
+        "line_index": 12,
         "section": "Общественный транспорт сегодня",
         "requested_action": "patch",
-        "reason": "Дата начала ремонтных работ указана неверно.",
+        "reason": "Указана некорректная дата, необходимо уточнить информацию о рейсах.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата начала ремонтных работ указана неверно.",
+        "critical_problem": "Некорректное указание даты.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "transport-06",
-        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-15-altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around-9fca3677f398",
-        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/10/15/altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around",
-        "original_html": "• Metrolink: линия Metrolink в Алтринчаме закроется на две недели с понедельника 19 октября для проведения ремонтных работ; пассажиры должны проверить маршруты, так как будет запущен прямой автобусный маршрут между Алтринчем и Манчестер Пикадилли. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/15/altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around\">Altrincham Today</a>",
-        "verification": "structured fact already rendered correctly",
+        "method": "model_patch",
+        "plan_slot_id": "transport-01",
+        "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-amended-early-morning-transpennine-express-service-to-from-manchester-victoria-o-0e48b03c4669",
+        "original_url_identity": "tfgm.com/travel-updates/travel-alerts/amended-early-morning-transpennine-express-service-to-from-manchester-victoria-o",
+        "original_html": "• TransPennine Express: с 19 октября по 19 октября. <a href=\"https://tfgm.com/travel-updates/travel-alerts/amended-early-morning-transpennine-express-service-to-from-manchester-victoria-o\">TfGM</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 18,
+        "line_index": 20,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Уточнение формулировки: клуб обвинён, но не признан виновным.",
+        "reason": "Утверждение о роли Майкла Каррика в Манчестер Юнайтед не соответствует фактам.",
         "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
+        "critical_error": true,
+        "critical_problem": "Неверное утверждение о роли Майкла Каррика в Манчестер Юнайтед.",
         "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "model_patch",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
         "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-were-still-man-city-even-34780102-7f7c4b77ca75",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/were-still-man-city-even-34780102",
-        "original_html": "• Болельщики Манчестер Сити проявили стойкость на первом домашнем матче после того, как клуб был признан виновным в 114 нарушениях финансовых правил. <a href=\"https://manchestereveningnews.co.uk/sport/football/were-still-man-city-even-34780102\">MEN Manchester City</a>",
-        "post_check_passed": false
-      },
-      {
-        "line_index": 28,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события в тексте не соответствует дате в данных события.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно. Указана дата 18 октября, но в данных события указана дата 10 мая.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-05",
-        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-        "original_html": "• 18 октября — автомобильная барахолка Burnage RFC. Вход свободный, подходит для всей семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-michael-carrick-something-vs-leeds-34781763-ca9568cf0be7",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/michael-carrick-something-vs-leeds-34781763",
+        "original_html": "• Майкл Каррик изменил тактику, что помогло Манчестер Юнайтед сыграть вничью 1-1 с Лидсом в Премьер-лиге. Его эмоциональная реакция на гол Брайана Мбеумо показала, под каким давлением он находится. <a href=\"https://manchestereveningnews.co.uk/sport/football/michael-carrick-something-vs-leeds-34781763\">MEN Manchester United</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 33,
+        "line_index": 27,
         "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Неверное указание роли 'boy' в контексте смерти Пэта Карни.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неверное указание роли 'boy' в контексте смерти Пэта Карни.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-05",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-legacy-mr-manchester-pat-karney-34774188-54f3e457aa57",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/legacy-mr-manchester-pat-karney-34774188",
-        "original_html": "• Умер депутат совета Пэт Карни, известный как 'Мистер Манчестер', в возрасте 78 лет. Он запомнится своей борьбой за права ЛГБТ, поддержкой Харпурхи и ролью 'Мистера Рождества'. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/legacy-mr-manchester-pat-karney-34774188\">MEN Latest News</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 37,
-        "section": "IT и бизнес",
         "requested_action": "strip",
-        "reason": "Новость о саде на железнодорожной станции не соответствует тематике раздела 'IT и бизнес'.",
-        "risk": "format",
+        "reason": "Событие не соответствует географическому охвату GM.",
+        "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Несоответствие разделу",
+        "critical_problem": "Событие происходит в Линкольншире, что выходит за пределы географического охвата GM.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "tech_business-02",
-        "candidate_fingerprint": "url-bbc-com-news-articles-c6n9r10prprjo-30e4a34960b4",
-        "original_url_identity": "bbc.com/news/articles/c6n9r10prprjo",
-        "original_html": "• Пара из Хиндли потратила 20 лет на создание общественного сада на железнодорожной станции, которая теперь номинирована на национальный конкурс \"Кубок мира\" станций. <a href=\"https://bbc.co.uk/news/articles/c6n9r10prprjo\">BBC Manchester</a>",
+        "plan_slot_id": "city_watch-06",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-the-first-five-years-life-34777511-420317904018",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/the-first-five-years-life-34777511",
+        "original_html": "• Ричард Ампех рассказывает о том, как он был неофициально усыновлён белой семьёй в Бостоне, Линкольншир, с 1984 по 1989 год в рамках схемы 'farming'. Он делится своими воспоминаниями о том, как воспринимал свою семью. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/the-first-five-years-life-34777511\">MEN</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 38,
-        "section": "Business/tech события для тебя",
-        "requested_action": "patch",
-        "reason": "Дата события указана неверно: 20 октября — это вторник, а не четверг.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно: 20 октября — это вторник, а не четверг.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "professional_events-01",
-        "candidate_fingerprint": "event-event-internationaltrade-unlocking-opportunities-with-slovenia-tuesday-20-oct-9-30am-1-30pm-2026-10-20-old-trafford-df06fdf6b700",
-        "original_url_identity": "gmchamber.co.uk/events/unlocking-opportunities-with-slovenia",
-        "original_html": "• #internationaltrade Unlocking Opportunities with Slovenia Tuesday 20 Oct 9:30am - 1:30pm — 20 октября, Old Trafford. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь. <a href=\"https://gmchamber.co.uk/events/unlocking-opportunities-with-slovenia\">GM Chamber Events</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 42,
-        "section": "Билеты / Ticket Radar",
+        "line_index": 34,
+        "section": "Дальние анонсы",
         "requested_action": "strip",
-        "reason": "Дата события в прошлом, информация неактуальна.",
-        "risk": "date",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+        "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Дата события указана как 21 августа, что уже прошло. Это не соответствует текущей дате выпуска.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "ticket_radar-03",
-        "candidate_fingerprint": "event-event-crook-on-the-wall-21st-august-2027-2027-08-21-manchester-academy-459eb6bbde41",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00",
-        "original_html": "• <b>CROOK ON THE WALL</b> — 21 августа, Manchester Academy; цена £10.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00\">Manchester Academy</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 5,
-        "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о вандализме в Salford.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
+        "critical_problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
         "completeness_concept": "",
         "outcome": "resolved_by_replacement",
-        "method": "removed",
-        "plan_slot_id": "last_24h-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-reveal-40-reports-of-34778963-0abdd50f5907",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-reveal-40-reports-of-34778963",
-        "original_html": "• Полиция Salford сообщила о 40 случаях вандализма в рамках преступной волны, связанной с домами многократного проживания (HMO). С 5 октября зарегистрировано 40 инцидентов, большинство из которых произошло в Salford. В полиции отметили, что 38 случаев имеют расистский или религиозный подтекст, а также что некоторые объекты были ошибочно приняты за HMOs. Ведется активное расследование, включая мониторинг социальных сетей. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-reveal-40-reports-of-34778963\">MEN</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
+        "method": "reserve_replacement",
+        "plan_slot_id": "future_announcements-01",
+        "candidate_fingerprint": "event-event-little-angels-big-bad-and-back-tour-2026-11-24-o2-academy-liverpool-d9e13c275339",
+        "original_url_identity": "ticketmaster.co.uk/little-angels-big-bad-and-back-liverpool-24-11-2026/event/3E006435E6324CCA",
+        "original_html": "• <b>Little Angels Big Bad and Back Tour</b> — 24 ноября, O2 Academy Liverpool. Билеты уже в продаже на официальной странице. <a href=\"https://ticketmaster.co.uk/little-angels-big-bad-and-back-liverpool-24-11-2026/event/3E006435E6324CCA\">Ticketmaster</a>",
+        "replacement_fingerprint": "event-id-skiddle-com-cdceaf747fb6-578d3d9c3a95",
         "post_check_passed": true
       },
       {
-        "line_index": 16,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о закрытии линии Metrolink в Алтринхаме.",
-        "risk": "factual",
+        "line_index": 39,
+        "section": "Крупные концерты вне GM",
+        "requested_action": "patch",
+        "reason": "Указание, что событие проходит сегодня, неверно, так как дата начала тура совпадает с текущей датой.",
+        "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дублирование информации о закрытии линии Metrolink в Алтринхаме.",
+        "critical_problem": "Некорректное указание даты события.",
         "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-05",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cqvgrpmljjvko-9edeabc591b6",
-        "original_url_identity": "bbc.com/news/articles/cqvgrpmljjvko",
-        "original_html": "• Metrolink: линии Metrolink в Алтринхаме, Trafford-Центре и Eccles будут закрыты на две недели с понедельника из-за инженерных работ; будут замещающие автобусы и изменения маршрутов до 4 ноября. <a href=\"https://bbc.co.uk/news/articles/cqvgrpmljjvko\">BBC Manchester</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 18,
-        "section": "Футбол",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о финансовых нарушениях Манчестер Сити.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Текст утверждает, что клуб был признан виновным, что не соответствует источнику, где говорится о предполагаемых нарушениях.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-were-still-man-city-even-34780102-7f7c4b77ca75",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/were-still-man-city-even-34780102",
-        "original_html": "• Болельщики Манчестер Сити проявили стойкость на первом домашнем матче после того, как клуб был признан виновным в 114 нарушениях финансовых правил. <a href=\"https://manchestereveningnews.co.uk/sport/football/were-still-man-city-even-34780102\">MEN Manchester City</a>",
-        "backup_outcome": "backup_chain_exhausted",
-        "removal_reason": "duplicate_after_plan",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "outside_gm_tickets-01",
+        "candidate_fingerprint": "event-event-alice-cooper-devil-on-my-shoulder-book-tour-2026-10-19-pavilion-theatre-glasgow-fa066dfa8e91",
+        "original_url_identity": "ticketmaster.co.uk/alice-cooper-devil-on-my-shoulder-glasgow-19-10-2026/event/36006465F9828511",
+        "original_html": "• <b>Alice Cooper Devil on My Shoulder Book Tour</b> — тур: 19 октября, Pavilion Theatre Glasgow; 20 октября, University of Wolverhampton at The Civic Hall. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/alice-cooper-devil-on-my-shoulder-glasgow-19-10-2026/event/36006465F9828511\">Ticketmaster</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
         "line_index": 3,
         "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о вандализме в Salford.",
-        "risk": "factual",
+        "requested_action": "replace",
+        "reason": "critical source fact dropped in translation: 'killed' (death/who/what) has no Russian rendering in the shipped line",
+        "risk": "translation",
         "critical_error": true,
         "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
+        "completeness_concept": "death",
+        "outcome": "unresolved",
         "method": "reserve_replacement",
         "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-arndale-centre-live-armed-34779924-b86f5ec6ce8b",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchester-arndale-centre-live-armed-34779924",
-        "original_html": "• Вооруженная полиция отреагировала на нападение с ножом на парковке Arndale Centre в центре Манчестера. • 14-летний мальчик был госпитализирован с серьезными травмами. • Арестов пока не было; полиция советует избегать этой области. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchester-arndale-centre-live-armed-34779924\">MEN</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-high-street-near-manchester-traders-34779841-62a40aab9aa5",
-        "post_check_passed": true
+        "candidate_fingerprint": "url-bbc-com-news-articles-cm0qkl7zn4v3o-4190029c115c",
+        "original_url_identity": "bbc.com/news/articles/cm0qkl7zn4v3o",
+        "original_html": "• В результате погони за мотоциклистом, который вел себя опасно на M60, произошла трагедия. Вечером 18 октября 2026 года, после того как полиция остановила мотоцикл на M56, гонщик выбежал на проезжую часть и был сбит другим автомобилем. Полиция призывает свидетелей и обладателей видеозаписей обратиться с информацией. <a href=\"https://bbc.co.uk/news/articles/cm0qkl7zn4v3o\">BBC Manchester</a>",
+        "replacement_fingerprint": "url-aboutmanchester-co-uk-ruling-over-hopwood-hall-may-not-be-the-end-of-the-legal-process-0d63c806f566",
+        "post_check_passed": false
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::устранение противоречия в описании инцидента.",
+        "group_key": "свежие новости::исправление даты на правильный день недели.",
         "actions": [
           {
-            "line_index": 1,
-            "section": "Главная история дня",
-            "requested_action": "patch",
-            "reason": "Устранение противоречия в описании инцидента.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Текст содержит противоречие: сначала говорится о подозрительном падении, затем утверждается, что полиция не считает обстоятельства подозрительными.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-tragedy-man-dies-stockport-town-34779036-0c81fb18044d",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/tragedy-man-dies-stockport-town-34779036",
-            "original_html": "<b>Мужчина погиб в центре Stockport после подозрительного падения с высоты на Chestergate; полиция не считает обстоятельства подозрительными.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/tragedy-man-dies-stockport-town-34779036\">MEN</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 1,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::дублирование информации о волне вандализма в salford",
-        "actions": [
-          {
-            "line_index": 6,
+            "line_index": 8,
             "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о волне вандализма в Salford.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о волне вандализма в Salford.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "last_24h-04",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-inside-salfords-hmo-crime-problem-34777584-fb8a4deae33d",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/inside-salfords-hmo-crime-problem-34777584",
-            "original_html": "• В Salford произошла волна вандализма, которая потрясла жителей, включая семью из Литл Хултона, чье окно было разбито кирпичом 13 октября 2026 года. Полиция сообщила, что атаки нацелены на HMO, но семья утверждает, что их дом не является HMO. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/inside-salfords-hmo-crime-problem-34777584\">MEN</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 6,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "topic:incident:salford inside salford s hmo crime problem the people trying to make sense of the mayhem|new story|2026 10 18",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::дата начала ремонтных работ указана неверно.",
-        "actions": [
-          {
-            "line_index": 17,
-            "section": "Общественный транспорт сегодня",
             "requested_action": "patch",
-            "reason": "Дата начала ремонтных работ указана неверно.",
+            "reason": "Исправление даты на правильный день недели.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата начала ремонтных работ указана неверно.",
+            "critical_problem": "Дата события указана неверно. 18 октября 2026 года — это воскресенье, а не суббота.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "transport-06",
-            "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-15-altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around-9fca3677f398",
-            "original_url_identity": "altrincham.todaynews.co.uk/news/2026/10/15/altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around",
-            "original_html": "• Metrolink: линия Metrolink в Алтринчаме закроется на две недели с понедельника 19 октября для проведения ремонтных работ; пассажиры должны проверить маршруты, так как будет запущен прямой автобусный маршрут между Алтринчем и Манчестер Пикадилли. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/15/altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around\">Altrincham Today</a>",
+            "plan_slot_id": "last_24h-06",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-search-launched-three-missing-boys-34781101-5cc4cf7d943e",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/search-launched-three-missing-boys-34781101",
+            "original_html": "• Полиция разыскивает троих пропавших мальчиков, возрастом 12 и 13 лет, которые в последний раз были замечены на остановке Metrolink в Stretford в субботу вечером, 18 октября 2026 года, в 18:50. Полиция выражает серьезную озабоченность и просит общественность помочь в их поисках. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/search-launched-three-missing-boys-34781101\">MEN Latest News</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -650,7 +393,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 17,
+            "line_index": 8,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -658,340 +401,193 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::уточнение формулировки: клуб обвинён, но не признан виновным.",
+        "group_key": "общественный транспорт сегодня::указана некорректная дата, необходимо уточнить информацию о рейсах.",
         "actions": [
           {
-            "line_index": 18,
+            "line_index": 12,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "patch",
+            "reason": "Указана некорректная дата, необходимо уточнить информацию о рейсах.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Некорректное указание даты.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "transport-01",
+            "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-amended-early-morning-transpennine-express-service-to-from-manchester-victoria-o-0e48b03c4669",
+            "original_url_identity": "tfgm.com/travel-updates/travel-alerts/amended-early-morning-transpennine-express-service-to-from-manchester-victoria-o",
+            "original_html": "• TransPennine Express: с 19 октября по 19 октября. <a href=\"https://tfgm.com/travel-updates/travel-alerts/amended-early-morning-transpennine-express-service-to-from-manchester-victoria-o\">TfGM</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 12,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::утверждение о роли майкла каррика в манчестер юнайтед не соответствует фактам.",
+        "actions": [
+          {
+            "line_index": 20,
             "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Уточнение формулировки: клуб обвинён, но не признан виновным.",
+            "reason": "Утверждение о роли Майкла Каррика в Манчестер Юнайтед не соответствует фактам.",
             "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
+            "critical_error": true,
+            "critical_problem": "Неверное утверждение о роли Майкла Каррика в Манчестер Юнайтед.",
             "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "model_patch",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
             "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-were-still-man-city-even-34780102-7f7c4b77ca75",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/were-still-man-city-even-34780102",
-            "original_html": "• Болельщики Манчестер Сити проявили стойкость на первом домашнем матче после того, как клуб был признан виновным в 114 нарушениях финансовых правил. <a href=\"https://manchestereveningnews.co.uk/sport/football/were-still-man-city-even-34780102\">MEN Manchester City</a>",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-michael-carrick-something-vs-leeds-34781763-ca9568cf0be7",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/michael-carrick-something-vs-leeds-34781763",
+            "original_html": "• Майкл Каррик изменил тактику, что помогло Манчестер Юнайтед сыграть вничью 1-1 с Лидсом в Премьер-лиге. Его эмоциональная реакция на гол Брайана Мбеумо показала, под каким давлением он находится. <a href=\"https://manchestereveningnews.co.uk/sport/football/michael-carrick-something-vs-leeds-34781763\">MEN Manchester United</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 20,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::событие не соответствует географическому охвату gm.",
+        "actions": [
+          {
+            "line_index": 27,
+            "section": "Городской радар",
+            "requested_action": "strip",
+            "reason": "Событие не соответствует географическому охвату GM.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие происходит в Линкольншире, что выходит за пределы географического охвата GM.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "city_watch-06",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-the-first-five-years-life-34777511-420317904018",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/the-first-five-years-life-34777511",
+            "original_html": "• Ричард Ампех рассказывает о том, как он был неофициально усыновлён белой семьёй в Бостоне, Линкольншир, с 1984 по 1989 год в рамках схемы 'farming'. Он делится своими воспоминаниями о том, как воспринимал свою семью. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/the-first-five-years-life-34777511\">MEN</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 27,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "дальние анонсы::событие проходит в ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+        "actions": [
+          {
+            "line_index": 34,
+            "section": "Дальние анонсы",
+            "requested_action": "strip",
+            "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "future_announcements-01",
+            "candidate_fingerprint": "event-event-little-angels-big-bad-and-back-tour-2026-11-24-o2-academy-liverpool-d9e13c275339",
+            "original_url_identity": "ticketmaster.co.uk/little-angels-big-bad-and-back-liverpool-24-11-2026/event/3E006435E6324CCA",
+            "original_html": "• <b>Little Angels Big Bad and Back Tour</b> — 24 ноября, O2 Academy Liverpool. Билеты уже в продаже на официальной странице. <a href=\"https://ticketmaster.co.uk/little-angels-big-bad-and-back-liverpool-24-11-2026/event/3E006435E6324CCA\">Ticketmaster</a>",
+            "replacement_fingerprint": "event-id-skiddle-com-cdceaf747fb6-578d3d9c3a95",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 34,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "крупные концерты вне gm::указание, что событие проходит сегодня, неверно, так как дата начала тура совпадает с текущей датой.",
+        "actions": [
+          {
+            "line_index": 39,
+            "section": "Крупные концерты вне GM",
+            "requested_action": "patch",
+            "reason": "Указание, что событие проходит сегодня, неверно, так как дата начала тура совпадает с текущей датой.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Некорректное указание даты события.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "outside_gm_tickets-01",
+            "candidate_fingerprint": "event-event-alice-cooper-devil-on-my-shoulder-book-tour-2026-10-19-pavilion-theatre-glasgow-fa066dfa8e91",
+            "original_url_identity": "ticketmaster.co.uk/alice-cooper-devil-on-my-shoulder-glasgow-19-10-2026/event/36006465F9828511",
+            "original_html": "• <b>Alice Cooper Devil on My Shoulder Book Tour</b> — тур: 19 октября, Pavilion Theatre Glasgow; 20 октября, University of Wolverhampton at The Civic Hall. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/alice-cooper-devil-on-my-shoulder-glasgow-19-10-2026/event/36006465F9828511\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 39,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::critical source fact dropped in translation: 'killed' (death/who/what) has no russian rendering in the shipped line",
+        "actions": [
+          {
+            "line_index": 3,
+            "section": "Свежие новости",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'killed' (death/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
+            "critical_error": true,
+            "critical_problem": "",
+            "completeness_concept": "death",
+            "outcome": "unresolved",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cm0qkl7zn4v3o-4190029c115c",
+            "original_url_identity": "bbc.com/news/articles/cm0qkl7zn4v3o",
+            "original_html": "• В результате погони за мотоциклистом, который вел себя опасно на M60, произошла трагедия. Вечером 18 октября 2026 года, после того как полиция остановила мотоцикл на M56, гонщик выбежал на проезжую часть и был сбит другим автомобилем. Полиция призывает свидетелей и обладателей видеозаписей обратиться с информацией. <a href=\"https://bbc.co.uk/news/articles/cm0qkl7zn4v3o\">BBC Manchester</a>",
+            "replacement_fingerprint": "url-aboutmanchester-co-uk-ruling-over-hopwood-hall-may-not-be-the-end-of-the-legal-process-0d63c806f566",
             "post_check_passed": false
           }
         ],
         "outcome": "unresolved",
         "post_checks": [
           {
-            "line_index": 18,
+            "line_index": 3,
             "passed": false,
-            "detail": "final line missing"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дата события в тексте не соответствует дате в данных события.",
-        "actions": [
-          {
-            "line_index": 28,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события в тексте не соответствует дате в данных события.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно. Указана дата 18 октября, но в данных события указана дата 10 мая.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-05",
-            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-            "original_html": "• 18 октября — автомобильная барахолка Burnage RFC. Вход свободный, подходит для всей семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 28,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::неверное указание роли 'boy' в контексте смерти пэта карни.",
-        "actions": [
-          {
-            "line_index": 33,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Неверное указание роли 'boy' в контексте смерти Пэта Карни.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неверное указание роли 'boy' в контексте смерти Пэта Карни.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-05",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-legacy-mr-manchester-pat-karney-34774188-54f3e457aa57",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/legacy-mr-manchester-pat-karney-34774188",
-            "original_html": "• Умер депутат совета Пэт Карни, известный как 'Мистер Манчестер', в возрасте 78 лет. Он запомнится своей борьбой за права ЛГБТ, поддержкой Харпурхи и ролью 'Мистера Рождества'. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/legacy-mr-manchester-pat-karney-34774188\">MEN Latest News</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 33,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "it и бизнес::новость о саде на железнодорожной станции не соответствует тематике раздела 'it и бизнес'.",
-        "actions": [
-          {
-            "line_index": 37,
-            "section": "IT и бизнес",
-            "requested_action": "strip",
-            "reason": "Новость о саде на железнодорожной станции не соответствует тематике раздела 'IT и бизнес'.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Несоответствие разделу",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "tech_business-02",
-            "candidate_fingerprint": "url-bbc-com-news-articles-c6n9r10prprjo-30e4a34960b4",
-            "original_url_identity": "bbc.com/news/articles/c6n9r10prprjo",
-            "original_html": "• Пара из Хиндли потратила 20 лет на создание общественного сада на железнодорожной станции, которая теперь номинирована на национальный конкурс \"Кубок мира\" станций. <a href=\"https://bbc.co.uk/news/articles/c6n9r10prprjo\">BBC Manchester</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 37,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "business/tech события для тебя::дата события указана неверно: 20 октября — это вторник, а не четверг.",
-        "actions": [
-          {
-            "line_index": 38,
-            "section": "Business/tech события для тебя",
-            "requested_action": "patch",
-            "reason": "Дата события указана неверно: 20 октября — это вторник, а не четверг.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно: 20 октября — это вторник, а не четверг.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "professional_events-01",
-            "candidate_fingerprint": "event-event-internationaltrade-unlocking-opportunities-with-slovenia-tuesday-20-oct-9-30am-1-30pm-2026-10-20-old-trafford-df06fdf6b700",
-            "original_url_identity": "gmchamber.co.uk/events/unlocking-opportunities-with-slovenia",
-            "original_html": "• #internationaltrade Unlocking Opportunities with Slovenia Tuesday 20 Oct 9:30am - 1:30pm — 20 октября, Old Trafford. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь. <a href=\"https://gmchamber.co.uk/events/unlocking-opportunities-with-slovenia\">GM Chamber Events</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 38,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::дата события в прошлом, информация неактуальна.",
-        "actions": [
-          {
-            "line_index": 42,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "strip",
-            "reason": "Дата события в прошлом, информация неактуальна.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана как 21 августа, что уже прошло. Это не соответствует текущей дате выпуска.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "ticket_radar-03",
-            "candidate_fingerprint": "event-event-crook-on-the-wall-21st-august-2027-2027-08-21-manchester-academy-459eb6bbde41",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00",
-            "original_html": "• <b>CROOK ON THE WALL</b> — 21 августа, Manchester Academy; цена £10.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00\">Manchester Academy</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 42,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::дублирование информации о вандализме в salford",
-        "actions": [
-          {
-            "line_index": 5,
-            "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о вандализме в Salford.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "removed",
-            "plan_slot_id": "last_24h-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-reveal-40-reports-of-34778963-0abdd50f5907",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-reveal-40-reports-of-34778963",
-            "original_html": "• Полиция Salford сообщила о 40 случаях вандализма в рамках преступной волны, связанной с домами многократного проживания (HMO). С 5 октября зарегистрировано 40 инцидентов, большинство из которых произошло в Salford. В полиции отметили, что 38 случаев имеют расистский или религиозный подтекст, а также что некоторые объекты были ошибочно приняты за HMOs. Ведется активное расследование, включая мониторинг социальных сетей. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-reveal-40-reports-of-34778963\">MEN</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 3,
-            "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о вандализме в Salford.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-arndale-centre-live-armed-34779924-b86f5ec6ce8b",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchester-arndale-centre-live-armed-34779924",
-            "original_html": "• Вооруженная полиция отреагировала на нападение с ножом на парковке Arndale Centre в центре Манчестера. • 14-летний мальчик был госпитализирован с серьезными травмами. • Арестов пока не было; полиция советует избегать этой области. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchester-arndale-centre-live-armed-34779924\">MEN</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-high-street-near-manchester-traders-34779841-62a40aab9aa5",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 5,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "line_index": 3,
-            "passed": true,
-            "detail": "post-check passed"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "story:public safety after incident|manchester|armed police rush to stabbing at arndale centre car park|new story|2026 10 17",
-            "visible_count": 0,
-            "passed": true
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "topic:incident:salford stockport police reveal 40 reports of criminal damage in hmo crime spree|announced|2026 10 17",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::дублирование информации о закрытии линии metrolink в алтринхаме",
-        "actions": [
-          {
-            "line_index": 16,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о закрытии линии Metrolink в Алтринхаме.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о закрытии линии Metrolink в Алтринхаме.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-05",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cqvgrpmljjvko-9edeabc591b6",
-            "original_url_identity": "bbc.com/news/articles/cqvgrpmljjvko",
-            "original_html": "• Metrolink: линии Metrolink в Алтринхаме, Trafford-Центре и Eccles будут закрыты на две недели с понедельника из-за инженерных работ; будут замещающие автобусы и изменения маршрутов до 4 ноября. <a href=\"https://bbc.co.uk/news/articles/cqvgrpmljjvko\">BBC Manchester</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 16,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "story:bbc|metrolink|tfgm|transport|rochdale|trafford|new story|2026 10 18",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::дублирование информации о финансовых нарушениях манчестер сити",
-        "actions": [
-          {
-            "line_index": 18,
-            "section": "Футбол",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о финансовых нарушениях Манчестер Сити.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Текст утверждает, что клуб был признан виновным, что не соответствует источнику, где говорится о предполагаемых нарушениях.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-were-still-man-city-even-34780102-7f7c4b77ca75",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/were-still-man-city-even-34780102",
-            "original_html": "• Болельщики Манчестер Сити проявили стойкость на первом домашнем матче после того, как клуб был признан виновным в 114 нарушениях финансовых правил. <a href=\"https://manchestereveningnews.co.uk/sport/football/were-still-man-city-even-34780102\">MEN Manchester City</a>",
-            "backup_outcome": "backup_chain_exhausted",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 18,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "topic:incident:manchester we re still man city even if we re in division two playing ramsbottom united or ashton fc|follow up|2026 10 17",
-            "visible_count": 0,
-            "passed": true
+            "detail": "shared prose policy still fails"
           }
         ],
         "known_factual_error": true
@@ -1002,18 +598,44 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 0
+      "skipped": 3,
+      "reports": [
+        {
+          "fingerprint": "url-tfgm-com-travel-updates-travel-alerts-amended-early-morning-transpennine-express-service-to-from-manchester-victoria-o-0e48b03c4669",
+          "title": "Amended early morning TransPennine Express service to / from Manchester Victoria on Monday 19 October",
+          "status": "skipped",
+          "reason": "tfgm_ephemeral_alert",
+          "url": "https://tfgm.com/travel-updates/travel-alerts/amended-early-morning-transpennine-express-service-to-from-manchester-victoria-o",
+          "candidate_evidence_chars": 173
+        },
+        {
+          "fingerprint": "event-event-little-angels-big-bad-and-back-tour-2026-11-24-o2-academy-liverpool-d9e13c275339",
+          "title": "Little Angels Big Bad and Back Tour — event 2026-11-24 — public sale 2026-02-13 09:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/little-angels-big-bad-and-back-liverpool-24-11-2026/event/3E006435E6324CCA",
+          "candidate_evidence_chars": 345
+        },
+        {
+          "fingerprint": "event-event-alice-cooper-devil-on-my-shoulder-book-tour-2026-10-19-pavilion-theatre-glasgow-fa066dfa8e91",
+          "title": "Alice Cooper Devil on My Shoulder Book Tour — event 2026-10-19 — public sale 2026-03-13 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/alice-cooper-devil-on-my-shoulder-glasgow-19-10-2026/event/36006465F9828511",
+          "candidate_evidence_chars": 373
+        }
+      ]
     },
-    "enrich_improved": 13,
-    "no_eligible_backup": 5,
-    "false_positive_existing_fact": 4,
-    "backup_chain_exhausted": 1,
+    "enrich_improved": 7,
+    "false_positive_existing_fact": 3,
+    "no_eligible_backup": 1,
+    "deterministic_rewrite_rejected": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 37,
-      "matched_lines": 37,
+      "checked_lines": 38,
+      "matched_lines": 38,
       "applicable_lines": 3,
-      "unmatched_lines": 3,
+      "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -1024,204 +646,126 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 40,
-      "resolved_in_place": 40,
-      "unresolved": 0,
-      "findings": []
+      "checked_lines": 38,
+      "resolved_in_place": 37,
+      "unresolved": 1,
+      "findings": [
+        {
+          "line_index": 3,
+          "section": "Свежие новости",
+          "outcome": "unresolved",
+          "code": "language_policy_defect",
+          "severity": "warning"
+        }
+      ]
     },
     "status": "unresolved"
   },
-  "notes": "Исправлено противоречие в описании инцидента, чтобы избежать путаницы.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка 6 дублирует информацию из строки 5, что может вызвать путаницу.; Ошибка в дате начала ремонтных работ на линии Metrolink в Алтринчаме.; Исправлена ошибка в формулировке обвинени",
+  "notes": "Строка соответствует требованиям: событие в GM, факты точны, нет юридических или переводческих ошибок.; Прогноз погоды соответствует данным Met Office и географическому охвату GM.; Исправлена ошибка в дате события на правильный день недели.; Ошибка в дате в строке 12 требует исправления для корректного информирования ч",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Текст содержит противоречие: сначала говорится о подозрительном падении, затем утверждается, что полиция не считает обстоятельства подозрительными.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 6,
+        "line_index": 8,
         "section": "Свежие новости",
-        "problem": "Дублирование информации о волне вандализма в Salford.",
-        "risk": "factual",
-        "suggested_action": "strip"
+        "problem": "Дата события указана неверно. 18 октября 2026 года — это воскресенье, а не суббота.",
+        "risk": "date",
+        "suggested_action": "repair"
       },
       {
-        "line_index": 17,
+        "line_index": 12,
         "section": "Общественный транспорт сегодня",
-        "problem": "Дата начала ремонтных работ указана неверно.",
+        "problem": "Некорректное указание даты.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 18,
+        "line_index": 20,
         "section": "Футбол",
-        "problem": "Текст утверждает, что клуб был признан виновным, что не соответствует источнику, где говорится о предполагаемых нарушениях.",
+        "problem": "Неверное утверждение о роли Майкла Каррика в Манчестер Юнайтед.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 28,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно. Указана дата 18 октября, но в данных события указана дата 10 мая.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 33,
+        "line_index": 27,
         "section": "Городской радар",
-        "problem": "Неверное указание роли 'boy' в контексте смерти Пэта Карни.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 37,
-        "section": "IT и бизнес",
-        "problem": "Несоответствие разделу",
-        "risk": "format",
+        "problem": "Событие происходит в Линкольншире, что выходит за пределы географического охвата GM.",
+        "risk": "geo",
         "suggested_action": "strip"
       },
       {
-        "line_index": 38,
-        "section": "Business/tech события для тебя",
-        "problem": "Дата события указана неверно: 20 октября — это вторник, а не четверг.",
+        "line_index": 34,
+        "section": "Дальние анонсы",
+        "problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 39,
+        "section": "Крупные концерты вне GM",
+        "problem": "Некорректное указание даты события.",
         "risk": "date",
         "suggested_action": "repair"
-      },
-      {
-        "line_index": 42,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дата события указана как 21 августа, что уже прошло. Это не соответствует текущей дате выпуска.",
-        "risk": "date",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "problem": "Дублирование информации о вандализме в Salford.",
-        "risk": "factual",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 16,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дублирование информации о закрытии линии Metrolink в Алтринхаме.",
-        "risk": "factual",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 18,
-        "section": "Футбол",
-        "problem": "Дублирование информации о финансовых нарушениях Манчестер Сити.",
-        "risk": "factual",
-        "suggested_action": "strip"
       }
     ],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• Мужчина погиб в центре Stockport после падения с высоты на Chestergate; полиция не считает обстоятельства подозрительными.",
-        "reason": "Устранение противоречия в описании инцидента.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 6,
+        "line_index": 8,
         "section": "Свежие новости",
-        "action": "strip",
-        "replacement_text": "",
-        "reason": "Дублирование информации о волне вандализма в Salford.",
-        "risk": "factual"
+        "action": "patch",
+        "replacement_text": "• Полиция разыскивает троих пропавших мальчиков, возрастом 12 и 13 лет, которые в последний раз были замечены на остановке Metrolink в Stretford в воскресенье вечером, 18 октября 2026 года, в 18:50. Полиция выражает серьезную озабоченность и просит общественность помочь в их поисках.",
+        "reason": "Исправление даты на правильный день недели.",
+        "risk": "date"
       },
       {
-        "line_index": 17,
+        "line_index": 12,
         "section": "Общественный транспорт сегодня",
         "action": "patch",
-        "replacement_text": "• Metrolink: линия Metrolink в Алтринчаме закроется на две недели с понедельника 19 октября для проведения ремонтных работ; пассажиры должны проверить маршруты, так как будет запущен прямой автобусный маршрут между Алтринчем и Манчестер Пикадилли.",
-        "reason": "Дата начала ремонтных работ указана неверно.",
+        "replacement_text": "• TransPennine Express: утренние рейсы из/в Manchester Victoria изменены 19 октября; проверьте расписание перед поездкой.",
+        "reason": "Указана некорректная дата, необходимо уточнить информацию о рейсах.",
         "risk": "date"
       },
       {
-        "line_index": 18,
+        "line_index": 20,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Болельщики Манчестер Сити проявили стойкость на первом домашнем матче после того, как клуб был обвинён в 114 нарушениях финансовых правил.",
-        "reason": "Уточнение формулировки: клуб обвинён, но не признан виновным.",
+        "replacement_text": "• Майкл Каррик изменил тактику, что помогло Манчестер Юнайтед сыграть вничью 1-1 с Лидсом в Премьер-лиге. Его эмоциональная реакция на гол показала, под каким давлением он находится.",
+        "reason": "Утверждение о роли Майкла Каррика в Манчестер Юнайтед не соответствует фактам.",
         "risk": "factual"
       },
       {
-        "line_index": 28,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 10 мая — автомобильная барахолка Burnage RFC. Вход свободный, подходит для всей семьи.",
-        "reason": "Дата события в тексте не соответствует дате в данных события.",
-        "risk": "date"
-      },
-      {
-        "line_index": 33,
+        "line_index": 27,
         "section": "Городской радар",
+        "action": "strip",
+        "reason": "Событие не соответствует географическому охвату GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 34,
+        "section": "Дальние анонсы",
+        "action": "strip",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 39,
+        "section": "Крупные концерты вне GM",
         "action": "patch",
-        "replacement_text": "• Умер депутат совета Пэт Карни, известный как 'Мистер Манчестер', в возрасте 78 лет. Он запомнится своей борьбой за права ЛГБТ, поддержкой Харпурхи и ролью 'Мистера Рождества'.",
-        "reason": "Неверное указание роли 'boy' в контексте смерти Пэта Карни.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 37,
-        "section": "IT и бизнес",
-        "action": "strip",
-        "reason": "Новость о саде на железнодорожной станции не соответствует тематике раздела 'IT и бизнес'.",
-        "risk": "format"
-      },
-      {
-        "line_index": 38,
-        "section": "Business/tech события для тебя",
-        "action": "patch",
-        "replacement_text": "• #internationaltrade Unlocking Opportunities with Slovenia Tuesday 20 Oct 9:30am - 1:30pm — 20 октября, Old Trafford. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь.",
-        "reason": "Дата события указана неверно: 20 октября — это вторник, а не четверг.",
+        "replacement_text": "• Alice Cooper Devil on My Shoulder Book Tour — тур: 19 октября, Pavilion Theatre Glasgow; 20 октября, University of Wolverhampton at The Civic Hall.",
+        "reason": "Указание, что событие проходит сегодня, неверно, так как дата начала тура совпадает с текущей датой.",
         "risk": "date"
-      },
-      {
-        "line_index": 42,
-        "section": "Билеты / Ticket Radar",
-        "action": "strip",
-        "reason": "Дата события в прошлом, информация неактуальна.",
-        "risk": "date"
-      },
-      {
-        "line_index": 5,
-        "section": "Свежие новости",
-        "action": "strip",
-        "reason": "Дублирование информации о вандализме в Salford.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 16,
-        "section": "Общественный транспорт сегодня",
-        "action": "strip",
-        "reason": "Дублирование информации о закрытии линии Metrolink в Алтринхаме.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 18,
-        "section": "Футбол",
-        "action": "strip",
-        "reason": "Дублирование информации о финансовых нарушениях Манчестер Сити.",
-        "risk": "factual"
       }
     ],
     "warnings": [
-      "Отсутствие блока 'Что важно сегодня' и 'Еда, открытия и рынки' снижает полноту выпуска."
+      "В блоке 'Билеты / Ticket Radar' все события указаны на одну и ту же дату — 20 октября. Это может создать впечатление, что выбор ограничен, хотя это может быть случайностью. Проверьте разнообразие дат в других частях выпуска.",
+      "judge reduce failed: parse_failed no parseable JSON"
     ],
-    "notes": "Исправлено противоречие в описании инцидента, чтобы избежать путаницы.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка 6 дублирует информацию из строки 5, что может вызвать путаницу.; Ошибка в дате начала ремонтных работ на линии Metrolink в Алтринчаме.; Исправлена ошибка в формулировке обвинени",
+    "notes": "Строка соответствует требованиям: событие в GM, факты точны, нет юридических или переводческих ошибок.; Прогноз погоды соответствует данным Met Office и географическому охвату GM.; Исправлена ошибка в дате события на правильный день недели.; Ошибка в дате в строке 12 требует исправления для корректного информирования ч",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "ok",
-      "chunk_count": 13,
+      "status": "partial",
+      "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -1234,13 +778,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2684,
-          "duration_seconds": 2.864
+          "estimated_tokens": 2758,
+          "duration_seconds": 1.508
         },
         {
           "chunk_id": "chunk-02",
@@ -1257,8 +801,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2453,
-          "duration_seconds": 1.482
+          "estimated_tokens": 2468,
+          "duration_seconds": 1.389
         },
         {
           "chunk_id": "chunk-03",
@@ -1275,15 +819,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7216,
-          "duration_seconds": 2.597
+          "estimated_tokens": 7062,
+          "duration_seconds": 2.895
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            17
+            18
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -1293,15 +837,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5094,
-          "duration_seconds": 2.167
+          "estimated_tokens": 5841,
+          "duration_seconds": 6.988
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            18,
+            19,
             19
+          ],
+          "sections": [
+            "Что важно сегодня"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2721,
+          "duration_seconds": 1.15
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "ok",
+          "line_range": [
+            20,
+            21
           ],
           "sections": [
             "Футбол"
@@ -1311,33 +873,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3128,
-          "duration_seconds": 2.223
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "ok",
-          "line_range": [
-            20,
-            28
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 6322,
-          "duration_seconds": 2.648
+          "estimated_tokens": 3155,
+          "duration_seconds": 2.532
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            29,
-            35
+            22,
+            31
           ],
           "sections": [
             "Городской радар"
@@ -1347,130 +891,112 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5824,
-          "duration_seconds": 53.964
+          "estimated_tokens": 7208,
+          "duration_seconds": 42.916
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            36,
-            37
+            32,
+            32
           ],
           "sections": [
             "IT и бизнес"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3104,
-          "duration_seconds": 15.773
+          "estimated_tokens": 2650,
+          "duration_seconds": 1.103
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            38,
-            38
+            33,
+            33
           ],
           "sections": [
             "Business/tech события для тебя"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2802,
+          "duration_seconds": 0.916
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            34,
+            34
+          ],
+          "sections": [
+            "Дальние анонсы"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2882,
-          "duration_seconds": 2.755
+          "estimated_tokens": 2703,
+          "duration_seconds": 6.394
         },
         {
-          "chunk_id": "chunk-10",
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            35,
+            38
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 4341,
+          "duration_seconds": 21.518
+        },
+        {
+          "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
             39,
             39
           ],
           "sections": [
-            "Дальние анонсы"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2651,
-          "duration_seconds": 4.825
-        },
-        {
-          "chunk_id": "chunk-11",
-          "status": "ok",
-          "line_range": [
-            40,
-            42
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
+            "Крупные концерты вне GM"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4041,
-          "duration_seconds": 31.431
-        },
-        {
-          "chunk_id": "chunk-12",
-          "status": "ok",
-          "line_range": [
-            43,
-            45
-          ],
-          "sections": [
-            "Крупные концерты вне GM"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3879,
-          "duration_seconds": 7.946
-        },
-        {
-          "chunk_id": "chunk-13",
-          "status": "ok",
-          "line_range": [
-            46,
-            46
-          ],
-          "sections": [
-            "Русскоязычные концерты и стендап UK"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2754,
-          "duration_seconds": 6.169
+          "estimated_tokens": 2774,
+          "duration_seconds": 6.493
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "ok",
+        "status": "parse_failed",
         "line_range": [],
         "sections": [],
-        "decision": "repair_required",
-        "critical_error_count": 3,
-        "action_count": 3,
-        "warning_count": 1,
-        "error": "",
-        "estimated_tokens": 10846,
-        "duration_seconds": 26.568
+        "decision": "",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 0,
+        "error": "no parseable JSON",
+        "estimated_tokens": 10445,
+        "duration_seconds": 28.758
       },
       "max_workers": 3,
       "chunk_line_target": 12,
