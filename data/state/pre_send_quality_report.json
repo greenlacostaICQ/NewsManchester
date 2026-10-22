@@ -2,181 +2,223 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair left 2 known factual operation(s) unresolved; delivery continues as degraded",
+  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-10-21",
-  "pipeline_run_id": "20261021T080153+0100",
-  "digest_sha256": "fc2123fd0cec04b73304597832270382a37c3571cc7e3e0da26b207a0241ff51",
-  "duration_seconds": 66.594,
+  "run_date_london": "2026-10-22",
+  "pipeline_run_id": "20261022T080149+0100",
+  "digest_sha256": "c71160ec5768fea0c734bc1dd2e0832e887270cf5f59354d1317b1d0f6c0e269",
+  "duration_seconds": 112.613,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 5,
+      "line_index": 7,
       "section": "Свежие новости",
-      "problem": "Дублирование информации о смерти Ивонн Кемп.",
+      "problem": "Дублирование информации о деле Стефана Гарнера.",
       "risk": "factual",
       "suggested_action": "strip"
     },
     {
-      "line_index": 14,
+      "line_index": 10,
+      "section": "Свежие новости",
+      "problem": "Дублирование информации о деле семьи Пирсон.",
+      "risk": "factual",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 18,
       "section": "Общественный транспорт сегодня",
-      "problem": "Неправильная дата начала закрытия линии.",
+      "problem": "Неправильная дата начала закрытия линии Metrolink в Алтринчаме.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 16,
+      "line_index": 20,
       "section": "Футбол",
-      "problem": "Количество нарушений указано неверно.",
+      "problem": "Неверная информация о матче Лиги чемпионов. Манчестер Юнайтед не играл с Комо.",
       "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 17,
-      "section": "Городской радар",
-      "problem": "Не указано, что женщина была убита ножом.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 26,
-      "section": "Business/tech события для тебя",
-      "problem": "Событие проходит в Ливерпуле, что не соответствует geo_scope 'gm'.",
-      "risk": "geo",
       "suggested_action": "strip"
     },
     {
-      "line_index": 27,
-      "section": "Дальние анонсы",
-      "problem": "Отсутствует ссылка на покупку билетов, что нарушает требования блока.",
-      "risk": "product",
+      "line_index": 32,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
       "suggested_action": "repair"
     },
     {
       "line_index": 33,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дублирование информации о событии J. Cole.",
-      "risk": "format",
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 35,
+      "section": "Городской радар",
+      "problem": "Неправильное использование термина 'обвиняется' вместо 'осуждён'.",
+      "risk": "legal",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 45,
+      "section": "Business/tech события для тебя",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 47,
+      "section": "Business/tech события для тебя",
+      "problem": "Событие проходит в Ливерпуле, что не соответствует geo_scope.",
+      "risk": "geo",
       "suggested_action": "strip"
     },
     {
-      "line_index": 5,
+      "line_index": 6,
       "section": "Свежие новости",
-      "problem": "Дублирование информации о смерти Ивонн Кемп.",
+      "problem": "Дублирование информации о Стефане Гарнере.",
       "risk": "factual",
       "suggested_action": "strip"
     },
     {
-      "line_index": 13,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дублирование информации о закрытии трамвайных линий.",
-      "risk": "format",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 16,
-      "section": "Футбол",
-      "problem": "Повтор информации о нарушениях Манчестер Сити.",
+      "line_index": 7,
+      "section": "Свежие новости",
+      "problem": "Дублирование информации о Стефане Гарнере.",
       "risk": "factual",
       "suggested_action": "strip"
     },
     {
-      "line_index": 8,
+      "line_index": 6,
       "section": "Свежие новости",
       "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'stabbing' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+      "problem": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
       "suggested_action": "repair",
       "completeness_concept": "weapon_violence"
+    },
+    {
+      "line_index": 7,
+      "section": "Свежие новости",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "weapon_violence"
+    },
+    {
+      "line_index": 10,
+      "section": "Свежие новости",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'murders' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "homicide"
+    },
+    {
+      "line_index": 37,
+      "section": "Городской радар",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "death"
     }
   ],
   "actions": [
     {
-      "line_index": 5,
+      "line_index": 7,
       "section": "Свежие новости",
       "action": "strip",
-      "reason": "Дублирование информации о смерти Ивонн Кемп.",
+      "reason": "Дублирование информации о деле Стефана Гарнера.",
       "risk": "factual",
       "replacement_text": ""
     },
     {
-      "line_index": 14,
+      "line_index": 10,
+      "section": "Свежие новости",
+      "action": "strip",
+      "reason": "Дублирование информации о деле семьи Пирсон.",
+      "risk": "factual",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 18,
       "section": "Общественный транспорт сегодня",
       "action": "patch",
-      "replacement_text": "• Metrolink: линия в Алтринчаме будет закрыта на две недели с понедельника, 19 октября 2026 года, для проведения ремонтных работ. Пассажиры могут воспользоваться прямым автобусным маршрутом между Алтринчемом и Манчестер Пикадилли.",
-      "reason": "Уточнение года для ясности и соответствия контексту.",
+      "replacement_text": "• Metrolink: линия Metrolink в Алтринчаме закроется на две недели с понедельника 19 октября 2026 года для проведения ремонтных работ; пассажиры должны проверить маршруты, так как будет запущен прямой автобусный маршрут между Алтринчем и Манчестер Пикадилли.",
+      "reason": "Уточнение года для даты начала закрытия линии.",
       "risk": "date"
     },
     {
-      "line_index": 16,
+      "line_index": 20,
       "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Манчестер Сити признан виновным в 115 нарушениях финансовых правил Премьер-лиги. Клуб подал апелляцию, и в случае её неуспеха возможно снижение очков.",
-      "reason": "Количество нарушений должно быть 115, согласно источнику.",
-      "risk": "factual"
+      "action": "strip",
+      "reason": "Неверная информация о матче Лиги чемпионов. Манчестер Юнайтед не играл с Комо.",
+      "risk": "factual",
+      "replacement_text": ""
     },
     {
-      "line_index": 17,
+      "line_index": 32,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 25 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
+      "reason": "Дата события должна быть 25 октября, а не 10 мая.",
+      "risk": "date"
+    },
+    {
+      "line_index": 33,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 25 октября — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
+      "reason": "Дата события должна быть 25 октября, а не 4 апреля.",
+      "risk": "date"
+    },
+    {
+      "line_index": 35,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Второй мужчина арестован по подозрению в убийстве после того, как Алиша Сэмюэлс, 26 лет, была найдена мертвой с ножевыми ранениями в Ньютон Хите, Манчестер.",
-      "reason": "Уточнение причины смерти для точности информации.",
-      "risk": "factual"
+      "replacement_text": "• Лоренс Джонсон, 26 лет, из Доркинг-авеню, обвинён в убийстве Алиши Самуэлс, 26 лет, и в покушении на убийство мужчины после инцидента с ножом в Манчестере в четверг.",
+      "reason": "Исправление юридически значимого термина 'обвиняется' на 'обвинён'.",
+      "risk": "legal"
     },
     {
-      "line_index": 26,
+      "line_index": 45,
+      "section": "Business/tech события для тебя",
+      "action": "patch",
+      "replacement_text": "• 23 октября 2026 года в Манчестере пройдет семинар по возможностям поставок НАТО и рынку обороны Северных стран, предназначенный для британских компаний, стремящихся к международному росту.",
+      "reason": "Дата события должна быть 23 октября 2026 года.",
+      "risk": "date"
+    },
+    {
+      "line_index": 47,
       "section": "Business/tech события для тебя",
       "action": "strip",
-      "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+      "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
       "risk": "geo",
       "replacement_text": ""
     },
     {
-      "line_index": 27,
-      "section": "Дальние анонсы",
-      "action": "patch",
-      "replacement_text": "• Käärijä Eurodisko — 6 ноября, O2 Ritz Manchester. Билеты и время указаны на официальной странице. [Купить билеты](https://www.ticketmaster.co.uk/kaarija-eurodisko-tour-2026-manchester-06-11-2026/event/3E00637CCACC877F)",
-      "reason": "Добавление ссылки на покупку билетов для соответствия требованиям блока.",
-      "risk": "product"
-    },
-    {
-      "line_index": 33,
-      "section": "Билеты / Ticket Radar",
-      "action": "strip",
-      "reason": "Дублирование информации о событии J. Cole.",
-      "risk": "format",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 5,
+      "line_index": 6,
       "section": "Свежие новости",
       "action": "strip",
       "replacement_text": "",
-      "reason": "Дублирование информации о смерти Ивонн Кемп.",
+      "reason": "Дублирование информации о Стефане Гарнере.",
       "risk": "factual"
     },
     {
-      "line_index": 13,
-      "section": "Общественный транспорт сегодня",
+      "line_index": 7,
+      "section": "Свежие новости",
       "action": "strip",
       "replacement_text": "",
-      "reason": "Дублирование информации о закрытии трамвайных линий.",
-      "risk": "format"
-    },
-    {
-      "line_index": 16,
-      "section": "Футбол",
-      "action": "strip",
-      "replacement_text": "",
-      "reason": "Повтор информации о нарушениях Манчестер Сити.",
+      "reason": "Дублирование информации о Стефане Гарнере.",
       "risk": "factual"
     }
   ],
   "warnings": [
-    "Отсутствие блока 'Что важно сегодня' снижает полноту выпуска.",
-    "Отсутствие блока 'Русскоязычные концерты и стендап UK' снижает разнообразие контента."
+    "В разделе 'Крупные концерты вне GM' оба события указаны на одну и ту же дату — 25 октября. Это может вызвать путаницу у читателей, если они планируют посетить оба мероприятия. Рекомендуется добавить время начала каждого концерта для большей ясности.",
+    "Недостаточное количество элементов в секции 'Что важно сегодня'.",
+    "Отсутствие элементов в секции 'Русскоязычные концерты и стендап UK'.",
+    "Отсутствие элементов в секции 'Еда, открытия и рынки'.",
+    "line 37 drops source number/date fact(s): 42%"
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -185,32 +227,34 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 3,
+      "Общественный транспорт сегодня": 7,
+      "Что важно сегодня": 1,
       "Футбол": 2,
-      "Городской радар": 8,
+      "Выходные в GM": 10,
+      "Городской радар": 9,
       "IT и бизнес": 1,
-      "Business/tech события для тебя": 1,
-      "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 6,
-      "Крупные концерты вне GM": 1
+      "Business/tech события для тебя": 3,
+      "Билеты / Ticket Radar": 8,
+      "Крупные концерты вне GM": 2
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
+      "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 8,
-      "Билеты / Ticket Radar": 6,
+      "Городской радар": 9,
+      "Выходные в GM": 10,
+      "Билеты / Ticket Radar": 8,
       "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 0,
-      "Business/tech события для тебя": 1,
+      "Business/tech события для тебя": 3,
       "Футбол": 2
     },
-    "ticket_items": 7,
-    "core_items": 22,
+    "ticket_items": 10,
+    "core_items": 36,
     "writer_quality_counts": {
-      "included_candidates": 35,
-      "rendered_candidates": 34,
+      "included_candidates": 55,
+      "rendered_candidates": 54,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
@@ -221,27 +265,27 @@
       "removed_with_reason": 1
     },
     "source_health_counts": {
-      "ok": 109,
+      "ok": 107,
       "partial": 2,
-      "stale": 1,
-      "empty": 14,
+      "stale": 3,
+      "empty": 13,
       "failed": 5,
-      "zero_yield": 82,
+      "zero_yield": 73,
       "no_contribution_breakdown": {
         "fetch_failed": 5,
-        "all_rejected": 82,
-        "idle_no_items": 24
+        "all_rejected": 73,
+        "idle_no_items": 20
       },
       "zero_contribution_by_stage": {
+        "written": 39,
+        "parsed": 20,
         "selected": 34,
-        "written": 48,
-        "parsed": 24,
         "fetched": 5
       },
-      "weekend_source_coverage_incidents": 61
+      "weekend_source_coverage_incidents": 53
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
+      "Что важно сегодня: 1 item(s), emergency floor 3",
       "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "source failures: 5"
@@ -250,312 +294,335 @@
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 27 has unchecked number/date token(s): 6",
-      "multiple actions target line 5",
-      "multiple actions target line 16"
+      "patch for line 33 has unchecked number/date token(s): 9:00",
+      "multiple actions target line 7"
     ],
     "can_apply_actions": true,
-    "action_count": 10
+    "action_count": 11
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 34,
-    "matched_lines": 34,
-    "applicable_lines": 10,
-    "unmatched_lines": 0,
-    "critical_omission_count": 1,
+    "checked_lines": 54,
+    "matched_lines": 54,
+    "applicable_lines": 6,
+    "unmatched_lines": 3,
+    "critical_omission_count": 4,
     "critical_omissions": [
       {
-        "line_index": 8,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/police-issue-update-after-two-34789411",
+        "line_index": 6,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/man-who-stabbed-pregnant-girlfriend-34797629",
         "concept": "weapon_violence",
         "obligation": "who/what",
-        "source_hit": "stabbing"
+        "source_hit": "stabbed"
+      },
+      {
+        "line_index": 7,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/man-stabbed-pregnant-girlfriend-after-34793346",
+        "concept": "weapon_violence",
+        "obligation": "who/what",
+        "source_hit": "stabbed"
+      },
+      {
+        "line_index": 10,
+        "source_url_key": "bbc.com/news/articles/cwx287glpxeno",
+        "concept": "homicide",
+        "obligation": "charge/verdict/victim",
+        "source_hit": "murders"
+      },
+      {
+        "line_index": 37,
+        "source_url_key": "bbc.com/news/articles/cq78pnk10vr9o",
+        "concept": "death",
+        "obligation": "who/what",
+        "source_hit": "death"
       }
     ],
-    "noncritical_omissions": [],
+    "noncritical_omissions": [
+      {
+        "line_index": 37,
+        "dropped": [
+          "42%"
+        ]
+      }
+    ],
     "recovered": 0,
-    "pulled_for_rework": 1,
+    "pulled_for_rework": 4,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 11,
-    "attempted": 10,
-    "applied": 10,
-    "model_patch_applied": 3,
+    "requested": 12,
+    "attempted": 7,
+    "applied": 7,
+    "model_patch_applied": 0,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 4,
-    "stripped": 3,
-    "unresolved": 2,
-    "blocking_unresolved": 2,
-    "resolved": 8,
-    "resolved_in_place": 4,
-    "resolved_by_replacement": 1,
-    "resolved_by_removal": 3,
+    "reserve_replacement_used": 6,
+    "stripped": 1,
+    "unresolved": 1,
+    "blocking_unresolved": 1,
+    "resolved": 10,
+    "resolved_in_place": 5,
+    "resolved_by_replacement": 4,
+    "resolved_by_removal": 1,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 11,
+    "enrich_attempted": 12,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 5,
+        "line_index": 7,
         "section": "Свежие новости",
         "requested_action": "strip",
-        "reason": "Дублирование информации о смерти Ивонн Кемп.",
+        "reason": "Дублирование информации о деле Стефана Гарнера.",
         "risk": "factual",
         "critical_error": false,
         "critical_problem": "",
         "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-05",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-stabbed-pregnant-girlfriend-after-34793346-04b9963bd419",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-stabbed-pregnant-girlfriend-after-34793346",
+        "original_html": "• Стефан Гарнер, 31 год, заявил на судебном процессе, что он \"потерял контроль\" и убил свою беременную девушку Эмбер О'Брайен после повторяющихся споров о ее употреблении кокаина. Он признал себя виновным в непредумышленном убийстве, но отрицает убийство. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-stabbed-pregnant-girlfriend-after-34793346\">MEN</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m61-traffic-live-vehicles-stopped-34795872-4d2ab31f51fa",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 10,
+        "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о деле семьи Пирсон.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о деле семьи Пирсон.",
+        "completeness_concept": "homicide",
         "outcome": "unresolved",
         "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-loving-grandmother-centre-moss-side-34793208-ea41230c2d5a",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/loving-grandmother-centre-moss-side-34793208",
-        "original_html": "• В Moss Side была названа бабушка Ивон Кемп, найденная мертвой в своем доме; 26-летняя женщина арестована по подозрению в убийстве. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/loving-grandmother-centre-moss-side-34793208\">MEN</a>",
-        "replacement_fingerprint": "url-bbc-com-news-articles-cvlyd7515d19o-b325a36d2ce4",
+        "plan_slot_id": "last_24h-08",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cwx287glpxeno-8447eb7cd525",
+        "original_url_identity": "bbc.com/news/articles/cwx287glpxeno",
+        "original_html": "• В ходе слушания дела о пожаре, унесшем жизни четырёх детей и их матери, стало известно, что социальные службы получили анонимный сигнал о том, что семья находится в опасности. Это произошло 29 ноября 2017 года, менее чем за две недели до трагедии, однако информация не была передана должным образом, что вызывает вопросы о работе местных властей. <a href=\"https://bbc.com/news/articles/cwx287glpxeno\">BBC Manchester</a>",
+        "replacement_fingerprint": "url-bbc-com-news-articles-cm4g1px25eq8o-0a1d81758aef",
         "post_check_passed": false
       },
       {
-        "line_index": 14,
+        "line_index": 18,
         "section": "Общественный транспорт сегодня",
         "requested_action": "patch",
-        "reason": "Уточнение года для ясности и соответствия контексту.",
+        "reason": "Уточнение года для даты начала закрытия линии.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Неправильная дата начала закрытия линии.",
+        "critical_problem": "Неправильная дата начала закрытия линии Metrolink в Алтринчаме.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "transport-03",
+        "plan_slot_id": "transport-07",
         "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-15-altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around-9fca3677f398",
         "original_url_identity": "altrincham.todaynews.co.uk/news/2026/10/15/altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around",
-        "original_html": "• Metrolink: линия в Алтринчаме будет закрыта на две недели с понедельника, 19 октября, для проведения ремонтных работ. Пассажиры могут воспользоваться прямым автобусным маршрутом между Алтринчемом и Манчестер Пикадилли. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/15/altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around\">Altrincham Today</a>",
+        "original_html": "• Metrolink: линия Metrolink в Алтринчаме закроется на две недели с понедельника 19 октября для проведения ремонтных работ; пассажиры должны проверить маршруты, так как будет запущен прямой автобусный маршрут между Алтринчем и Манчестер Пикадилли. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/15/altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around\">Altrincham Today</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 16,
+        "line_index": 20,
         "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Количество нарушений должно быть 115, согласно источнику.",
+        "requested_action": "strip",
+        "reason": "Неверная информация о матче Лиги чемпионов. Манчестер Юнайтед не играл с Комо.",
         "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
+        "critical_error": true,
+        "critical_problem": "Неверная информация о матче Лиги чемпионов. Манчестер Юнайтед не играл с Комо.",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-appeal-34783284-7cdf04e06fdc",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-appeal-34783284",
-        "original_html": "• Манчестер Сити признан виновным в 114 нарушениях финансовых правил Премьер-лиги. Клуб подал апелляцию, и в случае её неуспеха возможно снижение очков. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-appeal-34783284\">MEN Manchester City</a>",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-united-fixtures-como-carrick-34799103-a0bacf247e4b",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-united-fixtures-como-carrick-34799103",
+        "original_html": "• Манчестер Юнайтед потерпел поражение 4-1 от Комо в Лиге чемпионов 21 октября 2026 года, что увеличивает давление на тренера Майкла Каррика. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-united-fixtures-como-carrick-34799103\">MEN Manchester United</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-bruno-fernandes-carragher-man-united-34799353-fe675b9361b5",
         "post_check_passed": true
       },
       {
-        "line_index": 17,
+        "line_index": 32,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 25 октября, а не 10 мая.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-06",
+        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+        "original_html": "• 25 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 33,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 25 октября, а не 4 апреля.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-07",
+        "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+        "original_html": "• 24 октября — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 35,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Уточнение причины смерти для точности информации.",
-        "risk": "factual",
+        "reason": "Исправление юридически значимого термина 'обвиняется' на 'обвинён'.",
+        "risk": "legal",
         "critical_error": true,
-        "critical_problem": "Не указано, что женщина была убита ножом.",
+        "critical_problem": "Неправильное использование термина 'обвиняется' вместо 'осуждён'.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "model_patch",
+        "method": "verified_existing_fact",
         "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cqx287x9nz17o-8d966d4eedde",
-        "original_url_identity": "bbc.com/news/articles/cqx287x9nz17o",
-        "original_html": "• Второй мужчина арестован по подозрению в убийстве после того, как Алиша Сэмюэлс, 26 лет, была найдена мертвой в Ньютон Хите, Манчестер. <a href=\"https://bbc.co.uk/news/articles/cqx287x9nz17o\">BBC Manchester</a>",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cqjdm1g31z4no-444777adfe9d",
+        "original_url_identity": "bbc.com/news/articles/cqjdm1g31z4no",
+        "original_html": "• Лоренс Джонсон, 26 лет, из Доркинг-авеню, обвиняется в убийстве Алиши Самуэлс, 26 лет, и в покушении на убийство мужчины после инцидента с ножом в Манчестере в четверг. <a href=\"https://bbc.co.uk/news/articles/cqjdm1g31z4no\">BBC Manchester</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 26,
+        "line_index": 45,
+        "section": "Business/tech события для тебя",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 23 октября 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "professional_events-01",
+        "candidate_fingerprint": "event-event-unlock-nato-supply-chain-opportunities-exporting-to-nordic-defence-market-2026-10-23-unlock-nato-supply-chain-opportunities-exporting-to-nordic--d19637a2bbdb",
+        "original_url_identity": "businessgrowthhub.com/events/unlock-nato-supply-chain-opportunities-exporting-to-nordic-defence-market",
+        "original_html": "• 23 октября 2026 года в Манчестере пройдет семинар по возможностям поставок НАТО и рынку обороны Северных стран, предназначенный для британских компаний, стремящихся к международному росту. <a href=\"https://businessgrowthhub.com/events/unlock-nato-supply-chain-opportunities-exporting-to-nordic-defence-market\">GM Business Growth Hub Events</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 47,
         "section": "Business/tech события для тебя",
         "requested_action": "strip",
-        "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
         "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Событие проходит в Ливерпуле, что не соответствует geo_scope 'gm'.",
+        "critical_problem": "Событие проходит в Ливерпуле, что не соответствует geo_scope.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "professional_events-01",
+        "plan_slot_id": "professional_events-03",
         "candidate_fingerprint": "event-event-policy-heathrow-means-business-new-regional-summit-lands-in-liverpool-thursday-22-oct-9am-2026-10-22-liverpool-thursday-f6efad0faed6",
         "original_url_identity": "gmchamber.co.uk/events/heathrow-means-business-new-regional-summit-lands-in-liverpool",
-        "original_html": "• #policy Heathrow Means Business: New Regional Summit Lands in Liverpool Thursday 22 Oct 9am - 4pm — 22 октября, Liverpool Thursday. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь. <a href=\"https://gmchamber.co.uk/events/heathrow-means-business-new-regional-summit-lands-in-liverpool\">GM Chamber Events</a>",
+        "original_html": "• Региональный саммит Heathrow Means Business для местных бизнесов Северо-Запада и Северного Уэльса пройдет в Ливерпуле 22 октября с 9:00 до 16:00 в Hill Dickinson Stadium. <a href=\"https://gmchamber.co.uk/events/heathrow-means-business-new-regional-summit-lands-in-liverpool\">GM Chamber Events</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 27,
-        "section": "Дальние анонсы",
-        "requested_action": "patch",
-        "reason": "Добавление ссылки на покупку билетов для соответствия требованиям блока.",
-        "risk": "product",
-        "critical_error": true,
-        "critical_problem": "Отсутствует ссылка на покупку билетов, что нарушает требования блока.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "future_announcements-01",
-        "candidate_fingerprint": "event-event-k-rij-eurodisko-tour-2026-2026-11-06-o2-ritz-manchester-fac74e0c6e9b",
-        "original_url_identity": "ticketmaster.co.uk/kaarija-eurodisko-tour-2026-manchester-06-11-2026/event/3E00637CCACC877F",
-        "original_html": "• <b>Käärijä Eurodisko</b> — 6 ноября, O2 Ritz Manchester. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/kaarija-eurodisko-tour-2026-manchester-06-11-2026/event/3E00637CCACC877F\">Ticketmaster</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 33,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о событии J. Cole.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о событии J. Cole.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "ticket_radar-06",
-        "candidate_fingerprint": "event-event-j-cole-the-fall-off-tour-wed-28-oct-2026-thu-29-oct-2026-2026-10-28-co-op-live-bc5fd1ccf36b",
-        "original_url_identity": "cooplive.com/events/j-cole-98r5",
-        "original_html": "• <b>J. Cole The Fall-Off Tour</b> — 28 октября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/j-cole-98r5\">Co-op Live</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 5,
+        "line_index": 6,
         "section": "Свежие новости",
         "requested_action": "strip",
-        "reason": "Дублирование информации о смерти Ивонн Кемп.",
+        "reason": "Дублирование информации о Стефане Гарнере.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дублирование информации о смерти Ивонн Кемп.",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-loving-grandmother-centre-moss-side-34793208-ea41230c2d5a",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/loving-grandmother-centre-moss-side-34793208",
-        "original_html": "• В Moss Side была названа бабушка Ивон Кемп, найденная мертвой в своем доме; 26-летняя женщина арестована по подозрению в убийстве. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/loving-grandmother-centre-moss-side-34793208\">MEN</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-leading-bolton-labour-councillor-sean-34792952-a1f3eb5f5f8a",
-        "post_check_passed": false
-      },
-      {
-        "line_index": 13,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о закрытии трамвайных линий.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о закрытии трамвайных линий.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-02",
-        "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
-        "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-        "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажиры должны планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 16,
-        "section": "Футбол",
-        "requested_action": "strip",
-        "reason": "Повтор информации о нарушениях Манчестер Сити.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Количество нарушений указано неверно.",
-        "completeness_concept": "",
+        "critical_problem": "Дублирование информации о Стефане Гарнере.",
+        "completeness_concept": "weapon_violence",
         "outcome": "resolved_by_replacement",
         "method": "reserve_replacement",
-        "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-appeal-34783284-7cdf04e06fdc",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-appeal-34783284",
-        "original_html": "• Манчестер Сити признан виновным в 114 нарушениях финансовых правил Премьер-лиги. Клуб подал апелляцию, и в случае её неуспеха возможно снижение очков. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-appeal-34783284\">MEN Manchester City</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-player-ratings-vs-34793655-16a67c3ade05",
+        "plan_slot_id": "last_24h-04",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-who-stabbed-pregnant-girlfriend-34797629-a92a83694b83",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-who-stabbed-pregnant-girlfriend-34797629",
+        "original_html": "• На судебном процессе стало известно, что 31-летний Стефан Гарнер, обвиняемый в убийстве своей беременной подруги Эмбер О'Брайен, заявил, что 'сорвался' после того, как она сообщила ему о проведённом аборте. Гарнер признал, что убил 33-летнюю женщину в своей квартире в Блэкли, но отрицает обвинение в убийстве. Судебные заседания продолжаются, и ожидаются дальнейшие показания. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-who-stabbed-pregnant-girlfriend-34797629\">MEN</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-national-poppy-appeal-launches-in-34794762-a6c004a948ac",
         "post_check_passed": true
       },
       {
-        "line_index": 8,
+        "line_index": 7,
         "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о Стефане Гарнере.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о деле Стефана Гарнера.",
+        "completeness_concept": "weapon_violence",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-05",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-stabbed-pregnant-girlfriend-after-34793346-04b9963bd419",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-stabbed-pregnant-girlfriend-after-34793346",
+        "original_html": "• Стефан Гарнер, 31 год, заявил на судебном процессе, что он \"потерял контроль\" и убил свою беременную девушку Эмбер О'Брайен после повторяющихся споров о ее употреблении кокаина. Он признал себя виновным в непредумышленном убийстве, но отрицает убийство. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-stabbed-pregnant-girlfriend-after-34793346\">MEN</a>",
+        "replacement_fingerprint": "url-bbc-com-news-articles-ck78p16750p0o-fc812b49f212",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 37,
+        "section": "Городской радар",
         "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'stabbing' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+        "reason": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
         "risk": "translation",
         "critical_error": true,
         "critical_problem": "",
-        "completeness_concept": "weapon_violence",
-        "outcome": "unresolved",
+        "completeness_concept": "death",
+        "outcome": "resolved_by_replacement",
         "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-06",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-issue-update-after-two-34789411-a1d5e84302db",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-issue-update-after-two-34789411",
-        "original_html": "• В субботу в Арндейл-центре в Манчестере произошла атака на 14-летнего мальчика, который был госпитализирован в стабильном состоянии. Два 14-летних подростка, арестованные по подозрению в причинении тяжких телесных повреждений, были отпущены под залог, как сообщила полиция в понедельник. Свидетели утверждают, что перед нападением несколько человек выбежали из центра в сторону парковки. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-issue-update-after-two-34789411\">MEN</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-chaos-stockport-park-trampoline-set-34789992-abfa86106f89",
-        "post_check_passed": false
+        "plan_slot_id": "city_watch-03",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cq78pnk10vr9o-207902642c64",
+        "original_url_identity": "bbc.com/news/articles/cq78pnk10vr9o",
+        "original_html": "• Департамент здравоохранения и социального обеспечения заявил о своей решимости сократить неравенство в области здравоохранения в Северной Англии. <a href=\"https://bbc.co.uk/news/articles/cq78pnk10vr9o\">BBC Manchester</a>",
+        "replacement_fingerprint": "url-businesscloud-co-uk-news-greater-manchester-to-pause-for-worlds-first-citywide-meditation-c8418667c9f5",
+        "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::дублирование информации о смерти ивонн кемп",
+        "group_key": "свежие новости::дублирование информации о деле стефана гарнера",
         "actions": [
           {
-            "line_index": 5,
+            "line_index": 7,
             "section": "Свежие новости",
             "requested_action": "strip",
-            "reason": "Дублирование информации о смерти Ивонн Кемп.",
+            "reason": "Дублирование информации о деле Стефана Гарнера.",
             "risk": "factual",
             "critical_error": false,
             "critical_problem": "",
             "completeness_concept": "",
-            "outcome": "unresolved",
+            "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-loving-grandmother-centre-moss-side-34793208-ea41230c2d5a",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/loving-grandmother-centre-moss-side-34793208",
-            "original_html": "• В Moss Side была названа бабушка Ивон Кемп, найденная мертвой в своем доме; 26-летняя женщина арестована по подозрению в убийстве. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/loving-grandmother-centre-moss-side-34793208\">MEN</a>",
-            "replacement_fingerprint": "url-bbc-com-news-articles-cvlyd7515d19o-b325a36d2ce4",
-            "post_check_passed": false
-          },
-          {
-            "line_index": 5,
-            "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о смерти Ивонн Кемп.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о смерти Ивонн Кемп.",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-loving-grandmother-centre-moss-side-34793208-ea41230c2d5a",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/loving-grandmother-centre-moss-side-34793208",
-            "original_html": "• В Moss Side была названа бабушка Ивон Кемп, найденная мертвой в своем доме; 26-летняя женщина арестована по подозрению в убийстве. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/loving-grandmother-centre-moss-side-34793208\">MEN</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-leading-bolton-labour-councillor-sean-34792952-a1f3eb5f5f8a",
-            "post_check_passed": false
+            "plan_slot_id": "last_24h-05",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-stabbed-pregnant-girlfriend-after-34793346-04b9963bd419",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-stabbed-pregnant-girlfriend-after-34793346",
+            "original_html": "• Стефан Гарнер, 31 год, заявил на судебном процессе, что он \"потерял контроль\" и убил свою беременную девушку Эмбер О'Брайен после повторяющихся споров о ее употреблении кокаина. Он признал себя виновным в непредумышленном убийстве, но отрицает убийство. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-stabbed-pregnant-girlfriend-after-34793346\">MEN</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m61-traffic-live-vehicles-stopped-34795872-4d2ab31f51fa",
+            "post_check_passed": true
           }
         ],
-        "outcome": "unresolved",
+        "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 5,
-            "passed": false,
-            "detail": "shared prose policy still fails"
-          },
-          {
-            "line_index": 5,
-            "passed": false,
-            "detail": "shared prose policy still fails"
+            "line_index": 7,
+            "passed": true,
+            "detail": "post-check passed"
           },
           {
             "check": "duplicate_identity",
-            "identity": "topic:incident:moss side loving grandmother at centre of moss side murder investigation named|new story|2026 10 20",
+            "identity": "topic:incident:man stabbed pregnant girlfriend after repeated arguments about her drug use trial told|follow up|2026 10 21",
             "visible_count": 0,
             "passed": true
           }
@@ -563,23 +630,61 @@
         "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::уточнение года для ясности и соответствия контексту.",
+        "group_key": "свежие новости::дублирование информации о деле семьи пирсон",
         "actions": [
           {
-            "line_index": 14,
+            "line_index": 10,
+            "section": "Свежие новости",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о деле семьи Пирсон.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о деле семьи Пирсон.",
+            "completeness_concept": "homicide",
+            "outcome": "unresolved",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-08",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cwx287glpxeno-8447eb7cd525",
+            "original_url_identity": "bbc.com/news/articles/cwx287glpxeno",
+            "original_html": "• В ходе слушания дела о пожаре, унесшем жизни четырёх детей и их матери, стало известно, что социальные службы получили анонимный сигнал о том, что семья находится в опасности. Это произошло 29 ноября 2017 года, менее чем за две недели до трагедии, однако информация не была передана должным образом, что вызывает вопросы о работе местных властей. <a href=\"https://bbc.com/news/articles/cwx287glpxeno\">BBC Manchester</a>",
+            "replacement_fingerprint": "url-bbc-com-news-articles-cm4g1px25eq8o-0a1d81758aef",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 10,
+            "passed": false,
+            "detail": "shared prose policy still fails"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "topic:incident:salford city council bolton manchester inquest hears of great danger tip off before fire murders|same story rehash|2026 10 21",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "общественный транспорт сегодня::уточнение года для даты начала закрытия линии.",
+        "actions": [
+          {
+            "line_index": 18,
             "section": "Общественный транспорт сегодня",
             "requested_action": "patch",
-            "reason": "Уточнение года для ясности и соответствия контексту.",
+            "reason": "Уточнение года для даты начала закрытия линии.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Неправильная дата начала закрытия линии.",
+            "critical_problem": "Неправильная дата начала закрытия линии Metrolink в Алтринчаме.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "transport-03",
+            "plan_slot_id": "transport-07",
             "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-15-altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around-9fca3677f398",
             "original_url_identity": "altrincham.todaynews.co.uk/news/2026/10/15/altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around",
-            "original_html": "• Metrolink: линия в Алтринчаме будет закрыта на две недели с понедельника, 19 октября, для проведения ремонтных работ. Пассажиры могут воспользоваться прямым автобусным маршрутом между Алтринчемом и Манчестер Пикадилли. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/15/altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around\">Altrincham Today</a>",
+            "original_html": "• Metrolink: линия Metrolink в Алтринчаме закроется на две недели с понедельника 19 октября для проведения ремонтных работ; пассажиры должны проверить маршруты, так как будет запущен прямой автобусный маршрут между Алтринчем и Манчестер Пикадилли. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/15/altrincham-tram-line-shuts-for-two-weeks-on-monday-heres-how-to-get-around\">Altrincham Today</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -587,7 +692,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 14,
+            "line_index": 18,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -595,30 +700,31 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::количество нарушений должно быть 115, согласно источнику.",
+        "group_key": "футбол::неверная информация о матче лиги чемпионов. манчестер юнайтед не играл с комо.",
         "actions": [
           {
-            "line_index": 16,
+            "line_index": 20,
             "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Количество нарушений должно быть 115, согласно источнику.",
+            "requested_action": "strip",
+            "reason": "Неверная информация о матче Лиги чемпионов. Манчестер Юнайтед не играл с Комо.",
             "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
+            "critical_error": true,
+            "critical_problem": "Неверная информация о матче Лиги чемпионов. Манчестер Юнайтед не играл с Комо.",
             "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-appeal-34783284-7cdf04e06fdc",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-appeal-34783284",
-            "original_html": "• Манчестер Сити признан виновным в 114 нарушениях финансовых правил Премьер-лиги. Клуб подал апелляцию, и в случае её неуспеха возможно снижение очков. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-appeal-34783284\">MEN Manchester City</a>",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-united-fixtures-como-carrick-34799103-a0bacf247e4b",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-united-fixtures-como-carrick-34799103",
+            "original_html": "• Манчестер Юнайтед потерпел поражение 4-1 от Комо в Лиге чемпионов 21 октября 2026 года, что увеличивает давление на тренера Майкла Каррика. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-united-fixtures-como-carrick-34799103\">MEN Manchester United</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-bruno-fernandes-carragher-man-united-34799353-fe675b9361b5",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 16,
+            "line_index": 20,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -626,54 +732,151 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::уточнение причины смерти для точности информации.",
+        "group_key": "выходные в gm::дата события должна быть 25 октября, а не 10 мая.",
         "actions": [
           {
-            "line_index": 17,
+            "line_index": 32,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 25 октября, а не 10 мая.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-06",
+            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+            "original_html": "• 25 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 32,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата события должна быть 25 октября, а не 4 апреля.",
+        "actions": [
+          {
+            "line_index": 33,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 25 октября, а не 4 апреля.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-07",
+            "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+            "original_html": "• 24 октября — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 33,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::исправление юридически значимого термина 'обвиняется' на 'обвинён'.",
+        "actions": [
+          {
+            "line_index": 35,
             "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Уточнение причины смерти для точности информации.",
-            "risk": "factual",
+            "reason": "Исправление юридически значимого термина 'обвиняется' на 'обвинён'.",
+            "risk": "legal",
             "critical_error": true,
-            "critical_problem": "Не указано, что женщина была убита ножом.",
+            "critical_problem": "Неправильное использование термина 'обвиняется' вместо 'осуждён'.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
+            "method": "verified_existing_fact",
             "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cqx287x9nz17o-8d966d4eedde",
-            "original_url_identity": "bbc.com/news/articles/cqx287x9nz17o",
-            "original_html": "• Второй мужчина арестован по подозрению в убийстве после того, как Алиша Сэмюэлс, 26 лет, была найдена мертвой в Ньютон Хите, Манчестер. <a href=\"https://bbc.co.uk/news/articles/cqx287x9nz17o\">BBC Manchester</a>",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cqjdm1g31z4no-444777adfe9d",
+            "original_url_identity": "bbc.com/news/articles/cqjdm1g31z4no",
+            "original_html": "• Лоренс Джонсон, 26 лет, из Доркинг-авеню, обвиняется в убийстве Алиши Самуэлс, 26 лет, и в покушении на убийство мужчины после инцидента с ножом в Манчестере в четверг. <a href=\"https://bbc.co.uk/news/articles/cqjdm1g31z4no\">BBC Manchester</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 17,
+            "line_index": 35,
             "passed": true,
-            "detail": "post-check passed"
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "business/tech события для тебя::событие проходит в ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+        "group_key": "business/tech события для тебя::дата события должна быть 23 октября 2026 года.",
         "actions": [
           {
-            "line_index": 26,
+            "line_index": 45,
+            "section": "Business/tech события для тебя",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 23 октября 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "professional_events-01",
+            "candidate_fingerprint": "event-event-unlock-nato-supply-chain-opportunities-exporting-to-nordic-defence-market-2026-10-23-unlock-nato-supply-chain-opportunities-exporting-to-nordic--d19637a2bbdb",
+            "original_url_identity": "businessgrowthhub.com/events/unlock-nato-supply-chain-opportunities-exporting-to-nordic-defence-market",
+            "original_html": "• 23 октября 2026 года в Манчестере пройдет семинар по возможностям поставок НАТО и рынку обороны Северных стран, предназначенный для британских компаний, стремящихся к международному росту. <a href=\"https://businessgrowthhub.com/events/unlock-nato-supply-chain-opportunities-exporting-to-nordic-defence-market\">GM Business Growth Hub Events</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 45,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "business/tech события для тебя::событие проходит в ливерпуле, что не соответствует geo_scope gm.",
+        "actions": [
+          {
+            "line_index": 47,
             "section": "Business/tech события для тебя",
             "requested_action": "strip",
-            "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
+            "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
             "risk": "geo",
             "critical_error": true,
-            "critical_problem": "Событие проходит в Ливерпуле, что не соответствует geo_scope 'gm'.",
+            "critical_problem": "Событие проходит в Ливерпуле, что не соответствует geo_scope.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "professional_events-01",
+            "plan_slot_id": "professional_events-03",
             "candidate_fingerprint": "event-event-policy-heathrow-means-business-new-regional-summit-lands-in-liverpool-thursday-22-oct-9am-2026-10-22-liverpool-thursday-f6efad0faed6",
             "original_url_identity": "gmchamber.co.uk/events/heathrow-means-business-new-regional-summit-lands-in-liverpool",
-            "original_html": "• #policy Heathrow Means Business: New Regional Summit Lands in Liverpool Thursday 22 Oct 9am - 4pm — 22 октября, Liverpool Thursday. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь. <a href=\"https://gmchamber.co.uk/events/heathrow-means-business-new-regional-summit-lands-in-liverpool\">GM Chamber Events</a>",
+            "original_html": "• Региональный саммит Heathrow Means Business для местных бизнесов Северо-Запада и Северного Уэльса пройдет в Ливерпуле 22 октября с 9:00 до 16:00 в Hill Dickinson Stadium. <a href=\"https://gmchamber.co.uk/events/heathrow-means-business-new-regional-summit-lands-in-liverpool\">GM Chamber Events</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -682,7 +885,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 26,
+            "line_index": 47,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -690,174 +893,100 @@
         "known_factual_error": true
       },
       {
-        "group_key": "дальние анонсы::добавление ссылки на покупку билетов для соответствия требованиям блока.",
+        "group_key": "свежие новости::дублирование информации о стефане гарнере",
         "actions": [
           {
-            "line_index": 27,
-            "section": "Дальние анонсы",
-            "requested_action": "patch",
-            "reason": "Добавление ссылки на покупку билетов для соответствия требованиям блока.",
-            "risk": "product",
-            "critical_error": true,
-            "critical_problem": "Отсутствует ссылка на покупку билетов, что нарушает требования блока.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "future_announcements-01",
-            "candidate_fingerprint": "event-event-k-rij-eurodisko-tour-2026-2026-11-06-o2-ritz-manchester-fac74e0c6e9b",
-            "original_url_identity": "ticketmaster.co.uk/kaarija-eurodisko-tour-2026-manchester-06-11-2026/event/3E00637CCACC877F",
-            "original_html": "• <b>Käärijä Eurodisko</b> — 6 ноября, O2 Ritz Manchester. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/kaarija-eurodisko-tour-2026-manchester-06-11-2026/event/3E00637CCACC877F\">Ticketmaster</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 27,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::дублирование информации о событии j",
-        "actions": [
-          {
-            "line_index": 33,
-            "section": "Билеты / Ticket Radar",
+            "line_index": 6,
+            "section": "Свежие новости",
             "requested_action": "strip",
-            "reason": "Дублирование информации о событии J. Cole.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о событии J. Cole.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "ticket_radar-06",
-            "candidate_fingerprint": "event-event-j-cole-the-fall-off-tour-wed-28-oct-2026-thu-29-oct-2026-2026-10-28-co-op-live-bc5fd1ccf36b",
-            "original_url_identity": "cooplive.com/events/j-cole-98r5",
-            "original_html": "• <b>J. Cole The Fall-Off Tour</b> — 28 октября, Co-op Live. Билеты и время указаны на официальной странице. <a href=\"https://cooplive.com/events/j-cole-98r5\">Co-op Live</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 33,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:j cole the fall off tour|2026-10-28|co op live",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::дублирование информации о закрытии трамвайных линий",
-        "actions": [
-          {
-            "line_index": 13,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о закрытии трамвайных линий.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о закрытии трамвайных линий.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-02",
-            "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
-            "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-            "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажиры должны планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 13,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "story:itv|tfgm|manchester airport|transport|manchester|rochdale|trafford|same story new facts|2026 10 18",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::повтор информации о нарушениях манчестер сити.",
-        "actions": [
-          {
-            "line_index": 16,
-            "section": "Футбол",
-            "requested_action": "strip",
-            "reason": "Повтор информации о нарушениях Манчестер Сити.",
+            "reason": "Дублирование информации о Стефане Гарнере.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Количество нарушений указано неверно.",
-            "completeness_concept": "",
+            "critical_problem": "Дублирование информации о Стефане Гарнере.",
+            "completeness_concept": "weapon_violence",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-live-appeal-34783284-7cdf04e06fdc",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-appeal-34783284",
-            "original_html": "• Манчестер Сити признан виновным в 114 нарушениях финансовых правил Премьер-лиги. Клуб подал апелляцию, и в случае её неуспеха возможно снижение очков. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-live-appeal-34783284\">MEN Manchester City</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-player-ratings-vs-34793655-16a67c3ade05",
+            "plan_slot_id": "last_24h-04",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-who-stabbed-pregnant-girlfriend-34797629-a92a83694b83",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-who-stabbed-pregnant-girlfriend-34797629",
+            "original_html": "• На судебном процессе стало известно, что 31-летний Стефан Гарнер, обвиняемый в убийстве своей беременной подруги Эмбер О'Брайен, заявил, что 'сорвался' после того, как она сообщила ему о проведённом аборте. Гарнер признал, что убил 33-летнюю женщину в своей квартире в Блэкли, но отрицает обвинение в убийстве. Судебные заседания продолжаются, и ожидаются дальнейшие показания. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-who-stabbed-pregnant-girlfriend-34797629\">MEN</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-national-poppy-appeal-launches-in-34794762-a6c004a948ac",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 7,
+            "section": "Свежие новости",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о Стефане Гарнере.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о деле Стефана Гарнера.",
+            "completeness_concept": "weapon_violence",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-05",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-stabbed-pregnant-girlfriend-after-34793346-04b9963bd419",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-stabbed-pregnant-girlfriend-after-34793346",
+            "original_html": "• Стефан Гарнер, 31 год, заявил на судебном процессе, что он \"потерял контроль\" и убил свою беременную девушку Эмбер О'Брайен после повторяющихся споров о ее употреблении кокаина. Он признал себя виновным в непредумышленном убийстве, но отрицает убийство. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-stabbed-pregnant-girlfriend-after-34793346\">MEN</a>",
+            "replacement_fingerprint": "url-bbc-com-news-articles-ck78p16750p0o-fc812b49f212",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 16,
+            "line_index": 6,
             "passed": true,
             "detail": "post-check passed"
+          },
+          {
+            "line_index": 7,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "topic:incident:manchester man who stabbed pregnant girlfriend to death after she told him she had aborted their twins tells murder trial he snapped|same story new facts|2026 10 22",
+            "visible_count": 0,
+            "passed": true
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "topic:incident:man stabbed pregnant girlfriend after repeated arguments about her drug use trial told|follow up|2026 10 21",
+            "visible_count": 0,
+            "passed": true
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::critical source fact dropped in translation: 'stabbing' (weapon_violence/who/what) has no russian rendering in the shipped line",
+        "group_key": "городской радар::critical source fact dropped in translation: 'death' (death/who/what) has no russian rendering in the shipped line",
         "actions": [
           {
-            "line_index": 8,
-            "section": "Свежие новости",
+            "line_index": 37,
+            "section": "Городской радар",
             "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'stabbing' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+            "reason": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
             "risk": "translation",
             "critical_error": true,
             "critical_problem": "",
-            "completeness_concept": "weapon_violence",
-            "outcome": "unresolved",
+            "completeness_concept": "death",
+            "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-06",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-issue-update-after-two-34789411-a1d5e84302db",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-issue-update-after-two-34789411",
-            "original_html": "• В субботу в Арндейл-центре в Манчестере произошла атака на 14-летнего мальчика, который был госпитализирован в стабильном состоянии. Два 14-летних подростка, арестованные по подозрению в причинении тяжких телесных повреждений, были отпущены под залог, как сообщила полиция в понедельник. Свидетели утверждают, что перед нападением несколько человек выбежали из центра в сторону парковки. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-issue-update-after-two-34789411\">MEN</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-chaos-stockport-park-trampoline-set-34789992-abfa86106f89",
-            "post_check_passed": false
+            "plan_slot_id": "city_watch-03",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cq78pnk10vr9o-207902642c64",
+            "original_url_identity": "bbc.com/news/articles/cq78pnk10vr9o",
+            "original_html": "• Департамент здравоохранения и социального обеспечения заявил о своей решимости сократить неравенство в области здравоохранения в Северной Англии. <a href=\"https://bbc.co.uk/news/articles/cq78pnk10vr9o\">BBC Manchester</a>",
+            "replacement_fingerprint": "url-businesscloud-co-uk-news-greater-manchester-to-pause-for-worlds-first-citywide-meditation-c8418667c9f5",
+            "post_check_passed": true
           }
         ],
-        "outcome": "unresolved",
+        "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 8,
-            "passed": false,
-            "detail": "shared prose policy still fails"
+            "line_index": 37,
+            "passed": true,
+            "detail": "post-check passed"
           }
         ],
         "known_factual_error": true
@@ -868,36 +997,18 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 2,
-      "reports": [
-        {
-          "fingerprint": "event-event-k-rij-eurodisko-tour-2026-2026-11-06-o2-ritz-manchester-fac74e0c6e9b",
-          "title": "Käärijä Eurodisko - TOUR 2026 — event 2026-11-06 — public sale 2025-12-10 09:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/kaarija-eurodisko-tour-2026-manchester-06-11-2026/event/3E00637CCACC877F",
-          "candidate_evidence_chars": 355
-        },
-        {
-          "fingerprint": "event-event-j-cole-the-fall-off-tour-wed-28-oct-2026-thu-29-oct-2026-2026-10-28-co-op-live-bc5fd1ccf36b",
-          "title": "J. Cole The Fall-Off Tour Wed 28 Oct 2026 - Thu 29 Oct 2026",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://cooplive.com/events/j-cole-98r5",
-          "candidate_evidence_chars": 0
-        }
-      ]
+      "skipped": 0
     },
-    "enrich_improved": 10,
-    "false_positive_existing_fact": 1,
-    "no_eligible_backup": 3,
+    "enrich_improved": 12,
+    "false_positive_existing_fact": 5,
+    "no_eligible_backup": 1,
     "deterministic_rewrite_rejected": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 31,
-      "matched_lines": 31,
-      "applicable_lines": 8,
-      "unmatched_lines": 0,
+      "checked_lines": 53,
+      "matched_lines": 53,
+      "applicable_lines": 2,
+      "unmatched_lines": 3,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -908,20 +1019,20 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 31,
-      "resolved_in_place": 29,
+      "checked_lines": 56,
+      "resolved_in_place": 54,
       "unresolved": 2,
       "findings": [
         {
-          "line_index": 5,
+          "line_index": 10,
           "section": "Свежие новости",
           "outcome": "unresolved",
           "code": "language_policy_defect",
           "severity": "warning"
         },
         {
-          "line_index": 8,
-          "section": "Свежие новости",
+          "line_index": 50,
+          "section": "Билеты / Ticket Radar",
           "outcome": "unresolved",
           "code": "language_policy_defect",
           "severity": "warning"
@@ -930,170 +1041,186 @@
     },
     "status": "unresolved"
   },
-  "notes": "Строка соответствует всем требованиям: субъект и событие из GM, информация точная и актуальная.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка 5 дублирует информацию из строки 4, что может вызвать путаницу.; Уточнена дата начала закрытия линии для соответствия контексту и предотвращения путаниц",
+  "notes": "Строка соответствует требованиям: география GM, актуальная информация, корректное изложение событий.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Удалите дублирующиеся строки о делах Гарнера и семьи Пирсон для избежания повторов.; Исправлена дата начала закрытия линии Metrolink в Алтринчаме.; Строка",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 5,
+        "line_index": 7,
         "section": "Свежие новости",
-        "problem": "Дублирование информации о смерти Ивонн Кемп.",
+        "problem": "Дублирование информации о деле Стефана Гарнера.",
         "risk": "factual",
         "suggested_action": "strip"
       },
       {
-        "line_index": 14,
+        "line_index": 10,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о деле семьи Пирсон.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 18,
         "section": "Общественный транспорт сегодня",
-        "problem": "Неправильная дата начала закрытия линии.",
+        "problem": "Неправильная дата начала закрытия линии Metrolink в Алтринчаме.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 16,
+        "line_index": 20,
         "section": "Футбол",
-        "problem": "Количество нарушений указано неверно.",
+        "problem": "Неверная информация о матче Лиги чемпионов. Манчестер Юнайтед не играл с Комо.",
         "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 17,
-        "section": "Городской радар",
-        "problem": "Не указано, что женщина была убита ножом.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 26,
-        "section": "Business/tech события для тебя",
-        "problem": "Событие проходит в Ливерпуле, что не соответствует geo_scope 'gm'.",
-        "risk": "geo",
         "suggested_action": "strip"
       },
       {
-        "line_index": 27,
-        "section": "Дальние анонсы",
-        "problem": "Отсутствует ссылка на покупку билетов, что нарушает требования блока.",
-        "risk": "product",
+        "line_index": 32,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
         "suggested_action": "repair"
       },
       {
         "line_index": 33,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дублирование информации о событии J. Cole.",
-        "risk": "format",
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 35,
+        "section": "Городской радар",
+        "problem": "Неправильное использование термина 'обвиняется' вместо 'осуждён'.",
+        "risk": "legal",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 45,
+        "section": "Business/tech события для тебя",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 47,
+        "section": "Business/tech события для тебя",
+        "problem": "Событие проходит в Ливерпуле, что не соответствует geo_scope.",
+        "risk": "geo",
         "suggested_action": "strip"
       },
       {
-        "line_index": 5,
+        "line_index": 6,
         "section": "Свежие новости",
-        "problem": "Дублирование информации о смерти Ивонн Кемп.",
+        "problem": "Дублирование информации о Стефане Гарнере.",
         "risk": "factual",
         "suggested_action": "strip"
       },
       {
-        "line_index": 13,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дублирование информации о закрытии трамвайных линий.",
-        "risk": "format",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 16,
-        "section": "Футбол",
-        "problem": "Повтор информации о нарушениях Манчестер Сити.",
+        "line_index": 7,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о Стефане Гарнере.",
         "risk": "factual",
         "suggested_action": "strip"
       }
     ],
     "actions": [
       {
-        "line_index": 5,
+        "line_index": 7,
         "section": "Свежие новости",
         "action": "strip",
-        "reason": "Дублирование информации о смерти Ивонн Кемп.",
+        "reason": "Дублирование информации о деле Стефана Гарнера.",
         "risk": "factual"
       },
       {
-        "line_index": 14,
+        "line_index": 10,
+        "section": "Свежие новости",
+        "action": "strip",
+        "reason": "Дублирование информации о деле семьи Пирсон.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 18,
         "section": "Общественный транспорт сегодня",
         "action": "patch",
-        "replacement_text": "• Metrolink: линия в Алтринчаме будет закрыта на две недели с понедельника, 19 октября 2026 года, для проведения ремонтных работ. Пассажиры могут воспользоваться прямым автобусным маршрутом между Алтринчемом и Манчестер Пикадилли.",
-        "reason": "Уточнение года для ясности и соответствия контексту.",
+        "replacement_text": "• Metrolink: линия Metrolink в Алтринчаме закроется на две недели с понедельника 19 октября 2026 года для проведения ремонтных работ; пассажиры должны проверить маршруты, так как будет запущен прямой автобусный маршрут между Алтринчем и Манчестер Пикадилли.",
+        "reason": "Уточнение года для даты начала закрытия линии.",
         "risk": "date"
       },
       {
-        "line_index": 16,
+        "line_index": 20,
         "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Манчестер Сити признан виновным в 115 нарушениях финансовых правил Премьер-лиги. Клуб подал апелляцию, и в случае её неуспеха возможно снижение очков.",
-        "reason": "Количество нарушений должно быть 115, согласно источнику.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 17,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Второй мужчина арестован по подозрению в убийстве после того, как Алиша Сэмюэлс, 26 лет, была найдена мертвой с ножевыми ранениями в Ньютон Хите, Манчестер.",
-        "reason": "Уточнение причины смерти для точности информации.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 26,
-        "section": "Business/tech события для тебя",
         "action": "strip",
-        "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
-        "risk": "geo"
+        "reason": "Неверная информация о матче Лиги чемпионов. Манчестер Юнайтед не играл с Комо.",
+        "risk": "factual"
       },
       {
-        "line_index": 27,
-        "section": "Дальние анонсы",
+        "line_index": 32,
+        "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• Käärijä Eurodisko — 6 ноября, O2 Ritz Manchester. Билеты и время указаны на официальной странице. [Купить билеты](https://www.ticketmaster.co.uk/kaarija-eurodisko-tour-2026-manchester-06-11-2026/event/3E00637CCACC877F)",
-        "reason": "Добавление ссылки на покупку билетов для соответствия требованиям блока.",
-        "risk": "product"
+        "replacement_text": "• 25 октября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
+        "reason": "Дата события должна быть 25 октября, а не 10 мая.",
+        "risk": "date"
       },
       {
         "line_index": 33,
-        "section": "Билеты / Ticket Radar",
-        "action": "strip",
-        "reason": "Дублирование информации о событии J. Cole.",
-        "risk": "format"
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 25 октября — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
+        "reason": "Дата события должна быть 25 октября, а не 4 апреля.",
+        "risk": "date"
       },
       {
-        "line_index": 5,
+        "line_index": 35,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Лоренс Джонсон, 26 лет, из Доркинг-авеню, обвинён в убийстве Алиши Самуэлс, 26 лет, и в покушении на убийство мужчины после инцидента с ножом в Манчестере в четверг.",
+        "reason": "Исправление юридически значимого термина 'обвиняется' на 'обвинён'.",
+        "risk": "legal"
+      },
+      {
+        "line_index": 45,
+        "section": "Business/tech события для тебя",
+        "action": "patch",
+        "replacement_text": "• 23 октября 2026 года в Манчестере пройдет семинар по возможностям поставок НАТО и рынку обороны Северных стран, предназначенный для британских компаний, стремящихся к международному росту.",
+        "reason": "Дата события должна быть 23 октября 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 47,
+        "section": "Business/tech события для тебя",
+        "action": "strip",
+        "reason": "Событие проходит в Ливерпуле, что не соответствует geo_scope GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 6,
         "section": "Свежие новости",
         "action": "strip",
         "replacement_text": "",
-        "reason": "Дублирование информации о смерти Ивонн Кемп.",
+        "reason": "Дублирование информации о Стефане Гарнере.",
         "risk": "factual"
       },
       {
-        "line_index": 13,
-        "section": "Общественный транспорт сегодня",
+        "line_index": 7,
+        "section": "Свежие новости",
         "action": "strip",
         "replacement_text": "",
-        "reason": "Дублирование информации о закрытии трамвайных линий.",
-        "risk": "format"
-      },
-      {
-        "line_index": 16,
-        "section": "Футбол",
-        "action": "strip",
-        "replacement_text": "",
-        "reason": "Повтор информации о нарушениях Манчестер Сити.",
+        "reason": "Дублирование информации о Стефане Гарнере.",
         "risk": "factual"
       }
     ],
     "warnings": [
-      "Отсутствие блока 'Что важно сегодня' снижает полноту выпуска.",
-      "Отсутствие блока 'Русскоязычные концерты и стендап UK' снижает разнообразие контента."
+      "В разделе 'Крупные концерты вне GM' оба события указаны на одну и ту же дату — 25 октября. Это может вызвать путаницу у читателей, если они планируют посетить оба мероприятия. Рекомендуется добавить время начала каждого концерта для большей ясности.",
+      "Недостаточное количество элементов в секции 'Что важно сегодня'.",
+      "Отсутствие элементов в секции 'Русскоязычные концерты и стендап UK'.",
+      "Отсутствие элементов в секции 'Еда, открытия и рынки'."
     ],
-    "notes": "Строка соответствует всем требованиям: субъект и событие из GM, информация точная и актуальная.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка 5 дублирует информацию из строки 4, что может вызвать путаницу.; Уточнена дата начала закрытия линии для соответствия контексту и предотвращения путаниц",
+    "notes": "Строка соответствует требованиям: география GM, актуальная информация, корректное изложение событий.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Удалите дублирующиеся строки о делах Гарнера и семьи Пирсон для избежания повторов.; Исправлена дата начала закрытия линии Metrolink в Алтринчаме.; Строка",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 11,
+      "chunk_count": 13,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -1111,8 +1238,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2580,
-          "duration_seconds": 1.005
+          "estimated_tokens": 2658,
+          "duration_seconds": 1.608
         },
         {
           "chunk_id": "chunk-02",
@@ -1130,7 +1257,7 @@
           "warning_count": 0,
           "error": "",
           "estimated_tokens": 2488,
-          "duration_seconds": 0.967
+          "duration_seconds": 1.353
         },
         {
           "chunk_id": "chunk-03",
@@ -1143,19 +1270,19 @@
             "Свежие новости"
           ],
           "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7371,
-          "duration_seconds": 1.529
+          "estimated_tokens": 7212,
+          "duration_seconds": 2.746
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            14
+            18
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -1165,15 +1292,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3524,
-          "duration_seconds": 1.794
+          "estimated_tokens": 5268,
+          "duration_seconds": 2.131
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            15,
-            16
+            19,
+            19
+          ],
+          "sections": [
+            "Что важно сегодня"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2733,
+          "duration_seconds": 0.979
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "ok",
+          "line_range": [
+            20,
+            21
           ],
           "sections": [
             "Футбол"
@@ -1183,15 +1328,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3167,
-          "duration_seconds": 1.976
+          "estimated_tokens": 3152,
+          "duration_seconds": 2.002
         },
         {
-          "chunk_id": "chunk-06",
+          "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            17,
-            24
+            22,
+            33
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 8112,
+          "duration_seconds": 69.601
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            34,
+            34
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2747,
+          "duration_seconds": 1.301
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            35,
+            43
           ],
           "sections": [
             "Городской радар"
@@ -1201,15 +1382,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6183,
-          "duration_seconds": 1.884
+          "estimated_tokens": 6749,
+          "duration_seconds": 27.056
         },
         {
-          "chunk_id": "chunk-07",
+          "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            25,
-            25
+            44,
+            44
           ],
           "sections": [
             "IT и бизнес"
@@ -1219,80 +1400,62 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2690,
-          "duration_seconds": 0.837
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            26,
-            26
-          ],
-          "sections": [
-            "Business/tech события для тебя"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2898,
-          "duration_seconds": 19.234
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            27,
-            27
-          ],
-          "sections": [
-            "Дальние анонсы"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2699,
-          "duration_seconds": 6.733
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            28,
-            33
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 5657,
-          "duration_seconds": 30.98
+          "estimated_tokens": 2656,
+          "duration_seconds": 1.033
         },
         {
           "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            34,
-            34
+            45,
+            47
           ],
           "sections": [
-            "Крупные концерты вне GM"
+            "Business/tech события для тебя"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 4282,
+          "duration_seconds": 10.826
+        },
+        {
+          "chunk_id": "chunk-12",
+          "status": "ok",
+          "line_range": [
+            48,
+            55
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2658,
-          "duration_seconds": 4.786
+          "estimated_tokens": 6823,
+          "duration_seconds": 36.355
+        },
+        {
+          "chunk_id": "chunk-13",
+          "status": "ok",
+          "line_range": [
+            56,
+            57
+          ],
+          "sections": [
+            "Крупные концерты вне GM"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 3330,
+          "duration_seconds": 5.818
         }
       ],
       "reduce": {
@@ -1301,12 +1464,12 @@
         "line_range": [],
         "sections": [],
         "decision": "repair_required",
-        "critical_error_count": 3,
-        "action_count": 3,
-        "warning_count": 2,
+        "critical_error_count": 2,
+        "action_count": 2,
+        "warning_count": 3,
         "error": "",
-        "estimated_tokens": 9851,
-        "duration_seconds": 23.479
+        "estimated_tokens": 11638,
+        "duration_seconds": 26.072
       },
       "max_workers": 3,
       "chunk_line_target": 12,
