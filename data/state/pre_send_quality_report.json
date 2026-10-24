@@ -1,5 +1,5 @@
 {
-  "status": "partial",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
   "reason": "pre-send repair completed with honest unresolved non-factual findings: operations=0, prose=1",
@@ -7,205 +7,199 @@
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-10-23",
-  "pipeline_run_id": "20261023T080204+0100",
-  "digest_sha256": "d9e5014594c07d932665df9d78c973d6f7609d9023d381dbe0a972c95409cbf3",
-  "duration_seconds": 108.996,
+  "run_date_london": "2026-10-24",
+  "pipeline_run_id": "20261024T080156+0100",
+  "digest_sha256": "d9682ed460251afe6d10b995be2b5188a964b4add333893b1d614c29477f1159",
+  "duration_seconds": 114.533,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Неправильное использование термина 'обвиняемый' для Лоренса Джонсона.",
-      "risk": "legal",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 8,
+      "line_index": 4,
       "section": "Свежие новости",
-      "problem": "Противоречие в информации о знании водителя.",
-      "risk": "factual",
+      "problem": "Дата судебного заседания указана как 15 июня 2027 года, что не соответствует текущему контексту новостей.",
+      "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 12,
+      "line_index": 17,
       "section": "Общественный транспорт сегодня",
-      "problem": "Дублирование информации о приостановке трамвайных линий.",
+      "problem": "Строка не относится к общественному транспорту и не соответствует теме раздела.",
       "risk": "format",
       "suggested_action": "strip"
     },
     {
-      "line_index": 15,
-      "section": "Что важно сегодня",
-      "problem": "Дата закрытия школы указана как август 2027 года, что не соответствует текущему контексту.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 16,
+      "line_index": 19,
       "section": "Футбол",
-      "problem": "Неверное представление субъекта: Кайл Уокер не является обвиняемым в финансовых нарушениях.",
+      "problem": "Текст неясен и не отражает суть Q&A сессии.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 29,
+      "line_index": 32,
       "section": "Выходные в GM",
-      "problem": "Дата события указана неверно. Указана дата 25 октября, но в источнике указано, что мероприятие проходит с 10 мая по 30 августа.",
+      "problem": "Дата события указана неверно. Указана дата 25 октября, но в источнике указано, что мероприятие проходит с мая по август.",
+      "risk": "date",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 33,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно. В тексте указано 24 октября, но в данных события указана дата 4 апреля 2026 года.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 30,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно. В тексте указано 24 октября, но в источнике дата события 4 апреля 2026 года.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 39,
+      "line_index": 35,
       "section": "Городской радар",
-      "problem": "Строка касается всей Англии и Уэльса, а не только Большого Манчестера.",
+      "problem": "Событие произошло в Престоне, который не входит в Greater Manchester.",
       "risk": "geo",
       "suggested_action": "strip"
     },
     {
-      "line_index": 42,
-      "section": "Еда, открытия и рынки",
-      "problem": "Неправильное указание места открытия ресторана.",
-      "risk": "geo",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 45,
+      "line_index": 44,
       "section": "IT и бизнес",
-      "problem": "Строка не содержит достаточной информации для понимания события.",
-      "risk": "format",
+      "problem": "Географическая ошибка: Литтл Боллингтон находится в Чешире, а не в Greater Manchester.",
+      "risk": "geo",
       "suggested_action": "strip"
     },
     {
       "line_index": 47,
+      "section": "Дальние анонсы",
+      "problem": "Название события не указано полностью.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 61,
       "section": "Билеты / Ticket Radar",
-      "problem": "Дата события указана как 11 февраля, что не соответствует текущему времени и не является актуальной информацией для раздела билетов.",
+      "problem": "Название группы указано дважды, что может ввести в заблуждение.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 62,
+      "section": "Крупные концерты вне GM",
+      "problem": "Неправильная дата события.",
       "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 17,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Неправильное размещение контента. История о матери из Теймсайда не относится к общественному транспорту.",
+      "risk": "format",
       "suggested_action": "strip"
     },
     {
-      "line_index": 57,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дата события указана как 21 августа 2027 года, что не соответствует текущему времени и не является актуальной информацией для раздела билетов.",
-      "risk": "date",
+      "line_index": 33,
+      "section": "Выходные в GM",
+      "problem": "Дублирование информации о автомобильной барахолке.",
+      "risk": "format",
       "suggested_action": "strip"
-    },
-    {
-      "line_index": 34,
-      "section": "Городской радар",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'murders' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "homicide"
     }
   ],
   "actions": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• Ранее по этому делу был арестован 26-летний Лоренс Джонсон, также подозреваемый в убийстве, а также 48-летняя женщина, подозреваемая в помощи преступнику.",
-      "reason": "Лоренс Джонсон был арестован и подозревается в убийстве, но не обвинён.",
-      "risk": "legal"
-    },
-    {
-      "line_index": 8,
+      "line_index": 4,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• В суде по делу об убийстве стало известно, что водитель Саймон Ричардсон утверждает, что не осознавал, что директор Stretford грамматической школы Майкл Маллинс застрял под его автомобилем после наезда на него.",
-      "reason": "Уточнение позиции водителя в соответствии с источником.",
-      "risk": "factual"
+      "replacement_text": "• Два иранца предстанут перед судом по делу о планах взрыва синагоги в Манчестере. Судебное заседание назначено на 15 июня 2026 года в Королевском суде Манчестера.",
+      "reason": "Дата судебного заседания должна быть в 2026 году, чтобы соответствовать текущему контексту.",
+      "risk": "date"
     },
     {
-      "line_index": 12,
+      "line_index": 17,
       "section": "Общественный транспорт сегодня",
       "action": "strip",
-      "reason": "Информация о приостановке трамвайных линий уже представлена в строке 14.",
+      "reason": "Строка не соответствует тематике раздела 'Общественный транспорт сегодня'.",
       "risk": "format",
       "replacement_text": ""
     },
     {
-      "line_index": 15,
-      "section": "Что важно сегодня",
-      "action": "patch",
-      "replacement_text": "• В августе 2024 года закроется католическая начальная школа Святой Терезы в Сретфорде, что вызвало опустошение среди семей. Совет Trafford принял это решение из-за снижения числа учеников, которые упали до 39.",
-      "reason": "Дата закрытия школы должна быть 2024 год, чтобы соответствовать текущему контексту и источнику.",
-      "risk": "date"
-    },
-    {
-      "line_index": 16,
+      "line_index": 19,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Кайл Уокер признал, что 114 финансовых обвинений против Манчестер Сити 'выглядят не очень хорошо' и выразил опасения по поводу возможного удаления татуировки.",
-      "reason": "Уточнение, что обвинения направлены против клуба, а не лично против Уокера.",
+      "replacement_text": "• Вопросы и ответы по Манчестер Сити касаются Нунеса, апелляции по делу 115 и Аит-Нури. Маэска стремится к восьмой подряд победе в Премьер-лиге.",
+      "reason": "Уточнение формулировки для ясности.",
       "risk": "factual"
     },
     {
-      "line_index": 29,
+      "line_index": 32,
       "section": "Выходные в GM",
       "action": "strip",
-      "reason": "Дата события не соответствует информации из источника.",
+      "reason": "Дата события не соответствует информации из источника. Указана дата 25 октября, но в источнике указано, что мероприятие проходит с мая по август.",
       "risk": "date",
       "replacement_text": ""
     },
     {
-      "line_index": 30,
+      "line_index": 33,
       "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• 4 апреля 2026 — Barton Aerodrome автомобильная барахолка. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
-      "reason": "Дата события должна соответствовать источнику.",
+      "replacement_text": "• 4 апреля 2026 — автомобильная барахолка в Barton Aerodrome. Для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
+      "reason": "Дата события должна соответствовать данным из источника.",
       "risk": "date"
     },
     {
-      "line_index": 39,
+      "line_index": 35,
       "section": "Городской радар",
       "action": "strip",
-      "reason": "Информация о домашнем насилии касается всей Англии и Уэльса, а не только GM.",
+      "reason": "Престон не входит в Greater Manchester, что нарушает географический контракт раздела.",
       "risk": "geo",
       "replacement_text": ""
     },
     {
-      "line_index": 42,
-      "section": "Еда, открытия и рынки",
-      "action": "patch",
-      "replacement_text": "• В Стокпорте, в Weir Mill, открылся новый итальянский ресторан Social Osteria, предлагающий маленькие порции, домашнюю пасту и пиццу.",
-      "reason": "Уточнение места открытия ресторана в соответствии с источником.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 45,
+      "line_index": 44,
       "section": "IT и бизнес",
       "action": "strip",
-      "reason": "Строка 'Регистрация бесплатная.' не предоставляет контекста или информации о событии.",
-      "risk": "format",
+      "reason": "Литтл Боллингтон находится в Чешире, что не соответствует geo_scope GM.",
+      "risk": "geo",
       "replacement_text": ""
     },
     {
       "line_index": 47,
-      "section": "Билеты / Ticket Radar",
-      "action": "strip",
-      "reason": "Событие не актуально для текущего времени.",
-      "risk": "date",
-      "replacement_text": ""
+      "section": "Дальние анонсы",
+      "action": "patch",
+      "replacement_text": "• Pete Tong presents Ibiza Classics — 4 декабря, AO Arena. Билеты и время указаны на официальной странице.",
+      "reason": "Полное название события должно быть указано для точности.",
+      "risk": "factual"
     },
     {
-      "line_index": 57,
+      "line_index": 61,
       "section": "Билеты / Ticket Radar",
+      "action": "patch",
+      "replacement_text": "• Boundaries — 7 апреля, Manchester Academy. Билеты и время указаны на официальной странице.",
+      "reason": "Название группы указано дважды, что может ввести в заблуждение.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 62,
+      "section": "Крупные концерты вне GM",
+      "action": "patch",
+      "replacement_text": "• THE bEAT DANCE CRAZED TOO UK TOUR — 25 октября, O2 Academy Bournemouth. Билеты и время указаны на официальной странице.",
+      "reason": "Дата события указана неверно. Должна быть 25 октября.",
+      "risk": "date"
+    },
+    {
+      "line_index": 17,
+      "section": "Общественный транспорт сегодня",
       "action": "strip",
-      "reason": "Событие не актуально для текущего времени.",
-      "risk": "date",
-      "replacement_text": ""
+      "replacement_text": "",
+      "reason": "История о матери из Теймсайда не относится к общественному транспорту.",
+      "risk": "format"
+    },
+    {
+      "line_index": 33,
+      "section": "Выходные в GM",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации о автомобильной барахолке.",
+      "risk": "format"
     }
   ],
   "warnings": [
-    "judge reduce failed: parse_failed no parseable JSON"
+    "Некоторые строки содержат повторение имени артиста, что может быть избыточным, но это не критично для выпуска.",
+    "Секция 'Что важно сегодня' отсутствует, что нарушает продуктовую полноту.",
+    "Слишком много билетов в разделе 'Билеты / Ticket Radar', что может доминировать над основными новостями."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -214,100 +208,91 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 3,
-      "Что важно сегодня": 1,
+      "Общественный транспорт сегодня": 7,
       "Футбол": 2,
       "Выходные в GM": 11,
-      "Городской радар": 10,
-      "Еда, открытия и рынки": 1,
-      "IT и бизнес": 4,
-      "Билеты / Ticket Radar": 11,
-      "Крупные концерты вне GM": 1
+      "Городской радар": 9,
+      "IT и бизнес": 3,
+      "Дальние анонсы": 1,
+      "Билеты / Ticket Radar": 14,
+      "Крупные концерты вне GM": 2
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 1,
+      "Что важно сегодня": 0,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 10,
+      "Городской радар": 9,
       "Выходные в GM": 11,
-      "Билеты / Ticket Radar": 11,
+      "Билеты / Ticket Radar": 14,
       "Русскоязычные концерты и стендап UK": 0,
-      "Еда, открытия и рынки": 1,
+      "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
       "Футбол": 2
     },
-    "ticket_items": 12,
-    "core_items": 36,
+    "ticket_items": 16,
+    "core_items": 33,
     "writer_quality_counts": {
-      "included_candidates": 57,
-      "rendered_candidates": 55,
+      "included_candidates": 61,
+      "rendered_candidates": 60,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 2,
+      "dropped_low_quality": 1,
       "replaced_from_plan_backup": 0,
-      "removed_with_reason": 2
+      "removed_with_reason": 1
     },
     "source_health_counts": {
-      "ok": 106,
+      "ok": 105,
       "partial": 2,
-      "stale": 3,
+      "stale": 5,
       "empty": 13,
-      "failed": 7,
-      "zero_yield": 70,
+      "failed": 6,
+      "zero_yield": 66,
       "no_contribution_breakdown": {
-        "fetch_failed": 7,
-        "all_rejected": 70,
-        "idle_no_items": 25
+        "fetch_failed": 6,
+        "all_rejected": 66,
+        "idle_no_items": 26
       },
       "zero_contribution_by_stage": {
-        "written": 38,
-        "fetched": 7,
-        "parsed": 25,
-        "selected": 32
+        "selected": 30,
+        "written": 36,
+        "parsed": 26,
+        "fetched": 6
       },
       "weekend_source_coverage_incidents": 51
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 1 item(s), emergency floor 3",
+      "Что важно сегодня: 0 item(s), emergency floor 3",
       "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
-      "Еда, открытия и рынки: 1 item(s), emergency floor 3",
+      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "Business/tech события для тебя: 0 item(s), emergency floor 1",
-      "source failures: 7"
+      "source failures: 6"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 1 has unchecked number/date token(s): 48",
-      "patch for line 15 has unchecked number/date token(s): 2024, 39",
-      "patch for line 30 has unchecked number/date token(s): 9:00"
+      "patch for line 33 has unchecked number/date token(s): 9:00",
+      "multiple actions target line 17",
+      "multiple actions target line 33"
     ],
     "can_apply_actions": true,
     "action_count": 12
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 55,
-    "matched_lines": 55,
-    "applicable_lines": 7,
+    "checked_lines": 60,
+    "matched_lines": 60,
+    "applicable_lines": 3,
     "unmatched_lines": 3,
-    "critical_omission_count": 1,
-    "critical_omissions": [
-      {
-        "line_index": 34,
-        "source_url_key": "bbc.com/news/articles/cwx287glpxeno",
-        "concept": "homicide",
-        "obligation": "charge/verdict/victim",
-        "source_hit": "murders"
-      }
-    ],
+    "critical_omission_count": 0,
+    "critical_omissions": [],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 1,
+    "pulled_for_rework": 0,
     "still_missing": 0
   },
   "repair_executor": {
@@ -317,441 +302,268 @@
     "requested": 12,
     "attempted": 10,
     "applied": 10,
-    "model_patch_applied": 2,
+    "model_patch_applied": 3,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 1,
-    "stripped": 7,
+    "reserve_replacement_used": 4,
+    "stripped": 3,
     "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 11,
-    "resolved_in_place": 4,
-    "resolved_by_replacement": 1,
-    "resolved_by_removal": 6,
+    "resolved": 12,
+    "resolved_in_place": 5,
+    "resolved_by_replacement": 4,
+    "resolved_by_removal": 3,
     "fact_lock_rejected": 1,
     "enrich_attempted": 12,
     "post_check_errors": [],
-    "geo_contract_rejected": [
-      {
-        "line_index": 42,
-        "section": "Еда, открытия и рынки",
-        "geo_scope": "gm",
-        "reason": "Уточнение места открытия ресторана в соответствии с источником.",
-        "gm_anchor_present": true
-      }
-    ],
+    "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "requested_action": "patch",
-        "reason": "Лоренс Джонсон был арестован и подозревается в убийстве, но не обвинён.",
-        "risk": "legal",
-        "critical_error": true,
-        "critical_problem": "Неправильное использование термина 'обвиняемый' для Лоренса Джонсона.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cwz0vxz278mxo-7474739fab66",
-        "original_url_identity": "bbc.com/news/articles/cwz0vxz278mxo",
-        "original_html": "<b>Предъявлено обвинение — В связи с убийством 26-летней Алиши Самуэлс, найденной мёртвой 15 октября на Доркинг-авеню в Ньютон-Хите, двое молодых людей, Карл Харди и Тони Эванс, оба 19 лет, были обвинены в убийстве и покушении на убийство.</b> Они должны предстать перед судом в Манчестере в пятницу. Ранее по этому делу был арестован 26-летний Лоренс Джонсон, также обвиняемый в убийстве, а также 48-летняя женщина, подозреваемая в помощи преступнику. <a href=\"https://bbc.com/news/articles/cwz0vxz278mxo\">BBC Manchester</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 8,
+        "line_index": 4,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Уточнение позиции водителя в соответствии с источником.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Противоречие в информации о знании водителя.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "last_24h-06",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-driver-unaware-stretford-grammar-headteacher-34804063-323c67541c22",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/driver-unaware-stretford-grammar-headteacher-34804063",
-        "original_html": "• В суде по делу об убийстве стало известно, что водитель Саймон Ричардсон не осознавал, что директор Stretford грамматической школы Майкл Маллинс застрял под его автомобилем после наезда на него. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/driver-unaware-stretford-grammar-headteacher-34804063\">MEN</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Информация о приостановке трамвайных линий уже представлена в строке 14.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о приостановке трамвайных линий.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-01",
-        "candidate_fingerprint": "transport-reminder|metrolink|altrincham-line|2026-10-23",
-        "original_url_identity": "tfgm.com/travel-updates/travel-alerts/major-tram-works-city-centre-trafford-and-eccles",
-        "original_html": "• Metrolink (до 1 ноября): трамваи не ходят по линиям Эклс, Траффорд Центр и Алтринчам; используйте шаттл-автобусы и планируйте поездку заранее. <a href=\"https://tfgm.com/travel-updates/travel-alerts/major-tram-works-city-centre-trafford-and-eccles\">Metrolink</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 15,
-        "section": "Что важно сегодня",
-        "requested_action": "patch",
-        "reason": "Дата закрытия школы должна быть 2024 год, чтобы соответствовать текущему контексту и источнику.",
+        "reason": "Дата судебного заседания должна быть в 2026 году, чтобы соответствовать текущему контексту.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата закрытия школы указана как август 2027 года, что не соответствует текущему контексту.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "today_focus-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cw054127054do-8ddfb020cd8f",
-        "original_url_identity": "bbc.com/news/articles/cw054127054do",
-        "original_html": "• В августе 2027 года закроется католическая начальная школа Святой Терезы в Сретфорде, что вызвало опустошение среди семей. Совет Trafford принял это решение из-за снижения числа учеников, которые упали до 39. <a href=\"https://bbc.co.uk/news/articles/cw054127054do\">BBC Manchester</a>",
-        "model_replacement_rejected": "fact_lock: 2024",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 16,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Уточнение, что обвинения направлены против клуба, а не лично против Уокера.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неверное представление субъекта: Кайл Уокер не является обвиняемым в финансовых нарушениях.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-kyle-walker-charges-34799676-10f4e7c130b9",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-kyle-walker-charges-34799676",
-        "original_html": "• Кайл Уокер признал, что 114 финансовых обвинений против Манчестер Сити 'выглядят не очень хорошо' и выразил опасения по поводу необходимости удалить татуировку. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-kyle-walker-charges-34799676\">MEN Manchester City</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 29,
-        "section": "Выходные в GM",
-        "requested_action": "strip",
-        "reason": "Дата события не соответствует информации из источника.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно. Указана дата 25 октября, но в источнике указано, что мероприятие проходит с 10 мая по 30 августа.",
+        "critical_problem": "Дата судебного заседания указана как 15 июня 2027 года, что не соответствует текущему контексту новостей.",
         "completeness_concept": "",
         "outcome": "resolved_by_replacement",
         "method": "reserve_replacement",
-        "plan_slot_id": "weekend_activities-07",
-        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-        "original_html": "• 25 октября — Burnage RFC автомобильная барахолка. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-        "replacement_fingerprint": "event-event-aardman-in-concert-2026-10-23-manchester-central-70b9a59f7342",
+        "plan_slot_id": "last_24h-02",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cq62y3n1jj8mo-25c0751c012f",
+        "original_url_identity": "bbc.com/news/articles/cq62y3n1jj8mo",
+        "original_html": "• Два иранца предстанут перед судом по делу о планах взрыва синагоги в Манчестере. Судебное заседание назначено на 15 июня 2027 года в Королевском суде Манчестера. <a href=\"https://bbc.co.uk/news/articles/cq62y3n1jj8mo\">BBC Manchester</a>",
+        "model_replacement_rejected": "fact_lock: 15 июня 2026",
+        "replacement_fingerprint": "url-aboutmanchester-co-uk-protests-outside-no-10-north-over-jackdaw-decision-aada58c1bb86",
         "post_check_passed": true
       },
       {
-        "line_index": 30,
-        "section": "Выходные в GM",
+        "line_index": 17,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "strip",
+        "reason": "Строка не соответствует тематике раздела 'Общественный транспорт сегодня'.",
+        "risk": "format",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "transport-07",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-tameside-mum-small-business-owner-34807482-f77bb47b87ae",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/tameside-mum-small-business-owner-34807482",
+        "original_html": "• Мать из Теймсайда и владелица малого бизнеса сообщила, что TikTok Shop заблокировал доступ к её доходам на три месяца, что вынудило её обратиться в продовольственный банк. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/tameside-mum-small-business-owner-34807482\">MEN</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "unrenderable_line",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 19,
+        "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Дата события должна соответствовать источнику.",
+        "reason": "Уточнение формулировки для ясности.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Текст неясен и не отражает суть Q&A сессии.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-nunes-115-appeal-ait-nouri-34802718-62aa7f3bddaf",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/nunes-115-appeal-ait-nouri-34802718",
+        "original_html": "• Вопросы и ответы по Манчестер Сити касаются Нунеса, апелляции по делу 115 и Аит-Нури, поскольку Маэска стремится к восьмой подряд победе в Премьер-лиге. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/nunes-115-appeal-ait-nouri-34802718\">MEN Manchester City</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 32,
+        "section": "Выходные в GM",
+        "requested_action": "strip",
+        "reason": "Дата события не соответствует информации из источника. Указана дата 25 октября, но в источнике указано, что мероприятие проходит с мая по август.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события указана неверно. В тексте указано 24 октября, но в источнике дата события 4 апреля 2026 года.",
+        "critical_problem": "Дата события указана неверно. Указана дата 25 октября, но в источнике указано, что мероприятие проходит с мая по август.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "weekend_activities-08",
+        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+        "original_html": "• 25 октября — Burnage RFC автомобильная барахолка. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+        "replacement_fingerprint": "event-event-eat-well-supper-club-uma-x-diob-2026-10-25-diob-9de8eecc096e",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 33,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата события должна соответствовать данным из источника.",
+        "risk": "date",
+        "critical_error": false,
+        "critical_problem": "",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-08",
+        "plan_slot_id": "weekend_activities-09",
         "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
         "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
-        "original_html": "• 24 октября — Barton Aerodrome автомобильная барахолка. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+        "original_html": "• 24 октября — автомобильная барахолка в Barton Aerodrome. Для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 39,
+        "line_index": 35,
         "section": "Городской радар",
         "requested_action": "strip",
-        "reason": "Информация о домашнем насилии касается всей Англии и Уэльса, а не только GM.",
+        "reason": "Престон не входит в Greater Manchester, что нарушает географический контракт раздела.",
         "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Строка касается всей Англии и Уэльса, а не только Большого Манчестера.",
+        "critical_problem": "Событие произошло в Престоне, который не входит в Greater Manchester.",
         "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "city_watch-09",
-        "candidate_fingerprint": "url-bbc-com-news-articles-ckr5y20n96jdo-cac68c0b12d5",
-        "original_url_identity": "bbc.com/news/articles/ckr5y20n96jdo",
-        "original_html": "• В результате расследования BBC было выявлено более 1200 обвинений в домашнем насилии против полицейских и специальных констеблей в Англии и Уэльсе за три года. <a href=\"https://bbc.com/news/articles/ckr5y20n96jdo\">BBC Manchester</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "city_watch-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-truly-despicable-man-who-murdered-34807462-fa78bc6081b9",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/truly-despicable-man-who-murdered-34807462",
+        "original_html": "• Натан Оуэнс, 34 года, приговорён к пожизненному заключению с минимальным сроком 35 лет за убийство своей падчерицы Карлы Георгеаску в её университетском общежитии в Престоне 23 октября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/truly-despicable-man-who-murdered-34807462\">MEN</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-natwest-offer-new-scheme-greater-34809647-6c25a889a4f4",
         "post_check_passed": true
       },
       {
-        "line_index": 45,
+        "line_index": 44,
         "section": "IT и бизнес",
         "requested_action": "strip",
-        "reason": "Строка 'Регистрация бесплатная.' не предоставляет контекста или информации о событии.",
-        "risk": "format",
+        "reason": "Литтл Боллингтон находится в Чешире, что не соответствует geo_scope GM.",
+        "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Строка не содержит достаточной информации для понимания события.",
+        "critical_problem": "Географическая ошибка: Литтл Боллингтон находится в Чешире, а не в Greater Manchester.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "tech_business-03",
-        "candidate_fingerprint": "url-businesscloud-co-uk-news-founder-250-star-to-bring-grit-innovation-authenticity-to-fuel-manchester-0819664af4da",
-        "original_url_identity": "businesscloud.co.uk/news/founder-250-star-to-bring-grit-innovation-authenticity-to-fuel-manchester",
-        "original_html": "• Регистрация бесплатная. <a href=\"https://businesscloud.co.uk/news/founder-250-star-to-bring-grit-innovation-authenticity-to-fuel-manchester\">BusinessCloud</a>",
+        "plan_slot_id": "tech_business-01",
+        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-23-petition-against-little-bollington-data-centre-plans-passes-1-000-signatures-1978f3d6e3ff",
+        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/10/23/petition-against-little-bollington-data-centre-plans-passes-1-000-signatures",
+        "original_html": "• Петиция против планов строительства дата-центра в Литтл Боллингтоне собрала более 1000 подписей; застройщик Innova планирует подать заявку на планирование в совет Чешир Восток в конце 2026 или начале 2027 года. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/23/petition-against-little-bollington-data-centre-plans-passes-1-000-signatures\">Altrincham Today</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
         "line_index": 47,
+        "section": "Дальние анонсы",
+        "requested_action": "patch",
+        "reason": "Полное название события должно быть указано для точности.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Название события не указано полностью.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "future_announcements-01",
+        "candidate_fingerprint": "event-event-pete-tong-presents-ibiza-classics-venue-premium-tickets-2026-12-04-ao-arena-bd01be5901f8",
+        "original_url_identity": "ticketmaster.co.uk/pete-tong-presents-ibiza-classics-venue-manchester-04-12-2026/event/1F00638C9A15480D",
+        "original_html": "• <b>Ibiza Classics</b> — 4 декабря, AO Arena. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/pete-tong-presents-ibiza-classics-venue-manchester-04-12-2026/event/1F00638C9A15480D\">Ticketmaster</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 61,
         "section": "Билеты / Ticket Radar",
-        "requested_action": "strip",
-        "reason": "Событие не актуально для текущего времени.",
+        "requested_action": "patch",
+        "reason": "Название группы указано дважды, что может ввести в заблуждение.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Название группы указано дважды, что может ввести в заблуждение.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "ticket_radar-14",
+        "candidate_fingerprint": "event-event-boundaries-boundaries-plus-special-guests-wed-7th-apr-18-00-buy-2027-04-07-manchester-academy-7ee0c2988514",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13381938/boundaries-manchester-academy-2-2027-04-07-18-00-00",
+        "original_html": "• <b>Boundaries Boundaries</b> — 7 апреля, Manchester Academy. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381938/boundaries-manchester-academy-2-2027-04-07-18-00-00\">Manchester Academy</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 62,
+        "section": "Крупные концерты вне GM",
+        "requested_action": "patch",
+        "reason": "Дата события указана неверно. Должна быть 25 октября.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события указана как 11 февраля, что не соответствует текущему времени и не является актуальной информацией для раздела билетов.",
+        "critical_problem": "Неправильная дата события.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "outside_gm_tickets-01",
+        "candidate_fingerprint": "event-event-the-beat-dance-crazed-too-uk-tour-2026-10-25-o2-academy-bournemouth-f9e10f4faf8d",
+        "original_url_identity": "ticketmaster.co.uk/the-beat-dance-crazed-too-uk-bournemouth-25-10-2026/event/3E00636E072DD51A",
+        "original_html": "• <b>THE bEAT DANCE CRAZED TOO UK TOUR</b> — 25 октября, O2 Academy Bournemouth. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-beat-dance-crazed-too-uk-bournemouth-25-10-2026/event/3E00636E072DD51A\">Ticketmaster</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 17,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "strip",
+        "reason": "История о матери из Теймсайда не относится к общественному транспорту.",
+        "risk": "format",
+        "critical_error": true,
+        "critical_problem": "Строка не относится к общественному транспорту и не соответствует теме раздела.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "ticket_radar-01",
-        "candidate_fingerprint": "event-event-she-wants-revenge-11th-february-2027-2027-02-11-manchester-academy-ee1931ca596f",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13381926/she-wants-revenge-manchester-club-academy-2027-02-11-19-30-00",
-        "original_html": "• <b>She Wants Revenge</b> — 11 февраля, Manchester Academy; цена £25.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381926/she-wants-revenge-manchester-club-academy-2027-02-11-19-30-00\">Manchester Academy</a>",
+        "plan_slot_id": "transport-07",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-tameside-mum-small-business-owner-34807482-f77bb47b87ae",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/tameside-mum-small-business-owner-34807482",
+        "original_html": "• Мать из Теймсайда и владелица малого бизнеса сообщила, что TikTok Shop заблокировал доступ к её доходам на три месяца, что вынудило её обратиться в продовольственный банк. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/tameside-mum-small-business-owner-34807482\">MEN</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 57,
-        "section": "Билеты / Ticket Radar",
+        "line_index": 33,
+        "section": "Выходные в GM",
         "requested_action": "strip",
-        "reason": "Событие не актуально для текущего времени.",
-        "risk": "date",
+        "reason": "Дублирование информации о автомобильной барахолке.",
+        "risk": "format",
         "critical_error": true,
-        "critical_problem": "Дата события указана как 21 августа 2027 года, что не соответствует текущему времени и не является актуальной информацией для раздела билетов.",
+        "critical_problem": "Дата события указана неверно. В тексте указано 24 октября, но в данных события указана дата 4 апреля 2026 года.",
         "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "ticket_radar-11",
-        "candidate_fingerprint": "event-event-crook-on-the-wall-21st-august-2027-2027-08-21-manchester-academy-459eb6bbde41",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00",
-        "original_html": "• <b>CROOK ON THE WALL</b> — 21 августа, Manchester Academy; цена £10.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00\">Manchester Academy</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 34,
-        "section": "Городской радар",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'murders' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
-        "risk": "translation",
-        "critical_error": true,
-        "critical_problem": "",
-        "completeness_concept": "homicide",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "city_watch-03",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cwx287glpxeno-8447eb7cd525",
-        "original_url_identity": "bbc.com/news/articles/cwx287glpxeno",
-        "original_html": "• На коронерском расследовании стало известно, что социальные работники получили анонимный сигнал о том, что дети находятся в \"большой опасности\" за несколько дней до смертельного поджога в Салфорде, в результате которого погибли четверо детей и их мать. <a href=\"https://bbc.co.uk/news/articles/cwx287glpxeno\">BBC Manchester</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "weekend_activities-09",
+        "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+        "original_html": "• 24 октября — автомобильная барахолка в Barton Aerodrome. Для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+        "replacement_fingerprint": "url-contactmcr-com-support-us-bda1415d6bb6",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::лоренс джонсон был арестован и подозревается в убийстве, но не обвинён.",
+        "group_key": "свежие новости::дата судебного заседания должна быть в 2026 году, чтобы соответствовать текущему контексту.",
         "actions": [
           {
-            "line_index": 1,
-            "section": "Главная история дня",
-            "requested_action": "patch",
-            "reason": "Лоренс Джонсон был арестован и подозревается в убийстве, но не обвинён.",
-            "risk": "legal",
-            "critical_error": true,
-            "critical_problem": "Неправильное использование термина 'обвиняемый' для Лоренса Джонсона.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cwz0vxz278mxo-7474739fab66",
-            "original_url_identity": "bbc.com/news/articles/cwz0vxz278mxo",
-            "original_html": "<b>Предъявлено обвинение — В связи с убийством 26-летней Алиши Самуэлс, найденной мёртвой 15 октября на Доркинг-авеню в Ньютон-Хите, двое молодых людей, Карл Харди и Тони Эванс, оба 19 лет, были обвинены в убийстве и покушении на убийство.</b> Они должны предстать перед судом в Манчестере в пятницу. Ранее по этому делу был арестован 26-летний Лоренс Джонсон, также обвиняемый в убийстве, а также 48-летняя женщина, подозреваемая в помощи преступнику. <a href=\"https://bbc.com/news/articles/cwz0vxz278mxo\">BBC Manchester</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 1,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::уточнение позиции водителя в соответствии с источником.",
-        "actions": [
-          {
-            "line_index": 8,
+            "line_index": 4,
             "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Уточнение позиции водителя в соответствии с источником.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Противоречие в информации о знании водителя.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "last_24h-06",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-driver-unaware-stretford-grammar-headteacher-34804063-323c67541c22",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/driver-unaware-stretford-grammar-headteacher-34804063",
-            "original_html": "• В суде по делу об убийстве стало известно, что водитель Саймон Ричардсон не осознавал, что директор Stretford грамматической школы Майкл Маллинс застрял под его автомобилем после наезда на него. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/driver-unaware-stretford-grammar-headteacher-34804063\">MEN</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 8,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::информация о приостановке трамвайных линий уже представлена в строке 14.",
-        "actions": [
-          {
-            "line_index": 12,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Информация о приостановке трамвайных линий уже представлена в строке 14.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о приостановке трамвайных линий.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-01",
-            "candidate_fingerprint": "transport-reminder|metrolink|altrincham-line|2026-10-23",
-            "original_url_identity": "tfgm.com/travel-updates/travel-alerts/major-tram-works-city-centre-trafford-and-eccles",
-            "original_html": "• Metrolink (до 1 ноября): трамваи не ходят по линиям Эклс, Траффорд Центр и Алтринчам; используйте шаттл-автобусы и планируйте поездку заранее. <a href=\"https://tfgm.com/travel-updates/travel-alerts/major-tram-works-city-centre-trafford-and-eccles\">Metrolink</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 12,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "что важно сегодня::дата закрытия школы должна быть 2024 год, чтобы соответствовать текущему контексту и источнику.",
-        "actions": [
-          {
-            "line_index": 15,
-            "section": "Что важно сегодня",
-            "requested_action": "patch",
-            "reason": "Дата закрытия школы должна быть 2024 год, чтобы соответствовать текущему контексту и источнику.",
+            "reason": "Дата судебного заседания должна быть в 2026 году, чтобы соответствовать текущему контексту.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата закрытия школы указана как август 2027 года, что не соответствует текущему контексту.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "today_focus-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cw054127054do-8ddfb020cd8f",
-            "original_url_identity": "bbc.com/news/articles/cw054127054do",
-            "original_html": "• В августе 2027 года закроется католическая начальная школа Святой Терезы в Сретфорде, что вызвало опустошение среди семей. Совет Trafford принял это решение из-за снижения числа учеников, которые упали до 39. <a href=\"https://bbc.co.uk/news/articles/cw054127054do\">BBC Manchester</a>",
-            "model_replacement_rejected": "fact_lock: 2024",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 15,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::уточнение, что обвинения направлены против клуба, а не лично против уокера.",
-        "actions": [
-          {
-            "line_index": 16,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Уточнение, что обвинения направлены против клуба, а не лично против Уокера.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неверное представление субъекта: Кайл Уокер не является обвиняемым в финансовых нарушениях.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-kyle-walker-charges-34799676-10f4e7c130b9",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-kyle-walker-charges-34799676",
-            "original_html": "• Кайл Уокер признал, что 114 финансовых обвинений против Манчестер Сити 'выглядят не очень хорошо' и выразил опасения по поводу необходимости удалить татуировку. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-kyle-walker-charges-34799676\">MEN Manchester City</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 16,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дата события не соответствует информации из источника.",
-        "actions": [
-          {
-            "line_index": 29,
-            "section": "Выходные в GM",
-            "requested_action": "strip",
-            "reason": "Дата события не соответствует информации из источника.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно. Указана дата 25 октября, но в источнике указано, что мероприятие проходит с 10 мая по 30 августа.",
+            "critical_problem": "Дата судебного заседания указана как 15 июня 2027 года, что не соответствует текущему контексту новостей.",
             "completeness_concept": "",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "weekend_activities-07",
-            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-            "original_html": "• 25 октября — Burnage RFC автомобильная барахолка. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-            "replacement_fingerprint": "event-event-aardman-in-concert-2026-10-23-manchester-central-70b9a59f7342",
+            "plan_slot_id": "last_24h-02",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cq62y3n1jj8mo-25c0751c012f",
+            "original_url_identity": "bbc.com/news/articles/cq62y3n1jj8mo",
+            "original_html": "• Два иранца предстанут перед судом по делу о планах взрыва синагоги в Манчестере. Судебное заседание назначено на 15 июня 2027 года в Королевском суде Манчестера. <a href=\"https://bbc.co.uk/news/articles/cq62y3n1jj8mo\">BBC Manchester</a>",
+            "model_replacement_rejected": "fact_lock: 15 июня 2026",
+            "replacement_fingerprint": "url-aboutmanchester-co-uk-protests-outside-no-10-north-over-jackdaw-decision-aada58c1bb86",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 29,
+            "line_index": 4,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -759,23 +571,119 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::дата события должна соответствовать источнику.",
+        "group_key": "общественный транспорт сегодня::строка не соответствует тематике раздела 'общественный транспорт сегодня'.",
         "actions": [
           {
-            "line_index": 30,
-            "section": "Выходные в GM",
+            "line_index": 17,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "strip",
+            "reason": "Строка не соответствует тематике раздела 'Общественный транспорт сегодня'.",
+            "risk": "format",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "transport-07",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-tameside-mum-small-business-owner-34807482-f77bb47b87ae",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/tameside-mum-small-business-owner-34807482",
+            "original_html": "• Мать из Теймсайда и владелица малого бизнеса сообщила, что TikTok Shop заблокировал доступ к её доходам на три месяца, что вынудило её обратиться в продовольственный банк. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/tameside-mum-small-business-owner-34807482\">MEN</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "unrenderable_line",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 17,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "футбол::уточнение формулировки для ясности.",
+        "actions": [
+          {
+            "line_index": 19,
+            "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Дата события должна соответствовать источнику.",
+            "reason": "Уточнение формулировки для ясности.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Текст неясен и не отражает суть Q&A сессии.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-nunes-115-appeal-ait-nouri-34802718-62aa7f3bddaf",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/nunes-115-appeal-ait-nouri-34802718",
+            "original_html": "• Вопросы и ответы по Манчестер Сити касаются Нунеса, апелляции по делу 115 и Аит-Нури, поскольку Маэска стремится к восьмой подряд победе в Премьер-лиге. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/nunes-115-appeal-ait-nouri-34802718\">MEN Manchester City</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 19,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата события не соответствует информации из источника. указана дата 25 октября, но в источнике указано, что мероприятие проходит с мая по август.",
+        "actions": [
+          {
+            "line_index": 32,
+            "section": "Выходные в GM",
+            "requested_action": "strip",
+            "reason": "Дата события не соответствует информации из источника. Указана дата 25 октября, но в источнике указано, что мероприятие проходит с мая по август.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно. В тексте указано 24 октября, но в источнике дата события 4 апреля 2026 года.",
+            "critical_problem": "Дата события указана неверно. Указана дата 25 октября, но в источнике указано, что мероприятие проходит с мая по август.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "weekend_activities-08",
+            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+            "original_html": "• 25 октября — Burnage RFC автомобильная барахолка. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+            "replacement_fingerprint": "event-event-eat-well-supper-club-uma-x-diob-2026-10-25-diob-9de8eecc096e",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 32,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата события должна соответствовать данным из источника.",
+        "actions": [
+          {
+            "line_index": 33,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна соответствовать данным из источника.",
+            "risk": "date",
+            "critical_error": false,
+            "critical_problem": "",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-08",
+            "plan_slot_id": "weekend_activities-09",
             "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
             "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
-            "original_html": "• 24 октября — Barton Aerodrome автомобильная барахолка. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+            "original_html": "• 24 октября — автомобильная барахолка в Barton Aerodrome. Для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -783,7 +691,166 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 30,
+            "line_index": 33,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "городской радар::престон не входит в greater manchester, что нарушает географический контракт раздела.",
+        "actions": [
+          {
+            "line_index": 35,
+            "section": "Городской радар",
+            "requested_action": "strip",
+            "reason": "Престон не входит в Greater Manchester, что нарушает географический контракт раздела.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие произошло в Престоне, который не входит в Greater Manchester.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "city_watch-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-truly-despicable-man-who-murdered-34807462-fa78bc6081b9",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/truly-despicable-man-who-murdered-34807462",
+            "original_html": "• Натан Оуэнс, 34 года, приговорён к пожизненному заключению с минимальным сроком 35 лет за убийство своей падчерицы Карлы Георгеаску в её университетском общежитии в Престоне 23 октября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/truly-despicable-man-who-murdered-34807462\">MEN</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-natwest-offer-new-scheme-greater-34809647-6c25a889a4f4",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 35,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "it и бизнес::литтл боллингтон находится в чешире, что не соответствует geo_scope gm.",
+        "actions": [
+          {
+            "line_index": 44,
+            "section": "IT и бизнес",
+            "requested_action": "strip",
+            "reason": "Литтл Боллингтон находится в Чешире, что не соответствует geo_scope GM.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Географическая ошибка: Литтл Боллингтон находится в Чешире, а не в Greater Manchester.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "tech_business-01",
+            "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-23-petition-against-little-bollington-data-centre-plans-passes-1-000-signatures-1978f3d6e3ff",
+            "original_url_identity": "altrincham.todaynews.co.uk/news/2026/10/23/petition-against-little-bollington-data-centre-plans-passes-1-000-signatures",
+            "original_html": "• Петиция против планов строительства дата-центра в Литтл Боллингтоне собрала более 1000 подписей; застройщик Innova планирует подать заявку на планирование в совет Чешир Восток в конце 2026 или начале 2027 года. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/23/petition-against-little-bollington-data-centre-plans-passes-1-000-signatures\">Altrincham Today</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 44,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "дальние анонсы::полное название события должно быть указано для точности.",
+        "actions": [
+          {
+            "line_index": 47,
+            "section": "Дальние анонсы",
+            "requested_action": "patch",
+            "reason": "Полное название события должно быть указано для точности.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Название события не указано полностью.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "future_announcements-01",
+            "candidate_fingerprint": "event-event-pete-tong-presents-ibiza-classics-venue-premium-tickets-2026-12-04-ao-arena-bd01be5901f8",
+            "original_url_identity": "ticketmaster.co.uk/pete-tong-presents-ibiza-classics-venue-manchester-04-12-2026/event/1F00638C9A15480D",
+            "original_html": "• <b>Ibiza Classics</b> — 4 декабря, AO Arena. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/pete-tong-presents-ibiza-classics-venue-manchester-04-12-2026/event/1F00638C9A15480D\">Ticketmaster</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 47,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::название группы указано дважды, что может ввести в заблуждение.",
+        "actions": [
+          {
+            "line_index": 61,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Название группы указано дважды, что может ввести в заблуждение.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Название группы указано дважды, что может ввести в заблуждение.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "ticket_radar-14",
+            "candidate_fingerprint": "event-event-boundaries-boundaries-plus-special-guests-wed-7th-apr-18-00-buy-2027-04-07-manchester-academy-7ee0c2988514",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13381938/boundaries-manchester-academy-2-2027-04-07-18-00-00",
+            "original_html": "• <b>Boundaries Boundaries</b> — 7 апреля, Manchester Academy. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381938/boundaries-manchester-academy-2-2027-04-07-18-00-00\">Manchester Academy</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 61,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "крупные концерты вне gm::дата события указана неверно. должна быть 25 октября.",
+        "actions": [
+          {
+            "line_index": 62,
+            "section": "Крупные концерты вне GM",
+            "requested_action": "patch",
+            "reason": "Дата события указана неверно. Должна быть 25 октября.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Неправильная дата события.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "outside_gm_tickets-01",
+            "candidate_fingerprint": "event-event-the-beat-dance-crazed-too-uk-tour-2026-10-25-o2-academy-bournemouth-f9e10f4faf8d",
+            "original_url_identity": "ticketmaster.co.uk/the-beat-dance-crazed-too-uk-bournemouth-25-10-2026/event/3E00636E072DD51A",
+            "original_html": "• <b>THE bEAT DANCE CRAZED TOO UK TOUR</b> — 25 октября, O2 Academy Bournemouth. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-beat-dance-crazed-too-uk-bournemouth-25-10-2026/event/3E00636E072DD51A\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 62,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -791,56 +858,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::информация о домашнем насилии касается всей англии и уэльса, а не только gm.",
+        "group_key": "общественный транспорт сегодня::история о матери из теймсайда не относится к общественному транспорту.",
         "actions": [
           {
-            "line_index": 39,
-            "section": "Городской радар",
+            "line_index": 17,
+            "section": "Общественный транспорт сегодня",
             "requested_action": "strip",
-            "reason": "Информация о домашнем насилии касается всей Англии и Уэльса, а не только GM.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Строка касается всей Англии и Уэльса, а не только Большого Манчестера.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "city_watch-09",
-            "candidate_fingerprint": "url-bbc-com-news-articles-ckr5y20n96jdo-cac68c0b12d5",
-            "original_url_identity": "bbc.com/news/articles/ckr5y20n96jdo",
-            "original_html": "• В результате расследования BBC было выявлено более 1200 обвинений в домашнем насилии против полицейских и специальных констеблей в Англии и Уэльсе за три года. <a href=\"https://bbc.com/news/articles/ckr5y20n96jdo\">BBC Manchester</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 39,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "it и бизнес::строка 'регистрация бесплатная.' не предоставляет контекста или информации о событии.",
-        "actions": [
-          {
-            "line_index": 45,
-            "section": "IT и бизнес",
-            "requested_action": "strip",
-            "reason": "Строка 'Регистрация бесплатная.' не предоставляет контекста или информации о событии.",
+            "reason": "История о матери из Теймсайда не относится к общественному транспорту.",
             "risk": "format",
             "critical_error": true,
-            "critical_problem": "Строка не содержит достаточной информации для понимания события.",
+            "critical_problem": "Строка не относится к общественному транспорту и не соответствует теме раздела.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "tech_business-03",
-            "candidate_fingerprint": "url-businesscloud-co-uk-news-founder-250-star-to-bring-grit-innovation-authenticity-to-fuel-manchester-0819664af4da",
-            "original_url_identity": "businesscloud.co.uk/news/founder-250-star-to-bring-grit-innovation-authenticity-to-fuel-manchester",
-            "original_html": "• Регистрация бесплатная. <a href=\"https://businesscloud.co.uk/news/founder-250-star-to-bring-grit-innovation-authenticity-to-fuel-manchester\">BusinessCloud</a>",
+            "plan_slot_id": "transport-07",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-tameside-mum-small-business-owner-34807482-f77bb47b87ae",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/tameside-mum-small-business-owner-34807482",
+            "original_html": "• Мать из Теймсайда и владелица малого бизнеса сообщила, что TikTok Shop заблокировал доступ к её доходам на три месяца, что вынудило её обратиться в продовольственный банк. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/tameside-mum-small-business-owner-34807482\">MEN</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -849,7 +883,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 45,
+            "line_index": 17,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -857,91 +891,39 @@
         "known_factual_error": true
       },
       {
-        "group_key": "билеты / ticket radar::событие не актуально для текущего времени.",
+        "group_key": "выходные в gm::дублирование информации о автомобильной барахолке",
         "actions": [
           {
-            "line_index": 47,
-            "section": "Билеты / Ticket Radar",
+            "line_index": 33,
+            "section": "Выходные в GM",
             "requested_action": "strip",
-            "reason": "Событие не актуально для текущего времени.",
-            "risk": "date",
+            "reason": "Дублирование информации о автомобильной барахолке.",
+            "risk": "format",
             "critical_error": true,
-            "critical_problem": "Дата события указана как 11 февраля, что не соответствует текущему времени и не является актуальной информацией для раздела билетов.",
+            "critical_problem": "Дата события указана неверно. В тексте указано 24 октября, но в данных события указана дата 4 апреля 2026 года.",
             "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "event-event-she-wants-revenge-11th-february-2027-2027-02-11-manchester-academy-ee1931ca596f",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13381926/she-wants-revenge-manchester-club-academy-2027-02-11-19-30-00",
-            "original_html": "• <b>She Wants Revenge</b> — 11 февраля, Manchester Academy; цена £25.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381926/she-wants-revenge-manchester-club-academy-2027-02-11-19-30-00\">Manchester Academy</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 57,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "strip",
-            "reason": "Событие не актуально для текущего времени.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана как 21 августа 2027 года, что не соответствует текущему времени и не является актуальной информацией для раздела билетов.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "ticket_radar-11",
-            "candidate_fingerprint": "event-event-crook-on-the-wall-21st-august-2027-2027-08-21-manchester-academy-459eb6bbde41",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00",
-            "original_html": "• <b>CROOK ON THE WALL</b> — 21 августа, Manchester Academy; цена £10.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381861/crook-on-the-wall-manchester-academy-2-2027-08-21-19-30-00\">Manchester Academy</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "weekend_activities-09",
+            "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+            "original_html": "• 24 октября — автомобильная барахолка в Barton Aerodrome. Для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+            "replacement_fingerprint": "url-contactmcr-com-support-us-bda1415d6bb6",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_by_removal",
+        "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 47,
+            "line_index": 33,
             "passed": true,
-            "detail": "slot removed and source absent"
+            "detail": "post-check passed"
           },
           {
-            "line_index": 57,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::critical source fact dropped in translation: 'murders' (homicide/charge/verdict/victim) has no russian rendering in the shipped line",
-        "actions": [
-          {
-            "line_index": 34,
-            "section": "Городской радар",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'murders' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
-            "risk": "translation",
-            "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "homicide",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "city_watch-03",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cwx287glpxeno-8447eb7cd525",
-            "original_url_identity": "bbc.com/news/articles/cwx287glpxeno",
-            "original_html": "• На коронерском расследовании стало известно, что социальные работники получили анонимный сигнал о том, что дети находятся в \"большой опасности\" за несколько дней до смертельного поджога в Салфорде, в результате которого погибли четверо детей и их мать. <a href=\"https://bbc.co.uk/news/articles/cwx287glpxeno\">BBC Manchester</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 34,
-            "passed": true,
-            "detail": "slot removed and source absent"
+            "check": "duplicate_identity",
+            "identity": "event:barton aerodrome car boot sale|2026 04 04|",
+            "visible_count": 0,
+            "passed": true
           }
         ],
         "known_factual_error": true
@@ -952,27 +934,43 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 1,
+      "skipped": 3,
       "reports": [
         {
-          "fingerprint": "transport-reminder|metrolink|altrincham-line|2026-10-23",
-          "title": "[reminder] Metrolink Eccles, Trafford Centre, Altrincham",
+          "fingerprint": "event-event-pete-tong-presents-ibiza-classics-venue-premium-tickets-2026-12-04-ao-arena-bd01be5901f8",
+          "title": "Pete Tong presents Ibiza Classics- Venue Premium Tickets — event 2026-12-04 — public sale 2025-12-15 10:00",
           "status": "skipped",
-          "reason": "tfgm_ephemeral_alert",
-          "url": "https://tfgm.com/travel-updates/travel-alerts/major-tram-works-city-centre-trafford-and-eccles",
-          "candidate_evidence_chars": 0
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/pete-tong-presents-ibiza-classics-venue-manchester-04-12-2026/event/1F00638C9A15480D",
+          "candidate_evidence_chars": 343
+        },
+        {
+          "fingerprint": "event-event-boundaries-boundaries-plus-special-guests-wed-7th-apr-18-00-buy-2027-04-07-manchester-academy-7ee0c2988514",
+          "title": "Boundaries Boundaries plus special guests Wed 7th Apr, 18:00 BUY",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://manchesteracademy.net/order/gateway/13381938/boundaries-manchester-academy-2-2027-04-07-18-00-00",
+          "candidate_evidence_chars": 611
+        },
+        {
+          "fingerprint": "event-event-the-beat-dance-crazed-too-uk-tour-2026-10-25-o2-academy-bournemouth-f9e10f4faf8d",
+          "title": "THE bEAT DANCE CRAZED TOO UK TOUR — event 2026-10-25 — public sale 2025-11-28 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/the-beat-dance-crazed-too-uk-bournemouth-25-10-2026/event/3E00636E072DD51A",
+          "candidate_evidence_chars": 377
         }
       ]
     },
-    "enrich_improved": 11,
-    "no_eligible_backup": 7,
-    "deterministic_rewrite_rejected": 2,
+    "enrich_improved": 12,
+    "deterministic_rewrite_rejected": 1,
+    "no_eligible_backup": 3,
     "false_positive_existing_fact": 2,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 48,
-      "matched_lines": 48,
-      "applicable_lines": 6,
+      "checked_lines": 58,
+      "matched_lines": 58,
+      "applicable_lines": 3,
       "unmatched_lines": 3,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -984,12 +982,12 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 51,
-      "resolved_in_place": 50,
+      "checked_lines": 61,
+      "resolved_in_place": 60,
       "unresolved": 1,
       "findings": [
         {
-          "line_index": 42,
+          "line_index": 48,
           "section": "Билеты / Ticket Radar",
           "outcome": "unresolved",
           "code": "language_policy_defect",
@@ -999,195 +997,199 @@
     },
     "status": "unresolved"
   },
-  "notes": "Исправление необходимо для корректного юридического статуса Лоренса Джонсона.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Уточнена позиция водителя в строке 8 для соответствия источнику.; Строка 12 дублирует информацию из строки 14, что создает избыточность.; Дата закрытия школы должна быть 2024 го",
+  "notes": "Строка соответствует всем требованиям, включая географию и смысловую точность.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена дата судебного заседания в строке 4 для соответствия текущему контексту.; Строка о матери из Теймсайда не относится к общественному транспорту и должна быть удалена ",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Неправильное использование термина 'обвиняемый' для Лоренса Джонсона.",
-        "risk": "legal",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 8,
+        "line_index": 4,
         "section": "Свежие новости",
-        "problem": "Противоречие в информации о знании водителя.",
-        "risk": "factual",
+        "problem": "Дата судебного заседания указана как 15 июня 2027 года, что не соответствует текущему контексту новостей.",
+        "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 12,
+        "line_index": 17,
         "section": "Общественный транспорт сегодня",
-        "problem": "Дублирование информации о приостановке трамвайных линий.",
+        "problem": "Строка не относится к общественному транспорту и не соответствует теме раздела.",
         "risk": "format",
         "suggested_action": "strip"
       },
       {
-        "line_index": 15,
-        "section": "Что важно сегодня",
-        "problem": "Дата закрытия школы указана как август 2027 года, что не соответствует текущему контексту.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 16,
+        "line_index": 19,
         "section": "Футбол",
-        "problem": "Неверное представление субъекта: Кайл Уокер не является обвиняемым в финансовых нарушениях.",
+        "problem": "Текст неясен и не отражает суть Q&A сессии.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 29,
+        "line_index": 32,
         "section": "Выходные в GM",
-        "problem": "Дата события указана неверно. Указана дата 25 октября, но в источнике указано, что мероприятие проходит с 10 мая по 30 августа.",
+        "problem": "Дата события указана неверно. Указана дата 25 октября, но в источнике указано, что мероприятие проходит с мая по август.",
+        "risk": "date",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 33,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно. В тексте указано 24 октября, но в данных события указана дата 4 апреля 2026 года.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 30,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно. В тексте указано 24 октября, но в источнике дата события 4 апреля 2026 года.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 39,
+        "line_index": 35,
         "section": "Городской радар",
-        "problem": "Строка касается всей Англии и Уэльса, а не только Большого Манчестера.",
+        "problem": "Событие произошло в Престоне, который не входит в Greater Manchester.",
         "risk": "geo",
         "suggested_action": "strip"
       },
       {
-        "line_index": 42,
-        "section": "Еда, открытия и рынки",
-        "problem": "Неправильное указание места открытия ресторана.",
-        "risk": "geo",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 45,
+        "line_index": 44,
         "section": "IT и бизнес",
-        "problem": "Строка не содержит достаточной информации для понимания события.",
-        "risk": "format",
+        "problem": "Географическая ошибка: Литтл Боллингтон находится в Чешире, а не в Greater Manchester.",
+        "risk": "geo",
         "suggested_action": "strip"
       },
       {
         "line_index": 47,
+        "section": "Дальние анонсы",
+        "problem": "Название события не указано полностью.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 61,
         "section": "Билеты / Ticket Radar",
-        "problem": "Дата события указана как 11 февраля, что не соответствует текущему времени и не является актуальной информацией для раздела билетов.",
+        "problem": "Название группы указано дважды, что может ввести в заблуждение.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 62,
+        "section": "Крупные концерты вне GM",
+        "problem": "Неправильная дата события.",
         "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 17,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Неправильное размещение контента. История о матери из Теймсайда не относится к общественному транспорту.",
+        "risk": "format",
         "suggested_action": "strip"
       },
       {
-        "line_index": 57,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дата события указана как 21 августа 2027 года, что не соответствует текущему времени и не является актуальной информацией для раздела билетов.",
-        "risk": "date",
+        "line_index": 33,
+        "section": "Выходные в GM",
+        "problem": "Дублирование информации о автомобильной барахолке.",
+        "risk": "format",
         "suggested_action": "strip"
       }
     ],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• Ранее по этому делу был арестован 26-летний Лоренс Джонсон, также подозреваемый в убийстве, а также 48-летняя женщина, подозреваемая в помощи преступнику.",
-        "reason": "Лоренс Джонсон был арестован и подозревается в убийстве, но не обвинён.",
-        "risk": "legal"
-      },
-      {
-        "line_index": 8,
+        "line_index": 4,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• В суде по делу об убийстве стало известно, что водитель Саймон Ричардсон утверждает, что не осознавал, что директор Stretford грамматической школы Майкл Маллинс застрял под его автомобилем после наезда на него.",
-        "reason": "Уточнение позиции водителя в соответствии с источником.",
-        "risk": "factual"
+        "replacement_text": "• Два иранца предстанут перед судом по делу о планах взрыва синагоги в Манчестере. Судебное заседание назначено на 15 июня 2026 года в Королевском суде Манчестера.",
+        "reason": "Дата судебного заседания должна быть в 2026 году, чтобы соответствовать текущему контексту.",
+        "risk": "date"
       },
       {
-        "line_index": 12,
+        "line_index": 17,
         "section": "Общественный транспорт сегодня",
         "action": "strip",
-        "reason": "Информация о приостановке трамвайных линий уже представлена в строке 14.",
+        "reason": "Строка не соответствует тематике раздела 'Общественный транспорт сегодня'.",
         "risk": "format"
       },
       {
-        "line_index": 15,
-        "section": "Что важно сегодня",
-        "action": "patch",
-        "replacement_text": "• В августе 2024 года закроется католическая начальная школа Святой Терезы в Сретфорде, что вызвало опустошение среди семей. Совет Trafford принял это решение из-за снижения числа учеников, которые упали до 39.",
-        "reason": "Дата закрытия школы должна быть 2024 год, чтобы соответствовать текущему контексту и источнику.",
-        "risk": "date"
-      },
-      {
-        "line_index": 16,
+        "line_index": 19,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Кайл Уокер признал, что 114 финансовых обвинений против Манчестер Сити 'выглядят не очень хорошо' и выразил опасения по поводу возможного удаления татуировки.",
-        "reason": "Уточнение, что обвинения направлены против клуба, а не лично против Уокера.",
+        "replacement_text": "• Вопросы и ответы по Манчестер Сити касаются Нунеса, апелляции по делу 115 и Аит-Нури. Маэска стремится к восьмой подряд победе в Премьер-лиге.",
+        "reason": "Уточнение формулировки для ясности.",
         "risk": "factual"
       },
       {
-        "line_index": 29,
+        "line_index": 32,
         "section": "Выходные в GM",
         "action": "strip",
-        "reason": "Дата события не соответствует информации из источника.",
+        "reason": "Дата события не соответствует информации из источника. Указана дата 25 октября, но в источнике указано, что мероприятие проходит с мая по август.",
         "risk": "date"
       },
       {
-        "line_index": 30,
+        "line_index": 33,
         "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• 4 апреля 2026 — Barton Aerodrome автомобильная барахолка. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
-        "reason": "Дата события должна соответствовать источнику.",
+        "replacement_text": "• 4 апреля 2026 — автомобильная барахолка в Barton Aerodrome. Для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
+        "reason": "Дата события должна соответствовать данным из источника.",
         "risk": "date"
       },
       {
-        "line_index": 39,
+        "line_index": 35,
         "section": "Городской радар",
         "action": "strip",
-        "reason": "Информация о домашнем насилии касается всей Англии и Уэльса, а не только GM.",
+        "reason": "Престон не входит в Greater Manchester, что нарушает географический контракт раздела.",
         "risk": "geo"
       },
       {
-        "line_index": 42,
-        "section": "Еда, открытия и рынки",
-        "action": "patch",
-        "replacement_text": "• В Стокпорте, в Weir Mill, открылся новый итальянский ресторан Social Osteria, предлагающий маленькие порции, домашнюю пасту и пиццу.",
-        "reason": "Уточнение места открытия ресторана в соответствии с источником.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 45,
+        "line_index": 44,
         "section": "IT и бизнес",
         "action": "strip",
-        "reason": "Строка 'Регистрация бесплатная.' не предоставляет контекста или информации о событии.",
-        "risk": "format"
+        "reason": "Литтл Боллингтон находится в Чешире, что не соответствует geo_scope GM.",
+        "risk": "geo"
       },
       {
         "line_index": 47,
+        "section": "Дальние анонсы",
+        "action": "patch",
+        "replacement_text": "• Pete Tong presents Ibiza Classics — 4 декабря, AO Arena. Билеты и время указаны на официальной странице.",
+        "reason": "Полное название события должно быть указано для точности.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 61,
         "section": "Билеты / Ticket Radar",
-        "action": "strip",
-        "reason": "Событие не актуально для текущего времени.",
+        "action": "patch",
+        "replacement_text": "• Boundaries — 7 апреля, Manchester Academy. Билеты и время указаны на официальной странице.",
+        "reason": "Название группы указано дважды, что может ввести в заблуждение.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 62,
+        "section": "Крупные концерты вне GM",
+        "action": "patch",
+        "replacement_text": "• THE bEAT DANCE CRAZED TOO UK TOUR — 25 октября, O2 Academy Bournemouth. Билеты и время указаны на официальной странице.",
+        "reason": "Дата события указана неверно. Должна быть 25 октября.",
         "risk": "date"
       },
       {
-        "line_index": 57,
-        "section": "Билеты / Ticket Radar",
+        "line_index": 17,
+        "section": "Общественный транспорт сегодня",
         "action": "strip",
-        "reason": "Событие не актуально для текущего времени.",
-        "risk": "date"
+        "replacement_text": "",
+        "reason": "История о матери из Теймсайда не относится к общественному транспорту.",
+        "risk": "format"
+      },
+      {
+        "line_index": 33,
+        "section": "Выходные в GM",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации о автомобильной барахолке.",
+        "risk": "format"
       }
     ],
     "warnings": [
-      "judge reduce failed: parse_failed no parseable JSON"
+      "Некоторые строки содержат повторение имени артиста, что может быть избыточным, но это не критично для выпуска.",
+      "Секция 'Что важно сегодня' отсутствует, что нарушает продуктовую полноту.",
+      "Слишком много билетов в разделе 'Билеты / Ticket Radar', что может доминировать над основными новостями."
     ],
-    "notes": "Исправление необходимо для корректного юридического статуса Лоренса Джонсона.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Уточнена позиция водителя в строке 8 для соответствия источнику.; Строка 12 дублирует информацию из строки 14, что создает избыточность.; Дата закрытия школы должна быть 2024 го",
+    "notes": "Строка соответствует всем требованиям, включая географию и смысловую точность.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена дата судебного заседания в строке 4 для соответствия текущему контексту.; Строка о матери из Теймсайда не относится к общественному транспорту и должна быть удалена ",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "partial",
+      "status": "ok",
       "chunk_count": 13,
       "failed_chunk_count": 0,
       "chunks": [
@@ -1201,13 +1203,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2665,
-          "duration_seconds": 2.364
+          "estimated_tokens": 2648,
+          "duration_seconds": 1.184
         },
         {
           "chunk_id": "chunk-02",
@@ -1224,8 +1226,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2488,
-          "duration_seconds": 1.049
+          "estimated_tokens": 2486,
+          "duration_seconds": 1.017
         },
         {
           "chunk_id": "chunk-03",
@@ -1242,15 +1244,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7332,
-          "duration_seconds": 2.264
+          "estimated_tokens": 7132,
+          "duration_seconds": 2.268
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            14
+            18
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -1260,33 +1262,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3575,
-          "duration_seconds": 1.741
+          "estimated_tokens": 5306,
+          "duration_seconds": 1.752
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            15,
-            15
-          ],
-          "sections": [
-            "Что важно сегодня"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2614,
-          "duration_seconds": 2.035
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "ok",
-          "line_range": [
-            16,
-            17
+            19,
+            20
           ],
           "sections": [
             "Футбол"
@@ -1296,15 +1280,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3133,
-          "duration_seconds": 1.898
+          "estimated_tokens": 3113,
+          "duration_seconds": 1.762
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "ok",
+          "line_range": [
+            21,
+            32
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 8373,
+          "duration_seconds": 56.817
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            18,
-            29
+            33,
+            34
           ],
           "sections": [
             "Выходные в GM"
@@ -1314,33 +1316,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 8143,
-          "duration_seconds": 51.192
+          "estimated_tokens": 3355,
+          "duration_seconds": 1.821
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            30,
-            31
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3368,
-          "duration_seconds": 1.885
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            32,
-            41
+            35,
+            43
           ],
           "sections": [
             "Городской радар"
@@ -1350,32 +1334,14 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7285,
-          "duration_seconds": 25.908
+          "estimated_tokens": 6879,
+          "duration_seconds": 21.879
         },
         {
-          "chunk_id": "chunk-10",
+          "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            42,
-            42
-          ],
-          "sections": [
-            "Еда, открытия и рынки"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2762,
-          "duration_seconds": 2.765
-        },
-        {
-          "chunk_id": "chunk-11",
-          "status": "ok",
-          "line_range": [
-            43,
+            44,
             46
           ],
           "sections": [
@@ -1386,58 +1352,94 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4329,
-          "duration_seconds": 5.664
+          "estimated_tokens": 3747,
+          "duration_seconds": 2.02
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            47,
+            47
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2735,
+          "duration_seconds": 2.94
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            48,
+            59
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "warn",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 9352,
+          "duration_seconds": 69.441
         },
         {
           "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
-            47,
-            57
+            60,
+            61
           ],
           "sections": [
             "Билеты / Ticket Radar"
           ],
           "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 8637,
-          "duration_seconds": 59.969
+          "estimated_tokens": 3414,
+          "duration_seconds": 7.897
         },
         {
           "chunk_id": "chunk-13",
           "status": "ok",
           "line_range": [
-            58,
-            58
+            62,
+            63
           ],
           "sections": [
             "Крупные концерты вне GM"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2699,
-          "duration_seconds": 4.731
+          "estimated_tokens": 3335,
+          "duration_seconds": 7.243
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
-        "critical_error_count": 0,
-        "action_count": 0,
-        "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 11371,
-        "duration_seconds": 28.972
+        "decision": "repair_required",
+        "critical_error_count": 2,
+        "action_count": 2,
+        "warning_count": 2,
+        "error": "",
+        "estimated_tokens": 11594,
+        "duration_seconds": 27.376
       },
       "max_workers": 3,
       "chunk_line_target": 12,
