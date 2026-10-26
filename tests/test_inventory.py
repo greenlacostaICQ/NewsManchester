@@ -1542,6 +1542,31 @@ class NightWaveTest(unittest.TestCase):
         self.assertIn("inventory-wave-complete --wave", workflow)
         self.assertIn("steps.wave.outputs.skip != 'true'", workflow)
 
+    def test_events_schedule_handles_zero_offset_and_clock_changes(self) -> None:
+        from datetime import datetime
+        from unittest.mock import patch
+        from zoneinfo import ZoneInfo
+        from contextlib import redirect_stdout
+        from io import StringIO
+
+        workflow = (Path(__file__).parents[1] / ".github" / "workflows" / "night-inventory.yml").read_text(encoding="utf-8")
+        snippet = workflow.split("expected_schedule=$(python3 - <<'PY'\n", 1)[1].split("\n          PY", 1)[0]
+        snippet = "\n".join(line[10:] for line in snippet.splitlines())
+        for instant, expected in (
+            ("2026-01-15T12:00:00", "41 0 * * *"),
+            ("2026-07-15T12:00:00", "41 23 * * *"),
+            ("2026-10-25T00:59:00+00:00", "41 23 * * *"),
+            ("2026-10-25T01:01:00+00:00", "41 0 * * *"),
+        ):
+            with self.subTest(instant=instant):
+                now = datetime.fromisoformat(instant)
+                now = now.astimezone(ZoneInfo("Europe/London")) if now.tzinfo else now.replace(tzinfo=ZoneInfo("Europe/London"))
+                output = StringIO()
+                with patch("datetime.datetime") as clock, redirect_stdout(output):
+                    clock.now.return_value = now
+                    exec(snippet, {})
+                self.assertEqual(output.getvalue().strip(), expected)
+
     def test_main_code_pushes_run_ci_but_state_only_commits_do_not(self) -> None:
         workflow = (Path(__file__).parents[1] / ".github" / "workflows" / "tests.yml").read_text(encoding="utf-8")
         self.assertNotIn("branches-ignore", workflow)

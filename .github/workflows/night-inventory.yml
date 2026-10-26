@@ -85,7 +85,7 @@ jobs:
             expected_schedule=$(python3 - <<'PY'
           from datetime import datetime
           from zoneinfo import ZoneInfo
-          offset = int((datetime.now(ZoneInfo("Europe/London")).utcoffset() or 0).total_seconds())
+          offset = int(datetime.now(ZoneInfo("Europe/London")).utcoffset().total_seconds())
           print("41 23 * * *" if offset == 3600 else "41 0 * * *")
           PY
             )
