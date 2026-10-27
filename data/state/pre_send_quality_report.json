@@ -1,79 +1,72 @@
 {
-  "status": "ok",
+  "status": "partial",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair completed with honest unresolved non-factual findings: operations=1, prose=2",
+  "reason": "pre-send repair executor applied 2 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-10-26",
-  "pipeline_run_id": "20261026T080156+0000",
-  "digest_sha256": "e12dfca02eb82ba3e4e8da026a61ae4a0b1a16bc541c0c2a910833448675f33d",
-  "duration_seconds": 63.935,
+  "run_date_london": "2026-10-27",
+  "pipeline_run_id": "20261027T080154+0000",
+  "digest_sha256": "00920da690d0cadc82db76b6bbdd56d3e7bc204c2dbd7bc0e25c80e6e6e30658",
+  "duration_seconds": 77.261,
   "confidence": 0.9,
   "critical_errors": [
     {
       "line_index": 1,
       "section": "Главная история дня",
-      "problem": "Эндрю Бернэм не является премьер-министром Великобритании.",
-      "risk": "factual",
+      "problem": "Географическая ошибка: инцидент произошёл в Cheshire, а не в Greater Manchester.",
+      "risk": "geo",
       "suggested_action": "repair"
     },
     {
-      "line_index": 9,
+      "line_index": 10,
       "section": "Свежие новости",
-      "problem": "Неверное представление субъекта и контекста сделки.",
+      "problem": "Неправильное указание возраста обвиняемого на момент преступления.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 15,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дублирование информации о трамвайных работах.",
-      "risk": "format",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 16,
+      "line_index": 19,
       "section": "Что важно сегодня",
-      "problem": "Текст заканчивается на незавершённое предложение.",
-      "risk": "format",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 17,
-      "section": "Футбол",
-      "problem": "Ошибка в названии клуба: Майкл Каррик не является главным тренером \"Манчестер Юнайтед\".",
-      "risk": "factual",
+      "problem": "Географическая ошибка: Эденфилд не находится в Greater Manchester.",
+      "risk": "geo",
       "suggested_action": "repair"
     },
     {
       "line_index": 20,
+      "section": "Футбол",
+      "problem": "Текст утверждает, что Каррик может быть уволен, но это не подтверждено.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 32,
       "section": "Городской радар",
-      "problem": "Текст содержит ошибку в согласовании числительных и существительных.",
-      "risk": "translation",
+      "problem": "Неправильное представление субъекта и события.",
+      "risk": "sensitive",
       "suggested_action": "repair"
     },
     {
-      "line_index": 27,
+      "line_index": 33,
+      "section": "IT и бизнес",
+      "problem": "Неправильное указание субъекта.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 37,
       "section": "Дальние анонсы",
-      "problem": "Дата события указана как 14 ноября, но это не суббота.",
+      "problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 38,
+      "section": "Билеты / Ticket Radar",
+      "problem": "Дата события указана неверно.",
       "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 16,
-      "section": "Что важно сегодня",
-      "problem": "Недостаточное количество элементов в секции.",
-      "risk": "product",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 27,
-      "section": "Дальние анонсы",
-      "problem": "Недостаточная информация о событии.",
-      "risk": "product",
       "suggested_action": "repair"
     }
   ],
@@ -82,79 +75,69 @@
       "line_index": 1,
       "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• Мэр Манчестера Эндрю Бернэм объявил о том, что финансирование программы по выводу бездомных с улиц к Рождеству удвоится до £874 млн. Это решение было озвучено накануне первого саммита по проблемам бездомности в Даунинг-стрит, который пройдет в понедельник. Бернэм подчеркнул, что необходимо объединить усилия бизнеса, благотворительных организаций и местных властей для достижения устойчивого решения этой проблемы.",
-      "reason": "Эндрю Бернэм является мэром Манчестера, а не премьер-министром Великобритании.",
-      "risk": "factual"
+      "replacement_text": "• M6: на участке в Cheshire есть серьёзные ограничения из-за инцидента, возможны очереди и объезды. Если маршрут идёт через этот коридор сегодня, проверьте карту дорог и заложите больше времени.",
+      "reason": "Уточнение географического местоположения инцидента.",
+      "risk": "geo"
     },
     {
-      "line_index": 9,
+      "line_index": 10,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• В новом расследовании обсуждаются спорные земельные сделки между мэрией Манчестера и владельцами клуба Манчестер Сити из Абу-Даби. Бывший лидер городского совета Ричард Лиз заявил, что вопросы о правах человека в Абу-Даби не были учтены при подписании сделки.",
-      "reason": "Текст содержит неверное утверждение о строительстве домов, которое не подтверждено источником.",
+      "replacement_text": "• Учитель из Бери Уильям Налти был пожизненно отстранён от преподавания после осуждения за девять исторических сексуальных преступлений, совершённых в период с 2010 по 2012 год. Налти, работавший в начальной школе Our Lady of Lourdes, был уволен в сентябре 2022 года после начала расследования, а в 2025 году получил условный срок. Он настаивал на своей невиновности и выразил желание, чтобы дело было разрешено как можно быстрее и с минимальным вниманием к его личности.",
+      "reason": "Возраст обвиняемого на момент преступления не соответствует фактам.",
       "risk": "factual"
     },
     {
-      "line_index": 15,
-      "section": "Общественный транспорт сегодня",
-      "action": "strip",
-      "reason": "Информация о трамвайных работах уже представлена в строке 11.",
-      "risk": "format",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 16,
+      "line_index": 19,
       "section": "Что важно сегодня",
       "action": "patch",
-      "replacement_text": "• Полиция установила кордон рядом со стадионом Этихад, закрыв главную дорогу. Множество полицейских автомобилей находится на перекрестке Alan Turing Way и Ashton New Road, где также закрыт пешеходный мост.",
-      "reason": "Удаление лишней точки в конце предложения.",
-      "risk": "format"
-    },
-    {
-      "line_index": 17,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Будущее Майкла Каррика как главного тренера \"Мидлсбро\" под угрозой после поражения 0-3 от \"Борнмута\" 26 октября 2026 года. Сэр Джим Ратклифф ожидает ускорения поиска нового тренера.",
-      "reason": "Майкл Каррик является тренером \"Мидлсбро\", а не \"Манчестер Юнайтед\".",
-      "risk": "factual"
+      "replacement_text": "• Мужчина погиб в результате серьезной аварии с участием трех автомобилей на Rochdale-роуд в Эденфилде, который находится за пределами Greater Manchester, 26 октября 2026 года.",
+      "reason": "Эденфилд не является частью Greater Manchester, необходимо уточнить географию.",
+      "risk": "geo"
     },
     {
       "line_index": 20,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• Менеджерская ситуация в Манчестер Юнайтед находится под пристальным вниманием после поражения 3-0 от Борнмута, что увеличивает давление на Каррика, который находится под угрозой увольнения.",
+      "reason": "Уточнение формулировки, чтобы избежать утверждения о возможном увольнении.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 32,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Совет Trafford решил закрыть начальную школу Святой Терезы в Фирсвуде в августе 2027 года, что создает неопределенность для Чешской школы и сообщества Манчестера, использующих её помещения для занятий с 70 детьми.",
-      "reason": "Исправление ошибки в согласовании числительных и существительных.",
-      "risk": "translation"
+      "replacement_text": "• Шеннон Бирн, 21 год, делится своим опытом жертвы контролирующего поведения со стороны бывшего бойфренда Деклана Уолша, который был арестован в Стокпорте в марте 2023 года. Она надеется помочь другим в похожей ситуации.",
+      "reason": "Добавление контекста о мотивации Шеннон Бирн, чтобы избежать неправильного восприятия её роли.",
+      "risk": "sensitive"
     },
     {
-      "line_index": 27,
-      "section": "Дальние анонсы",
+      "line_index": 33,
+      "section": "IT и бизнес",
       "action": "patch",
-      "replacement_text": "• 14 ноября в Creatures Comedy Club пройдет шоу Saturday Night Showcase.",
-      "reason": "Уточнение названия события и исправление даты.",
+      "replacement_text": "• Манчестерский университет получил 16 миллионов фунтов стерлингов из Фонда хорошего роста Greater Manchester для создания FUSE-M, инновационного центра в Халме, посвященного иммерсивным технологиям, ИИ и передовому производству.",
+      "reason": "Неправильное указание субъекта: средства выделены Манчестерскому университету, а не метрополитену.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 37,
+      "section": "Дальние анонсы",
+      "action": "strip",
+      "reason": "Событие не соответствует географическому охвату Greater Manchester.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 38,
+      "section": "Билеты / Ticket Radar",
+      "action": "patch",
+      "replacement_text": "• J. Cole — 28 октября, Co-op Live. Билеты уже в продаже на официальной странице.",
+      "reason": "Дата события должна быть 28 октября, согласно источнику.",
       "risk": "date"
-    },
-    {
-      "line_index": 16,
-      "section": "Что важно сегодня",
-      "action": "patch",
-      "replacement_text": "• Полиция установила кордон рядом со стадионом Этихад, закрыв главную дорогу. Множество полицейских автомобилей находится на перекрестке Alan Turing Way и Ashton New Road, где также закрыт пешеходный мост.",
-      "reason": "Недостаточное количество элементов в секции.",
-      "risk": "product"
-    },
-    {
-      "line_index": 27,
-      "section": "Дальние анонсы",
-      "action": "patch",
-      "replacement_text": "• 14 ноября в Creatures Comedy Club пройдет Saturday Night Showcase. Подробности о времени и билетах доступны на официальной странице.",
-      "reason": "Недостаточная информация о событии.",
-      "risk": "product"
     }
   ],
   "warnings": [
-    "Текст содержит фразу 'спокойная практика профессионального английского', что может быть не совсем понятно для русскоязычной аудитории. Возможно, стоит переформулировать для ясности.",
-    "Секция 'Что важно сегодня' содержит только один элемент, что ниже минимального порога.",
-    "Секция 'Дальние анонсы' содержит недостаточную информацию о событии."
+    "judge reduce failed: parse_failed no parseable JSON"
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -162,59 +145,59 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 8,
-      "Общественный транспорт сегодня": 5,
+      "Свежие новости": 9,
+      "Общественный транспорт сегодня": 7,
       "Что важно сегодня": 1,
-      "Футбол": 3,
-      "Городской радар": 6,
+      "Футбол": 2,
+      "Городской радар": 11,
+      "IT и бизнес": 3,
       "Business/tech события для тебя": 1,
       "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 5,
-      "Крупные концерты вне GM": 2
+      "Билеты / Ticket Radar": 7
     },
     "core_counts": {
       "Погода": 1,
       "Что важно сегодня": 1,
-      "Свежие новости": 8,
+      "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 6,
-      "Билеты / Ticket Radar": 5,
+      "Городской радар": 11,
+      "Билеты / Ticket Radar": 7,
       "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 1,
-      "Футбол": 3
+      "Футбол": 2
     },
     "ticket_items": 7,
-    "core_items": 21,
+    "core_items": 26,
     "writer_quality_counts": {
-      "included_candidates": 37,
-      "rendered_candidates": 34,
+      "included_candidates": 46,
+      "rendered_candidates": 44,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 3,
-      "replaced_from_plan_backup": 0,
-      "removed_with_reason": 3
+      "dropped_low_quality": 1,
+      "replaced_from_plan_backup": 1,
+      "removed_with_reason": 1
     },
     "source_health_counts": {
-      "ok": 99,
+      "ok": 104,
       "partial": 2,
-      "stale": 9,
-      "empty": 13,
+      "stale": 6,
+      "empty": 12,
       "failed": 7,
-      "zero_yield": 74,
+      "zero_yield": 77,
       "no_contribution_breakdown": {
         "fetch_failed": 7,
-        "all_rejected": 74,
-        "idle_no_items": 30
+        "all_rejected": 77,
+        "idle_no_items": 26
       },
       "zero_contribution_by_stage": {
-        "written": 47,
-        "parsed": 30,
-        "selected": 27,
-        "fetched": 7
+        "written": 48,
+        "fetched": 7,
+        "selected": 29,
+        "parsed": 26
       },
       "weekend_source_coverage_incidents": 61
     },
@@ -228,19 +211,17 @@
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 1 has unchecked number/date token(s): 874",
-      "patch for line 20 has unchecked number/date token(s): 2027",
-      "multiple actions target line 16",
-      "multiple actions target line 27"
+      "patch for line 10 has unchecked number/date token(s): 2010, 2012, 2022, 2025",
+      "patch for line 32 has unchecked number/date token(s): 2023"
     ],
     "can_apply_actions": true,
-    "action_count": 9
+    "action_count": 8
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 34,
-    "matched_lines": 34,
-    "applicable_lines": 0,
+    "checked_lines": 44,
+    "matched_lines": 44,
+    "applicable_lines": 4,
     "unmatched_lines": 0,
     "critical_omission_count": 0,
     "critical_omissions": [],
@@ -253,207 +234,179 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 9,
-    "attempted": 7,
-    "applied": 7,
-    "model_patch_applied": 4,
+    "requested": 7,
+    "attempted": 2,
+    "applied": 2,
+    "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 1,
-    "stripped": 2,
-    "unresolved": 1,
+    "stripped": 0,
+    "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 8,
+    "resolved": 7,
     "resolved_in_place": 6,
-    "resolved_by_replacement": 0,
-    "resolved_by_removal": 2,
-    "fact_lock_rejected": 2,
-    "enrich_attempted": 9,
+    "resolved_by_replacement": 1,
+    "resolved_by_removal": 0,
+    "fact_lock_rejected": 0,
+    "enrich_attempted": 7,
     "post_check_errors": [],
-    "geo_contract_rejected": [],
+    "geo_contract_rejected": [
+      {
+        "line_index": 19,
+        "section": "Что важно сегодня",
+        "geo_scope": "gm",
+        "reason": "Эденфилд не является частью Greater Manchester, необходимо уточнить географию.",
+        "gm_anchor_present": true
+      }
+    ],
     "source_link_metadata_rejected": [],
     "actions": [
       {
         "line_index": 1,
         "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Эндрю Бернэм является мэром Манчестера, а не премьер-министром Великобритании.",
-        "risk": "factual",
+        "reason": "Уточнение географического местоположения инцидента.",
+        "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Эндрю Бернэм не является премьер-министром Великобритании.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-bbc-com-news-articles-c3n04yxn2yqro-0a9f9b559334",
-        "original_url_identity": "bbc.com/news/articles/c3n04yxn2yqro",
-        "original_html": "<b>Премьер-министр Эндрю Бернэм объявил о том, что финансирование программы по выводу бездомных с улиц к Рождеству удвоится до £874 млн.</b> Это решение было озвучено накануне первого саммита по проблемам бездомности в Даунинг-стрит, который пройдет в понедельник. Бернэм подчеркнул, что необходимо объединить усилия бизнеса, благотворительных организаций и местных властей для достижения устойчивого решения этой проблемы. <a href=\"https://bbc.co.uk/news/articles/c3n04yxn2yqro\">BBC Manchester</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 9,
-        "section": "Свежие новости",
-        "requested_action": "patch",
-        "reason": "Текст содержит неверное утверждение о строительстве домов, которое не подтверждено источником.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неверное представление субъекта и контекста сделки.",
+        "critical_problem": "Географическая ошибка: инцидент произошёл в Cheshire, а не в Greater Manchester.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "last_24h-07",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-hes-coming-across-jaundiced-football-34802442-4eb2d176e466",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/hes-coming-across-jaundiced-football-34802442",
-        "original_html": "• В новом расследовании, основанном на 900 страницах документов, обсуждаются спорные земельные сделки между мэрией Манчестера и владельцами клуба Манчестер Сити из Абу-Даби. Бывший лидер городского совета Ричард Лиз заявил, что вопросы о правах человека в Абу-Даби не были учтены при подписании сделки, которая привела к строительству более 1800 домов в Анкоатсе и Нью-Ислингтоне. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/hes-coming-across-jaundiced-football-34802442\">MEN</a>",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c9ly02zg810go-c832cc478ebc",
+        "original_url_identity": "bbc.com/news/articles/c9ly02zg810go",
+        "original_html": "<b>M6: на участке есть серьёзные ограничения из-за инцидента, возможны очереди и объезды.</b> Если маршрут идёт через этот коридор сегодня, проверьте карту дорог и заложите больше времени. <a href=\"https://bbc.co.uk/news/articles/c9ly02zg810go\">BBC Manchester</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Информация о трамвайных работах уже представлена в строке 11.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о трамвайных работах.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-05",
-        "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
-        "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-        "original_html": "• Metrolink: с 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажирам рекомендуется планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>.",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 16,
-        "section": "Что важно сегодня",
+        "line_index": 10,
+        "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Удаление лишней точки в конце предложения.",
-        "risk": "format",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "today_focus-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-cordon-place-near-etihad-34815937-3b8db8ff114b",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-cordon-place-near-etihad-34815937",
-        "original_html": "• Полиция установила кордон рядом со стадионом Этихад, закрыв главную дорогу. Множество полицейских автомобилей находится на перекрестке Alan Turing Way и Ashton New Road, где также закрыт пешеходный мост. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-cordon-place-near-etihad-34815937\">MEN</a>.",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Майкл Каррик является тренером \"Мидлсбро\", а не \"Манчестер Юнайтед\".",
+        "reason": "Возраст обвиняемого на момент преступления не соответствует фактам.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Ошибка в названии клуба: Майкл Каррик не является главным тренером \"Манчестер Юнайтед\".",
+        "critical_problem": "Неправильное указание возраста обвиняемого на момент преступления.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-insiders-carrick-ratcliffe-34816006-0d0ecb69e334",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-insiders-carrick-ratcliffe-34816006",
-        "original_html": "• Будущее Майкла Каррика как главного тренера \"Манчестер Юнайтед\" под угрозой после поражения 0-3 от \"Борнмута\" 26 октября 2026 года. Сэр Джим Ратклифф ожидает ускорения поиска нового тренера. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-insiders-carrick-ratcliffe-34816006\">MEN Manchester United</a>.",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "last_24h-08",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bury-teacher-banned-teaching-life-34821279-7944a5d11470",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/bury-teacher-banned-teaching-life-34821279",
+        "original_html": "• Учитель из Бери Уильям Налти был пожизненно отстранён от преподавания после осуждения за девять исторических сексуальных преступлений, совершённых в период с 2010 по 2012 год, когда ему было от 16 до 18 лет. Налти, работавший в начальной школе Our Lady of Lourdes, был уволен в сентябре 2022 года после начала расследования, а в 2025 году получил условный срок. Он настаивал на своей невиновности и выразил желание, чтобы дело было разрешено как можно быстрее и с минимальным вниманием к его личности. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/bury-teacher-banned-teaching-life-34821279\">MEN</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
         "line_index": 20,
-        "section": "Городской радар",
+        "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Исправление ошибки в согласовании числительных и существительных.",
-        "risk": "translation",
+        "reason": "Уточнение формулировки, чтобы избежать утверждения о возможном увольнении.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Текст содержит ошибку в согласовании числительных и существительных.",
+        "critical_problem": "Текст утверждает, что Каррик может быть уволен, но это не подтверждено.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-crvg6jnzg51go-501c0ef977c8",
-        "original_url_identity": "bbc.com/news/articles/crvg6jnzg51go",
-        "original_html": "• Совет Trafford решил закрыть начальную школу Святой Терезы в Фирсвуде в августе 2027 года, что создает неопределенность для Чешской школы и сообщества Манчестера, использующей ее помещения для занятий с 70 детьми. <a href=\"https://bbc.co.uk/news/articles/crvg6jnzg51go\">BBC Manchester</a>.",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-united-carrick-sack-howe-34819601-59954acf9129",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-united-carrick-sack-howe-34819601",
+        "original_html": "• Менеджерская ситуация в Манчестер Юнайтед находится под пристальным вниманием после поражения 3-0 от Борнмута, что увеличивает давление на Каррика, который может быть уволен. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-united-carrick-sack-howe-34819601\">MEN Manchester United</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 27,
-        "section": "Дальние анонсы",
+        "line_index": 32,
+        "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Уточнение названия события и исправление даты.",
-        "risk": "date",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "reserve_replacement",
-        "plan_slot_id": "future_announcements-01",
-        "candidate_fingerprint": "event-id-skiddle-com-f2c32c1ac897-0465ff8ffc9e",
-        "original_url_identity": "skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Saturday-Night-Showcase-Creatures-Comedy-Club/42500340",
-        "original_html": "• 14 ноября в Creatures Comedy Club пройдет Saturday Night Showcase. <a href=\"https://skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Saturday-Night-Showcase-Creatures-Comedy-Club/42500340\">Skiddle Manchester Comedy</a>.",
-        "model_replacement_rejected": "fact_lock: 14 ноября",
-        "replacement_fingerprint": "event-event-welcome-to-stockport-council-2026-11-21-romiley-forum-the-precinct-c09e7a13ba52",
-        "post_check_passed": false
-      },
-      {
-        "line_index": 16,
-        "section": "Что важно сегодня",
-        "requested_action": "patch",
-        "reason": "Недостаточное количество элементов в секции.",
-        "risk": "product",
+        "reason": "Добавление контекста о мотивации Шеннон Бирн, чтобы избежать неправильного восприятия её роли.",
+        "risk": "sensitive",
         "critical_error": true,
-        "critical_problem": "Текст заканчивается на незавершённое предложение.",
+        "critical_problem": "Неправильное представление субъекта и события.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "today_focus-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-cordon-place-near-etihad-34815937-3b8db8ff114b",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-cordon-place-near-etihad-34815937",
-        "original_html": "• Полиция установила кордон рядом со стадионом Этихад, закрыв главную дорогу. Множество полицейских автомобилей находится на перекрестке Alan Turing Way и Ashton New Road, где также закрыт пешеходный мост. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-cordon-place-near-etihad-34815937\">MEN</a>.",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "city_watch-12",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c54g1kjxj8yno-5aaf1585cc74",
+        "original_url_identity": "bbc.com/news/articles/c54g1kjxj8yno",
+        "original_html": "• Шеннон Бирн, 21 год, делится своим опытом жертвы контролирующего поведения со стороны бывшего бойфренда Деклана Уолша, который был арестован в Стокпорте в марте 2023 года. <a href=\"https://bbc.co.uk/news/articles/c54g1kjxj8yno\">BBC Manchester</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 27,
-        "section": "Дальние анонсы",
+        "line_index": 33,
+        "section": "IT и бизнес",
         "requested_action": "patch",
-        "reason": "Недостаточная информация о событии.",
-        "risk": "product",
+        "reason": "Неправильное указание субъекта: средства выделены Манчестерскому университету, а не метрополитену.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дата события указана как 14 ноября, но это не суббота.",
+        "critical_problem": "Неправильное указание субъекта.",
         "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "tech_business-01",
+        "candidate_fingerprint": "url-aboutmanchester-co-uk-university-allocated-16m-good-growth-fund-investment-for-manufacturing-and-creative-innovation-facility-b2ac1ef1cf57",
+        "original_url_identity": "aboutmanchester.co.uk/university-allocated-16m-good-growth-fund-investment-for-manufacturing-and-creative-innovation-facility",
+        "original_html": "• Манчестерский метрополитен получил 16 миллионов фунтов стерлингов из Фонда хорошего роста Greater Manchester для создания FUSE-M, инновационного центра в Халме, посвященного иммерсивным технологиям, ИИ и передовому производству. <a href=\"https://aboutmanchester.co.uk/university-allocated-16m-good-growth-fund-investment-for-manufacturing-and-creative-innovation-facility\">About Manchester News</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 37,
+        "section": "Дальние анонсы",
+        "requested_action": "strip",
+        "reason": "Событие не соответствует географическому охвату Greater Manchester.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
         "plan_slot_id": "future_announcements-01",
-        "candidate_fingerprint": "event-id-skiddle-com-f2c32c1ac897-0465ff8ffc9e",
-        "original_url_identity": "skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Saturday-Night-Showcase-Creatures-Comedy-Club/42500340",
-        "original_html": "• 14 ноября в Creatures Comedy Club пройдет Saturday Night Showcase. <a href=\"https://skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Saturday-Night-Showcase-Creatures-Comedy-Club/42500340\">Skiddle Manchester Comedy</a>.",
-        "model_replacement_rejected": "fact_lock: 14 ноября",
-        "backup_outcome": "backup_chain_exhausted",
-        "removal_reason": "fact_lock_failed",
+        "candidate_fingerprint": "event-event-the-stylistics-2026-11-27-liverpool-philharmonic-hall-fe465fcdcbd3",
+        "original_url_identity": "ticketmaster.co.uk/the-stylistics-liverpool-27-11-2026/event/1F006450AB16350D",
+        "original_html": "• <b>The Stylistics</b> — 27 ноября, Liverpool Philharmonic Hall. Билеты уже в продаже на официальной странице. <a href=\"https://ticketmaster.co.uk/the-stylistics-liverpool-27-11-2026/event/1F006450AB16350D\">Ticketmaster</a>",
+        "replacement_fingerprint": "event-id-skiddle-com-c6039255f1fc-6c607523caaf",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 38,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "patch",
+        "reason": "Дата события должна быть 28 октября, согласно источнику.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "ticket_radar-01",
+        "candidate_fingerprint": "event-event-j-cole-the-fall-off-tour-2026-10-28-co-op-live-5b0f3cee237f",
+        "original_url_identity": "ticketmaster.co.uk/j-cole-the-falloff-tour-manchester-28-10-2026/event/3700643692ED1BA8",
+        "original_html": "• <b>J. Cole</b> — 28 и 29 октября, Co-op Live. Билеты уже в продаже на официальной странице. <a href=\"https://ticketmaster.co.uk/j-cole-the-falloff-tour-manchester-28-10-2026/event/3700643692ED1BA8\">Ticketmaster</a>",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::эндрю бернэм является мэром манчестера, а не премьер-министром великобритании.",
+        "group_key": "главная история дня::уточнение географического местоположения инцидента.",
         "actions": [
           {
             "line_index": 1,
             "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Эндрю Бернэм является мэром Манчестера, а не премьер-министром Великобритании.",
-            "risk": "factual",
+            "reason": "Уточнение географического местоположения инцидента.",
+            "risk": "geo",
             "critical_error": true,
-            "critical_problem": "Эндрю Бернэм не является премьер-министром Великобритании.",
+            "critical_problem": "Географическая ошибка: инцидент произошёл в Cheshire, а не в Greater Manchester.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
+            "method": "verified_existing_fact",
             "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-bbc-com-news-articles-c3n04yxn2yqro-0a9f9b559334",
-            "original_url_identity": "bbc.com/news/articles/c3n04yxn2yqro",
-            "original_html": "<b>Премьер-министр Эндрю Бернэм объявил о том, что финансирование программы по выводу бездомных с улиц к Рождеству удвоится до £874 млн.</b> Это решение было озвучено накануне первого саммита по проблемам бездомности в Даунинг-стрит, который пройдет в понедельник. Бернэм подчеркнул, что необходимо объединить усилия бизнеса, благотворительных организаций и местных властей для достижения устойчивого решения этой проблемы. <a href=\"https://bbc.co.uk/news/articles/c3n04yxn2yqro\">BBC Manchester</a>",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c9ly02zg810go-c832cc478ebc",
+            "original_url_identity": "bbc.com/news/articles/c9ly02zg810go",
+            "original_html": "<b>M6: на участке есть серьёзные ограничения из-за инцидента, возможны очереди и объезды.</b> Если маршрут идёт через этот коридор сегодня, проверьте карту дорог и заложите больше времени. <a href=\"https://bbc.co.uk/news/articles/c9ly02zg810go\">BBC Manchester</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
@@ -462,29 +415,29 @@
           {
             "line_index": 1,
             "passed": true,
-            "detail": "post-check passed"
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::текст содержит неверное утверждение о строительстве домов, которое не подтверждено источником.",
+        "group_key": "свежие новости::возраст обвиняемого на момент преступления не соответствует фактам.",
         "actions": [
           {
-            "line_index": 9,
+            "line_index": 10,
             "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Текст содержит неверное утверждение о строительстве домов, которое не подтверждено источником.",
+            "reason": "Возраст обвиняемого на момент преступления не соответствует фактам.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неверное представление субъекта и контекста сделки.",
+            "critical_problem": "Неправильное указание возраста обвиняемого на момент преступления.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-07",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-hes-coming-across-jaundiced-football-34802442-4eb2d176e466",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/hes-coming-across-jaundiced-football-34802442",
-            "original_html": "• В новом расследовании, основанном на 900 страницах документов, обсуждаются спорные земельные сделки между мэрией Манчестера и владельцами клуба Манчестер Сити из Абу-Даби. Бывший лидер городского совета Ричард Лиз заявил, что вопросы о правах человека в Абу-Даби не были учтены при подписании сделки, которая привела к строительству более 1800 домов в Анкоатсе и Нью-Ислингтоне. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/hes-coming-across-jaundiced-football-34802442\">MEN</a>",
+            "plan_slot_id": "last_24h-08",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bury-teacher-banned-teaching-life-34821279-7944a5d11470",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/bury-teacher-banned-teaching-life-34821279",
+            "original_html": "• Учитель из Бери Уильям Налти был пожизненно отстранён от преподавания после осуждения за девять исторических сексуальных преступлений, совершённых в период с 2010 по 2012 год, когда ему было от 16 до 18 лет. Налти, работавший в начальной школе Our Lady of Lourdes, был уволен в сентябре 2022 года после начала расследования, а в 2025 году получил условный срок. Он настаивал на своей невиновности и выразил желание, чтобы дело было разрешено как можно быстрее и с минимальным вниманием к его личности. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/bury-teacher-banned-teaching-life-34821279\">MEN</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -492,7 +445,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 9,
+            "line_index": 10,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -500,118 +453,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::информация о трамвайных работах уже представлена в строке 11.",
+        "group_key": "футбол::уточнение формулировки, чтобы избежать утверждения о возможном увольнении.",
         "actions": [
           {
-            "line_index": 15,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Информация о трамвайных работах уже представлена в строке 11.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о трамвайных работах.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-05",
-            "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
-            "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-            "original_html": "• Metrolink: с 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажирам рекомендуется планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>.",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 15,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "что важно сегодня::удаление лишней точки в конце предложения.",
-        "actions": [
-          {
-            "line_index": 16,
-            "section": "Что важно сегодня",
-            "requested_action": "patch",
-            "reason": "Удаление лишней точки в конце предложения.",
-            "risk": "format",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "today_focus-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-cordon-place-near-etihad-34815937-3b8db8ff114b",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-cordon-place-near-etihad-34815937",
-            "original_html": "• Полиция установила кордон рядом со стадионом Этихад, закрыв главную дорогу. Множество полицейских автомобилей находится на перекрестке Alan Turing Way и Ashton New Road, где также закрыт пешеходный мост. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-cordon-place-near-etihad-34815937\">MEN</a>.",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 16,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "футбол::майкл каррик является тренером \"мидлсбро\", а не \"манчестер юнайтед\".",
-        "actions": [
-          {
-            "line_index": 17,
+            "line_index": 20,
             "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Майкл Каррик является тренером \"Мидлсбро\", а не \"Манчестер Юнайтед\".",
+            "reason": "Уточнение формулировки, чтобы избежать утверждения о возможном увольнении.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Ошибка в названии клуба: Майкл Каррик не является главным тренером \"Манчестер Юнайтед\".",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-insiders-carrick-ratcliffe-34816006-0d0ecb69e334",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-insiders-carrick-ratcliffe-34816006",
-            "original_html": "• Будущее Майкла Каррика как главного тренера \"Манчестер Юнайтед\" под угрозой после поражения 0-3 от \"Борнмута\" 26 октября 2026 года. Сэр Джим Ратклифф ожидает ускорения поиска нового тренера. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-insiders-carrick-ratcliffe-34816006\">MEN Manchester United</a>.",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 17,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::исправление ошибки в согласовании числительных и существительных.",
-        "actions": [
-          {
-            "line_index": 20,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Исправление ошибки в согласовании числительных и существительных.",
-            "risk": "translation",
-            "critical_error": true,
-            "critical_problem": "Текст содержит ошибку в согласовании числительных и существительных.",
+            "critical_problem": "Текст утверждает, что Каррик может быть уволен, но это не подтверждено.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-crvg6jnzg51go-501c0ef977c8",
-            "original_url_identity": "bbc.com/news/articles/crvg6jnzg51go",
-            "original_html": "• Совет Trafford решил закрыть начальную школу Святой Терезы в Фирсвуде в августе 2027 года, что создает неопределенность для Чешской школы и сообщества Манчестера, использующей ее помещения для занятий с 70 детьми. <a href=\"https://bbc.co.uk/news/articles/crvg6jnzg51go\">BBC Manchester</a>.",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-united-carrick-sack-howe-34819601-59954acf9129",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-united-carrick-sack-howe-34819601",
+            "original_html": "• Менеджерская ситуация в Манчестер Юнайтед находится под пристальным вниманием после поражения 3-0 от Борнмута, что увеличивает давление на Каррика, который может быть уволен. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-united-carrick-sack-howe-34819601\">MEN Manchester United</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -627,63 +485,95 @@
         "known_factual_error": true
       },
       {
-        "group_key": "дальние анонсы::уточнение названия события и исправление даты.",
+        "group_key": "городской радар::добавление контекста о мотивации шеннон бирн, чтобы избежать неправильного восприятия её роли.",
         "actions": [
           {
-            "line_index": 27,
-            "section": "Дальние анонсы",
+            "line_index": 32,
+            "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Уточнение названия события и исправление даты.",
-            "risk": "date",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "reserve_replacement",
-            "plan_slot_id": "future_announcements-01",
-            "candidate_fingerprint": "event-id-skiddle-com-f2c32c1ac897-0465ff8ffc9e",
-            "original_url_identity": "skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Saturday-Night-Showcase-Creatures-Comedy-Club/42500340",
-            "original_html": "• 14 ноября в Creatures Comedy Club пройдет Saturday Night Showcase. <a href=\"https://skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Saturday-Night-Showcase-Creatures-Comedy-Club/42500340\">Skiddle Manchester Comedy</a>.",
-            "model_replacement_rejected": "fact_lock: 14 ноября",
-            "replacement_fingerprint": "event-event-welcome-to-stockport-council-2026-11-21-romiley-forum-the-precinct-c09e7a13ba52",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 27,
-            "passed": false,
-            "detail": "final line missing"
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "что важно сегодня::недостаточное количество элементов в секции.",
-        "actions": [
-          {
-            "line_index": 16,
-            "section": "Что важно сегодня",
-            "requested_action": "patch",
-            "reason": "Недостаточное количество элементов в секции.",
-            "risk": "product",
+            "reason": "Добавление контекста о мотивации Шеннон Бирн, чтобы избежать неправильного восприятия её роли.",
+            "risk": "sensitive",
             "critical_error": true,
-            "critical_problem": "Текст заканчивается на незавершённое предложение.",
+            "critical_problem": "Неправильное представление субъекта и события.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "today_focus-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-cordon-place-near-etihad-34815937-3b8db8ff114b",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-cordon-place-near-etihad-34815937",
-            "original_html": "• Полиция установила кордон рядом со стадионом Этихад, закрыв главную дорогу. Множество полицейских автомобилей находится на перекрестке Alan Turing Way и Ashton New Road, где также закрыт пешеходный мост. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-cordon-place-near-etihad-34815937\">MEN</a>.",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "city_watch-12",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c54g1kjxj8yno-5aaf1585cc74",
+            "original_url_identity": "bbc.com/news/articles/c54g1kjxj8yno",
+            "original_html": "• Шеннон Бирн, 21 год, делится своим опытом жертвы контролирующего поведения со стороны бывшего бойфренда Деклана Уолша, который был арестован в Стокпорте в марте 2023 года. <a href=\"https://bbc.co.uk/news/articles/c54g1kjxj8yno\">BBC Manchester</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 16,
+            "line_index": 32,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "it и бизнес::неправильное указание субъекта: средства выделены манчестерскому университету, а не метрополитену.",
+        "actions": [
+          {
+            "line_index": 33,
+            "section": "IT и бизнес",
+            "requested_action": "patch",
+            "reason": "Неправильное указание субъекта: средства выделены Манчестерскому университету, а не метрополитену.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильное указание субъекта.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "tech_business-01",
+            "candidate_fingerprint": "url-aboutmanchester-co-uk-university-allocated-16m-good-growth-fund-investment-for-manufacturing-and-creative-innovation-facility-b2ac1ef1cf57",
+            "original_url_identity": "aboutmanchester.co.uk/university-allocated-16m-good-growth-fund-investment-for-manufacturing-and-creative-innovation-facility",
+            "original_html": "• Манчестерский метрополитен получил 16 миллионов фунтов стерлингов из Фонда хорошего роста Greater Manchester для создания FUSE-M, инновационного центра в Халме, посвященного иммерсивным технологиям, ИИ и передовому производству. <a href=\"https://aboutmanchester.co.uk/university-allocated-16m-good-growth-fund-investment-for-manufacturing-and-creative-innovation-facility\">About Manchester News</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 33,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "дальние анонсы::событие не соответствует географическому охвату greater manchester.",
+        "actions": [
+          {
+            "line_index": 37,
+            "section": "Дальние анонсы",
+            "requested_action": "strip",
+            "reason": "Событие не соответствует географическому охвату Greater Manchester.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "future_announcements-01",
+            "candidate_fingerprint": "event-event-the-stylistics-2026-11-27-liverpool-philharmonic-hall-fe465fcdcbd3",
+            "original_url_identity": "ticketmaster.co.uk/the-stylistics-liverpool-27-11-2026/event/1F006450AB16350D",
+            "original_html": "• <b>The Stylistics</b> — 27 ноября, Liverpool Philharmonic Hall. Билеты уже в продаже на официальной странице. <a href=\"https://ticketmaster.co.uk/the-stylistics-liverpool-27-11-2026/event/1F006450AB16350D\">Ticketmaster</a>",
+            "replacement_fingerprint": "event-id-skiddle-com-c6039255f1fc-6c607523caaf",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 37,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -691,73 +581,69 @@
         "known_factual_error": true
       },
       {
-        "group_key": "дальние анонсы::недостаточная информация о событии.",
+        "group_key": "билеты / ticket radar::дата события должна быть 28 октября, согласно источнику.",
         "actions": [
           {
-            "line_index": 27,
-            "section": "Дальние анонсы",
+            "line_index": 38,
+            "section": "Билеты / Ticket Radar",
             "requested_action": "patch",
-            "reason": "Недостаточная информация о событии.",
-            "risk": "product",
+            "reason": "Дата события должна быть 28 октября, согласно источнику.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата события указана как 14 ноября, но это не суббота.",
+            "critical_problem": "Дата события указана неверно.",
             "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "future_announcements-01",
-            "candidate_fingerprint": "event-id-skiddle-com-f2c32c1ac897-0465ff8ffc9e",
-            "original_url_identity": "skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Saturday-Night-Showcase-Creatures-Comedy-Club/42500340",
-            "original_html": "• 14 ноября в Creatures Comedy Club пройдет Saturday Night Showcase. <a href=\"https://skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Saturday-Night-Showcase-Creatures-Comedy-Club/42500340\">Skiddle Manchester Comedy</a>.",
-            "model_replacement_rejected": "fact_lock: 14 ноября",
-            "backup_outcome": "backup_chain_exhausted",
-            "removal_reason": "fact_lock_failed",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "ticket_radar-01",
+            "candidate_fingerprint": "event-event-j-cole-the-fall-off-tour-2026-10-28-co-op-live-5b0f3cee237f",
+            "original_url_identity": "ticketmaster.co.uk/j-cole-the-falloff-tour-manchester-28-10-2026/event/3700643692ED1BA8",
+            "original_html": "• <b>J. Cole</b> — 28 и 29 октября, Co-op Live. Билеты уже в продаже на официальной странице. <a href=\"https://ticketmaster.co.uk/j-cole-the-falloff-tour-manchester-28-10-2026/event/3700643692ED1BA8\">Ticketmaster</a>",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_by_removal",
+        "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 27,
+            "line_index": 38,
             "passed": true,
-            "detail": "slot removed and source absent"
+            "detail": "post-check passed"
           }
         ],
         "known_factual_error": true
       }
     ],
     "refetch": {
-      "attempted": 2,
+      "attempted": 0,
       "improved": 0,
       "failed": 0,
-      "empty_or_not_better": 2,
-      "skipped": 0,
+      "empty_or_not_better": 0,
+      "skipped": 2,
       "reports": [
         {
-          "fingerprint": "event-id-skiddle-com-f2c32c1ac897-0465ff8ffc9e",
-          "title": "Saturday Night Showcase | Creatures Comedy Club",
-          "status": "empty",
-          "url": "https://skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Saturday-Night-Showcase-Creatures-Comedy-Club/42500340",
-          "chars": 0
+          "fingerprint": "event-event-the-stylistics-2026-11-27-liverpool-philharmonic-hall-fe465fcdcbd3",
+          "title": "The Stylistics — event 2026-11-27 — public sale 2026-02-20 09:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/the-stylistics-liverpool-27-11-2026/event/1F006450AB16350D",
+          "candidate_evidence_chars": 355
         },
         {
-          "fingerprint": "event-id-skiddle-com-f2c32c1ac897-0465ff8ffc9e",
-          "title": "Saturday Night Showcase | Creatures Comedy Club",
-          "status": "empty",
-          "url": "https://skiddle.com/whats-on/Manchester/Creatures-Comedy-Club/Saturday-Night-Showcase-Creatures-Comedy-Club/42500340",
-          "chars": 0
+          "fingerprint": "event-event-j-cole-the-fall-off-tour-2026-10-28-co-op-live-5b0f3cee237f",
+          "title": "J. Cole: The Fall-Off Tour — event 2026-10-28 — public sale 2026-02-20 09:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/j-cole-the-falloff-tour-manchester-28-10-2026/event/3700643692ED1BA8",
+          "candidate_evidence_chars": 359
         }
       ]
     },
-    "enrich_improved": 9,
-    "false_positive_existing_fact": 2,
-    "no_eligible_backup": 1,
-    "deterministic_fact_lock_rejected": 2,
-    "backup_chain_exhausted": 1,
+    "enrich_improved": 7,
+    "false_positive_existing_fact": 5,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 32,
-      "matched_lines": 32,
-      "applicable_lines": 0,
+      "checked_lines": 44,
+      "matched_lines": 44,
+      "applicable_lines": 4,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -769,29 +655,14 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 32,
-      "resolved_in_place": 30,
-      "unresolved": 2,
-      "findings": [
-        {
-          "line_index": 12,
-          "section": "Общественный транспорт сегодня",
-          "outcome": "unresolved",
-          "code": "language_policy_defect",
-          "severity": "warning"
-        },
-        {
-          "line_index": 13,
-          "section": "Общественный транспорт сегодня",
-          "outcome": "unresolved",
-          "code": "language_policy_defect",
-          "severity": "warning"
-        }
-      ]
+      "checked_lines": 44,
+      "resolved_in_place": 44,
+      "unresolved": 0,
+      "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved"
   },
-  "notes": "Исправление необходимо для корректного указания должности Эндрю Бернэма.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного представления фактов о земельной сделке.; Строка 15 дублирует информацию из строки 11, что может вызвать путаницу у читателей.; Лишняя точка в ",
+  "notes": "Инцидент на M6 произошёл в Cheshire, а не в Greater Manchester.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в указании возраста обвиняемого на момент преступления.; Все строки соответствуют требованиям и содержат актуальную информацию о транспортных изменениях в Greater Manchester",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
@@ -799,64 +670,57 @@
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "problem": "Эндрю Бернэм не является премьер-министром Великобритании.",
-        "risk": "factual",
+        "problem": "Географическая ошибка: инцидент произошёл в Cheshire, а не в Greater Manchester.",
+        "risk": "geo",
         "suggested_action": "repair"
       },
       {
-        "line_index": 9,
+        "line_index": 10,
         "section": "Свежие новости",
-        "problem": "Неверное представление субъекта и контекста сделки.",
+        "problem": "Неправильное указание возраста обвиняемого на момент преступления.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дублирование информации о трамвайных работах.",
-        "risk": "format",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 16,
+        "line_index": 19,
         "section": "Что важно сегодня",
-        "problem": "Текст заканчивается на незавершённое предложение.",
-        "risk": "format",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "problem": "Ошибка в названии клуба: Майкл Каррик не является главным тренером \"Манчестер Юнайтед\".",
-        "risk": "factual",
+        "problem": "Географическая ошибка: Эденфилд не находится в Greater Manchester.",
+        "risk": "geo",
         "suggested_action": "repair"
       },
       {
         "line_index": 20,
+        "section": "Футбол",
+        "problem": "Текст утверждает, что Каррик может быть уволен, но это не подтверждено.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 32,
         "section": "Городской радар",
-        "problem": "Текст содержит ошибку в согласовании числительных и существительных.",
-        "risk": "translation",
+        "problem": "Неправильное представление субъекта и события.",
+        "risk": "sensitive",
         "suggested_action": "repair"
       },
       {
-        "line_index": 27,
+        "line_index": 33,
+        "section": "IT и бизнес",
+        "problem": "Неправильное указание субъекта.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 37,
         "section": "Дальние анонсы",
-        "problem": "Дата события указана как 14 ноября, но это не суббота.",
+        "problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 38,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Дата события указана неверно.",
         "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 16,
-        "section": "Что важно сегодня",
-        "problem": "Недостаточное количество элементов в секции.",
-        "risk": "product",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 27,
-        "section": "Дальние анонсы",
-        "problem": "Недостаточная информация о событии.",
-        "risk": "product",
         "suggested_action": "repair"
       }
     ],
@@ -865,83 +729,73 @@
         "line_index": 1,
         "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• Мэр Манчестера Эндрю Бернэм объявил о том, что финансирование программы по выводу бездомных с улиц к Рождеству удвоится до £874 млн. Это решение было озвучено накануне первого саммита по проблемам бездомности в Даунинг-стрит, который пройдет в понедельник. Бернэм подчеркнул, что необходимо объединить усилия бизнеса, благотворительных организаций и местных властей для достижения устойчивого решения этой проблемы.",
-        "reason": "Эндрю Бернэм является мэром Манчестера, а не премьер-министром Великобритании.",
-        "risk": "factual"
+        "replacement_text": "• M6: на участке в Cheshire есть серьёзные ограничения из-за инцидента, возможны очереди и объезды. Если маршрут идёт через этот коридор сегодня, проверьте карту дорог и заложите больше времени.",
+        "reason": "Уточнение географического местоположения инцидента.",
+        "risk": "geo"
       },
       {
-        "line_index": 9,
+        "line_index": 10,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• В новом расследовании обсуждаются спорные земельные сделки между мэрией Манчестера и владельцами клуба Манчестер Сити из Абу-Даби. Бывший лидер городского совета Ричард Лиз заявил, что вопросы о правах человека в Абу-Даби не были учтены при подписании сделки.",
-        "reason": "Текст содержит неверное утверждение о строительстве домов, которое не подтверждено источником.",
+        "replacement_text": "• Учитель из Бери Уильям Налти был пожизненно отстранён от преподавания после осуждения за девять исторических сексуальных преступлений, совершённых в период с 2010 по 2012 год. Налти, работавший в начальной школе Our Lady of Lourdes, был уволен в сентябре 2022 года после начала расследования, а в 2025 году получил условный срок. Он настаивал на своей невиновности и выразил желание, чтобы дело было разрешено как можно быстрее и с минимальным вниманием к его личности.",
+        "reason": "Возраст обвиняемого на момент преступления не соответствует фактам.",
         "risk": "factual"
       },
       {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "action": "strip",
-        "reason": "Информация о трамвайных работах уже представлена в строке 11.",
-        "risk": "format"
-      },
-      {
-        "line_index": 16,
+        "line_index": 19,
         "section": "Что важно сегодня",
         "action": "patch",
-        "replacement_text": "• Полиция установила кордон рядом со стадионом Этихад, закрыв главную дорогу. Множество полицейских автомобилей находится на перекрестке Alan Turing Way и Ashton New Road, где также закрыт пешеходный мост.",
-        "reason": "Удаление лишней точки в конце предложения.",
-        "risk": "format"
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Будущее Майкла Каррика как главного тренера \"Мидлсбро\" под угрозой после поражения 0-3 от \"Борнмута\" 26 октября 2026 года. Сэр Джим Ратклифф ожидает ускорения поиска нового тренера.",
-        "reason": "Майкл Каррик является тренером \"Мидлсбро\", а не \"Манчестер Юнайтед\".",
-        "risk": "factual"
+        "replacement_text": "• Мужчина погиб в результате серьезной аварии с участием трех автомобилей на Rochdale-роуд в Эденфилде, который находится за пределами Greater Manchester, 26 октября 2026 года.",
+        "reason": "Эденфилд не является частью Greater Manchester, необходимо уточнить географию.",
+        "risk": "geo"
       },
       {
         "line_index": 20,
+        "section": "Футбол",
+        "action": "patch",
+        "replacement_text": "• Менеджерская ситуация в Манчестер Юнайтед находится под пристальным вниманием после поражения 3-0 от Борнмута, что увеличивает давление на Каррика, который находится под угрозой увольнения.",
+        "reason": "Уточнение формулировки, чтобы избежать утверждения о возможном увольнении.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 32,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Совет Trafford решил закрыть начальную школу Святой Терезы в Фирсвуде в августе 2027 года, что создает неопределенность для Чешской школы и сообщества Манчестера, использующих её помещения для занятий с 70 детьми.",
-        "reason": "Исправление ошибки в согласовании числительных и существительных.",
-        "risk": "translation"
+        "replacement_text": "• Шеннон Бирн, 21 год, делится своим опытом жертвы контролирующего поведения со стороны бывшего бойфренда Деклана Уолша, который был арестован в Стокпорте в марте 2023 года. Она надеется помочь другим в похожей ситуации.",
+        "reason": "Добавление контекста о мотивации Шеннон Бирн, чтобы избежать неправильного восприятия её роли.",
+        "risk": "sensitive"
       },
       {
-        "line_index": 27,
-        "section": "Дальние анонсы",
+        "line_index": 33,
+        "section": "IT и бизнес",
         "action": "patch",
-        "replacement_text": "• 14 ноября в Creatures Comedy Club пройдет шоу Saturday Night Showcase.",
-        "reason": "Уточнение названия события и исправление даты.",
+        "replacement_text": "• Манчестерский университет получил 16 миллионов фунтов стерлингов из Фонда хорошего роста Greater Manchester для создания FUSE-M, инновационного центра в Халме, посвященного иммерсивным технологиям, ИИ и передовому производству.",
+        "reason": "Неправильное указание субъекта: средства выделены Манчестерскому университету, а не метрополитену.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 37,
+        "section": "Дальние анонсы",
+        "action": "strip",
+        "reason": "Событие не соответствует географическому охвату Greater Manchester.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 38,
+        "section": "Билеты / Ticket Radar",
+        "action": "patch",
+        "replacement_text": "• J. Cole — 28 октября, Co-op Live. Билеты уже в продаже на официальной странице.",
+        "reason": "Дата события должна быть 28 октября, согласно источнику.",
         "risk": "date"
-      },
-      {
-        "line_index": 16,
-        "section": "Что важно сегодня",
-        "action": "patch",
-        "replacement_text": "• Полиция установила кордон рядом со стадионом Этихад, закрыв главную дорогу. Множество полицейских автомобилей находится на перекрестке Alan Turing Way и Ashton New Road, где также закрыт пешеходный мост.",
-        "reason": "Недостаточное количество элементов в секции.",
-        "risk": "product"
-      },
-      {
-        "line_index": 27,
-        "section": "Дальние анонсы",
-        "action": "patch",
-        "replacement_text": "• 14 ноября в Creatures Comedy Club пройдет Saturday Night Showcase. Подробности о времени и билетах доступны на официальной странице.",
-        "reason": "Недостаточная информация о событии.",
-        "risk": "product"
       }
     ],
     "warnings": [
-      "Текст содержит фразу 'спокойная практика профессионального английского', что может быть не совсем понятно для русскоязычной аудитории. Возможно, стоит переформулировать для ясности.",
-      "Секция 'Что важно сегодня' содержит только один элемент, что ниже минимального порога.",
-      "Секция 'Дальние анонсы' содержит недостаточную информацию о событии."
+      "judge reduce failed: parse_failed no parseable JSON"
     ],
-    "notes": "Исправление необходимо для корректного указания должности Эндрю Бернэма.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного представления фактов о земельной сделке.; Строка 15 дублирует информацию из строки 11, что может вызвать путаницу у читателей.; Лишняя точка в ",
+    "notes": "Инцидент на M6 произошёл в Cheshire, а не в Greater Manchester.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в указании возраста обвиняемого на момент преступления.; Все строки соответствуют требованиям и содержат актуальную информацию о транспортных изменениях в Greater Manchester",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "ok",
+      "status": "partial",
       "chunk_count": 11,
       "failed_chunk_count": 0,
       "chunks": [
@@ -960,8 +814,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2663,
-          "duration_seconds": 2.844
+          "estimated_tokens": 2612,
+          "duration_seconds": 1.999
         },
         {
           "chunk_id": "chunk-02",
@@ -978,15 +832,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2486,
-          "duration_seconds": 1.259
+          "estimated_tokens": 2447,
+          "duration_seconds": 1.014
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            10
+            11
           ],
           "sections": [
             "Свежие новости"
@@ -996,33 +850,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6565,
-          "duration_seconds": 2.82
+          "estimated_tokens": 7456,
+          "duration_seconds": 2.704
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            11,
-            15
+            12,
+            18
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4878,
-          "duration_seconds": 2.164
+          "estimated_tokens": 5592,
+          "duration_seconds": 0.991
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            16,
-            16
+            19,
+            19
           ],
           "sections": [
             "Что важно сегодня"
@@ -1032,15 +886,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2695,
-          "duration_seconds": 2.056
+          "estimated_tokens": 2691,
+          "duration_seconds": 1.685
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            17,
-            19
+            20,
+            21
           ],
           "sections": [
             "Футбол"
@@ -1050,15 +904,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3839,
-          "duration_seconds": 1.99
+          "estimated_tokens": 3166,
+          "duration_seconds": 1.818
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            20,
-            25
+            22,
+            32
           ],
           "sections": [
             "Городской радар"
@@ -1068,33 +922,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5219,
-          "duration_seconds": 2.588
+          "estimated_tokens": 7850,
+          "duration_seconds": 44.271
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            26,
-            26
+            33,
+            35
           ],
           "sections": [
-            "Business/tech события для тебя"
+            "IT и бизнес"
           ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2852,
-          "duration_seconds": 11.713
+          "estimated_tokens": 3672,
+          "duration_seconds": 2.105
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            27,
-            27
+            36,
+            36
+          ],
+          "sections": [
+            "Business/tech события для тебя"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2852,
+          "duration_seconds": 10.725
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            37,
+            37
           ],
           "sections": [
             "Дальние анонсы"
@@ -1104,58 +976,40 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2706,
-          "duration_seconds": 5.839
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            28,
-            32
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 4971,
-          "duration_seconds": 28.649
+          "estimated_tokens": 2662,
+          "duration_seconds": 3.143
         },
         {
           "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            33,
-            34
+            38,
+            44
           ],
           "sections": [
-            "Крупные концерты вне GM"
+            "Билеты / Ticket Radar"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3287,
-          "duration_seconds": 13.016
+          "estimated_tokens": 6034,
+          "duration_seconds": 20.374
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "ok",
+        "status": "parse_failed",
         "line_range": [],
         "sections": [],
-        "decision": "repair_required",
-        "critical_error_count": 2,
-        "action_count": 2,
-        "warning_count": 2,
-        "error": "",
-        "estimated_tokens": 10080,
-        "duration_seconds": 24.82
+        "decision": "",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 0,
+        "error": "no parseable JSON",
+        "estimated_tokens": 10848,
+        "duration_seconds": 26.925
       },
       "max_workers": 3,
       "chunk_line_target": 12,
