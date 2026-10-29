@@ -2,145 +2,211 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 6 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-10-28",
-  "pipeline_run_id": "20261028T080154+0000",
-  "digest_sha256": "dea0222342a6f266300a70228fa5fe7b75d5fdd783fa032d4805c56a113175cd",
-  "duration_seconds": 75.337,
+  "run_date_london": "2026-10-29",
+  "pipeline_run_id": "20261029T080153+0000",
+  "digest_sha256": "4e2b4874f520b83ff68e6fd062067c7b6095ca411fd21604e18b457cda0f9cdd",
+  "duration_seconds": 94.878,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 3,
-      "section": "Свежие новости",
-      "problem": "Текст утверждает, что Симон Ричардсон обвиняется в убийстве, но источник указывает, что он обвиняется в смерти, но не в убийстве.",
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Неправильное обвинение: арестованы по подозрению в хулиганстве, а не в нападении с ножом.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 17,
+      "line_index": 10,
+      "section": "Свежие новости",
+      "problem": "Текст неясно указывает на статус судебного процесса.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 15,
       "section": "Общественный транспорт сегодня",
-      "problem": "Дата события в прошлом, но предупреждение остаётся активным.",
+      "problem": "Дублирование информации о прорыве водопровода на Portland Street.",
+      "risk": "format",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 16,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Дублирование информации о прорыве водопровода на Portland Street.",
+      "risk": "format",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 17,
+      "section": "Футбол",
+      "problem": "Неверная информация о Райане Черки. Он не является игроком Манчестер Сити.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 31,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно. Указана дата 1 ноября, но в источнике указано, что событие проходит с 10 мая по 30 августа.",
       "risk": "date",
       "suggested_action": "strip"
     },
     {
-      "line_index": 19,
-      "section": "Футбол",
-      "problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждено официальными источниками.",
-      "risk": "factual",
+      "line_index": 32,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 21,
-      "section": "Городской радар",
-      "problem": "Эденфилд находится в Ланкашире, а не в Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
+      "line_index": 41,
+      "section": "IT и бизнес",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
     },
     {
-      "line_index": 39,
+      "line_index": 47,
       "section": "Билеты / Ticket Radar",
-      "problem": "Дублирование информации о концерте J. Cole.",
+      "problem": "Дублирование события J. Cole.",
       "risk": "format",
       "suggested_action": "strip"
     },
     {
       "line_index": 3,
       "section": "Свежие новости",
-      "problem": "Неправильное представление статуса судебного процесса.",
-      "risk": "legal",
-      "suggested_action": "repair"
+      "problem": "Дублирование информации о нападении с ножом.",
+      "risk": "factual",
+      "suggested_action": "strip"
     },
     {
-      "line_index": 19,
-      "section": "Футбол",
-      "problem": "Неправильное представление статуса дела Манчестер Сити.",
-      "risk": "legal",
-      "suggested_action": "repair"
+      "line_index": 13,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Дублирование информации о прорыве водопровода на Портленд-стрит.",
+      "risk": "factual",
+      "suggested_action": "strip"
     },
     {
-      "line_index": 36,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дублирование информации о концерте J. Cole.",
-      "risk": "format",
+      "line_index": 15,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Дублирование информации о прорыве водопровода на Портленд-стрит.",
+      "risk": "factual",
       "suggested_action": "strip"
     }
   ],
   "actions": [
     {
-      "line_index": 3,
-      "section": "Свежие новости",
+      "line_index": 1,
+      "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• В Манчестере продолжается судебный процесс над Симоном Ричардсоном, 35 лет, который обвиняется в причинении смерти учителю Майклу Маллинсу, 56 лет. Инцидент произошёл 20 апреля в Уорбертоне, когда Ричардсон сбил Маллинса на велосипеде и, по утверждениям прокуроров, зная о том, что тот застрял под его автомобилем, продолжил движение на расстояние более 2,2 км.",
-      "reason": "Уточнение обвинения в соответствии с источником.",
+      "replacement_text": "• Два других подростка, 14 и 16 лет, были арестованы по подозрению в причастности к инциденту.",
+      "reason": "Уточнение формулировки обвинения, чтобы избежать фактической ошибки.",
       "risk": "factual"
     },
     {
-      "line_index": 17,
+      "line_index": 10,
+      "section": "Свежие новости",
+      "action": "patch",
+      "replacement_text": "• Женщина, переходившая дорогу, была сбита автомобилем на высокой скорости во время 'соревновательных гонок' на улицах Манчестера; три мужчины из National Tyres в Дентоне обвиняются в этом инциденте и предстают перед судом в Королевском суде Миншулл Стрит.",
+      "reason": "Уточнение статуса обвиняемых в судебном процессе.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 15,
       "section": "Общественный транспорт сегодня",
       "action": "strip",
-      "reason": "Предупреждение о событии 25 октября 2026 года, которое уже прошло.",
+      "reason": "Дублирование информации о прорыве водопровода на Portland Street.",
+      "risk": "format",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 16,
+      "section": "Общественный транспорт сегодня",
+      "action": "strip",
+      "reason": "Дублирование информации о прорыве водопровода на Portland Street.",
+      "risk": "format",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 17,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• Манчестер Сити обыграл Брайтон в Кубке Карабао, победив в серии пенальти.",
+      "reason": "Райан Черки не является игроком Манчестер Сити, информация о его участии неверна.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 31,
+      "section": "Выходные в GM",
+      "action": "strip",
+      "reason": "Дата события не соответствует информации из источника.",
       "risk": "date",
       "replacement_text": ""
     },
     {
-      "line_index": 19,
-      "section": "Футбол",
+      "line_index": 32,
+      "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• Манчестер Сити обвиняется в более чем 100 нарушениях правил и может столкнуться с понижением в классе из Премьер-лиги или даже худшими последствиями. • Репортер The Guardian Хелен Пидд общается с фанатами о том, как они относятся к этому скандалу. • Место: Манчестер, дата: 27 октября 2026 года, время: 12:25. • Фанаты Манчестер Сити, похоже, не проявляют особой заботы о скандале с нарушениями.",
-      "reason": "Утверждение о признании вины требует подтверждения, в то время как обвинение более корректно.",
-      "risk": "factual"
+      "replacement_text": "• 4 апреля — автомобильная барахолка на аэродроме Бартон. Вход свободный с 9:00, можно с собакой, подходит для семьи.",
+      "reason": "Дата события в карточке не соответствует фактической дате события.",
+      "risk": "date"
     },
     {
-      "line_index": 21,
-      "section": "Городской радар",
-      "action": "strip",
-      "reason": "Эденфилд не находится в Greater Manchester, что нарушает географический контракт раздела.",
-      "risk": "geo",
-      "replacement_text": ""
+      "line_index": 41,
+      "section": "IT и бизнес",
+      "action": "patch",
+      "replacement_text": "• Финал Четверки Baller League UK сезона 4 пройдет на площадке AO Arena в Манчестере 28 декабря 2026 года; предпродажа начнется 30 октября.",
+      "reason": "Уточнение года проведения события для ясности.",
+      "risk": "date"
     },
     {
-      "line_index": 39,
+      "line_index": 47,
       "section": "Билеты / Ticket Radar",
       "action": "strip",
-      "reason": "Дублирование информации о концерте J. Cole.",
+      "reason": "Дублирование события J. Cole.",
       "risk": "format",
       "replacement_text": ""
     },
     {
       "line_index": 3,
       "section": "Свежие новости",
-      "action": "patch",
-      "replacement_text": "• В Манчестере продолжается судебный процесс над Симоном Ричардсоном, 35 лет, который обвиняется в убийстве учителя Майкла Маллинса, 56 лет. Инцидент произошёл 20 апреля в Уорбертоне, когда Ричардсон сбил Маллинса на велосипеде и, по утверждениям прокуроров, действовал с намерением.",
-      "reason": "Уточнение статуса судебного процесса.",
-      "risk": "legal"
+      "action": "strip",
+      "reason": "Дублирование информации о нападении с ножом.",
+      "risk": "factual",
+      "replacement_text": ""
     },
     {
-      "line_index": 19,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Манчестер Сити обвиняется в более чем 100 нарушениях правил и может столкнуться с санкциями, включая понижение в классе из Премьер-лиги. • Репортер The Guardian Хелен Пидд общается с фанатами о том, как они относятся к этому скандалу.",
-      "reason": "Уточнение статуса дела.",
-      "risk": "legal"
+      "line_index": 13,
+      "section": "Общественный транспорт сегодня",
+      "action": "strip",
+      "reason": "Дублирование информации о прорыве водопровода на Портленд-стрит.",
+      "risk": "factual",
+      "replacement_text": ""
     },
     {
-      "line_index": 36,
+      "line_index": 15,
+      "section": "Общественный транспорт сегодня",
+      "action": "strip",
+      "reason": "Дублирование информации о прорыве водопровода на Портленд-стрит.",
+      "risk": "factual",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 47,
       "section": "Билеты / Ticket Radar",
       "action": "strip",
-      "replacement_text": "",
       "reason": "Дублирование информации о концерте J. Cole.",
-      "risk": "format"
+      "risk": "factual",
+      "replacement_text": ""
     }
   ],
   "warnings": [
-    "Текст содержит английские слова, такие как 'International Trade Forum', которые могут быть переведены для лучшего понимания русскоязычной аудитории.",
-    "Недостаточное количество элементов в разделе 'Что важно сегодня'.",
-    "Отсутствие элементов в разделе 'Русскоязычные концерты и стендап UK'.",
-    "Отсутствие элементов в разделе 'Еда, открытия и рынки'."
+    "Отсутствие блока 'Что важно сегодня' снижает полноту выпуска.",
+    "Отсутствие блока 'Русскоязычные концерты и стендап UK' снижает полноту выпуска."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -149,86 +215,86 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 6,
-      "Что важно сегодня": 1,
-      "Футбол": 2,
-      "Городской радар": 12,
-      "IT и бизнес": 2,
-      "Business/tech события для тебя": 1,
-      "Билеты / Ticket Radar": 6,
-      "Крупные концерты вне GM": 2
+      "Общественный транспорт сегодня": 5,
+      "Футбол": 3,
+      "Выходные в GM": 10,
+      "Городской радар": 5,
+      "IT и бизнес": 4,
+      "Дальние анонсы": 2,
+      "Билеты / Ticket Radar": 9,
+      "Крупные концерты вне GM": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 1,
+      "Что важно сегодня": 0,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 12,
-      "Билеты / Ticket Radar": 6,
+      "Городской радар": 5,
+      "Выходные в GM": 10,
+      "Билеты / Ticket Radar": 9,
       "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 0,
-      "Business/tech события для тебя": 1,
-      "Футбол": 2
+      "Business/tech события для тебя": 0,
+      "Футбол": 3
     },
-    "ticket_items": 8,
-    "core_items": 27,
+    "ticket_items": 10,
+    "core_items": 29,
     "writer_quality_counts": {
-      "included_candidates": 45,
-      "rendered_candidates": 43,
+      "included_candidates": 52,
+      "rendered_candidates": 50,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 0,
-      "replaced_from_plan_backup": 2,
-      "removed_with_reason": 0
+      "dropped_low_quality": 1,
+      "replaced_from_plan_backup": 1,
+      "removed_with_reason": 1
     },
     "source_health_counts": {
       "ok": 102,
       "partial": 2,
       "stale": 4,
       "empty": 17,
-      "failed": 6,
-      "zero_yield": 71,
+      "failed": 7,
+      "zero_yield": 67,
       "no_contribution_breakdown": {
-        "fetch_failed": 6,
-        "all_rejected": 71,
+        "fetch_failed": 7,
+        "all_rejected": 67,
         "idle_no_items": 29
       },
       "zero_contribution_by_stage": {
-        "selected": 30,
-        "written": 41,
-        "parsed": 29,
-        "fetched": 6
+        "selected": 32,
+        "written": 35,
+        "fetched": 7,
+        "parsed": 29
       },
-      "weekend_source_coverage_incidents": 61
+      "weekend_source_coverage_incidents": 52
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 1 item(s), emergency floor 3",
+      "Что важно сегодня: 0 item(s), emergency floor 3",
       "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "source failures: 6"
+      "Business/tech события для тебя: 0 item(s), emergency floor 1",
+      "source failures: 7"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 3 has unchecked number/date token(s): 2,2, 20",
-      "patch for line 19 has unchecked number/date token(s): 12:25",
-      "multiple actions target line 3",
-      "patch for line 3 has unchecked number/date token(s): 20",
-      "multiple actions target line 19"
+      "patch for line 32 has unchecked number/date token(s): 9:00",
+      "multiple actions target line 15",
+      "multiple actions target line 47"
     ],
     "can_apply_actions": true,
-    "action_count": 8
+    "action_count": 13
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 43,
-    "matched_lines": 43,
-    "applicable_lines": 4,
-    "unmatched_lines": 0,
+    "checked_lines": 50,
+    "matched_lines": 50,
+    "applicable_lines": 5,
+    "unmatched_lines": 4,
     "critical_omission_count": 0,
     "critical_omissions": [],
     "noncritical_omissions": [],
@@ -240,101 +306,185 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 7,
-    "attempted": 6,
-    "applied": 6,
-    "model_patch_applied": 3,
+    "requested": 13,
+    "attempted": 9,
+    "applied": 9,
+    "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 0,
-    "stripped": 3,
-    "unresolved": 0,
-    "blocking_unresolved": 0,
-    "resolved": 6,
-    "resolved_in_place": 4,
-    "resolved_by_replacement": 0,
-    "resolved_by_removal": 2,
+    "reserve_replacement_used": 2,
+    "stripped": 6,
+    "unresolved": 1,
+    "blocking_unresolved": 1,
+    "resolved": 10,
+    "resolved_in_place": 5,
+    "resolved_by_replacement": 1,
+    "resolved_by_removal": 4,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 7,
+    "enrich_attempted": 13,
     "post_check_errors": [],
-    "geo_contract_rejected": [
-      {
-        "line_index": 21,
-        "section": "Городской радар",
-        "geo_scope": "gm",
-        "reason": "Эденфилд не находится в Greater Manchester, что нарушает географический контракт раздела.",
-        "gm_anchor_present": true
-      }
-    ],
+    "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 3,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "requested_action": "patch",
+        "reason": "Уточнение формулировки обвинения, чтобы избежать фактической ошибки.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неправильное обвинение: арестованы по подозрению в хулиганстве, а не в нападении с ножом.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cv70p54y4x3no-dd13b3a79a4d",
+        "original_url_identity": "bbc.com/news/articles/cv70p54y4x3no",
+        "original_html": "<b>В Манчестере, 28 октября 2026 года, 13-летний мальчик получил серьезные травмы в результате третьего нападения с ножом за две недели у торгового центра Арндейл.</b> Полиция была вызвана на Market Street в 19:00 по местному времени, где мальчика доставили в больницу с потенциально изменяющими жизнь травмами. Два других подростка, 14 и 16 лет, были арестованы по подозрению в хулиганстве. <a href=\"https://bbc.co.uk/news/articles/cv70p54y4x3no\">BBC Manchester</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 10,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Уточнение обвинения в соответствии с источником.",
+        "reason": "Уточнение статуса обвиняемых в судебном процессе.",
         "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
+        "critical_error": true,
+        "critical_problem": "Текст неясно указывает на статус судебного процесса.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cjwy960gznero-7dd87ee5ac88",
-        "original_url_identity": "bbc.com/news/articles/cjwy960gznero",
-        "original_html": "• В Манчестере продолжается судебный процесс над Симоном Ричардсоном, 35 лет, который обвиняется в убийстве учителя Майкла Маллинса, 56 лет. Инцидент произошёл 20 апреля в Уорбертоне, когда Ричардсон сбил Маллинса на велосипеде и, по утверждениям прокуроров, зная о том, что тот застрял под его автомобилем, продолжил движение на расстояние более 2,2 км. <a href=\"https://bbc.com/news/articles/cjwy960gznero\">BBC Manchester</a>",
+        "plan_slot_id": "last_24h-08",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-womans-life-changed-forever-drivers-34830195-d49b74e1e7ae",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/womans-life-changed-forever-drivers-34830195",
+        "original_html": "• Женщина, переходившая дорогу, была сбита автомобилем на высокой скорости во время 'соревновательных гонок' на улицах Манчестера; три мужчины из National Tyres в Дентоне предстают перед судом в Королевском суде Миншулл Стрит. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/womans-life-changed-forever-drivers-34830195\">MEN</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о прорыве водопровода на Portland Street.",
+        "risk": "format",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "transport-04",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-portland-street-leak-live-manchester-34828329-36d8b2d8ee60",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-manchester-34828329",
+        "original_html": "• Автобусы: на Портленд-стрит в центре Манчестера произошла авария водопровода, в результате чего дорога закрыта и наблюдаются серьезные сбои в движении автобусов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-manchester-34828329\">MEN Latest News</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "duplicate_after_plan",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 16,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о прорыве водопровода на Portland Street.",
+        "risk": "format",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о прорыве водопровода на Portland Street.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "transport-05",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-nightmare-portland-street-burst-water-34831619-f82385104d2a",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/nightmare-portland-street-burst-water-34831619",
+        "original_html": "• Автобусы: прорыв водопровода на Portland Street вызвал серьезные сбои в движении автобусов и полицейский кордон в центре города; ожидаются перебои в движении до вечера. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/nightmare-portland-street-burst-water-34831619\">MEN</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "duplicate_after_plan",
         "post_check_passed": true
       },
       {
         "line_index": 17,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Предупреждение о событии 25 октября 2026 года, которое уже прошло.",
-        "risk": "date",
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Райан Черки не является игроком Манчестер Сити, информация о его участии неверна.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дата события в прошлом, но предупреждение остаётся активным.",
+        "critical_problem": "Неверная информация о Райане Черки. Он не является игроком Манчестер Сити.",
         "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-06",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cqe8l756lvemo-2d765122afc1",
-        "original_url_identity": "bbc.com/news/articles/cqe8l756lvemo",
-        "original_html": "• Metrolink: В связи с отменой трамваев и сокращением услуг на нескольких линиях Metrolink, ожидаются перебои в движении для футбольных болельщиков, направляющихся на матч Манчестер Юнайтед против Борнмута в Old Trafford 25 октября 2026 года в 14:00 GMT. <a href=\"https://bbc.co.uk/news/articles/cqe8l756lvemo\">BBC Manchester</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-enzo-maresca-discover-34831859-e263a9b08d85",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-enzo-maresca-discover-34831859",
+        "original_html": "• Райан Черки провел 90 минут на поле и забил в серии пенальти, когда Манчестер Сити обыграл Брайтон в Кубке Карабао. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-enzo-maresca-discover-34831859\">MEN Manchester City</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 19,
-        "section": "Футбол",
+        "line_index": 31,
+        "section": "Выходные в GM",
+        "requested_action": "strip",
+        "reason": "Дата события не соответствует информации из источника.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно. Указана дата 1 ноября, но в источнике указано, что событие проходит с 10 мая по 30 августа.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "weekend_activities-06",
+        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2027-05-10-burnage-rfc-9a3e9cdf54f4",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+        "original_html": "• 1 ноября — автомобильная барахолка Burnage RFC. Вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+        "replacement_fingerprint": "event-id-skiddle-com-94fcbbed122e-359226f575f3",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 32,
+        "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Утверждение о признании вины требует подтверждения, в то время как обвинение более корректно.",
-        "risk": "factual",
+        "reason": "Дата события в карточке не соответствует фактической дате события.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "weekend_activities-07",
+        "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+        "original_html": "• 31 октября — автомобильная барахолка на аэродроме Бартон. Вход свободный с 9:00, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 41,
+        "section": "IT и бизнес",
+        "requested_action": "patch",
+        "reason": "Уточнение года проведения события для ясности.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "tech_business-03",
+        "candidate_fingerprint": "url-prolificnorth-co-uk-news-i-wish-i-was-a-little-bit-taller-i-wish-ao-arena-was-hosting-baller-league-uks-season-4-finale-which-it-is-3b1bf21dea38",
+        "original_url_identity": "prolificnorth.co.uk/news/i-wish-i-was-a-little-bit-taller-i-wish-ao-arena-was-hosting-baller-league-uks-season-4-finale-which-it-is",
+        "original_html": "• Финал Четверки Baller League UK сезона 4 пройдет на площадке AO Arena в Манчестере 28 декабря; предпродажа начнется 30 октября. <a href=\"https://prolificnorth.co.uk/news/i-wish-i-was-a-little-bit-taller-i-wish-ao-arena-was-hosting-baller-league-uks-season-4-finale-which-it-is\">Prolific North Manchester</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 47,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "strip",
+        "reason": "Дублирование события J. Cole.",
+        "risk": "format",
         "critical_error": false,
         "critical_problem": "",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-theguardian-com-uk-news-video-2026-oct-27-why-man-city-fans-dont-care-about-the-cheating-video-fd4158ca6516",
-        "original_url_identity": "theguardian.com/uk-news/video/2026/oct/27/why-man-city-fans-dont-care-about-the-cheating-video",
-        "original_html": "• Манчестер Сити признан виновным в более чем 100 нарушениях правил и может столкнуться с понижением в классе из Премьер-лиги или даже худшими последствиями. • Репортер The Guardian Хелен Пидд общается с фанатами о том, как они относятся к этому скандалу. • Место: Манчестер, дата: 27 октября 2026 года, время: 12:25. • Фанаты Манчестер Сити, похоже, не проявляют особой заботы о скандале с нарушениями. <a href=\"https://theguardian.com/uk-news/video/2026/oct/27/why-man-city-fans-dont-care-about-the-cheating-video\">Guardian Manchester City</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 39,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о концерте J. Cole.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о концерте J. Cole.",
-        "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "ticket_radar-04",
-        "candidate_fingerprint": "event-event-j-cole-the-fall-off-tour-wed-28-oct-2026-thu-29-oct-2026-2026-10-28-co-op-live-bc5fd1ccf36b",
+        "plan_slot_id": "ticket_radar-03",
+        "candidate_fingerprint": "event-event-j-cole-the-fall-off-tour-thu-29-oct-2026-multiple-times-2026-10-29-co-op-live-6596f5ddfc23",
         "original_url_identity": "cooplive.com/events/j-cole-98r5",
-        "original_html": "• <b>J. Cole The Fall-Off Tour</b> — 28 октября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/j-cole-98r5\">Co-op Live</a>",
+        "original_html": "• <b>J. Cole The Fall-Off Tour</b> — 29 октября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/j-cole-98r5\">Co-op Live</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "duplicate_after_plan",
         "post_check_passed": true
@@ -342,53 +492,74 @@
       {
         "line_index": 3,
         "section": "Свежие новости",
-        "requested_action": "patch",
-        "reason": "Уточнение статуса судебного процесса.",
-        "risk": "legal",
-        "critical_error": true,
-        "critical_problem": "Текст утверждает, что Симон Ричардсон обвиняется в убийстве, но источник указывает, что он обвиняется в смерти, но не в убийстве.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cjwy960gznero-7dd87ee5ac88",
-        "original_url_identity": "bbc.com/news/articles/cjwy960gznero",
-        "original_html": "• В Манчестере продолжается судебный процесс над Симоном Ричардсоном, 35 лет, который обвиняется в убийстве учителя Майкла Маллинса, 56 лет. Инцидент произошёл 20 апреля в Уорбертоне, когда Ричардсон сбил Маллинса на велосипеде и, по утверждениям прокуроров, зная о том, что тот застрял под его автомобилем, продолжил движение на расстояние более 2,2 км. <a href=\"https://bbc.com/news/articles/cjwy960gznero\">BBC Manchester</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 19,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Уточнение статуса дела.",
-        "risk": "legal",
-        "critical_error": true,
-        "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждено официальными источниками.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-theguardian-com-uk-news-video-2026-oct-27-why-man-city-fans-dont-care-about-the-cheating-video-fd4158ca6516",
-        "original_url_identity": "theguardian.com/uk-news/video/2026/oct/27/why-man-city-fans-dont-care-about-the-cheating-video",
-        "original_html": "• Манчестер Сити признан виновным в более чем 100 нарушениях правил и может столкнуться с понижением в классе из Премьер-лиги или даже худшими последствиями. • Репортер The Guardian Хелен Пидд общается с фанатами о том, как они относятся к этому скандалу. • Место: Манчестер, дата: 27 октября 2026 года, время: 12:25. • Фанаты Манчестер Сити, похоже, не проявляют особой заботы о скандале с нарушениями. <a href=\"https://theguardian.com/uk-news/video/2026/oct/27/why-man-city-fans-dont-care-about-the-cheating-video\">Guardian Manchester City</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 36,
-        "section": "Билеты / Ticket Radar",
         "requested_action": "strip",
-        "reason": "Дублирование информации о концерте J. Cole.",
-        "risk": "format",
+        "reason": "Дублирование информации о нападении с ножом.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дублирование информации о концерте J. Cole.",
+        "critical_problem": "Дублирование информации о нападении с ножом.",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-four-teens-arrested-after-boy-34830826-84c9f6965978",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/four-teens-arrested-after-boy-34830826",
+        "original_html": "• Четыре подростка были арестованы после того, как 13-летний мальчик был ранен ножом в центре Манчестера 27 октября. Пострадавший находится в стабильном состоянии в больнице. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/four-teens-arrested-after-boy-34830826\">MEN</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-former-oldham-labour-mp-lord-34830666-140ae65db534",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 13,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о прорыве водопровода на Портленд-стрит.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о прорыве водопровода на Портленд-стрит.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "ticket_radar-01",
-        "candidate_fingerprint": "event-event-j-cole-the-fall-off-tour-2026-10-28-co-op-live-5b0f3cee237f",
-        "original_url_identity": "ticketmaster.co.uk/j-cole-the-falloff-tour-manchester-28-10-2026/event/3700643692ED1BA8",
-        "original_html": "• <b>J. Cole</b> — 28 и 29 октября, Co-op Live. Концерт проходит сегодня. <a href=\"https://ticketmaster.co.uk/j-cole-the-falloff-tour-manchester-28-10-2026/event/3700643692ED1BA8\">Ticketmaster</a>",
+        "plan_slot_id": "transport-02",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c6kgq915wvj1o-1a4143e9f005",
+        "original_url_identity": "bbc.com/news/articles/c6kgq915wvj1o",
+        "original_html": "• Дороги: на Портленд-стрит произошел прорыв водопровода, что привело к закрытию дорог и изменению маршрутов автобусов в центре Манчестера. Станция автобусов на Пиккадилли-Гарденс также закрыта до дальнейшего уведомления. <a href=\"https://bbc.co.uk/news/articles/c6kgq915wvj1o\">BBC Manchester</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "duplicate_after_plan",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о прорыве водопровода на Портленд-стрит.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о прорыве водопровода на Portland Street.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "transport-04",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-portland-street-leak-live-manchester-34828329-36d8b2d8ee60",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-manchester-34828329",
+        "original_html": "• Автобусы: на Портленд-стрит в центре Манчестера произошла авария водопровода, в результате чего дорога закрыта и наблюдаются серьезные сбои в движении автобусов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-manchester-34828329\">MEN Latest News</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "duplicate_after_plan",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 47,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о концерте J. Cole.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дублирование события J. Cole.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "ticket_radar-03",
+        "candidate_fingerprint": "event-event-j-cole-the-fall-off-tour-thu-29-oct-2026-multiple-times-2026-10-29-co-op-live-6596f5ddfc23",
+        "original_url_identity": "cooplive.com/events/j-cole-98r5",
+        "original_html": "• <b>J. Cole The Fall-Off Tour</b> — 29 октября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/j-cole-98r5\">Co-op Live</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "duplicate_after_plan",
         "post_check_passed": true
@@ -396,30 +567,62 @@
     ],
     "operations": [
       {
-        "group_key": "свежие новости::уточнение обвинения в соответствии с источником.",
+        "group_key": "главная история дня::уточнение формулировки обвинения, чтобы избежать фактической ошибки.",
         "actions": [
           {
-            "line_index": 3,
-            "section": "Свежие новости",
+            "line_index": 1,
+            "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Уточнение обвинения в соответствии с источником.",
+            "reason": "Уточнение формулировки обвинения, чтобы избежать фактической ошибки.",
             "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
+            "critical_error": true,
+            "critical_problem": "Неправильное обвинение: арестованы по подозрению в хулиганстве, а не в нападении с ножом.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cjwy960gznero-7dd87ee5ac88",
-            "original_url_identity": "bbc.com/news/articles/cjwy960gznero",
-            "original_html": "• В Манчестере продолжается судебный процесс над Симоном Ричардсоном, 35 лет, который обвиняется в убийстве учителя Майкла Маллинса, 56 лет. Инцидент произошёл 20 апреля в Уорбертоне, когда Ричардсон сбил Маллинса на велосипеде и, по утверждениям прокуроров, зная о том, что тот застрял под его автомобилем, продолжил движение на расстояние более 2,2 км. <a href=\"https://bbc.com/news/articles/cjwy960gznero\">BBC Manchester</a>",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cv70p54y4x3no-dd13b3a79a4d",
+            "original_url_identity": "bbc.com/news/articles/cv70p54y4x3no",
+            "original_html": "<b>В Манчестере, 28 октября 2026 года, 13-летний мальчик получил серьезные травмы в результате третьего нападения с ножом за две недели у торгового центра Арндейл.</b> Полиция была вызвана на Market Street в 19:00 по местному времени, где мальчика доставили в больницу с потенциально изменяющими жизнь травмами. Два других подростка, 14 и 16 лет, были арестованы по подозрению в хулиганстве. <a href=\"https://bbc.co.uk/news/articles/cv70p54y4x3no\">BBC Manchester</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 3,
+            "line_index": 1,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::уточнение статуса обвиняемых в судебном процессе.",
+        "actions": [
+          {
+            "line_index": 10,
+            "section": "Свежие новости",
+            "requested_action": "patch",
+            "reason": "Уточнение статуса обвиняемых в судебном процессе.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Текст неясно указывает на статус судебного процесса.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "last_24h-08",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-womans-life-changed-forever-drivers-34830195-d49b74e1e7ae",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/womans-life-changed-forever-drivers-34830195",
+            "original_html": "• Женщина, переходившая дорогу, была сбита автомобилем на высокой скорости во время 'соревновательных гонок' на улицах Манчестера; три мужчины из National Tyres в Дентоне предстают перед судом в Королевском суде Миншулл Стрит. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/womans-life-changed-forever-drivers-34830195\">MEN</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 10,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -427,65 +630,344 @@
         "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::предупреждение о событии 25 октября 2026 года, которое уже прошло.",
+        "group_key": "общественный транспорт сегодня::дублирование информации о прорыве водопровода на portland street",
         "actions": [
           {
-            "line_index": 17,
+            "line_index": 15,
             "section": "Общественный транспорт сегодня",
             "requested_action": "strip",
-            "reason": "Предупреждение о событии 25 октября 2026 года, которое уже прошло.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события в прошлом, но предупреждение остаётся активным.",
+            "reason": "Дублирование информации о прорыве водопровода на Portland Street.",
+            "risk": "format",
+            "critical_error": false,
+            "critical_problem": "",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "transport-06",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cqe8l756lvemo-2d765122afc1",
-            "original_url_identity": "bbc.com/news/articles/cqe8l756lvemo",
-            "original_html": "• Metrolink: В связи с отменой трамваев и сокращением услуг на нескольких линиях Metrolink, ожидаются перебои в движении для футбольных болельщиков, направляющихся на матч Манчестер Юнайтед против Борнмута в Old Trafford 25 октября 2026 года в 14:00 GMT. <a href=\"https://bbc.co.uk/news/articles/cqe8l756lvemo\">BBC Manchester</a>",
+            "plan_slot_id": "transport-04",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-portland-street-leak-live-manchester-34828329-36d8b2d8ee60",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-manchester-34828329",
+            "original_html": "• Автобусы: на Портленд-стрит в центре Манчестера произошла авария водопровода, в результате чего дорога закрыта и наблюдаются серьезные сбои в движении автобусов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-manchester-34828329\">MEN Latest News</a>",
             "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
+            "removal_reason": "duplicate_after_plan",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 16,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о прорыве водопровода на Portland Street.",
+            "risk": "format",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о прорыве водопровода на Portland Street.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "transport-05",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-nightmare-portland-street-burst-water-34831619-f82385104d2a",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/nightmare-portland-street-burst-water-34831619",
+            "original_html": "• Автобусы: прорыв водопровода на Portland Street вызвал серьезные сбои в движении автобусов и полицейский кордон в центре города; ожидаются перебои в движении до вечера. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/nightmare-portland-street-burst-water-34831619\">MEN</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "duplicate_after_plan",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 17,
+            "line_index": 15,
             "passed": true,
             "detail": "slot removed and source absent"
+          },
+          {
+            "line_index": 16,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "story:tfgm|closed|manchester|event this week|2026 10 29",
+            "visible_count": 0,
+            "passed": true
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "story:transport|chorlton|city centre|nightmare on portland street as burst water main causes bee network chaos and commuter mis|new story|2026 10 28",
+            "visible_count": 0,
+            "passed": true
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::утверждение о признании вины требует подтверждения, в то время как обвинение более корректно.",
+        "group_key": "футбол::райан черки не является игроком манчестер сити, информация о его участии неверна.",
         "actions": [
           {
-            "line_index": 19,
+            "line_index": 17,
             "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Утверждение о признании вины требует подтверждения, в то время как обвинение более корректно.",
+            "reason": "Райан Черки не является игроком Манчестер Сити, информация о его участии неверна.",
             "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
+            "critical_error": true,
+            "critical_problem": "Неверная информация о Райане Черки. Он не является игроком Манчестер Сити.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
+            "method": "verified_existing_fact",
             "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-theguardian-com-uk-news-video-2026-oct-27-why-man-city-fans-dont-care-about-the-cheating-video-fd4158ca6516",
-            "original_url_identity": "theguardian.com/uk-news/video/2026/oct/27/why-man-city-fans-dont-care-about-the-cheating-video",
-            "original_html": "• Манчестер Сити признан виновным в более чем 100 нарушениях правил и может столкнуться с понижением в классе из Премьер-лиги или даже худшими последствиями. • Репортер The Guardian Хелен Пидд общается с фанатами о том, как они относятся к этому скандалу. • Место: Манчестер, дата: 27 октября 2026 года, время: 12:25. • Фанаты Манчестер Сити, похоже, не проявляют особой заботы о скандале с нарушениями. <a href=\"https://theguardian.com/uk-news/video/2026/oct/27/why-man-city-fans-dont-care-about-the-cheating-video\">Guardian Manchester City</a>",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-enzo-maresca-discover-34831859-e263a9b08d85",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-enzo-maresca-discover-34831859",
+            "original_html": "• Райан Черки провел 90 минут на поле и забил в серии пенальти, когда Манчестер Сити обыграл Брайтон в Кубке Карабао. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-enzo-maresca-discover-34831859\">MEN Manchester City</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 19,
+            "line_index": 17,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата события не соответствует информации из источника.",
+        "actions": [
+          {
+            "line_index": 31,
+            "section": "Выходные в GM",
+            "requested_action": "strip",
+            "reason": "Дата события не соответствует информации из источника.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно. Указана дата 1 ноября, но в источнике указано, что событие проходит с 10 мая по 30 августа.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "weekend_activities-06",
+            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2027-05-10-burnage-rfc-9a3e9cdf54f4",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+            "original_html": "• 1 ноября — автомобильная барахолка Burnage RFC. Вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+            "replacement_fingerprint": "event-id-skiddle-com-94fcbbed122e-359226f575f3",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 31,
             "passed": true,
             "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата события в карточке не соответствует фактической дате события.",
+        "actions": [
+          {
+            "line_index": 32,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события в карточке не соответствует фактической дате события.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "weekend_activities-07",
+            "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+            "original_html": "• 31 октября — автомобильная барахолка на аэродроме Бартон. Вход свободный с 9:00, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 32,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "it и бизнес::уточнение года проведения события для ясности.",
+        "actions": [
+          {
+            "line_index": 41,
+            "section": "IT и бизнес",
+            "requested_action": "patch",
+            "reason": "Уточнение года проведения события для ясности.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "tech_business-03",
+            "candidate_fingerprint": "url-prolificnorth-co-uk-news-i-wish-i-was-a-little-bit-taller-i-wish-ao-arena-was-hosting-baller-league-uks-season-4-finale-which-it-is-3b1bf21dea38",
+            "original_url_identity": "prolificnorth.co.uk/news/i-wish-i-was-a-little-bit-taller-i-wish-ao-arena-was-hosting-baller-league-uks-season-4-finale-which-it-is",
+            "original_html": "• Финал Четверки Baller League UK сезона 4 пройдет на площадке AO Arena в Манчестере 28 декабря; предпродажа начнется 30 октября. <a href=\"https://prolificnorth.co.uk/news/i-wish-i-was-a-little-bit-taller-i-wish-ao-arena-was-hosting-baller-league-uks-season-4-finale-which-it-is\">Prolific North Manchester</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 41,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::дублирование события j",
+        "actions": [
+          {
+            "line_index": 47,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "strip",
+            "reason": "Дублирование события J. Cole.",
+            "risk": "format",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "ticket_radar-03",
+            "candidate_fingerprint": "event-event-j-cole-the-fall-off-tour-thu-29-oct-2026-multiple-times-2026-10-29-co-op-live-6596f5ddfc23",
+            "original_url_identity": "cooplive.com/events/j-cole-98r5",
+            "original_html": "• <b>J. Cole The Fall-Off Tour</b> — 29 октября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/j-cole-98r5\">Co-op Live</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "duplicate_after_plan",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 47,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "ticket:j cole the fall off tour|2026-10-29|co op live",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "свежие новости::дублирование информации о нападении с ножом",
+        "actions": [
+          {
+            "line_index": 3,
+            "section": "Свежие новости",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о нападении с ножом.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о нападении с ножом.",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-four-teens-arrested-after-boy-34830826-84c9f6965978",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/four-teens-arrested-after-boy-34830826",
+            "original_html": "• Четыре подростка были арестованы после того, как 13-летний мальчик был ранен ножом в центре Манчестера 27 октября. Пострадавший находится в стабильном состоянии в больнице. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/four-teens-arrested-after-boy-34830826\">MEN</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-former-oldham-labour-mp-lord-34830666-140ae65db534",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 3,
+            "passed": false,
+            "detail": "shared prose policy still fails"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "story:public safety after incident|manchester|four teens arrested after boy 13 stabbed in manchester city centre|follow up|2026 10 28",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "общественный транспорт сегодня::дублирование информации о прорыве водопровода на портленд-стрит",
+        "actions": [
+          {
+            "line_index": 13,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о прорыве водопровода на Портленд-стрит.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о прорыве водопровода на Портленд-стрит.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "transport-02",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c6kgq915wvj1o-1a4143e9f005",
+            "original_url_identity": "bbc.com/news/articles/c6kgq915wvj1o",
+            "original_html": "• Дороги: на Портленд-стрит произошел прорыв водопровода, что привело к закрытию дорог и изменению маршрутов автобусов в центре Манчестера. Станция автобусов на Пиккадилли-Гарденс также закрыта до дальнейшего уведомления. <a href=\"https://bbc.co.uk/news/articles/c6kgq915wvj1o\">BBC Manchester</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "duplicate_after_plan",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 15,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о прорыве водопровода на Портленд-стрит.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о прорыве водопровода на Portland Street.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "transport-04",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-portland-street-leak-live-manchester-34828329-36d8b2d8ee60",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-manchester-34828329",
+            "original_html": "• Автобусы: на Портленд-стрит в центре Манчестера произошла авария водопровода, в результате чего дорога закрыта и наблюдаются серьезные сбои в движении автобусов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-manchester-34828329\">MEN Latest News</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "duplicate_after_plan",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 13,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "line_index": 15,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "story:tfgm|closed|manchester|event this week|2026 10 29",
+            "visible_count": 0,
+            "passed": true
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "story:bbc|tfgm|closed|manchester|new story|2026 10 28",
+            "visible_count": 0,
+            "passed": true
           }
         ],
         "known_factual_error": true
@@ -494,39 +976,20 @@
         "group_key": "билеты / ticket radar::дублирование информации о концерте j",
         "actions": [
           {
-            "line_index": 39,
+            "line_index": 47,
             "section": "Билеты / Ticket Radar",
             "requested_action": "strip",
             "reason": "Дублирование информации о концерте J. Cole.",
-            "risk": "format",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Дублирование информации о концерте J. Cole.",
+            "critical_problem": "Дублирование события J. Cole.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "ticket_radar-04",
-            "candidate_fingerprint": "event-event-j-cole-the-fall-off-tour-wed-28-oct-2026-thu-29-oct-2026-2026-10-28-co-op-live-bc5fd1ccf36b",
+            "plan_slot_id": "ticket_radar-03",
+            "candidate_fingerprint": "event-event-j-cole-the-fall-off-tour-thu-29-oct-2026-multiple-times-2026-10-29-co-op-live-6596f5ddfc23",
             "original_url_identity": "cooplive.com/events/j-cole-98r5",
-            "original_html": "• <b>J. Cole The Fall-Off Tour</b> — 28 октября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/j-cole-98r5\">Co-op Live</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 36,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о концерте J. Cole.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о концерте J. Cole.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "event-event-j-cole-the-fall-off-tour-2026-10-28-co-op-live-5b0f3cee237f",
-            "original_url_identity": "ticketmaster.co.uk/j-cole-the-falloff-tour-manchester-28-10-2026/event/3700643692ED1BA8",
-            "original_html": "• <b>J. Cole</b> — 28 и 29 октября, Co-op Live. Концерт проходит сегодня. <a href=\"https://ticketmaster.co.uk/j-cole-the-falloff-tour-manchester-28-10-2026/event/3700643692ED1BA8\">Ticketmaster</a>",
+            "original_html": "• <b>J. Cole The Fall-Off Tour</b> — 29 октября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/j-cole-98r5\">Co-op Live</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "duplicate_after_plan",
             "post_check_passed": true
@@ -535,89 +998,15 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 39,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "line_index": 36,
+            "line_index": 47,
             "passed": true,
             "detail": "slot removed and source absent"
           },
           {
             "check": "duplicate_identity",
-            "identity": "ticket:j cole the fall off tour|2026-10-28|co op live",
+            "identity": "ticket:j cole the fall off tour|2026-10-29|co op live",
             "visible_count": 0,
             "passed": true
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:j cole|2026-10-28|co op live",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::уточнение статуса судебного процесса.",
-        "actions": [
-          {
-            "line_index": 3,
-            "section": "Свежие новости",
-            "requested_action": "patch",
-            "reason": "Уточнение статуса судебного процесса.",
-            "risk": "legal",
-            "critical_error": true,
-            "critical_problem": "Текст утверждает, что Симон Ричардсон обвиняется в убийстве, но источник указывает, что он обвиняется в смерти, но не в убийстве.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cjwy960gznero-7dd87ee5ac88",
-            "original_url_identity": "bbc.com/news/articles/cjwy960gznero",
-            "original_html": "• В Манчестере продолжается судебный процесс над Симоном Ричардсоном, 35 лет, который обвиняется в убийстве учителя Майкла Маллинса, 56 лет. Инцидент произошёл 20 апреля в Уорбертоне, когда Ричардсон сбил Маллинса на велосипеде и, по утверждениям прокуроров, зная о том, что тот застрял под его автомобилем, продолжил движение на расстояние более 2,2 км. <a href=\"https://bbc.com/news/articles/cjwy960gznero\">BBC Manchester</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 3,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::уточнение статуса дела.",
-        "actions": [
-          {
-            "line_index": 19,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Уточнение статуса дела.",
-            "risk": "legal",
-            "critical_error": true,
-            "critical_problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждено официальными источниками.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-theguardian-com-uk-news-video-2026-oct-27-why-man-city-fans-dont-care-about-the-cheating-video-fd4158ca6516",
-            "original_url_identity": "theguardian.com/uk-news/video/2026/oct/27/why-man-city-fans-dont-care-about-the-cheating-video",
-            "original_html": "• Манчестер Сити признан виновным в более чем 100 нарушениях правил и может столкнуться с понижением в классе из Премьер-лиги или даже худшими последствиями. • Репортер The Guardian Хелен Пидд общается с фанатами о том, как они относятся к этому скандалу. • Место: Манчестер, дата: 27 октября 2026 года, время: 12:25. • Фанаты Манчестер Сити, похоже, не проявляют особой заботы о скандале с нарушениями. <a href=\"https://theguardian.com/uk-news/video/2026/oct/27/why-man-city-fans-dont-care-about-the-cheating-video\">Guardian Manchester City</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 19,
-            "passed": true,
-            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
@@ -631,32 +1020,32 @@
       "skipped": 2,
       "reports": [
         {
-          "fingerprint": "event-event-j-cole-the-fall-off-tour-wed-28-oct-2026-thu-29-oct-2026-2026-10-28-co-op-live-bc5fd1ccf36b",
-          "title": "J. Cole The Fall-Off Tour Wed 28 Oct 2026 - Thu 29 Oct 2026",
+          "fingerprint": "event-event-j-cole-the-fall-off-tour-thu-29-oct-2026-multiple-times-2026-10-29-co-op-live-6596f5ddfc23",
+          "title": "J. Cole The Fall-Off Tour Thu 29 Oct 2026 Multiple times",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
           "url": "https://cooplive.com/events/j-cole-98r5",
           "candidate_evidence_chars": 0
         },
         {
-          "fingerprint": "event-event-j-cole-the-fall-off-tour-2026-10-28-co-op-live-5b0f3cee237f",
-          "title": "J. Cole: The Fall-Off Tour — event 2026-10-28 — public sale 2026-02-20 09:00",
+          "fingerprint": "event-event-j-cole-the-fall-off-tour-thu-29-oct-2026-multiple-times-2026-10-29-co-op-live-6596f5ddfc23",
+          "title": "J. Cole The Fall-Off Tour Thu 29 Oct 2026 Multiple times",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/j-cole-the-falloff-tour-manchester-28-10-2026/event/3700643692ED1BA8",
-          "candidate_evidence_chars": 359
+          "url": "https://cooplive.com/events/j-cole-98r5",
+          "candidate_evidence_chars": 0
         }
       ]
     },
-    "enrich_improved": 6,
-    "no_eligible_backup": 3,
-    "false_positive_existing_fact": 1,
+    "enrich_improved": 11,
+    "false_positive_existing_fact": 4,
+    "no_eligible_backup": 6,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 40,
-      "matched_lines": 40,
-      "applicable_lines": 4,
-      "unmatched_lines": 0,
+      "checked_lines": 46,
+      "matched_lines": 46,
+      "applicable_lines": 5,
+      "unmatched_lines": 4,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -667,149 +1056,225 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 40,
-      "resolved_in_place": 40,
-      "unresolved": 0,
-      "findings": []
+      "checked_lines": 50,
+      "resolved_in_place": 49,
+      "unresolved": 1,
+      "findings": [
+        {
+          "line_index": 3,
+          "section": "Свежие новости",
+          "outcome": "unresolved",
+          "code": "language_policy_defect",
+          "severity": "warning"
+        }
+      ]
     },
-    "status": "resolved"
+    "status": "unresolved"
   },
-  "notes": "Строка соответствует требованиям: событие в GM, информация актуальна и соответствует источнику.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление обвинения в строке 3 необходимо для соответствия источнику.; Предупреждение о матче Манчестер Юнайтед устарело, так как событие уже прошло.; Строка",
+  "notes": "Уточнено обвинение, чтобы избежать фактической ошибки.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Уточнён статус обвиняемых в строке 10 для корректного отражения судебного процесса.; Дублирование информации о прорыве водопровода на Portland Street в строках 15 и 16.; Ошибка в строке 17: Райан Черк",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "problem": "Текст утверждает, что Симон Ричардсон обвиняется в убийстве, но источник указывает, что он обвиняется в смерти, но не в убийстве.",
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Неправильное обвинение: арестованы по подозрению в хулиганстве, а не в нападении с ножом.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 17,
+        "line_index": 10,
+        "section": "Свежие новости",
+        "problem": "Текст неясно указывает на статус судебного процесса.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 15,
         "section": "Общественный транспорт сегодня",
-        "problem": "Дата события в прошлом, но предупреждение остаётся активным.",
+        "problem": "Дублирование информации о прорыве водопровода на Portland Street.",
+        "risk": "format",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 16,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дублирование информации о прорыве водопровода на Portland Street.",
+        "risk": "format",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 17,
+        "section": "Футбол",
+        "problem": "Неверная информация о Райане Черки. Он не является игроком Манчестер Сити.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 31,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно. Указана дата 1 ноября, но в источнике указано, что событие проходит с 10 мая по 30 августа.",
         "risk": "date",
         "suggested_action": "strip"
       },
       {
-        "line_index": 19,
-        "section": "Футбол",
-        "problem": "Текст утверждает, что Манчестер Сити признан виновным, но это не подтверждено официальными источниками.",
-        "risk": "factual",
+        "line_index": 32,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 21,
-        "section": "Городской радар",
-        "problem": "Эденфилд находится в Ланкашире, а не в Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
+        "line_index": 41,
+        "section": "IT и бизнес",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
       },
       {
-        "line_index": 39,
+        "line_index": 47,
         "section": "Билеты / Ticket Radar",
-        "problem": "Дублирование информации о концерте J. Cole.",
+        "problem": "Дублирование события J. Cole.",
         "risk": "format",
         "suggested_action": "strip"
       },
       {
         "line_index": 3,
         "section": "Свежие новости",
-        "problem": "Неправильное представление статуса судебного процесса.",
-        "risk": "legal",
-        "suggested_action": "repair"
+        "problem": "Дублирование информации о нападении с ножом.",
+        "risk": "factual",
+        "suggested_action": "strip"
       },
       {
-        "line_index": 19,
-        "section": "Футбол",
-        "problem": "Неправильное представление статуса дела Манчестер Сити.",
-        "risk": "legal",
-        "suggested_action": "repair"
+        "line_index": 13,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дублирование информации о прорыве водопровода на Портленд-стрит.",
+        "risk": "factual",
+        "suggested_action": "strip"
       },
       {
-        "line_index": 36,
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дублирование информации о прорыве водопровода на Портленд-стрит.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 47,
         "section": "Билеты / Ticket Radar",
         "problem": "Дублирование информации о концерте J. Cole.",
-        "risk": "format",
+        "risk": "factual",
         "suggested_action": "strip"
       }
     ],
     "actions": [
       {
-        "line_index": 3,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "action": "patch",
+        "replacement_text": "• Два других подростка, 14 и 16 лет, были арестованы по подозрению в причастности к инциденту.",
+        "reason": "Уточнение формулировки обвинения, чтобы избежать фактической ошибки.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 10,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• В Манчестере продолжается судебный процесс над Симоном Ричардсоном, 35 лет, который обвиняется в причинении смерти учителю Майклу Маллинсу, 56 лет. Инцидент произошёл 20 апреля в Уорбертоне, когда Ричардсон сбил Маллинса на велосипеде и, по утверждениям прокуроров, зная о том, что тот застрял под его автомобилем, продолжил движение на расстояние более 2,2 км.",
-        "reason": "Уточнение обвинения в соответствии с источником.",
+        "replacement_text": "• Женщина, переходившая дорогу, была сбита автомобилем на высокой скорости во время 'соревновательных гонок' на улицах Манчестера; три мужчины из National Tyres в Дентоне обвиняются в этом инциденте и предстают перед судом в Королевском суде Миншулл Стрит.",
+        "reason": "Уточнение статуса обвиняемых в судебном процессе.",
         "risk": "factual"
+      },
+      {
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
+        "action": "strip",
+        "reason": "Дублирование информации о прорыве водопровода на Portland Street.",
+        "risk": "format"
+      },
+      {
+        "line_index": 16,
+        "section": "Общественный транспорт сегодня",
+        "action": "strip",
+        "reason": "Дублирование информации о прорыве водопровода на Portland Street.",
+        "risk": "format"
       },
       {
         "line_index": 17,
-        "section": "Общественный транспорт сегодня",
-        "action": "strip",
-        "reason": "Предупреждение о событии 25 октября 2026 года, которое уже прошло.",
-        "risk": "date"
-      },
-      {
-        "line_index": 19,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Манчестер Сити обвиняется в более чем 100 нарушениях правил и может столкнуться с понижением в классе из Премьер-лиги или даже худшими последствиями. • Репортер The Guardian Хелен Пидд общается с фанатами о том, как они относятся к этому скандалу. • Место: Манчестер, дата: 27 октября 2026 года, время: 12:25. • Фанаты Манчестер Сити, похоже, не проявляют особой заботы о скандале с нарушениями.",
-        "reason": "Утверждение о признании вины требует подтверждения, в то время как обвинение более корректно.",
+        "replacement_text": "• Манчестер Сити обыграл Брайтон в Кубке Карабао, победив в серии пенальти.",
+        "reason": "Райан Черки не является игроком Манчестер Сити, информация о его участии неверна.",
         "risk": "factual"
       },
       {
-        "line_index": 21,
-        "section": "Городской радар",
+        "line_index": 31,
+        "section": "Выходные в GM",
         "action": "strip",
-        "reason": "Эденфилд не находится в Greater Manchester, что нарушает географический контракт раздела.",
-        "risk": "geo"
+        "reason": "Дата события не соответствует информации из источника.",
+        "risk": "date"
       },
       {
-        "line_index": 39,
+        "line_index": 32,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 4 апреля — автомобильная барахолка на аэродроме Бартон. Вход свободный с 9:00, можно с собакой, подходит для семьи.",
+        "reason": "Дата события в карточке не соответствует фактической дате события.",
+        "risk": "date"
+      },
+      {
+        "line_index": 41,
+        "section": "IT и бизнес",
+        "action": "patch",
+        "replacement_text": "• Финал Четверки Baller League UK сезона 4 пройдет на площадке AO Arena в Манчестере 28 декабря 2026 года; предпродажа начнется 30 октября.",
+        "reason": "Уточнение года проведения события для ясности.",
+        "risk": "date"
+      },
+      {
+        "line_index": 47,
         "section": "Билеты / Ticket Radar",
         "action": "strip",
-        "reason": "Дублирование информации о концерте J. Cole.",
+        "reason": "Дублирование события J. Cole.",
         "risk": "format"
       },
       {
         "line_index": 3,
         "section": "Свежие новости",
-        "action": "patch",
-        "replacement_text": "• В Манчестере продолжается судебный процесс над Симоном Ричардсоном, 35 лет, который обвиняется в убийстве учителя Майкла Маллинса, 56 лет. Инцидент произошёл 20 апреля в Уорбертоне, когда Ричардсон сбил Маллинса на велосипеде и, по утверждениям прокуроров, действовал с намерением.",
-        "reason": "Уточнение статуса судебного процесса.",
-        "risk": "legal"
+        "action": "strip",
+        "reason": "Дублирование информации о нападении с ножом.",
+        "risk": "factual"
       },
       {
-        "line_index": 19,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Манчестер Сити обвиняется в более чем 100 нарушениях правил и может столкнуться с санкциями, включая понижение в классе из Премьер-лиги. • Репортер The Guardian Хелен Пидд общается с фанатами о том, как они относятся к этому скандалу.",
-        "reason": "Уточнение статуса дела.",
-        "risk": "legal"
+        "line_index": 13,
+        "section": "Общественный транспорт сегодня",
+        "action": "strip",
+        "reason": "Дублирование информации о прорыве водопровода на Портленд-стрит.",
+        "risk": "factual"
       },
       {
-        "line_index": 36,
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
+        "action": "strip",
+        "reason": "Дублирование информации о прорыве водопровода на Портленд-стрит.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 47,
         "section": "Билеты / Ticket Radar",
         "action": "strip",
-        "replacement_text": "",
         "reason": "Дублирование информации о концерте J. Cole.",
-        "risk": "format"
+        "risk": "factual"
       }
     ],
     "warnings": [
-      "Текст содержит английские слова, такие как 'International Trade Forum', которые могут быть переведены для лучшего понимания русскоязычной аудитории.",
-      "Недостаточное количество элементов в разделе 'Что важно сегодня'.",
-      "Отсутствие элементов в разделе 'Русскоязычные концерты и стендап UK'.",
-      "Отсутствие элементов в разделе 'Еда, открытия и рынки'."
+      "Отсутствие блока 'Что важно сегодня' снижает полноту выпуска.",
+      "Отсутствие блока 'Русскоязычные концерты и стендап UK' снижает полноту выпуска."
     ],
-    "notes": "Строка соответствует требованиям: событие в GM, информация актуальна и соответствует источнику.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление обвинения в строке 3 необходимо для соответствия источнику.; Предупреждение о матче Манчестер Юнайтед устарело, так как событие уже прошло.; Строка",
+    "notes": "Уточнено обвинение, чтобы избежать фактической ошибки.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Уточнён статус обвиняемых в строке 10 для корректного отражения судебного процесса.; Дублирование информации о прорыве водопровода на Portland Street в строках 15 и 16.; Ошибка в строке 17: Райан Черк",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 11,
+      "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -822,13 +1287,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2764,
-          "duration_seconds": 1.199
+          "estimated_tokens": 2639,
+          "duration_seconds": 2.644
         },
         {
           "chunk_id": "chunk-02",
@@ -845,8 +1310,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2451,
-          "duration_seconds": 1.164
+          "estimated_tokens": 2444,
+          "duration_seconds": 1.163
         },
         {
           "chunk_id": "chunk-03",
@@ -863,51 +1328,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7058,
-          "duration_seconds": 3.342
+          "estimated_tokens": 7272,
+          "duration_seconds": 3.403
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            17
+            16
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
           "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4999,
-          "duration_seconds": 2.428
+          "estimated_tokens": 4635,
+          "duration_seconds": 2.356
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            18,
-            18
-          ],
-          "sections": [
-            "Что важно сегодня"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2696,
-          "duration_seconds": 1.026
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "ok",
-          "line_range": [
-            19,
-            20
+            17,
+            19
           ],
           "sections": [
             "Футбол"
@@ -917,69 +1364,105 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3247,
-          "duration_seconds": 3.217
+          "estimated_tokens": 3606,
+          "duration_seconds": 1.845
         },
         {
-          "chunk_id": "chunk-07",
+          "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            21,
-            32
+            20,
+            31
           ],
           "sections": [
-            "Городской радар"
+            "Выходные в GM"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 8574,
-          "duration_seconds": 42.318
+          "estimated_tokens": 7306,
+          "duration_seconds": 1.809
+        },
+        {
+          "chunk_id": "chunk-07",
+          "status": "ok",
+          "line_range": [
+            32,
+            33
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3351,
+          "duration_seconds": 7.664
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            33,
-            34
+            34,
+            38
           ],
           "sections": [
-            "IT и бизнес"
+            "Городской радар"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3127,
-          "duration_seconds": 1.155
+          "estimated_tokens": 4797,
+          "duration_seconds": 39.244
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            35,
-            35
+            39,
+            42
           ],
           "sections": [
-            "Business/tech события для тебя"
+            "IT и бизнес"
           ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2873,
-          "duration_seconds": 1.429
+          "estimated_tokens": 4120,
+          "duration_seconds": 22.616
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            36,
-            41
+            43,
+            44
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3320,
+          "duration_seconds": 6.572
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            45,
+            53
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -989,15 +1472,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5703,
-          "duration_seconds": 21.271
+          "estimated_tokens": 7617,
+          "duration_seconds": 43.545
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
-            42,
-            43
+            54,
+            54
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -1007,8 +1490,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3320,
-          "duration_seconds": 7.033
+          "estimated_tokens": 2726,
+          "duration_seconds": 5.369
         }
       ],
       "reduce": {
@@ -1017,12 +1500,12 @@
         "line_range": [],
         "sections": [],
         "decision": "repair_required",
-        "critical_error_count": 3,
-        "action_count": 3,
-        "warning_count": 3,
+        "critical_error_count": 4,
+        "action_count": 4,
+        "warning_count": 2,
         "error": "",
-        "estimated_tokens": 10634,
-        "duration_seconds": 26.425
+        "estimated_tokens": 10964,
+        "duration_seconds": 26.75
       },
       "max_workers": 3,
       "chunk_line_target": 12,
