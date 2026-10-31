@@ -2,100 +2,58 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
+  "reason": "pre-send repair executor applied 2 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-10-30",
-  "pipeline_run_id": "20261030T080151+0000",
-  "digest_sha256": "a2835c03c9272508f163d1f584f31ecef0bd11720f1d79c9469d1eeeedb21177",
-  "duration_seconds": 102.058,
-  "confidence": 0.9,
+  "run_date_london": "2026-10-31",
+  "pipeline_run_id": "20261031T080157+0000",
+  "digest_sha256": "c0841c65b4ed5f52e0ae160e64292f6c93a703a4312c427c80208d81500c5fa9",
+  "duration_seconds": 86.601,
+  "confidence": 0.85,
   "critical_errors": [
     {
       "line_index": 4,
       "section": "Свежие новости",
-      "problem": "Неправильное использование термина 'хулиганство'.",
-      "risk": "legal",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 12,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дублирование информации о трамвайных работах.",
-      "risk": "format",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 15,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дублирование информации о прорыве водопровода на улице Портленд.",
-      "risk": "format",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 18,
-      "section": "Футбол",
-      "problem": "Ошибка в информации о следующем матче.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 21,
-      "section": "Выходные в GM",
-      "problem": "Дата начала события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 32,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 34,
-      "section": "Городской радар",
-      "problem": "Указано, что Патрик Уилан из Ливерпуля, но событие должно быть в GM.",
+      "problem": "Неверная географическая привязка субъекта.",
       "risk": "geo",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 40,
-      "section": "Городской радар",
-      "problem": "Событие произошло в Португалии, но указано как относящееся к GM.",
-      "risk": "geo",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 45,
-      "section": "Еда, открытия и рынки",
-      "problem": "Неправильное название заведения.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 52,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Некорректное отображение символов в названии тура.",
-      "risk": "format",
       "suggested_action": "repair"
     },
     {
       "line_index": 14,
       "section": "Общественный транспорт сегодня",
-      "problem": "Дублирование информации о прорыве водопровода на улице Портленд.",
-      "risk": "format",
+      "problem": "Дата 1 ноября 2026 года приходится на субботу, а не на воскресенье.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 16,
+      "section": "Футбол",
+      "problem": "Неверное утверждение о статусе дела.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 28,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно, так как оно проводится только в летний сезон.",
+      "risk": "date",
       "suggested_action": "strip"
     },
     {
-      "line_index": 15,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дублирование информации о прорыве водопровода на улице Портленд.",
-      "risk": "format",
-      "suggested_action": "strip"
+      "line_index": 30,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно. В тексте указано 31 октября, но в данных события указана дата 4 апреля 2026 года.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 38,
+      "section": "Городской радар",
+      "problem": "Неправильное указание на жертву в контексте преступления.",
+      "risk": "sensitive",
+      "suggested_action": "repair"
     }
   ],
   "actions": [
@@ -103,102 +61,55 @@
       "line_index": 4,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• В Манчестере, 27 октября, в торговом центре Арндейл произошла драка, в результате которой 13-летний мальчик получил ножевые ранения и был госпитализирован. Трое подростков, возрастом 14, 15 и 16 лет, были задержаны по подозрению в нападении, а еще один 13-летний мальчик — за хранение ножа. По последним данным, трое из них выпущены под залог, а один все еще находится в больнице.",
-      "reason": "Термин 'хулиганство' не соответствует серьёзности инцидента с ножевыми ранениями.",
-      "risk": "legal"
-    },
-    {
-      "line_index": 12,
-      "section": "Общественный транспорт сегодня",
-      "action": "strip",
-      "reason": "Дублирование информации о трамвайных работах.",
-      "risk": "format",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 15,
-      "section": "Общественный транспорт сегодня",
-      "action": "strip",
-      "reason": "Дублирование информации о прорыве водопровода на улице Портленд.",
-      "risk": "format",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 18,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Манчестер Сити одержал победу над Брайтоном в Кубке Карбао, выиграв 4-3 по пенальти, и ожидает возвращения пяти основных игроков к следующему матчу в субботу.",
-      "reason": "Следующий матч Манчестер Сити не против Брайтона.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 21,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 26 октября — Makers Market на Great Northern Square в Манчестере. На площадке: рынок, вход свободный, ремесленные товары, еда, подходит для семьи.",
-      "reason": "Дата начала события должна быть 26 октября, а не 30 октября.",
-      "risk": "date"
-    },
-    {
-      "line_index": 32,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 4 апреля — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
-      "reason": "Дата события в тексте не соответствует данным из источника.",
-      "risk": "date"
-    },
-    {
-      "line_index": 34,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• 62-летний рабочий Патрик Уилан погиб в аварии на временных дорожных работах на Rochdale Роуд в Эденфилде 26 октября; его семья опубликовала трогательную дань.",
-      "reason": "Уточнение, что Патрик Уилан погиб в GM, а не из Ливерпуля.",
+      "replacement_text": "• Бывший исполнительный директор футбольного клуба Карл Линдсей, 56 лет, признал себя виновным в преступлениях, связанных с наркотиками и изнасилованием женщины её мужем и другими мужчинами. Преступления произошли в период с 2015 по 2025 годы в Сомерсете.",
+      "reason": "Карл Линдсей был связан с клубом в Сомерсете, а не в Стокпорте.",
       "risk": "geo"
-    },
-    {
-      "line_index": 40,
-      "section": "Городской радар",
-      "action": "strip",
-      "replacement_text": "",
-      "reason": "Событие произошло в Португалии, не соответствует geo_scope GM.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 45,
-      "section": "Еда, открытия и рынки",
-      "action": "patch",
-      "replacement_text": "• 6 ноября 2026 года в MediaCity откроется новый испанский бар и кухня \"El Gatito\", созданный командой El Gato Negro, предлагающий маленькие закуски, фокаччи, вино и сангрию.",
-      "reason": "Уточнение, что El Gatito связан с El Gato Negro.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 52,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• L.A. GUNS LUCKY MF'R TOUR — 31 октября, Manchester Academy; цена £30.00. Билеты и время указаны на официальной странице.",
-      "reason": "Исправление некорректного отображения символов в названии тура.",
-      "risk": "format"
     },
     {
       "line_index": 14,
       "section": "Общественный транспорт сегодня",
+      "action": "patch",
+      "replacement_text": "• Автобусы заменят поезда между Манчестер Пикадилли, Крю, Гринбанк, Ливерпуль Саут Парквей и Честером в субботу, 1 ноября. Операторы: Avanti West Coast, Northern и Transport for Wales.",
+      "reason": "Дата 1 ноября 2026 года приходится на субботу, а не на воскресенье.",
+      "risk": "date"
+    },
+    {
+      "line_index": 16,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• 30 октября 2026 года бывший полузащитник Манчестер Сити Гарет Барри заявил, что клуб должен быть наказан, если их апелляция против обвинительного вердикта по 114 финансовым обвинениям не будет успешной.",
+      "reason": "Уточнение формулировки для корректного отражения статуса апелляции.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 28,
+      "section": "Выходные в GM",
       "action": "strip",
-      "reason": "Дублирование информации о прорыве водопровода на улице Портленд.",
-      "risk": "format",
+      "reason": "Событие Burnage RFC Car Boot Sale проводится только в летний сезон, а не 1 ноября.",
+      "risk": "date",
       "replacement_text": ""
     },
     {
-      "line_index": 15,
-      "section": "Общественный транспорт сегодня",
-      "action": "strip",
-      "reason": "Дублирование информации о прорыве водопровода на улице Портленд.",
-      "risk": "format",
-      "replacement_text": ""
+      "line_index": 30,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 4 апреля 2026 — автомобильная барахолка в Barton Aerodrome. Для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
+      "reason": "Дата события в тексте не соответствует данным события.",
+      "risk": "date"
+    },
+    {
+      "line_index": 38,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Бывший стажёр GCHQ Хасан Аршад, студент Манчестерского университета, не смог уменьшить свой срок в семь с половиной лет за то, что забрал секретные данные домой и сделал непристойные изображения с участием ребёнка.",
+      "reason": "Уточнение формулировки для корректного указания на характер преступления.",
+      "risk": "sensitive"
     }
   ],
   "warnings": [
-    "Отсутствие блока 'Что важно сегодня' снижает полноту выпуска.",
-    "Отсутствие блока 'Русскоязычные концерты и стендап UK' снижает полноту выпуска."
+    "Отсутствует блок 'Что важно сегодня', что может снизить информативность выпуска.",
+    "Отсутствует блок 'Еда, открытия и рынки', что может снизить разнообразие контента.",
+    "Отсутствует блок 'Business/tech события для тебя', что может снизить привлекательность для деловой аудитории."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -207,66 +118,64 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 6,
+      "Общественный транспорт сегодня": 4,
       "Футбол": 2,
       "Выходные в GM": 10,
-      "Городской радар": 11,
-      "Еда, открытия и рынки": 1,
-      "IT и бизнес": 2,
-      "Билеты / Ticket Radar": 10,
-      "Крупные концерты вне GM": 1
+      "Городской радар": 12,
+      "Билеты / Ticket Radar": 9,
+      "Крупные концерты вне GM": 2,
+      "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
       "Что важно сегодня": 0,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 11,
+      "Городской радар": 12,
       "Выходные в GM": 10,
-      "Билеты / Ticket Radar": 10,
-      "Русскоязычные концерты и стендап UK": 0,
-      "Еда, открытия и рынки": 1,
+      "Билеты / Ticket Radar": 9,
+      "Русскоязычные концерты и стендап UK": 1,
+      "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
       "Футбол": 2
     },
-    "ticket_items": 11,
+    "ticket_items": 12,
     "core_items": 35,
     "writer_quality_counts": {
-      "included_candidates": 56,
-      "rendered_candidates": 54,
+      "included_candidates": 52,
+      "rendered_candidates": 51,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
       "dropped_low_quality": 1,
-      "replaced_from_plan_backup": 1,
+      "replaced_from_plan_backup": 0,
       "removed_with_reason": 1
     },
     "source_health_counts": {
-      "ok": 105,
-      "partial": 3,
-      "stale": 6,
-      "empty": 13,
+      "ok": 108,
+      "partial": 2,
+      "stale": 2,
+      "empty": 14,
       "failed": 4,
       "zero_yield": 68,
       "no_contribution_breakdown": {
         "fetch_failed": 4,
         "all_rejected": 68,
-        "idle_no_items": 27
+        "idle_no_items": 24
       },
       "zero_contribution_by_stage": {
-        "written": 33,
-        "parsed": 27,
-        "selected": 35,
+        "selected": 33,
+        "written": 35,
+        "parsed": 24,
         "fetched": 4
       },
       "weekend_source_coverage_incidents": 51
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 0 item(s), emergency floor 3",
-      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
-      "Еда, открытия и рынки: 1 item(s), emergency floor 3",
+      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "Business/tech события для тебя: 0 item(s), emergency floor 1",
       "source failures: 4"
     ]
@@ -274,18 +183,16 @@
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 4 has unchecked number/date token(s): 14, 16, 27",
-      "patch for line 32 has unchecked number/date token(s): 9:00",
-      "multiple actions target line 15"
+      "patch for line 30 has unchecked number/date token(s): 9:00"
     ],
     "can_apply_actions": true,
-    "action_count": 12
+    "action_count": 6
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 54,
-    "matched_lines": 54,
-    "applicable_lines": 4,
+    "checked_lines": 51,
+    "matched_lines": 51,
+    "applicable_lines": 5,
     "unmatched_lines": 4,
     "critical_omission_count": 0,
     "critical_omissions": [],
@@ -298,430 +205,149 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 10,
-    "attempted": 7,
-    "applied": 7,
+    "requested": 5,
+    "attempted": 2,
+    "applied": 2,
     "model_patch_applied": 1,
-    "deterministic_rewrite_used": 1,
-    "reserve_replacement_used": 0,
-    "stripped": 5,
-    "unresolved": 1,
-    "blocking_unresolved": 1,
-    "resolved": 7,
+    "deterministic_rewrite_used": 0,
+    "reserve_replacement_used": 1,
+    "stripped": 0,
+    "unresolved": 0,
+    "blocking_unresolved": 0,
+    "resolved": 5,
     "resolved_in_place": 4,
-    "resolved_by_replacement": 0,
-    "resolved_by_removal": 3,
-    "fact_lock_rejected": 1,
-    "enrich_attempted": 10,
+    "resolved_by_replacement": 1,
+    "resolved_by_removal": 0,
+    "fact_lock_rejected": 0,
+    "enrich_attempted": 5,
     "post_check_errors": [],
     "geo_contract_rejected": [
       {
-        "line_index": 34,
-        "section": "Городской радар",
+        "line_index": 4,
+        "section": "Свежие новости",
         "geo_scope": "gm",
-        "reason": "Уточнение, что Патрик Уилан погиб в GM, а не из Ливерпуля.",
-        "gm_anchor_present": true
-      },
-      {
-        "line_index": 40,
-        "section": "Городской радар",
-        "geo_scope": "gm",
-        "reason": "Событие произошло в Португалии, не соответствует geo_scope GM.",
+        "reason": "Карл Линдсей был связан с клубом в Сомерсете, а не в Стокпорте.",
         "gm_anchor_present": true
       }
     ],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 4,
-        "section": "Свежие новости",
+        "line_index": 14,
+        "section": "Общественный транспорт сегодня",
         "requested_action": "patch",
-        "reason": "Термин 'хулиганство' не соответствует серьёзности инцидента с ножевыми ранениями.",
-        "risk": "legal",
+        "reason": "Дата 1 ноября 2026 года приходится на субботу, а не на воскресенье.",
+        "risk": "date",
         "critical_error": true,
-        "critical_problem": "Неправильное использование термина 'хулиганство'.",
+        "critical_problem": "Дата 1 ноября 2026 года приходится на субботу, а не на воскресенье.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "transport-03",
+        "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-avanti-west-coast-buses-replace-trains-between-manchester-piccadilly-crewe-green-567613e1a6a9",
+        "original_url_identity": "nationalrail.co.uk/status-and-disruptions/avanti-west-coast-buses-replace-trains-between-manchester-piccadilly-crewe-green",
+        "original_html": "• Автобусы заменят поезда между Манчестер Пикадилли, Крю, Гринбанк, Ливерпуль Саут Парквей и Честером в воскресенье, 1 ноября. Операторы: Avanti West Coast, Northern и Transport for Wales. <a href=\"https://nationalrail.co.uk/status-and-disruptions/avanti-west-coast-buses-replace-trains-between-manchester-piccadilly-crewe-green\">National Rail Enquiries</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 16,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Уточнение формулировки для корректного отражения статуса апелляции.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неверное утверждение о статусе дела.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "last_24h-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-issue-update-after-officers-34833270-0ac886e57cd9",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-issue-update-after-officers-34833270",
-        "original_html": "• В Манчестере, 27 октября, в торговом центре Арндейл произошла драка, в результате которой 13-летний мальчик получил ножевые ранения и был госпитализирован. Трое подростков, возрастом 14, 15 и 16 лет, были задержаны по подозрению в хулиганстве, а еще один 13-летний мальчик — за хранение ножа. По последним данным, трое из них выпущены под залог, а один все еще находится в больнице. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-issue-update-after-officers-34833270\">MEN Latest News</a>",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-punishment-titles-34838823-924bf93b2155",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-punishment-titles-34838823",
+        "original_html": "• 30 октября 2026 года бывший полузащитник Манчестер Сити Гарет Барри заявил, что клуб должен быть наказан, если их апелляция против обвинительного вердикта по 114 финансовым обвинениям не увенчается успехом. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-punishment-titles-34838823\">MEN Manchester City</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о трамвайных работах.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о трамвайных работах.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-01",
-        "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-major-tram-works-city-centre-trafford-and-eccles-728b3b13cf69",
-        "original_url_identity": "tfgm.com/travel-updates/travel-alerts/major-tram-works-city-centre-trafford-and-eccles",
-        "original_html": "• Metrolink: С 19 октября по 1 ноября в Deansgate-Castlefield и Trafford Bar проводятся работы по улучшению трамвайного сообщения; трамваи на линиях Eccles, Trafford Centre и Altrincham не будут ходить. Экспресс-автобусы будут работать с ограниченными остановками. <a href=\"https://tfgm.com/travel-updates/travel-alerts/major-tram-works-city-centre-trafford-and-eccles\">TfGM</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о прорыве водопровода на улице Портленд.",
-        "risk": "format",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-04",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-portland-street-leak-live-traffic-34836723-2d107c668c9f",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-traffic-34836723",
-        "original_html": "• Автобусы: улица Портленд в центре Манчестера закрыта из-за прорыва водопровода с 28 октября 2026 года; ремонт может занять несколько дней, автобусная станция Пикадилли также закрыта, и маршруты Bee Network перенаправлены. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-traffic-34836723\">MEN</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 18,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Следующий матч Манчестер Сити не против Брайтона.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Ошибка в информации о следующем матче.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-ndiaye-nunes-semenyo-man-city-34832935-a95e6cb8fe46",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/ndiaye-nunes-semenyo-man-city-34832935",
-        "original_html": "• Манчестер Сити одержал победу над Брайтоном в Кубке Карбао, выиграв 4-3 по пенальти, и ожидает возвращения пяти основных игроков к следующему матчу в субботу против Брайтона. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/ndiaye-nunes-semenyo-man-city-34832935\">MEN Manchester City</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 21,
+        "line_index": 28,
         "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата начала события должна быть 26 октября, а не 30 октября.",
+        "requested_action": "strip",
+        "reason": "Событие Burnage RFC Car Boot Sale проводится только в летний сезон, а не 1 ноября.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата начала события указана неверно.",
+        "critical_problem": "Дата события указана неверно, так как оно проводится только в летний сезон.",
         "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "weekend_activities-01",
-        "candidate_fingerprint": "event-event-makers-market-in-great-northern-square-great-northern-manchester-2026-10-26-great-northern-square-f86e545937a3",
-        "original_url_identity": "thegreatnorthern.com/event/makers-market-in-great-northern-square",
-        "original_html": "• 30 октября — Makers Market на Great Northern Square в Манчестере. На площадке: рынок, вход свободный, ремесленные товары, еда, подходит для семьи. <a href=\"https://thegreatnorthern.com/event/makers-market-in-great-northern-square\">Great Northern Makers Market</a>",
-        "model_replacement_rejected": "post_check: structured event date is not rendered correctly",
-        "reserve_rejections": [
-          {
-            "fingerprint": "event-event-rewrites-jeezus-2026-10-30-lowry-8fd32e5bcba7",
-            "errors": [
-              "structured event date is not rendered correctly"
-            ]
-          },
-          {
-            "fingerprint": "event-event-waitress-fri-30-oct-2026-sat-31-oct-2026-lyric-theatre-2026-10-30-the-lowry-86c68782ee48",
-            "errors": [
-              "structured event date is not rendered correctly"
-            ]
-          }
-        ],
-        "backup_outcome": "backup_chain_exhausted",
-        "removal_reason": "fact_lock_failed",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "weekend_activities-06",
+        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+        "original_html": "• 1 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+        "replacement_fingerprint": "event-id-skiddle-com-5b0d69588d44-dd06c1a9e775",
         "post_check_passed": true
       },
       {
-        "line_index": 32,
+        "line_index": 30,
         "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Дата события в тексте не соответствует данным из источника.",
+        "reason": "Дата события в тексте не соответствует данным события.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
+        "critical_problem": "Дата события указана неверно. В тексте указано 31 октября, но в данных события указана дата 4 апреля 2026 года.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
         "plan_slot_id": "weekend_activities-08",
         "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
         "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
-        "original_html": "• 31 октября — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+        "original_html": "• 31 октября — автомобильная барахолка в Barton Aerodrome. Для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 45,
-        "section": "Еда, открытия и рынки",
+        "line_index": 38,
+        "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Уточнение, что El Gatito связан с El Gato Negro.",
-        "risk": "factual",
+        "reason": "Уточнение формулировки для корректного указания на характер преступления.",
+        "risk": "sensitive",
         "critical_error": true,
-        "critical_problem": "Неправильное название заведения.",
+        "critical_problem": "Неправильное указание на жертву в контексте преступления.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "openings-01",
-        "candidate_fingerprint": "event-event-el-gato-negro-s-new-little-sister-el-gatito-to-open-at-mediacity-2026-11-06-mediacity-the-c6695ba484c9",
-        "original_url_identity": "manchestersfinest.com/eating-and-drinking/el-gato-negros-new-little-sister-el-gatito-to-open-at-mediacity",
-        "original_html": "• 6 ноября 2026 года в MediaCity откроется новый испанский бар и кухня \"El Gatito\", предлагающий маленькие закуски, фокаччи, вино и сангрию. <a href=\"https://manchestersfinest.com/eating-and-drinking/el-gato-negros-new-little-sister-el-gatito-to-open-at-mediacity\">Manchester&#x27;s Finest</a>",
+        "plan_slot_id": "city_watch-07",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cqly0r4pp2m5o-fdded0e3ddc8",
+        "original_url_identity": "bbc.com/news/articles/cqly0r4pp2m5o",
+        "original_html": "• Бывший стажёр GCHQ Хасан Аршад, студент Манчестерского университета, не смог уменьшить свой срок в семь с половиной лет за то, что забрал секретные данные домой и сделал непристойные изображения ребёнка. <a href=\"https://bbc.co.uk/news/articles/cqly0r4pp2m5o\">BBC Manchester</a>",
         "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 52,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Исправление некорректного отображения символов в названии тура.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Некорректное отображение символов в названии тура.",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "deterministic_rewrite",
-        "plan_slot_id": "ticket_radar-05",
-        "candidate_fingerprint": "event-event-l-a-guns-31st-october-2026-2026-10-31-manchester-academy-5ef71ff393f7",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13379528/l-a-guns-manchester-club-academy-2026-10-31-19-30-00",
-        "original_html": "• <b>L.A. GUNS LUCKY MFâR TOUR</b> — 31 октября, Manchester Academy; цена £30.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13379528/l-a-guns-manchester-club-academy-2026-10-31-19-30-00\">Manchester Academy</a>",
-        "model_replacement_rejected": "fact_lock: l.a. guns lucky mf'r tour",
-        "post_check_passed": false
-      },
-      {
-        "line_index": 14,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о прорыве водопровода на улице Портленд.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о прорыве водопровода на улице Портленд.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-major-travel-disruption-last-days-34834020-b17d00967550",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/major-travel-disruption-last-days-34834020",
-        "original_html": "• Дороги: В центре Манчестера наблюдаются серьезные сбои в движении из-за разрыва водопровода на улице Портленд, ожидается, что они продлятся несколько дней; автовокзал Пикадилли закрыт, автобусы идут в объезд. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/major-travel-disruption-last-days-34834020\">MEN Latest News</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о прорыве водопровода на улице Портленд.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о прорыве водопровода на улице Портленд.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-04",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-portland-street-leak-live-traffic-34836723-2d107c668c9f",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-traffic-34836723",
-        "original_html": "• Автобусы: улица Портленд в центре Манчестера закрыта из-за прорыва водопровода с 28 октября 2026 года; ремонт может занять несколько дней, автобусная станция Пикадилли также закрыта, и маршруты Bee Network перенаправлены. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-traffic-34836723\">MEN</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::термин 'хулиганство' не соответствует серьёзности инцидента с ножевыми ранениями.",
+        "group_key": "общественный транспорт сегодня::дата 1 ноября 2026 года приходится на субботу, а не на воскресенье.",
         "actions": [
-          {
-            "line_index": 4,
-            "section": "Свежие новости",
-            "requested_action": "patch",
-            "reason": "Термин 'хулиганство' не соответствует серьёзности инцидента с ножевыми ранениями.",
-            "risk": "legal",
-            "critical_error": true,
-            "critical_problem": "Неправильное использование термина 'хулиганство'.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-issue-update-after-officers-34833270-0ac886e57cd9",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-issue-update-after-officers-34833270",
-            "original_html": "• В Манчестере, 27 октября, в торговом центре Арндейл произошла драка, в результате которой 13-летний мальчик получил ножевые ранения и был госпитализирован. Трое подростков, возрастом 14, 15 и 16 лет, были задержаны по подозрению в хулиганстве, а еще один 13-летний мальчик — за хранение ножа. По последним данным, трое из них выпущены под залог, а один все еще находится в больнице. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-issue-update-after-officers-34833270\">MEN Latest News</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 4,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::дублирование информации о трамвайных работах",
-        "actions": [
-          {
-            "line_index": 12,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о трамвайных работах.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о трамвайных работах.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-01",
-            "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-major-tram-works-city-centre-trafford-and-eccles-728b3b13cf69",
-            "original_url_identity": "tfgm.com/travel-updates/travel-alerts/major-tram-works-city-centre-trafford-and-eccles",
-            "original_html": "• Metrolink: С 19 октября по 1 ноября в Deansgate-Castlefield и Trafford Bar проводятся работы по улучшению трамвайного сообщения; трамваи на линиях Eccles, Trafford Centre и Altrincham не будут ходить. Экспресс-автобусы будут работать с ограниченными остановками. <a href=\"https://tfgm.com/travel-updates/travel-alerts/major-tram-works-city-centre-trafford-and-eccles\">TfGM</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 12,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "story:tfgm|transport|trafford|same story new facts|2026 10 30",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::дублирование информации о прорыве водопровода на улице портленд",
-        "actions": [
-          {
-            "line_index": 15,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о прорыве водопровода на улице Портленд.",
-            "risk": "format",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-04",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-portland-street-leak-live-traffic-34836723-2d107c668c9f",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-traffic-34836723",
-            "original_html": "• Автобусы: улица Портленд в центре Манчестера закрыта из-за прорыва водопровода с 28 октября 2026 года; ремонт может занять несколько дней, автобусная станция Пикадилли также закрыта, и маршруты Bee Network перенаправлены. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-traffic-34836723\">MEN</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          },
           {
             "line_index": 14,
             "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о прорыве водопровода на улице Портленд.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о прорыве водопровода на улице Портленд.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-major-travel-disruption-last-days-34834020-b17d00967550",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/major-travel-disruption-last-days-34834020",
-            "original_html": "• Дороги: В центре Манчестера наблюдаются серьезные сбои в движении из-за разрыва водопровода на улице Портленд, ожидается, что они продлятся несколько дней; автовокзал Пикадилли закрыт, автобусы идут в объезд. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/major-travel-disruption-last-days-34834020\">MEN Latest News</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 15,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о прорыве водопровода на улице Портленд.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о прорыве водопровода на улице Портленд.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-04",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-portland-street-leak-live-traffic-34836723-2d107c668c9f",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-traffic-34836723",
-            "original_html": "• Автобусы: улица Портленд в центре Манчестера закрыта из-за прорыва водопровода с 28 октября 2026 года; ремонт может занять несколько дней, автобусная станция Пикадилли также закрыта, и маршруты Bee Network перенаправлены. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/portland-street-leak-live-traffic-34836723\">MEN</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 15,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "line_index": 14,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "line_index": 15,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "story:tfgm|closed|opened|manchester|new story|2026 10 29",
-            "visible_count": 0,
-            "passed": true
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "story:transport|manchester|major travel disruption to last for days in manchester city centre amid leak on portland s|new story|2026 10 29",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::следующий матч манчестер сити не против брайтона.",
-        "actions": [
-          {
-            "line_index": 18,
-            "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Следующий матч Манчестер Сити не против Брайтона.",
-            "risk": "factual",
+            "reason": "Дата 1 ноября 2026 года приходится на субботу, а не на воскресенье.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Ошибка в информации о следующем матче.",
+            "critical_problem": "Дата 1 ноября 2026 года приходится на субботу, а не на воскресенье.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-ndiaye-nunes-semenyo-man-city-34832935-a95e6cb8fe46",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/ndiaye-nunes-semenyo-man-city-34832935",
-            "original_html": "• Манчестер Сити одержал победу над Брайтоном в Кубке Карбао, выиграв 4-3 по пенальти, и ожидает возвращения пяти основных игроков к следующему матчу в субботу против Брайтона. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/ndiaye-nunes-semenyo-man-city-34832935\">MEN Manchester City</a>",
+            "plan_slot_id": "transport-03",
+            "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-avanti-west-coast-buses-replace-trains-between-manchester-piccadilly-crewe-green-567613e1a6a9",
+            "original_url_identity": "nationalrail.co.uk/status-and-disruptions/avanti-west-coast-buses-replace-trains-between-manchester-piccadilly-crewe-green",
+            "original_html": "• Автобусы заменят поезда между Манчестер Пикадилли, Крю, Гринбанк, Ливерпуль Саут Парквей и Честером в воскресенье, 1 ноября. Операторы: Avanti West Coast, Northern и Transport for Wales. <a href=\"https://nationalrail.co.uk/status-and-disruptions/avanti-west-coast-buses-replace-trains-between-manchester-piccadilly-crewe-green\">National Rail Enquiries</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 18,
+            "line_index": 14,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -729,71 +355,87 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::дата начала события должна быть 26 октября, а не 30 октября.",
+        "group_key": "футбол::уточнение формулировки для корректного отражения статуса апелляции.",
         "actions": [
           {
-            "line_index": 21,
-            "section": "Выходные в GM",
+            "line_index": 16,
+            "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Дата начала события должна быть 26 октября, а не 30 октября.",
-            "risk": "date",
+            "reason": "Уточнение формулировки для корректного отражения статуса апелляции.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Дата начала события указана неверно.",
+            "critical_problem": "Неверное утверждение о статусе дела.",
             "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "weekend_activities-01",
-            "candidate_fingerprint": "event-event-makers-market-in-great-northern-square-great-northern-manchester-2026-10-26-great-northern-square-f86e545937a3",
-            "original_url_identity": "thegreatnorthern.com/event/makers-market-in-great-northern-square",
-            "original_html": "• 30 октября — Makers Market на Great Northern Square в Манчестере. На площадке: рынок, вход свободный, ремесленные товары, еда, подходит для семьи. <a href=\"https://thegreatnorthern.com/event/makers-market-in-great-northern-square\">Great Northern Makers Market</a>",
-            "model_replacement_rejected": "post_check: structured event date is not rendered correctly",
-            "reserve_rejections": [
-              {
-                "fingerprint": "event-event-rewrites-jeezus-2026-10-30-lowry-8fd32e5bcba7",
-                "errors": [
-                  "structured event date is not rendered correctly"
-                ]
-              },
-              {
-                "fingerprint": "event-event-waitress-fri-30-oct-2026-sat-31-oct-2026-lyric-theatre-2026-10-30-the-lowry-86c68782ee48",
-                "errors": [
-                  "structured event date is not rendered correctly"
-                ]
-              }
-            ],
-            "backup_outcome": "backup_chain_exhausted",
-            "removal_reason": "fact_lock_failed",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-charges-punishment-titles-34838823-924bf93b2155",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-punishment-titles-34838823",
+            "original_html": "• 30 октября 2026 года бывший полузащитник Манчестер Сити Гарет Барри заявил, что клуб должен быть наказан, если их апелляция против обвинительного вердикта по 114 финансовым обвинениям не увенчается успехом. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-charges-punishment-titles-34838823\">MEN Manchester City</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_by_removal",
+        "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 21,
+            "line_index": 16,
             "passed": true,
-            "detail": "slot removed and source absent"
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::дата события в тексте не соответствует данным из источника.",
+        "group_key": "выходные в gm::событие burnage rfc car boot sale проводится только в летний сезон, а не 1 ноября.",
         "actions": [
           {
-            "line_index": 32,
+            "line_index": 28,
             "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события в тексте не соответствует данным из источника.",
+            "requested_action": "strip",
+            "reason": "Событие Burnage RFC Car Boot Sale проводится только в летний сезон, а не 1 ноября.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
+            "critical_problem": "Дата события указана неверно, так как оно проводится только в летний сезон.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "weekend_activities-06",
+            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+            "original_html": "• 1 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+            "replacement_fingerprint": "event-id-skiddle-com-5b0d69588d44-dd06c1a9e775",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 28,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата события в тексте не соответствует данным события.",
+        "actions": [
+          {
+            "line_index": 30,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата события в тексте не соответствует данным события.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно. В тексте указано 31 октября, но в данных события указана дата 4 апреля 2026 года.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
             "plan_slot_id": "weekend_activities-08",
             "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
             "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
-            "original_html": "• 31 октября — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+            "original_html": "• 31 октября — автомобильная барахолка в Barton Aerodrome. Для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -801,7 +443,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 32,
+            "line_index": 30,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -809,23 +451,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "еда, открытия и рынки::уточнение, что el gatito связан с el gato negro.",
+        "group_key": "городской радар::уточнение формулировки для корректного указания на характер преступления.",
         "actions": [
           {
-            "line_index": 45,
-            "section": "Еда, открытия и рынки",
+            "line_index": 38,
+            "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Уточнение, что El Gatito связан с El Gato Negro.",
-            "risk": "factual",
+            "reason": "Уточнение формулировки для корректного указания на характер преступления.",
+            "risk": "sensitive",
             "critical_error": true,
-            "critical_problem": "Неправильное название заведения.",
+            "critical_problem": "Неправильное указание на жертву в контексте преступления.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "openings-01",
-            "candidate_fingerprint": "event-event-el-gato-negro-s-new-little-sister-el-gatito-to-open-at-mediacity-2026-11-06-mediacity-the-c6695ba484c9",
-            "original_url_identity": "manchestersfinest.com/eating-and-drinking/el-gato-negros-new-little-sister-el-gatito-to-open-at-mediacity",
-            "original_html": "• 6 ноября 2026 года в MediaCity откроется новый испанский бар и кухня \"El Gatito\", предлагающий маленькие закуски, фокаччи, вино и сангрию. <a href=\"https://manchestersfinest.com/eating-and-drinking/el-gato-negros-new-little-sister-el-gatito-to-open-at-mediacity\">Manchester&#x27;s Finest</a>",
+            "plan_slot_id": "city_watch-07",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cqly0r4pp2m5o-fdded0e3ddc8",
+            "original_url_identity": "bbc.com/news/articles/cqly0r4pp2m5o",
+            "original_html": "• Бывший стажёр GCHQ Хасан Аршад, студент Манчестерского университета, не смог уменьшить свой срок в семь с половиной лет за то, что забрал секретные данные домой и сделал непристойные изображения ребёнка. <a href=\"https://bbc.co.uk/news/articles/cqly0r4pp2m5o\">BBC Manchester</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -833,66 +475,37 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 45,
+            "line_index": 38,
             "passed": true,
             "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::исправление некорректного отображения символов в названии тура.",
-        "actions": [
-          {
-            "line_index": 52,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "patch",
-            "reason": "Исправление некорректного отображения символов в названии тура.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Некорректное отображение символов в названии тура.",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "deterministic_rewrite",
-            "plan_slot_id": "ticket_radar-05",
-            "candidate_fingerprint": "event-event-l-a-guns-31st-october-2026-2026-10-31-manchester-academy-5ef71ff393f7",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13379528/l-a-guns-manchester-club-academy-2026-10-31-19-30-00",
-            "original_html": "• <b>L.A. GUNS LUCKY MFâR TOUR</b> — 31 октября, Manchester Academy; цена £30.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13379528/l-a-guns-manchester-club-academy-2026-10-31-19-30-00\">Manchester Academy</a>",
-            "model_replacement_rejected": "fact_lock: l.a. guns lucky mf'r tour",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 52,
-            "passed": false,
-            "detail": "line did not change"
           }
         ],
         "known_factual_error": true
       }
     ],
     "refetch": {
-      "attempted": 0,
+      "attempted": 1,
       "improved": 0,
-      "failed": 0,
+      "failed": 1,
       "empty_or_not_better": 0,
-      "skipped": 0
+      "skipped": 0,
+      "reports": [
+        {
+          "fingerprint": "url-nationalrail-co-uk-status-and-disruptions-avanti-west-coast-buses-replace-trains-between-manchester-piccadilly-crewe-green-567613e1a6a9",
+          "title": "Avanti West Coast: Buses replace trains between Manchester Piccadilly / Crewe / Greenbank / Liverpool South Parkway and Chester on Sunday 1 November",
+          "status": "failed",
+          "url": "https://nationalrail.co.uk/status-and-disruptions/avanti-west-coast-buses-replace-trains-between-manchester-piccadilly-crewe-green",
+          "error": "RuntimeError: HTTP 404"
+        }
+      ]
     },
-    "enrich_improved": 10,
+    "enrich_improved": 5,
     "false_positive_existing_fact": 3,
-    "no_eligible_backup": 4,
-    "model_post_check_rejected": 1,
-    "deterministic_fact_lock_rejected": 1,
-    "reserve_post_check_rejected": 2,
-    "backup_chain_exhausted": 1,
-    "deterministic_rewrite_built": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 50,
-      "matched_lines": 50,
-      "applicable_lines": 4,
+      "checked_lines": 51,
+      "matched_lines": 51,
+      "applicable_lines": 5,
       "unmatched_lines": 4,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -904,101 +517,59 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 54,
-      "resolved_in_place": 54,
+      "checked_lines": 55,
+      "resolved_in_place": 55,
       "unresolved": 0,
       "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved"
   },
-  "notes": "Строка соответствует требованиям: событие в GM, информация актуальна и полна.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление терминологии в строке 4 для соответствия юридической точности.; Удалите дублирующиеся строки для улучшения читаемости.; Ошибка в информации о следующем сопернике Ман",
+  "notes": "Строка соответствует всем критериям: география, факты и юридическая точность соблюдены.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Ошибка географии в строке 4: субъект из Сомерсета, а не из GM.; Исправлена ошибка в дате: 1 ноября 2026 года — это суббота.; Уточнена формулировка о статусе апелляции ",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.9,
+    "confidence": 0.85,
     "critical_errors": [
       {
         "line_index": 4,
         "section": "Свежие новости",
-        "problem": "Неправильное использование термина 'хулиганство'.",
-        "risk": "legal",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дублирование информации о трамвайных работах.",
-        "risk": "format",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дублирование информации о прорыве водопровода на улице Портленд.",
-        "risk": "format",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 18,
-        "section": "Футбол",
-        "problem": "Ошибка в информации о следующем матче.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 21,
-        "section": "Выходные в GM",
-        "problem": "Дата начала события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 32,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 34,
-        "section": "Городской радар",
-        "problem": "Указано, что Патрик Уилан из Ливерпуля, но событие должно быть в GM.",
+        "problem": "Неверная географическая привязка субъекта.",
         "risk": "geo",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 40,
-        "section": "Городской радар",
-        "problem": "Событие произошло в Португалии, но указано как относящееся к GM.",
-        "risk": "geo",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 45,
-        "section": "Еда, открытия и рынки",
-        "problem": "Неправильное название заведения.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 52,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Некорректное отображение символов в названии тура.",
-        "risk": "format",
         "suggested_action": "repair"
       },
       {
         "line_index": 14,
         "section": "Общественный транспорт сегодня",
-        "problem": "Дублирование информации о прорыве водопровода на улице Портленд.",
-        "risk": "format",
+        "problem": "Дата 1 ноября 2026 года приходится на субботу, а не на воскресенье.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 16,
+        "section": "Футбол",
+        "problem": "Неверное утверждение о статусе дела.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 28,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно, так как оно проводится только в летний сезон.",
+        "risk": "date",
         "suggested_action": "strip"
       },
       {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дублирование информации о прорыве водопровода на улице Портленд.",
-        "risk": "format",
-        "suggested_action": "strip"
+        "line_index": 30,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно. В тексте указано 31 октября, но в данных события указана дата 4 апреля 2026 года.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 38,
+        "section": "Городской радар",
+        "problem": "Неправильное указание на жертву в контексте преступления.",
+        "risk": "sensitive",
+        "suggested_action": "repair"
       }
     ],
     "actions": [
@@ -1006,104 +577,60 @@
         "line_index": 4,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• В Манчестере, 27 октября, в торговом центре Арндейл произошла драка, в результате которой 13-летний мальчик получил ножевые ранения и был госпитализирован. Трое подростков, возрастом 14, 15 и 16 лет, были задержаны по подозрению в нападении, а еще один 13-летний мальчик — за хранение ножа. По последним данным, трое из них выпущены под залог, а один все еще находится в больнице.",
-        "reason": "Термин 'хулиганство' не соответствует серьёзности инцидента с ножевыми ранениями.",
-        "risk": "legal"
-      },
-      {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
-        "action": "strip",
-        "reason": "Дублирование информации о трамвайных работах.",
-        "risk": "format"
-      },
-      {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "action": "strip",
-        "reason": "Дублирование информации о прорыве водопровода на улице Портленд.",
-        "risk": "format"
-      },
-      {
-        "line_index": 18,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Манчестер Сити одержал победу над Брайтоном в Кубке Карбао, выиграв 4-3 по пенальти, и ожидает возвращения пяти основных игроков к следующему матчу в субботу.",
-        "reason": "Следующий матч Манчестер Сити не против Брайтона.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 21,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 26 октября — Makers Market на Great Northern Square в Манчестере. На площадке: рынок, вход свободный, ремесленные товары, еда, подходит для семьи.",
-        "reason": "Дата начала события должна быть 26 октября, а не 30 октября.",
-        "risk": "date"
-      },
-      {
-        "line_index": 32,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 4 апреля — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
-        "reason": "Дата события в тексте не соответствует данным из источника.",
-        "risk": "date"
-      },
-      {
-        "line_index": 34,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• 62-летний рабочий Патрик Уилан погиб в аварии на временных дорожных работах на Rochdale Роуд в Эденфилде 26 октября; его семья опубликовала трогательную дань.",
-        "reason": "Уточнение, что Патрик Уилан погиб в GM, а не из Ливерпуля.",
+        "replacement_text": "• Бывший исполнительный директор футбольного клуба Карл Линдсей, 56 лет, признал себя виновным в преступлениях, связанных с наркотиками и изнасилованием женщины её мужем и другими мужчинами. Преступления произошли в период с 2015 по 2025 годы в Сомерсете.",
+        "reason": "Карл Линдсей был связан с клубом в Сомерсете, а не в Стокпорте.",
         "risk": "geo"
-      },
-      {
-        "line_index": 40,
-        "section": "Городской радар",
-        "action": "strip",
-        "replacement_text": "",
-        "reason": "Событие произошло в Португалии, не соответствует geo_scope GM.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 45,
-        "section": "Еда, открытия и рынки",
-        "action": "patch",
-        "replacement_text": "• 6 ноября 2026 года в MediaCity откроется новый испанский бар и кухня \"El Gatito\", созданный командой El Gato Negro, предлагающий маленькие закуски, фокаччи, вино и сангрию.",
-        "reason": "Уточнение, что El Gatito связан с El Gato Negro.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 52,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• L.A. GUNS LUCKY MF'R TOUR — 31 октября, Manchester Academy; цена £30.00. Билеты и время указаны на официальной странице.",
-        "reason": "Исправление некорректного отображения символов в названии тура.",
-        "risk": "format"
       },
       {
         "line_index": 14,
         "section": "Общественный транспорт сегодня",
-        "action": "strip",
-        "reason": "Дублирование информации о прорыве водопровода на улице Портленд.",
-        "risk": "format"
+        "action": "patch",
+        "replacement_text": "• Автобусы заменят поезда между Манчестер Пикадилли, Крю, Гринбанк, Ливерпуль Саут Парквей и Честером в субботу, 1 ноября. Операторы: Avanti West Coast, Northern и Transport for Wales.",
+        "reason": "Дата 1 ноября 2026 года приходится на субботу, а не на воскресенье.",
+        "risk": "date"
       },
       {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
+        "line_index": 16,
+        "section": "Футбол",
+        "action": "patch",
+        "replacement_text": "• 30 октября 2026 года бывший полузащитник Манчестер Сити Гарет Барри заявил, что клуб должен быть наказан, если их апелляция против обвинительного вердикта по 114 финансовым обвинениям не будет успешной.",
+        "reason": "Уточнение формулировки для корректного отражения статуса апелляции.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 28,
+        "section": "Выходные в GM",
         "action": "strip",
-        "reason": "Дублирование информации о прорыве водопровода на улице Портленд.",
-        "risk": "format"
+        "reason": "Событие Burnage RFC Car Boot Sale проводится только в летний сезон, а не 1 ноября.",
+        "risk": "date"
+      },
+      {
+        "line_index": 30,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 4 апреля 2026 — автомобильная барахолка в Barton Aerodrome. Для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
+        "reason": "Дата события в тексте не соответствует данным события.",
+        "risk": "date"
+      },
+      {
+        "line_index": 38,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Бывший стажёр GCHQ Хасан Аршад, студент Манчестерского университета, не смог уменьшить свой срок в семь с половиной лет за то, что забрал секретные данные домой и сделал непристойные изображения с участием ребёнка.",
+        "reason": "Уточнение формулировки для корректного указания на характер преступления.",
+        "risk": "sensitive"
       }
     ],
     "warnings": [
-      "Отсутствие блока 'Что важно сегодня' снижает полноту выпуска.",
-      "Отсутствие блока 'Русскоязычные концерты и стендап UK' снижает полноту выпуска."
+      "Отсутствует блок 'Что важно сегодня', что может снизить информативность выпуска.",
+      "Отсутствует блок 'Еда, открытия и рынки', что может снизить разнообразие контента.",
+      "Отсутствует блок 'Business/tech события для тебя', что может снизить привлекательность для деловой аудитории."
     ],
-    "notes": "Строка соответствует требованиям: событие в GM, информация актуальна и полна.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление терминологии в строке 4 для соответствия юридической точности.; Удалите дублирующиеся строки для улучшения читаемости.; Ошибка в информации о следующем сопернике Ман",
+    "notes": "Строка соответствует всем критериям: география, факты и юридическая точность соблюдены.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Ошибка географии в строке 4: субъект из Сомерсета, а не из GM.; Исправлена ошибка в дате: 1 ноября 2026 года — это суббота.; Уточнена формулировка о статусе апелляции ",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 12,
+      "chunk_count": 11,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -1121,8 +648,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2767,
-          "duration_seconds": 1.091
+          "estimated_tokens": 2674,
+          "duration_seconds": 0.916
         },
         {
           "chunk_id": "chunk-02",
@@ -1140,7 +667,7 @@
           "warning_count": 0,
           "error": "",
           "estimated_tokens": 2433,
-          "duration_seconds": 1.544
+          "duration_seconds": 0.968
         },
         {
           "chunk_id": "chunk-03",
@@ -1157,33 +684,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7357,
-          "duration_seconds": 2.751
+          "estimated_tokens": 7198,
+          "duration_seconds": 2.477
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            17
+            15
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
           "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5542,
-          "duration_seconds": 2.124
+          "estimated_tokens": 4372,
+          "duration_seconds": 1.877
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            18,
-            19
+            16,
+            17
           ],
           "sections": [
             "Футбол"
@@ -1193,14 +720,32 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3171,
-          "duration_seconds": 1.997
+          "estimated_tokens": 3186,
+          "duration_seconds": 1.722
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            20,
+            18,
+            29
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 7503,
+          "duration_seconds": 1.805
+        },
+        {
+          "chunk_id": "chunk-07",
+          "status": "ok",
+          "line_range": [
+            30,
             31
           ],
           "sections": [
@@ -1211,105 +756,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7527,
-          "duration_seconds": 23.828
-        },
-        {
-          "chunk_id": "chunk-07",
-          "status": "ok",
-          "line_range": [
-            32,
-            33
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3364,
-          "duration_seconds": 1.827
+          "estimated_tokens": 3358,
+          "duration_seconds": 7.633
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            34,
-            44
+            32,
+            43
           ],
           "sections": [
             "Городской радар"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 7858,
-          "duration_seconds": 47.865
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            45,
-            45
-          ],
-          "sections": [
-            "Еда, открытия и рынки"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2793,
-          "duration_seconds": 2.449
+          "estimated_tokens": 8284,
+          "duration_seconds": 55.46
         },
         {
-          "chunk_id": "chunk-10",
+          "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            46,
-            47
+            44,
+            52
           ],
           "sections": [
-            "IT и бизнес"
+            "Билеты / Ticket Radar"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3064,
-          "duration_seconds": 1.099
+          "estimated_tokens": 7244,
+          "duration_seconds": 34.435
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            48,
-            57
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 8361,
-          "duration_seconds": 60.427
-        },
-        {
-          "chunk_id": "chunk-12",
-          "status": "ok",
-          "line_range": [
-            58,
-            58
+            53,
+            54
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -1319,8 +810,26 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2732,
-          "duration_seconds": 5.05
+          "estimated_tokens": 3305,
+          "duration_seconds": 6.481
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            55,
+            55
+          ],
+          "sections": [
+            "Русскоязычные концерты и стендап UK"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2741,
+          "duration_seconds": 5.71
         }
       ],
       "reduce": {
@@ -1328,13 +837,13 @@
         "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "repair_required",
-        "critical_error_count": 2,
-        "action_count": 2,
-        "warning_count": 2,
+        "decision": "warn",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 3,
         "error": "",
-        "estimated_tokens": 11369,
-        "duration_seconds": 25.624
+        "estimated_tokens": 10899,
+        "duration_seconds": 23.757
       },
       "max_workers": 3,
       "chunk_line_target": 12,
