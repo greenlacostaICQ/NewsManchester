@@ -1,101 +1,74 @@
 {
-  "status": "ok",
+  "status": "partial",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 7 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair executor applied 5 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-11-01",
-  "pipeline_run_id": "20261101T080134+0000",
-  "digest_sha256": "5ff8280867c07fd16f7ba2b664fa390735a06f253dfc833b4c042d0685c7137e",
-  "duration_seconds": 77.796,
+  "run_date_london": "2026-11-02",
+  "pipeline_run_id": "20261102T080147+0000",
+  "digest_sha256": "a0c7978fec2a90bc22f11ca1e8e49ff4bdfb5ed28223a0fb6df9ba7eb47e09d4",
+  "duration_seconds": 74.092,
   "confidence": 0.9,
   "critical_errors": [
     {
       "line_index": 1,
       "section": "Главная история дня",
-      "problem": "Текст утверждает, что Симон Ричардсон обвиняется в убийстве, но не осуждён. Это требует уточнения, чтобы избежать путаницы между обвинением и осуждением.",
+      "problem": "География плана не ограничивается Greater Manchester, но представлено как событие только для региона.",
+      "risk": "geo",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 8,
+      "section": "Свежие новости",
+      "problem": "New Mills находится за пределами Greater Manchester.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 17,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Дата открытия линий указана неверно. 3 ноября 2026 года — это вторник, а не понедельник.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 24,
+      "section": "Футбол",
+      "problem": "Некорректное утверждение о 114 очках в сезоне.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 25,
+      "section": "Городской радар",
+      "problem": "Неправильное использование термина 'виновным' вместо 'осуждённым'.",
       "risk": "legal",
       "suggested_action": "repair"
     },
     {
-      "line_index": 3,
-      "section": "Свежие новости",
-      "problem": "Возраст Льюиса Риммера не указан, хотя он упоминается в источнике.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 15,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дублирование информации о приостановке трамвайных линий.",
+      "line_index": 34,
+      "section": "Билеты / Ticket Radar",
+      "problem": "Duplicate event listing for Yaelokre on the same date.",
       "risk": "format",
       "suggested_action": "strip"
     },
     {
-      "line_index": 18,
-      "section": "Что важно сегодня",
-      "problem": "Неправильная география: Нью-Миллс находится за пределами Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 21,
-      "section": "Футбол",
-      "problem": "Дата матча указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 29,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно, так как событие проходит только летом.",
-      "risk": "date",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 32,
-      "section": "Городской радар",
-      "problem": "Ошибка географии: событие связано с преступлением в Стокпорте, но субъект не из Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 41,
-      "section": "Крупные концерты вне GM",
-      "problem": "Некорректная информация о дате события.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Неправильное указание даты убийства.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 3,
-      "section": "Свежие новости",
-      "problem": "Неправильная дата инцидента.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 9,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дублирование информации о задержках на линии Metrolink.",
+      "line_index": 36,
+      "section": "Билеты / Ticket Radar",
+      "problem": "Duplicate event listing for Yaelokre on the same date.",
       "risk": "format",
       "suggested_action": "strip"
     },
     {
-      "line_index": 16,
-      "section": "Что важно сегодня",
-      "problem": "Неполное описание инцидента на Mancunian Way.",
-      "risk": "factual",
-      "suggested_action": "repair"
+      "line_index": 11,
+      "section": "Свежие новости",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'knife' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "weapon_violence"
     }
   ],
   "actions": [
@@ -103,79 +76,61 @@
       "line_index": 1,
       "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• Симон Ричардсон, обвиняемый в преступлении, не признал своей вины, что заставило семью Маллинса пройти через болезненный судебный процесс. Свидетели описали ужасные обстоятельства, при которых Маллинс был сбит на велосипеде и протащен более мили под машиной, что потрясло местное сообщество.",
-      "reason": "Уточнение статуса Симона Ричардсона как обвиняемого, а не осуждённого.",
-      "risk": "legal"
+      "replacement_text": "• Мэр Манчестера Энди Бернэм представил план на £700 миллионов, направленный на привлечение миллиардов инвестиций для 10 ключевых объектов по всей Великобритании. Запуск программы, состоящей из займов и грантов, поможет преодолеть препятствия для развития, такие как проблемы с планированием и доступом к финансам, что, в свою очередь, может привести к созданию новых промышленных и коммерческих площадок в регионе.",
+      "reason": "Уточнение географии плана, чтобы отразить, что он охватывает всю Великобританию, а не только Greater Manchester.",
+      "risk": "geo"
     },
     {
-      "line_index": 3,
+      "line_index": 8,
       "section": "Свежие новости",
+      "action": "strip",
+      "reason": "New Mills не входит в Greater Manchester, что нарушает географический контракт блока.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 17,
+      "section": "Общественный транспорт сегодня",
       "action": "patch",
-      "replacement_text": "• Льюис Риммер, 57 лет, который находился в искусственной коме после того, как его сбила машина в Bolton, теперь восстанавливается. Инцидент произошел 27 октября 2025 года, когда он только что купил лотерейный билет и встретился с семьей. После более 40 часов операций и ампутации левой стопы, он смог вернуться домой, и его жена Сара делится надеждой на будущее, несмотря на сложности, с которыми они сталкиваются.",
-      "reason": "Добавление возраста Льюиса Риммера для соответствия источнику.",
+      "replacement_text": "• Metrolink: работы по замене рельсов Metrolink завершены, линии Altrincham, Eccles и Trafford Centre откроются во вторник, 3 ноября 2026 года.",
+      "reason": "Исправление даты открытия линий на правильный день недели.",
+      "risk": "date"
+    },
+    {
+      "line_index": 24,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• В этом месяце Manchester City столкнулся с трудностями, потерпев поражения от Aston Villa и Brighton, что поставило под сомнение их шансы на успешное завершение сезона. Несмотря на обвинения в нечестной игре, команда продолжает привлекать внимание к своим матчам. У болельщиков есть возможность задать вопросы нашему главному корреспонденту Симону Байковски о ситуации в клубе.",
+      "reason": "Утверждение о 114 очках в сезоне не соответствует реальности.",
       "risk": "factual"
     },
     {
-      "line_index": 15,
-      "section": "Общественный транспорт сегодня",
+      "line_index": 25,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Симон Ричардсон осуждён за убийство директора школы Майкла Маллинса, который был протащен под автомобилем более чем на милю. Приговор будет вынесен в понедельник.",
+      "reason": "Исправление юридически значимого термина.",
+      "risk": "legal"
+    },
+    {
+      "line_index": 34,
+      "section": "Билеты / Ticket Radar",
       "action": "strip",
-      "reason": "Дублирование информации о приостановке трамвайных линий, уже упомянутой в строке 10.",
+      "reason": "Duplicate event listing for Yaelokre on the same date.",
       "risk": "format",
       "replacement_text": ""
     },
     {
-      "line_index": 18,
-      "section": "Что важно сегодня",
+      "line_index": 36,
+      "section": "Билеты / Ticket Radar",
       "action": "strip",
-      "reason": "Нью-Миллс находится за пределами Greater Manchester, что нарушает контракт geo_scope.",
-      "risk": "geo",
+      "reason": "Duplicate event listing for Yaelokre on the same date.",
+      "risk": "format",
       "replacement_text": ""
-    },
-    {
-      "line_index": 21,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Майкл Каррик подтвердил, что он останется на посту тренера Манчестер Юнайтед на матче против Ромы в Лиге чемпионов в среду, 1 ноября 2026 года.",
-      "reason": "Дата матча против Ромы указана неверно, должна быть 1 ноября 2026 года.",
-      "risk": "date"
-    },
-    {
-      "line_index": 29,
-      "section": "Выходные в GM",
-      "action": "strip",
-      "reason": "Событие Burnage RFC Car Boot Sale указано с неверной датой, так как оно проводится только в летний период.",
-      "risk": "date",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 32,
-      "section": "Городской радар",
-      "action": "strip",
-      "reason": "Событие связано с преступлением в Стокпорте, но субъект не из Greater Manchester.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 41,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• The Kid LAROI — тур: 1 ноября, Eventim Apollo. Событие проходит сегодня.",
-      "reason": "Дата события указана неверно. Событие проходит только 1 ноября.",
-      "risk": "date"
-    },
-    {
-      "line_index": 9,
-      "section": "Общественный транспорт сегодня",
-      "action": "strip",
-      "replacement_text": "",
-      "reason": "Дублирование информации о задержках на линии Metrolink.",
-      "risk": "format"
     }
   ],
   "warnings": [
-    "Городской радар: недостаточное количество элементов.",
-    "Еда, открытия и рынки: отсутствуют элементы.",
-    "Business/tech события для тебя: отсутствуют элементы."
+    "judge reduce failed: parse_failed no parseable JSON"
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -183,34 +138,32 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 6,
-      "Общественный транспорт сегодня": 7,
-      "Что важно сегодня": 3,
+      "Свежие новости": 9,
+      "Общественный транспорт сегодня": 9,
+      "Что важно сегодня": 1,
       "Футбол": 3,
-      "Выходные в GM": 6,
-      "Городской радар": 4,
+      "Городской радар": 8,
+      "Дальние анонсы": 1,
       "Билеты / Ticket Radar": 6,
-      "Крупные концерты вне GM": 3,
-      "Русскоязычные концерты и стендап UK": 2
+      "Крупные концерты вне GM": 4
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 3,
-      "Свежие новости": 6,
+      "Что важно сегодня": 1,
+      "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 4,
-      "Выходные в GM": 6,
+      "Городской радар": 8,
       "Билеты / Ticket Radar": 6,
-      "Русскоязычные концерты и стендап UK": 2,
+      "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
       "Футбол": 3
     },
-    "ticket_items": 11,
-    "core_items": 24,
+    "ticket_items": 10,
+    "core_items": 23,
     "writer_quality_counts": {
-      "included_candidates": 43,
-      "rendered_candidates": 42,
+      "included_candidates": 44,
+      "rendered_candidates": 43,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
@@ -221,27 +174,28 @@
       "removed_with_reason": 1
     },
     "source_health_counts": {
-      "ok": 106,
+      "ok": 105,
       "partial": 2,
-      "stale": 8,
-      "empty": 10,
+      "stale": 7,
+      "empty": 12,
       "failed": 4,
-      "zero_yield": 75,
+      "zero_yield": 80,
       "no_contribution_breakdown": {
         "fetch_failed": 4,
-        "all_rejected": 75,
-        "idle_no_items": 26
+        "all_rejected": 80,
+        "idle_no_items": 28
       },
       "zero_contribution_by_stage": {
-        "written": 36,
-        "parsed": 26,
-        "selected": 39,
+        "written": 43,
+        "parsed": 28,
+        "selected": 37,
         "fetched": 4
       },
-      "weekend_source_coverage_incidents": 55
+      "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
-      "Городской радар: 4 item(s), emergency floor 5",
+      "Что важно сегодня: 1 item(s), emergency floor 3",
+      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "Business/tech события для тебя: 0 item(s), emergency floor 1",
       "source failures: 4"
@@ -250,226 +204,187 @@
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 3 has unchecked number/date token(s): 40, 57"
+      "patch for line 1 has unchecked number/date token(s): 700"
     ],
     "can_apply_actions": true,
-    "action_count": 9
+    "action_count": 7
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 42,
-    "matched_lines": 42,
-    "applicable_lines": 2,
-    "unmatched_lines": 3,
-    "critical_omission_count": 0,
-    "critical_omissions": [],
+    "checked_lines": 43,
+    "matched_lines": 43,
+    "applicable_lines": 4,
+    "unmatched_lines": 0,
+    "critical_omission_count": 1,
+    "critical_omissions": [
+      {
+        "line_index": 11,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/knife-attacks-rocked-arndale-34839101",
+        "concept": "weapon_violence",
+        "obligation": "who/what",
+        "source_hit": "knife"
+      }
+    ],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 0,
+    "pulled_for_rework": 1,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 9,
-    "attempted": 7,
-    "applied": 7,
+    "requested": 7,
+    "attempted": 5,
+    "applied": 5,
     "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 1,
-    "stripped": 5,
+    "stripped": 3,
     "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 9,
+    "resolved": 6,
     "resolved_in_place": 3,
     "resolved_by_replacement": 1,
-    "resolved_by_removal": 5,
+    "resolved_by_removal": 2,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 9,
+    "enrich_attempted": 7,
     "post_check_errors": [],
     "geo_contract_rejected": [
       {
-        "line_index": 32,
-        "section": "Городской радар",
+        "line_index": 1,
+        "section": "Главная история дня",
         "geo_scope": "gm",
-        "reason": "Событие связано с преступлением в Стокпорте, но субъект не из Greater Manchester.",
+        "reason": "Уточнение географии плана, чтобы отразить, что он охватывает всю Великобританию, а не только Greater Manchester.",
         "gm_anchor_present": true
       }
     ],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "requested_action": "patch",
-        "reason": "Уточнение статуса Симона Ричардсона как обвиняемого, а не осуждённого.",
-        "risk": "legal",
+        "line_index": 8,
+        "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "New Mills не входит в Greater Manchester, что нарушает географический контракт блока.",
+        "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Текст утверждает, что Симон Ричардсон обвиняется в убийстве, но не осуждён. Это требует уточнения, чтобы избежать путаницы между обвинением и осуждением.",
+        "critical_problem": "New Mills находится за пределами Greater Manchester.",
         "completeness_concept": "",
         "outcome": "resolved_by_replacement",
         "method": "reserve_replacement",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-full-story-murder-stretford-grammar-34842419-2ced8392e0a1",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/full-story-murder-stretford-grammar-34842419",
-        "original_html": "<b>В суде продолжается дело об убийстве директора Stretford Grammar, Майкла Маллинса, который был убит 1 ноября 2026 года.</b> Симон Ричардсон, обвиняемый в преступлении, не признал своей вины, что заставило семью Маллинса пройти через болезненный судебный процесс. Свидетели описали ужасные обстоятельства, при которых Маллинс был сбит на велосипеде и протащен более мили под машиной, что потрясло местное сообщество. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/full-story-murder-stretford-grammar-34842419\">MEN</a>",
-        "model_replacement_rejected": "post_check: replacement drops homicide",
-        "replacement_fingerprint": "url-bbc-com-news-articles-cm9qzdwvw99wo-dde2c79278b9",
+        "plan_slot_id": "last_24h-06",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-mills-building-declared-safe-34846186-934fa209d9df",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-mills-building-declared-safe-34846186",
+        "original_html": "• В Нью-Миллс автобус Bee Network врезался в здание на Union Road, несколько пассажиров получили легкие травмы. Здание признано безопасным, дороги открыты. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-mills-building-declared-safe-34846186\">MEN Latest News</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-nightmare-gridlocked-stockport-road-manchester-34837802-e17d721a7f6d",
         "post_check_passed": true
       },
       {
-        "line_index": 3,
-        "section": "Свежие новости",
+        "line_index": 17,
+        "section": "Общественный транспорт сегодня",
         "requested_action": "patch",
-        "reason": "Добавление возраста Льюиса Риммера для соответствия источнику.",
+        "reason": "Исправление даты открытия линий на правильный день недели.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата открытия линий указана неверно. 3 ноября 2026 года — это вторник, а не понедельник.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "transport-06",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-metrolink-tracks-must-tricked-thinking-34839953-38aaf17cfd2d",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/metrolink-tracks-must-tricked-thinking-34839953",
+        "original_html": "• Metrolink: работы по замене рельсов Metrolink завершены, линии Altrincham, Eccles и Trafford Centre откроются в понедельник, 3 ноября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/metrolink-tracks-must-tricked-thinking-34839953\">MEN</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 24,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Утверждение о 114 очках в сезоне не соответствует реальности.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Возраст Льюиса Риммера не указан, хотя он упоминается в источнике.",
+        "critical_problem": "Некорректное утверждение о 114 очках в сезоне.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-c977pmypn61eo-cfab641d9e7c",
-        "original_url_identity": "bbc.com/news/articles/c977pmypn61eo",
-        "original_html": "• Льюис Риммер, который находился в искусственной коме после того, как его сбила машина в Bolton, теперь восстанавливается. Инцидент произошел 27 октября 2025 года, когда он только что купил лотерейный билет и встретился с семьей. После более 40 часов операций и ампутации левой стопы, он смог вернуться домой, и его жена Сара делится надеждой на будущее, несмотря на сложности, с которыми они сталкиваются. <a href=\"https://bbc.co.uk/news/articles/c977pmypn61eo\">BBC Manchester</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о приостановке трамвайных линий, уже упомянутой в строке 10.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Дублирование информации о приостановке трамвайных линий.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-07",
-        "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
-        "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-        "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажиры должны планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 18,
-        "section": "Что важно сегодня",
-        "requested_action": "strip",
-        "reason": "Нью-Миллс находится за пределами Greater Manchester, что нарушает контракт geo_scope.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Неправильная география: Нью-Миллс находится за пределами Greater Manchester.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "today_focus-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-passengers-hurt-new-mills-road-34845826-549ce774c139",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/passengers-hurt-new-mills-road-34845826",
-        "original_html": "• Автобус Bee Network врезался в здание на Union Road в Нью-Миллс, в результате чего несколько пассажиров получили легкие травмы; дорога закрыта, установлено оцепление. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/passengers-hurt-new-mills-road-34845826\">MEN Latest News</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 21,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Дата матча против Ромы указана неверно, должна быть 1 ноября 2026 года.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата матча указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
         "plan_slot_id": "football-03",
-        "candidate_fingerprint": "url-theguardian-com-football-2026-oct-31-michael-carrick-chelsea-manchester-united-roma-premier-league-d2470194cf37",
-        "original_url_identity": "theguardian.com/football/2026/oct/31/michael-carrick-chelsea-manchester-united-roma-premier-league",
-        "original_html": "• Майкл Каррик подтвердил, что он останется на посту тренера Манчестер Юнайтед на матче против Ромы в Лиге чемпионов во вторник, 31 октября 2026 года. <a href=\"https://theguardian.com/football/2026/oct/31/michael-carrick-chelsea-manchester-united-roma-premier-league\">Guardian Manchester United</a>",
-        "verification": "structured fact already rendered correctly",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-january-transfers-115-charges-coverage-34838366-4f8715fa4613",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/january-transfers-115-charges-coverage-34838366",
+        "original_html": "• В этом месяце Manchester City столкнулся с трудностями, потерпев поражения от Aston Villa и Brighton, что поставило под сомнение их шансы на 114 очков в текущем сезоне. Несмотря на обвинения в нечестной игре, команда продолжает привлекать внимание к своим матчам. У болельщиков есть возможность задать вопросы нашему главному корреспонденту Симону Байковски о ситуации в клубе. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/january-transfers-115-charges-coverage-34838366\">MEN Manchester City</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 29,
-        "section": "Выходные в GM",
-        "requested_action": "strip",
-        "reason": "Событие Burnage RFC Car Boot Sale указано с неверной датой, так как оно проводится только в летний период.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно, так как событие проходит только летом.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "weekend_activities-04",
-        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-        "original_html": "• 1 ноября — автомобильная барахолка Burnage RFC. Вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-        "reserve_rejections": [
-          {
-            "fingerprint": "event-event-chris-packham-s-world-of-wonder-a-planet-on-the-edge-2026-11-01-lowry-4db654d0d0a9",
-            "errors": [
-              "structured event date is not rendered correctly"
-            ]
-          }
-        ],
-        "backup_outcome": "backup_chain_exhausted",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 41,
-        "section": "Крупные концерты вне GM",
+        "line_index": 25,
+        "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Дата события указана неверно. Событие проходит только 1 ноября.",
-        "risk": "date",
+        "reason": "Исправление юридически значимого термина.",
+        "risk": "legal",
         "critical_error": true,
-        "critical_problem": "Некорректная информация о дате события.",
+        "critical_problem": "Неправильное использование термина 'виновным' вместо 'осуждённым'.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "outside_gm_tickets-01",
-        "candidate_fingerprint": "event-event-the-kid-laroi-a-perfect-world-tour-2026-11-01-eventim-apollo-769e0e432ff3",
-        "original_url_identity": "ticketmaster.co.uk/the-kid-laroi-a-perfect-world-london-01-11-2026/event/3600644BC78A55E3",
-        "original_html": "• <b>The Kid LAROI</b> — тур: 1 и 2 ноября, Eventim Apollo. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/the-kid-laroi-a-perfect-world-london-01-11-2026/event/3600644BC78A55E3\">Ticketmaster</a>",
+        "plan_slot_id": "city_watch-01",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c6e3xg5we9eyo-be3af3771b34",
+        "original_url_identity": "bbc.com/news/articles/c6e3xg5we9eyo",
+        "original_html": "• Симон Ричардсон признан виновным в убийстве директора школы Майкла Маллинса, который был протащен под автомобилем более чем на милю. Приговор будет вынесен в понедельник. <a href=\"https://bbc.co.uk/news/articles/c6e3xg5we9eyo\">BBC Manchester</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 9,
-        "section": "Общественный транспорт сегодня",
+        "line_index": 34,
+        "section": "Билеты / Ticket Radar",
         "requested_action": "strip",
-        "reason": "Дублирование информации о задержках на линии Metrolink.",
+        "reason": "Duplicate event listing for Yaelokre on the same date.",
         "risk": "format",
         "critical_error": true,
-        "critical_problem": "Дублирование информации о задержках на линии Metrolink.",
+        "critical_problem": "Duplicate event listing for Yaelokre on the same date.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "transport-01",
-        "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-minor-delays-bury-line-927492e1f7cd",
-        "original_url_identity": "tfgm.com/travel-updates/travel-alerts/minor-delays-bury-line",
-        "original_html": "• Metrolink: на линии Bury Metrolink наблюдаются сильные задержки из-за инцидента с полицией; пассажирам рекомендуется планировать поездки с учетом возможных задержек. <a href=\"https://tfgm.com/travel-updates/travel-alerts/minor-delays-bury-line\">TfGM</a>",
+        "plan_slot_id": "ticket_radar-01",
+        "candidate_fingerprint": "event-event-yaelokre-2nd-november-2026-2026-11-02-manchester-academy-25c720e85db6",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13380496/yaelokre-manchester-academy-2-2026-11-02-19-30-00",
+        "original_html": "• <b>Yaelokre</b> — 2 ноября, Manchester Academy; цена £20.00. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13380496/yaelokre-manchester-academy-2-2026-11-02-19-30-00\">Manchester Academy</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "duplicate_after_plan",
         "post_check_passed": true
       },
       {
-        "line_index": 16,
-        "section": "Что важно сегодня",
+        "line_index": 36,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "strip",
+        "reason": "Duplicate event listing for Yaelokre on the same date.",
+        "risk": "format",
+        "critical_error": true,
+        "critical_problem": "Duplicate event listing for Yaelokre on the same date.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "ticket_radar-03",
+        "candidate_fingerprint": "event-event-yaelokre-2026-11-02-manchester-academy-2-6d83f02f224f",
+        "original_url_identity": "ticketmaster.co.uk/yaelokre-manchester-02-11-2026/event/1F0064A8C1AC44A8",
+        "original_html": "• <b>Yaelokre</b> — 2 ноября, Manchester Academy 2. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/yaelokre-manchester-02-11-2026/event/1F0064A8C1AC44A8\">Ticketmaster</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "duplicate_after_plan",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 11,
+        "section": "Свежие новости",
         "requested_action": "replace",
-        "reason": "Неполное описание инцидента на Mancunian Way.",
-        "risk": "factual",
+        "reason": "critical source fact dropped in translation: 'knife' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+        "risk": "translation",
         "critical_error": true,
         "critical_problem": "",
-        "completeness_concept": "",
+        "completeness_concept": "weapon_violence",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "today_focus-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mancunian-way-closure-live-road-34845950-bb4752123466",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mancunian-way-closure-live-road-34845950",
-        "original_html": "• Mancunian Way закрыт полицией из-за серьезного инцидента; закрытие дороги продолжается1 ноября 2026 года, водителям рекомендуется избегать этой зоны. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mancunian-way-closure-live-road-34845950\">MEN</a>",
+        "plan_slot_id": "last_24h-09",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-knife-attacks-rocked-arndale-34839101-4b6d6bbb66bf",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/knife-attacks-rocked-arndale-34839101",
+        "original_html": "• За 11 дней в районе Манчестер Арндейл произошло три инцидента с ножами; полиция не считает их связанными. Один из пострадавших, 14-летний мальчик, был ранен в многоуровневой парковке. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/knife-attacks-rocked-arndale-34839101\">MEN</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
@@ -477,32 +392,31 @@
     ],
     "operations": [
       {
-        "group_key": "главная история дня::уточнение статуса симона ричардсона как обвиняемого, а не осуждённого.",
+        "group_key": "свежие новости::new mills не входит в greater manchester, что нарушает географический контракт блока.",
         "actions": [
           {
-            "line_index": 1,
-            "section": "Главная история дня",
-            "requested_action": "patch",
-            "reason": "Уточнение статуса Симона Ричардсона как обвиняемого, а не осуждённого.",
-            "risk": "legal",
+            "line_index": 8,
+            "section": "Свежие новости",
+            "requested_action": "strip",
+            "reason": "New Mills не входит в Greater Manchester, что нарушает географический контракт блока.",
+            "risk": "geo",
             "critical_error": true,
-            "critical_problem": "Текст утверждает, что Симон Ричардсон обвиняется в убийстве, но не осуждён. Это требует уточнения, чтобы избежать путаницы между обвинением и осуждением.",
+            "critical_problem": "New Mills находится за пределами Greater Manchester.",
             "completeness_concept": "",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-full-story-murder-stretford-grammar-34842419-2ced8392e0a1",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/full-story-murder-stretford-grammar-34842419",
-            "original_html": "<b>В суде продолжается дело об убийстве директора Stretford Grammar, Майкла Маллинса, который был убит 1 ноября 2026 года.</b> Симон Ричардсон, обвиняемый в преступлении, не признал своей вины, что заставило семью Маллинса пройти через болезненный судебный процесс. Свидетели описали ужасные обстоятельства, при которых Маллинс был сбит на велосипеде и протащен более мили под машиной, что потрясло местное сообщество. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/full-story-murder-stretford-grammar-34842419\">MEN</a>",
-            "model_replacement_rejected": "post_check: replacement drops homicide",
-            "replacement_fingerprint": "url-bbc-com-news-articles-cm9qzdwvw99wo-dde2c79278b9",
+            "plan_slot_id": "last_24h-06",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-mills-building-declared-safe-34846186-934fa209d9df",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-mills-building-declared-safe-34846186",
+            "original_html": "• В Нью-Миллс автобус Bee Network врезался в здание на Union Road, несколько пассажиров получили легкие травмы. Здание признано безопасным, дороги открыты. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-mills-building-declared-safe-34846186\">MEN Latest News</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-nightmare-gridlocked-stockport-road-manchester-34837802-e17d721a7f6d",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 1,
+            "line_index": 8,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -510,30 +424,62 @@
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::добавление возраста льюиса риммера для соответствия источнику.",
+        "group_key": "общественный транспорт сегодня::исправление даты открытия линий на правильный день недели.",
         "actions": [
           {
-            "line_index": 3,
-            "section": "Свежие новости",
+            "line_index": 17,
+            "section": "Общественный транспорт сегодня",
             "requested_action": "patch",
-            "reason": "Добавление возраста Льюиса Риммера для соответствия источнику.",
+            "reason": "Исправление даты открытия линий на правильный день недели.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата открытия линий указана неверно. 3 ноября 2026 года — это вторник, а не понедельник.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "transport-06",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-metrolink-tracks-must-tricked-thinking-34839953-38aaf17cfd2d",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/metrolink-tracks-must-tricked-thinking-34839953",
+            "original_html": "• Metrolink: работы по замене рельсов Metrolink завершены, линии Altrincham, Eccles и Trafford Centre откроются в понедельник, 3 ноября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/metrolink-tracks-must-tricked-thinking-34839953\">MEN</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 17,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::утверждение о 114 очках в сезоне не соответствует реальности.",
+        "actions": [
+          {
+            "line_index": 24,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Утверждение о 114 очках в сезоне не соответствует реальности.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Возраст Льюиса Риммера не указан, хотя он упоминается в источнике.",
+            "critical_problem": "Некорректное утверждение о 114 очках в сезоне.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-c977pmypn61eo-cfab641d9e7c",
-            "original_url_identity": "bbc.com/news/articles/c977pmypn61eo",
-            "original_html": "• Льюис Риммер, который находился в искусственной коме после того, как его сбила машина в Bolton, теперь восстанавливается. Инцидент произошел 27 октября 2025 года, когда он только что купил лотерейный билет и встретился с семьей. После более 40 часов операций и ампутации левой стопы, он смог вернуться домой, и его жена Сара делится надеждой на будущее, несмотря на сложности, с которыми они сталкиваются. <a href=\"https://bbc.co.uk/news/articles/c977pmypn61eo\">BBC Manchester</a>",
+            "plan_slot_id": "football-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-january-transfers-115-charges-coverage-34838366-4f8715fa4613",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/january-transfers-115-charges-coverage-34838366",
+            "original_html": "• В этом месяце Manchester City столкнулся с трудностями, потерпев поражения от Aston Villa и Brighton, что поставило под сомнение их шансы на 114 очков в текущем сезоне. Несмотря на обвинения в нечестной игре, команда продолжает привлекать внимание к своим матчам. У болельщиков есть возможность задать вопросы нашему главному корреспонденту Симону Байковски о ситуации в клубе. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/january-transfers-115-charges-coverage-34838366\">MEN Manchester City</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 3,
+            "line_index": 24,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -541,23 +487,74 @@
         "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::дублирование информации о приостановке трамвайных линий, уже упомянутой в строке #",
+        "group_key": "городской радар::исправление юридически значимого термина.",
         "actions": [
           {
-            "line_index": 15,
-            "section": "Общественный транспорт сегодня",
+            "line_index": 25,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Исправление юридически значимого термина.",
+            "risk": "legal",
+            "critical_error": true,
+            "critical_problem": "Неправильное использование термина 'виновным' вместо 'осуждённым'.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "city_watch-01",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c6e3xg5we9eyo-be3af3771b34",
+            "original_url_identity": "bbc.com/news/articles/c6e3xg5we9eyo",
+            "original_html": "• Симон Ричардсон признан виновным в убийстве директора школы Майкла Маллинса, который был протащен под автомобилем более чем на милю. Приговор будет вынесен в понедельник. <a href=\"https://bbc.co.uk/news/articles/c6e3xg5we9eyo\">BBC Manchester</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 25,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::duplicate event listing for yaelokre on the same date",
+        "actions": [
+          {
+            "line_index": 34,
+            "section": "Билеты / Ticket Radar",
             "requested_action": "strip",
-            "reason": "Дублирование информации о приостановке трамвайных линий, уже упомянутой в строке 10.",
+            "reason": "Duplicate event listing for Yaelokre on the same date.",
             "risk": "format",
             "critical_error": true,
-            "critical_problem": "Дублирование информации о приостановке трамвайных линий.",
+            "critical_problem": "Duplicate event listing for Yaelokre on the same date.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "transport-07",
-            "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
-            "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-            "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажиры должны планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
+            "plan_slot_id": "ticket_radar-01",
+            "candidate_fingerprint": "event-event-yaelokre-2nd-november-2026-2026-11-02-manchester-academy-25c720e85db6",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13380496/yaelokre-manchester-academy-2-2026-11-02-19-30-00",
+            "original_html": "• <b>Yaelokre</b> — 2 ноября, Manchester Academy; цена £20.00. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13380496/yaelokre-manchester-academy-2-2026-11-02-19-30-00\">Manchester Academy</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "duplicate_after_plan",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 36,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "strip",
+            "reason": "Duplicate event listing for Yaelokre on the same date.",
+            "risk": "format",
+            "critical_error": true,
+            "critical_problem": "Duplicate event listing for Yaelokre on the same date.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "ticket_radar-03",
+            "candidate_fingerprint": "event-event-yaelokre-2026-11-02-manchester-academy-2-6d83f02f224f",
+            "original_url_identity": "ticketmaster.co.uk/yaelokre-manchester-02-11-2026/event/1F0064A8C1AC44A8",
+            "original_html": "• <b>Yaelokre</b> — 2 ноября, Manchester Academy 2. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/yaelokre-manchester-02-11-2026/event/1F0064A8C1AC44A8\">Ticketmaster</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "duplicate_after_plan",
             "post_check_passed": true
@@ -566,13 +563,24 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 15,
+            "line_index": 34,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "line_index": 36,
             "passed": true,
             "detail": "slot removed and source absent"
           },
           {
             "check": "duplicate_identity",
-            "identity": "story:itv|tfgm|manchester airport|transport|manchester|rochdale|trafford|same story new facts|2026 10 18",
+            "identity": "ticket:yaelokre|2026-11-02|manchester academy",
+            "visible_count": 0,
+            "passed": true
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "ticket:yaelokre|2026-11-02|manchester academy 2",
             "visible_count": 0,
             "passed": true
           }
@@ -580,200 +588,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "что важно сегодня::нью-миллс находится за пределами greater manchester, что нарушает контракт geo_scope.",
+        "group_key": "свежие новости::critical source fact dropped in translation: 'knife' (weapon_violence/who/what) has no russian rendering in the shipped line",
         "actions": [
           {
-            "line_index": 18,
-            "section": "Что важно сегодня",
-            "requested_action": "strip",
-            "reason": "Нью-Миллс находится за пределами Greater Manchester, что нарушает контракт geo_scope.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Неправильная география: Нью-Миллс находится за пределами Greater Manchester.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "today_focus-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-passengers-hurt-new-mills-road-34845826-549ce774c139",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/passengers-hurt-new-mills-road-34845826",
-            "original_html": "• Автобус Bee Network врезался в здание на Union Road в Нью-Миллс, в результате чего несколько пассажиров получили легкие травмы; дорога закрыта, установлено оцепление. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/passengers-hurt-new-mills-road-34845826\">MEN Latest News</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 18,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::дата матча против ромы указана неверно, должна быть 1 ноября 2026 года.",
-        "actions": [
-          {
-            "line_index": 21,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Дата матча против Ромы указана неверно, должна быть 1 ноября 2026 года.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата матча указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-03",
-            "candidate_fingerprint": "url-theguardian-com-football-2026-oct-31-michael-carrick-chelsea-manchester-united-roma-premier-league-d2470194cf37",
-            "original_url_identity": "theguardian.com/football/2026/oct/31/michael-carrick-chelsea-manchester-united-roma-premier-league",
-            "original_html": "• Майкл Каррик подтвердил, что он останется на посту тренера Манчестер Юнайтед на матче против Ромы в Лиге чемпионов во вторник, 31 октября 2026 года. <a href=\"https://theguardian.com/football/2026/oct/31/michael-carrick-chelsea-manchester-united-roma-premier-league\">Guardian Manchester United</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 21,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::событие burnage rfc car boot sale указано с неверной датой, так как оно проводится только в летний период.",
-        "actions": [
-          {
-            "line_index": 29,
-            "section": "Выходные в GM",
-            "requested_action": "strip",
-            "reason": "Событие Burnage RFC Car Boot Sale указано с неверной датой, так как оно проводится только в летний период.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно, так как событие проходит только летом.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "weekend_activities-04",
-            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-            "original_html": "• 1 ноября — автомобильная барахолка Burnage RFC. Вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-            "reserve_rejections": [
-              {
-                "fingerprint": "event-event-chris-packham-s-world-of-wonder-a-planet-on-the-edge-2026-11-01-lowry-4db654d0d0a9",
-                "errors": [
-                  "structured event date is not rendered correctly"
-                ]
-              }
-            ],
-            "backup_outcome": "backup_chain_exhausted",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 29,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "крупные концерты вне gm::дата события указана неверно. событие проходит только 1 ноября.",
-        "actions": [
-          {
-            "line_index": 41,
-            "section": "Крупные концерты вне GM",
-            "requested_action": "patch",
-            "reason": "Дата события указана неверно. Событие проходит только 1 ноября.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Некорректная информация о дате события.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "outside_gm_tickets-01",
-            "candidate_fingerprint": "event-event-the-kid-laroi-a-perfect-world-tour-2026-11-01-eventim-apollo-769e0e432ff3",
-            "original_url_identity": "ticketmaster.co.uk/the-kid-laroi-a-perfect-world-london-01-11-2026/event/3600644BC78A55E3",
-            "original_html": "• <b>The Kid LAROI</b> — тур: 1 и 2 ноября, Eventim Apollo. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/the-kid-laroi-a-perfect-world-london-01-11-2026/event/3600644BC78A55E3\">Ticketmaster</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 41,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::дублирование информации о задержках на линии metrolink",
-        "actions": [
-          {
-            "line_index": 9,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о задержках на линии Metrolink.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о задержках на линии Metrolink.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-01",
-            "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-minor-delays-bury-line-927492e1f7cd",
-            "original_url_identity": "tfgm.com/travel-updates/travel-alerts/minor-delays-bury-line",
-            "original_html": "• Metrolink: на линии Bury Metrolink наблюдаются сильные задержки из-за инцидента с полицией; пассажирам рекомендуется планировать поездки с учетом возможных задержек. <a href=\"https://tfgm.com/travel-updates/travel-alerts/minor-delays-bury-line\">TfGM</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 9,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "story:metrolink|tfgm|transport|bury|new story|2026 11 01",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "что важно сегодня::неполное описание инцидента на mancunian way.",
-        "actions": [
-          {
-            "line_index": 16,
-            "section": "Что важно сегодня",
+            "line_index": 11,
+            "section": "Свежие новости",
             "requested_action": "replace",
-            "reason": "Неполное описание инцидента на Mancunian Way.",
-            "risk": "factual",
+            "reason": "critical source fact dropped in translation: 'knife' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
             "critical_error": true,
             "critical_problem": "",
-            "completeness_concept": "",
+            "completeness_concept": "weapon_violence",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "today_focus-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mancunian-way-closure-live-road-34845950-bb4752123466",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mancunian-way-closure-live-road-34845950",
-            "original_html": "• Mancunian Way закрыт полицией из-за серьезного инцидента; закрытие дороги продолжается1 ноября 2026 года, водителям рекомендуется избегать этой зоны. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mancunian-way-closure-live-road-34845950\">MEN</a>",
+            "plan_slot_id": "last_24h-09",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-knife-attacks-rocked-arndale-34839101-4b6d6bbb66bf",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/knife-attacks-rocked-arndale-34839101",
+            "original_html": "• За 11 дней в районе Манчестер Арндейл произошло три инцидента с ножами; полиция не считает их связанными. Один из пострадавших, 14-летний мальчик, был ранен в многоуровневой парковке. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/knife-attacks-rocked-arndale-34839101\">MEN</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -782,7 +613,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 16,
+            "line_index": 11,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -795,39 +626,28 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 2,
+      "skipped": 1,
       "reports": [
         {
-          "fingerprint": "event-event-the-kid-laroi-a-perfect-world-tour-2026-11-01-eventim-apollo-769e0e432ff3",
-          "title": "The Kid LAROI - A Perfect World Tour — event 2026-11-01 — public sale 2026-02-20 10:00",
+          "fingerprint": "event-event-yaelokre-2026-11-02-manchester-academy-2-6d83f02f224f",
+          "title": "Yaelokre — event 2026-11-02 — public sale 2026-05-15 10:00",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/the-kid-laroi-a-perfect-world-london-01-11-2026/event/3600644BC78A55E3",
-          "candidate_evidence_chars": 359
-        },
-        {
-          "fingerprint": "url-tfgm-com-travel-updates-travel-alerts-minor-delays-bury-line-927492e1f7cd",
-          "title": "Minor Delays - Bury line",
-          "status": "skipped",
-          "reason": "tfgm_ephemeral_alert",
-          "url": "https://tfgm.com/travel-updates/travel-alerts/minor-delays-bury-line",
-          "candidate_evidence_chars": 579
+          "url": "https://ticketmaster.co.uk/yaelokre-manchester-02-11-2026/event/1F0064A8C1AC44A8",
+          "candidate_evidence_chars": 365
         }
       ]
     },
-    "enrich_improved": 9,
-    "model_post_check_rejected": 1,
-    "deterministic_rewrite_rejected": 2,
-    "no_eligible_backup": 4,
+    "enrich_improved": 7,
     "false_positive_existing_fact": 2,
-    "reserve_post_check_rejected": 1,
-    "backup_chain_exhausted": 1,
+    "no_eligible_backup": 3,
+    "deterministic_rewrite_rejected": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 37,
-      "matched_lines": 37,
-      "applicable_lines": 1,
-      "unmatched_lines": 3,
+      "checked_lines": 40,
+      "matched_lines": 40,
+      "applicable_lines": 3,
+      "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -845,7 +665,7 @@
     },
     "status": "resolved"
   },
-  "notes": "Уточнение статуса обвиняемого необходимо для юридической точности.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Добавлен возраст Льюиса Риммера для соответствия фактам из источника.; Строка 15 дублирует информацию из строки 10, что может запутать читателей.; Строка о Нью-Миллс нарушает географически",
+  "notes": "Уточнение географии плана необходимо для корректного представления информации.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка о происшествии в Нью-Миллс нарушает географический контракт блока 'Свежие новости'.; Исправлена ошибка в дате открытия линий Metrolink.; Информация о происшествии в Рочд",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
@@ -853,114 +673,51 @@
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "problem": "Текст утверждает, что Симон Ричардсон обвиняется в убийстве, но не осуждён. Это требует уточнения, чтобы избежать путаницы между обвинением и осуждением.",
+        "problem": "География плана не ограничивается Greater Manchester, но представлено как событие только для региона.",
+        "risk": "geo",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 8,
+        "section": "Свежие новости",
+        "problem": "New Mills находится за пределами Greater Manchester.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 17,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дата открытия линий указана неверно. 3 ноября 2026 года — это вторник, а не понедельник.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 24,
+        "section": "Футбол",
+        "problem": "Некорректное утверждение о 114 очках в сезоне.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 25,
+        "section": "Городской радар",
+        "problem": "Неправильное использование термина 'виновным' вместо 'осуждённым'.",
         "risk": "legal",
         "suggested_action": "repair"
       },
       {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "problem": "Возраст Льюиса Риммера не указан, хотя он упоминается в источнике.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дублирование информации о приостановке трамвайных линий.",
+        "line_index": 34,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Duplicate event listing for Yaelokre on the same date.",
         "risk": "format",
         "suggested_action": "strip"
       },
       {
-        "line_index": 18,
-        "section": "Что важно сегодня",
-        "problem": "Неправильная география: Нью-Миллс находится за пределами Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 21,
-        "section": "Футбол",
-        "problem": "Дата матча указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 29,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно, так как событие проходит только летом.",
-        "risk": "date",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 32,
-        "section": "Городской радар",
-        "problem": "Ошибка географии: событие связано с преступлением в Стокпорте, но субъект не из Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 41,
-        "section": "Крупные концерты вне GM",
-        "problem": "Некорректная информация о дате события.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Неправильное указание даты убийства.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "problem": "Неправильная дата инцидента.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 9,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дублирование информации о задержках на линии Metrolink.",
+        "line_index": 36,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Duplicate event listing for Yaelokre on the same date.",
         "risk": "format",
         "suggested_action": "strip"
-      },
-      {
-        "line_index": 16,
-        "section": "Что важно сегодня",
-        "problem": "Неполное описание инцидента на Mancunian Way.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 19,
-        "section": "Футбол",
-        "problem": "Неправильная дата матча.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 22,
-        "section": "Выходные в GM",
-        "problem": "Отсутствие информации о событиях.",
-        "risk": "product",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 31,
-        "section": "Городской радар",
-        "problem": "Неполная информация о преступлении.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 41,
-        "section": "Крупные концерты вне GM",
-        "problem": "Неправильная дата концерта.",
-        "risk": "date",
-        "suggested_action": "repair"
       }
     ],
     "actions": [
@@ -968,81 +725,64 @@
         "line_index": 1,
         "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• Симон Ричардсон, обвиняемый в преступлении, не признал своей вины, что заставило семью Маллинса пройти через болезненный судебный процесс. Свидетели описали ужасные обстоятельства, при которых Маллинс был сбит на велосипеде и протащен более мили под машиной, что потрясло местное сообщество.",
-        "reason": "Уточнение статуса Симона Ричардсона как обвиняемого, а не осуждённого.",
-        "risk": "legal"
+        "replacement_text": "• Мэр Манчестера Энди Бернэм представил план на £700 миллионов, направленный на привлечение миллиардов инвестиций для 10 ключевых объектов по всей Великобритании. Запуск программы, состоящей из займов и грантов, поможет преодолеть препятствия для развития, такие как проблемы с планированием и доступом к финансам, что, в свою очередь, может привести к созданию новых промышленных и коммерческих площадок в регионе.",
+        "reason": "Уточнение географии плана, чтобы отразить, что он охватывает всю Великобританию, а не только Greater Manchester.",
+        "risk": "geo"
       },
       {
-        "line_index": 3,
+        "line_index": 8,
         "section": "Свежие новости",
+        "action": "strip",
+        "reason": "New Mills не входит в Greater Manchester, что нарушает географический контракт блока.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 17,
+        "section": "Общественный транспорт сегодня",
         "action": "patch",
-        "replacement_text": "• Льюис Риммер, 57 лет, который находился в искусственной коме после того, как его сбила машина в Bolton, теперь восстанавливается. Инцидент произошел 27 октября 2025 года, когда он только что купил лотерейный билет и встретился с семьей. После более 40 часов операций и ампутации левой стопы, он смог вернуться домой, и его жена Сара делится надеждой на будущее, несмотря на сложности, с которыми они сталкиваются.",
-        "reason": "Добавление возраста Льюиса Риммера для соответствия источнику.",
+        "replacement_text": "• Metrolink: работы по замене рельсов Metrolink завершены, линии Altrincham, Eccles и Trafford Centre откроются во вторник, 3 ноября 2026 года.",
+        "reason": "Исправление даты открытия линий на правильный день недели.",
+        "risk": "date"
+      },
+      {
+        "line_index": 24,
+        "section": "Футбол",
+        "action": "patch",
+        "replacement_text": "• В этом месяце Manchester City столкнулся с трудностями, потерпев поражения от Aston Villa и Brighton, что поставило под сомнение их шансы на успешное завершение сезона. Несмотря на обвинения в нечестной игре, команда продолжает привлекать внимание к своим матчам. У болельщиков есть возможность задать вопросы нашему главному корреспонденту Симону Байковски о ситуации в клубе.",
+        "reason": "Утверждение о 114 очках в сезоне не соответствует реальности.",
         "risk": "factual"
       },
       {
-        "line_index": 15,
-        "section": "Общественный транспорт сегодня",
+        "line_index": 25,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Симон Ричардсон осуждён за убийство директора школы Майкла Маллинса, который был протащен под автомобилем более чем на милю. Приговор будет вынесен в понедельник.",
+        "reason": "Исправление юридически значимого термина.",
+        "risk": "legal"
+      },
+      {
+        "line_index": 34,
+        "section": "Билеты / Ticket Radar",
         "action": "strip",
-        "reason": "Дублирование информации о приостановке трамвайных линий, уже упомянутой в строке 10.",
+        "reason": "Duplicate event listing for Yaelokre on the same date.",
         "risk": "format"
       },
       {
-        "line_index": 18,
-        "section": "Что важно сегодня",
+        "line_index": 36,
+        "section": "Билеты / Ticket Radar",
         "action": "strip",
-        "reason": "Нью-Миллс находится за пределами Greater Manchester, что нарушает контракт geo_scope.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 21,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Майкл Каррик подтвердил, что он останется на посту тренера Манчестер Юнайтед на матче против Ромы в Лиге чемпионов в среду, 1 ноября 2026 года.",
-        "reason": "Дата матча против Ромы указана неверно, должна быть 1 ноября 2026 года.",
-        "risk": "date"
-      },
-      {
-        "line_index": 29,
-        "section": "Выходные в GM",
-        "action": "strip",
-        "reason": "Событие Burnage RFC Car Boot Sale указано с неверной датой, так как оно проводится только в летний период.",
-        "risk": "date"
-      },
-      {
-        "line_index": 32,
-        "section": "Городской радар",
-        "action": "strip",
-        "reason": "Событие связано с преступлением в Стокпорте, но субъект не из Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 41,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• The Kid LAROI — тур: 1 ноября, Eventim Apollo. Событие проходит сегодня.",
-        "reason": "Дата события указана неверно. Событие проходит только 1 ноября.",
-        "risk": "date"
-      },
-      {
-        "line_index": 9,
-        "section": "Общественный транспорт сегодня",
-        "action": "strip",
-        "replacement_text": "",
-        "reason": "Дублирование информации о задержках на линии Metrolink.",
+        "reason": "Duplicate event listing for Yaelokre on the same date.",
         "risk": "format"
       }
     ],
     "warnings": [
-      "Городской радар: недостаточное количество элементов.",
-      "Еда, открытия и рынки: отсутствуют элементы.",
-      "Business/tech события для тебя: отсутствуют элементы."
+      "judge reduce failed: parse_failed no parseable JSON"
     ],
-    "notes": "Уточнение статуса обвиняемого необходимо для юридической точности.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Добавлен возраст Льюиса Риммера для соответствия фактам из источника.; Строка 15 дублирует информацию из строки 10, что может запутать читателей.; Строка о Нью-Миллс нарушает географически",
+    "notes": "Уточнение географии плана необходимо для корректного представления информации.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка о происшествии в Нью-Миллс нарушает географический контракт блока 'Свежие новости'.; Исправлена ошибка в дате открытия линий Metrolink.; Информация о происшествии в Рочд",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "ok",
-      "chunk_count": 11,
+      "status": "partial",
+      "chunk_count": 10,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -1060,8 +800,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2748,
-          "duration_seconds": 2.165
+          "estimated_tokens": 2757,
+          "duration_seconds": 2.973
         },
         {
           "chunk_id": "chunk-02",
@@ -1078,15 +818,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2453,
-          "duration_seconds": 0.976
+          "estimated_tokens": 2446,
+          "duration_seconds": 0.981
         },
         {
           "chunk_id": "chunk-03",
           "status": "ok",
           "line_range": [
             3,
-            8
+            11
           ],
           "sections": [
             "Свежие новости"
@@ -1096,15 +836,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5482,
-          "duration_seconds": 2.39
+          "estimated_tokens": 6999,
+          "duration_seconds": 1.956
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
-            9,
-            15
+            12,
+            20
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -1114,33 +854,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5900,
-          "duration_seconds": 1.471
+          "estimated_tokens": 6885,
+          "duration_seconds": 2.302
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            16,
-            18
+            21,
+            21
           ],
           "sections": [
             "Что важно сегодня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3810,
-          "duration_seconds": 1.441
+          "estimated_tokens": 2712,
+          "duration_seconds": 1.084
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            19,
-            21
+            22,
+            24
           ],
           "sections": [
             "Футбол"
@@ -1150,33 +890,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3635,
-          "duration_seconds": 1.509
+          "estimated_tokens": 3723,
+          "duration_seconds": 2.492
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            22,
-            30
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 6287,
-          "duration_seconds": 44.343
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            31,
-            34
+            25,
+            32
           ],
           "sections": [
             "Городской радар"
@@ -1186,76 +908,76 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4176,
-          "duration_seconds": 1.587
+          "estimated_tokens": 6309,
+          "duration_seconds": 38.39
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            33,
+            33
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2717,
+          "duration_seconds": 0.86
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            35,
-            40
+            34,
+            39
           ],
           "sections": [
             "Билеты / Ticket Radar"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5682,
-          "duration_seconds": 28.167
+          "estimated_tokens": 5806,
+          "duration_seconds": 24.26
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            41,
+            40,
             43
           ],
           "sections": [
             "Крупные концерты вне GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3826,
-          "duration_seconds": 7.588
-        },
-        {
-          "chunk_id": "chunk-11",
-          "status": "ok",
-          "line_range": [
-            44,
-            45
-          ],
-          "sections": [
-            "Русскоязычные концерты и стендап UK"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3293,
-          "duration_seconds": 6.552
+          "estimated_tokens": 4320,
+          "duration_seconds": 7.621
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "ok",
+        "status": "parse_failed",
         "line_range": [],
         "sections": [],
-        "decision": "repair_required",
-        "critical_error_count": 8,
-        "action_count": 1,
-        "warning_count": 3,
-        "error": "",
-        "estimated_tokens": 10465,
-        "duration_seconds": 25.562
+        "decision": "",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 0,
+        "error": "no parseable JSON",
+        "estimated_tokens": 10397,
+        "duration_seconds": 27.489
       },
       "max_workers": 3,
       "chunk_line_target": 12,
