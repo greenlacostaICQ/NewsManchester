@@ -1,136 +1,221 @@
 {
-  "status": "partial",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 5 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair left 4 known factual operation(s) unresolved; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-11-02",
-  "pipeline_run_id": "20261102T080147+0000",
-  "digest_sha256": "a0c7978fec2a90bc22f11ca1e8e49ff4bdfb5ed28223a0fb6df9ba7eb47e09d4",
-  "duration_seconds": 74.092,
+  "run_date_london": "2026-11-03",
+  "pipeline_run_id": "20261103T080143+0000",
+  "digest_sha256": "be57aa5aa61b625b745ca94b08d37181ebf90c5fd5c226f602961a6b37ca19d7",
+  "duration_seconds": 80.495,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "География плана не ограничивается Greater Manchester, но представлено как событие только для региона.",
-      "risk": "geo",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 8,
+      "line_index": 3,
       "section": "Свежие новости",
-      "problem": "New Mills находится за пределами Greater Manchester.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 17,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дата открытия линий указана неверно. 3 ноября 2026 года — это вторник, а не понедельник.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 24,
-      "section": "Футбол",
-      "problem": "Некорректное утверждение о 114 очках в сезоне.",
+      "problem": "Текст не упоминает факт, что Майкл Маллинс был протащен под машиной более мили.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 25,
-      "section": "Городской радар",
-      "problem": "Неправильное использование термина 'виновным' вместо 'осуждённым'.",
-      "risk": "legal",
-      "suggested_action": "repair"
+      "line_index": 11,
+      "section": "Свежие новости",
+      "problem": "Дублирование информации о приговоре Симона Ричардсона.",
+      "risk": "factual",
+      "suggested_action": "strip"
     },
     {
-      "line_index": 34,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Duplicate event listing for Yaelokre on the same date.",
+      "line_index": 21,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Строка не относится к общественному транспорту и не соответствует теме раздела.",
       "risk": "format",
       "suggested_action": "strip"
     },
     {
+      "line_index": 23,
+      "section": "Футбол",
+      "problem": "Тренер Манчестер Юнайтед указан как Майкл Каррик, но он не является тренером команды на момент публикации.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 27,
+      "section": "Городской радар",
+      "problem": "Ошибка в описании события: Симон Ричардсон был признан виновным в убийстве, но не сбил Майкла Маллинса на велосипеде, а на автомобиле.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 32,
+      "section": "Business/tech события для тебя",
+      "problem": "Неправильная дата события.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
       "line_index": 36,
       "section": "Билеты / Ticket Radar",
-      "problem": "Duplicate event listing for Yaelokre on the same date.",
-      "risk": "format",
+      "problem": "Название события не переведено на русский язык.",
+      "risk": "translation",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 41,
+      "section": "Крупные концерты вне GM",
+      "problem": "Некорректное указание даты концерта.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 42,
+      "section": "Крупные концерты вне GM",
+      "problem": "Некорректное указание даты концерта.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 3,
+      "section": "Свежие новости",
+      "problem": "Дублирование информации о приговоре Симона Ричардсона.",
+      "risk": "factual",
       "suggested_action": "strip"
     },
     {
       "line_index": 11,
       "section": "Свежие новости",
+      "problem": "Дублирование информации о приговоре Симона Ричардсона.",
+      "risk": "factual",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 27,
+      "section": "Городской радар",
+      "problem": "Дублирование информации о приговоре Симона Ричардсона.",
+      "risk": "factual",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 4,
+      "section": "Свежие новости",
       "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'knife' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+      "problem": "critical source fact dropped in translation: 'stabbing' (weapon_violence/who/what) has no Russian rendering in the shipped line",
       "suggested_action": "repair",
       "completeness_concept": "weapon_violence"
     }
   ],
   "actions": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• Мэр Манчестера Энди Бернэм представил план на £700 миллионов, направленный на привлечение миллиардов инвестиций для 10 ключевых объектов по всей Великобритании. Запуск программы, состоящей из займов и грантов, поможет преодолеть препятствия для развития, такие как проблемы с планированием и доступом к финансам, что, в свою очередь, может привести к созданию новых промышленных и коммерческих площадок в регионе.",
-      "reason": "Уточнение географии плана, чтобы отразить, что он охватывает всю Великобританию, а не только Greater Manchester.",
-      "risk": "geo"
-    },
-    {
-      "line_index": 8,
+      "line_index": 3,
       "section": "Свежие новости",
-      "action": "strip",
-      "reason": "New Mills не входит в Greater Manchester, что нарушает географический контракт блока.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 17,
-      "section": "Общественный транспорт сегодня",
       "action": "patch",
-      "replacement_text": "• Metrolink: работы по замене рельсов Metrolink завершены, линии Altrincham, Eccles и Trafford Centre откроются во вторник, 3 ноября 2026 года.",
-      "reason": "Исправление даты открытия линий на правильный день недели.",
-      "risk": "date"
-    },
-    {
-      "line_index": 24,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• В этом месяце Manchester City столкнулся с трудностями, потерпев поражения от Aston Villa и Brighton, что поставило под сомнение их шансы на успешное завершение сезона. Несмотря на обвинения в нечестной игре, команда продолжает привлекать внимание к своим матчам. У болельщиков есть возможность задать вопросы нашему главному корреспонденту Симону Байковски о ситуации в клубе.",
-      "reason": "Утверждение о 114 очках в сезоне не соответствует реальности.",
+      "replacement_text": "• Вынесен приговор — 20 апреля в деревне Уорбертон, Trafford, Симон Ричардсон сбил 56-летнего Майкла Маллинса, когда тот возвращался с работы в Stretford грамматической школе, и протащил его под машиной более мили. Суд приговорил Ричардсона к пожизненному заключению с минимальным сроком 25 лет за убийство, отметив его \"ужасную\" водительскую историю, включая опасное вождение на следующий день после трагедии.",
+      "reason": "Добавление важной детали о происшествии для полноты информации.",
       "risk": "factual"
     },
     {
-      "line_index": 25,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Симон Ричардсон осуждён за убийство директора школы Майкла Маллинса, который был протащен под автомобилем более чем на милю. Приговор будет вынесен в понедельник.",
-      "reason": "Исправление юридически значимого термина.",
-      "risk": "legal"
+      "line_index": 11,
+      "section": "Свежие новости",
+      "action": "strip",
+      "reason": "Дублирование информации о приговоре Симона Ричардсона.",
+      "risk": "factual",
+      "replacement_text": ""
     },
     {
-      "line_index": 34,
-      "section": "Билеты / Ticket Radar",
+      "line_index": 21,
+      "section": "Общественный транспорт сегодня",
       "action": "strip",
-      "reason": "Duplicate event listing for Yaelokre on the same date.",
+      "reason": "Строка о статуе не имеет отношения к общественному транспорту и не соответствует теме раздела.",
       "risk": "format",
       "replacement_text": ""
+    },
+    {
+      "line_index": 23,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• 3 ноября 2026 года Манчестер Юнайтед принимает АС Рома в Лиге чемпионов, при этом давление на тренера сохраняется после девяти игр без побед.",
+      "reason": "Указан неверный тренер команды.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 27,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Симон Ричардсон был признан виновным в убийстве директора школы Майкла Маллинса после того, как сбил его на автомобиле в Алтринчаме; приговор ещё не вынесен.",
+      "reason": "Уточнение транспортного средства, использованного в инциденте.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 32,
+      "section": "Business/tech события для тебя",
+      "action": "patch",
+      "replacement_text": "• 4 ноября 2026 года в 9:30 утра в библиотеке Радклиффа пройдет мероприятие Bury Business Networking, предлагающее возможности для сетевого взаимодействия и поддержки бизнеса.",
+      "reason": "Дата события указана неверно. Должна быть 4 ноября 2026 года.",
+      "risk": "date"
     },
     {
       "line_index": 36,
       "section": "Билеты / Ticket Radar",
+      "action": "patch",
+      "replacement_text": "• can't be blue — 3 ноября, Manchester Academy; цена £55.00. Событие проходит сегодня.",
+      "reason": "Название события должно быть переведено на русский язык.",
+      "risk": "translation"
+    },
+    {
+      "line_index": 41,
+      "section": "Крупные концерты вне GM",
+      "action": "patch",
+      "replacement_text": "• Against the Current — тур: 3 ноября, O2 Institute Birmingham; 4 ноября, O2 Shepherds Bush Empire.",
+      "reason": "Концерт проходит 3 ноября, а не сегодня.",
+      "risk": "date"
+    },
+    {
+      "line_index": 42,
+      "section": "Крупные концерты вне GM",
+      "action": "patch",
+      "replacement_text": "• LP — 3 ноября, O2 Shepherds Bush Empire.",
+      "reason": "Концерт проходит 3 ноября, а не сегодня.",
+      "risk": "date"
+    },
+    {
+      "line_index": 3,
+      "section": "Свежие новости",
       "action": "strip",
-      "reason": "Duplicate event listing for Yaelokre on the same date.",
-      "risk": "format",
+      "reason": "Дублирование информации о приговоре Симона Ричардсона.",
+      "risk": "factual",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 11,
+      "section": "Свежие новости",
+      "action": "strip",
+      "reason": "Дублирование информации о приговоре Симона Ричардсона.",
+      "risk": "factual",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 27,
+      "section": "Городской радар",
+      "action": "strip",
+      "reason": "Дублирование информации о приговоре Симона Ричардсона.",
+      "risk": "factual",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 41,
+      "section": "Крупные концерты вне GM",
+      "action": "strip",
+      "reason": "Дублирование информации о концерте Against the Current.",
+      "risk": "factual",
       "replacement_text": ""
     }
   ],
   "warnings": [
-    "judge reduce failed: parse_failed no parseable JSON"
+    "Недостаточное количество элементов в разделе 'Что важно сегодня'.",
+    "Отсутствие элементов в разделе 'Русскоязычные концерты и стендап UK'.",
+    "Отсутствие элементов в разделе 'Еда, открытия и рынки'."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -139,56 +224,57 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 9,
+      "Общественный транспорт сегодня": 10,
       "Что важно сегодня": 1,
       "Футбол": 3,
-      "Городской радар": 8,
+      "Городской радар": 6,
+      "Business/tech события для тебя": 2,
       "Дальние анонсы": 1,
       "Билеты / Ticket Radar": 6,
-      "Крупные концерты вне GM": 4
+      "Крупные концерты вне GM": 2
     },
     "core_counts": {
       "Погода": 1,
       "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 8,
+      "Городской радар": 6,
       "Билеты / Ticket Radar": 6,
       "Русскоязычные концерты и стендап UK": 0,
       "Еда, открытия и рынки": 0,
-      "Business/tech события для тебя": 0,
+      "Business/tech события для тебя": 2,
       "Футбол": 3
     },
-    "ticket_items": 10,
+    "ticket_items": 8,
     "core_items": 23,
     "writer_quality_counts": {
-      "included_candidates": 44,
-      "rendered_candidates": 43,
+      "included_candidates": 43,
+      "rendered_candidates": 42,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 1,
-      "replaced_from_plan_backup": 0,
-      "removed_with_reason": 1
+      "dropped_low_quality": 0,
+      "replaced_from_plan_backup": 1,
+      "removed_with_reason": 0
     },
     "source_health_counts": {
-      "ok": 105,
+      "ok": 106,
       "partial": 2,
-      "stale": 7,
-      "empty": 12,
+      "stale": 6,
+      "empty": 11,
       "failed": 4,
-      "zero_yield": 80,
+      "zero_yield": 82,
       "no_contribution_breakdown": {
         "fetch_failed": 4,
-        "all_rejected": 80,
-        "idle_no_items": 28
+        "all_rejected": 82,
+        "idle_no_items": 21
       },
       "zero_contribution_by_stage": {
-        "written": 43,
-        "parsed": 28,
-        "selected": 37,
+        "written": 42,
+        "selected": 40,
+        "parsed": 21,
         "fetched": 4
       },
       "weekend_source_coverage_incidents": 61
@@ -197,32 +283,36 @@
       "Что важно сегодня: 1 item(s), emergency floor 3",
       "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "Business/tech события для тебя: 0 item(s), emergency floor 1",
       "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 1 has unchecked number/date token(s): 700"
+      "patch for line 32 has unchecked number/date token(s): 9:30",
+      "patch for line 36 has unchecked number/date token(s): 55.00",
+      "multiple actions target line 3",
+      "multiple actions target line 11",
+      "multiple actions target line 27",
+      "multiple actions target line 41"
     ],
     "can_apply_actions": true,
-    "action_count": 7
+    "action_count": 13
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 43,
-    "matched_lines": 43,
-    "applicable_lines": 4,
+    "checked_lines": 42,
+    "matched_lines": 42,
+    "applicable_lines": 5,
     "unmatched_lines": 0,
     "critical_omission_count": 1,
     "critical_omissions": [
       {
-        "line_index": 11,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/knife-attacks-rocked-arndale-34839101",
+        "line_index": 4,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/killer-found-guilty-murder-after-34852358",
         "concept": "weapon_violence",
         "obligation": "who/what",
-        "source_hit": "knife"
+        "source_hit": "stabbing"
       }
     ],
     "noncritical_omissions": [],
@@ -234,377 +324,426 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 7,
-    "attempted": 5,
-    "applied": 5,
-    "model_patch_applied": 1,
+    "requested": 14,
+    "attempted": 10,
+    "applied": 10,
+    "model_patch_applied": 2,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 1,
-    "stripped": 3,
-    "unresolved": 0,
-    "blocking_unresolved": 0,
-    "resolved": 6,
+    "reserve_replacement_used": 3,
+    "stripped": 5,
+    "unresolved": 4,
+    "blocking_unresolved": 4,
+    "resolved": 7,
     "resolved_in_place": 3,
     "resolved_by_replacement": 1,
-    "resolved_by_removal": 2,
-    "fact_lock_rejected": 0,
-    "enrich_attempted": 7,
+    "resolved_by_removal": 3,
+    "fact_lock_rejected": 1,
+    "enrich_attempted": 14,
     "post_check_errors": [],
-    "geo_contract_rejected": [
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "geo_scope": "gm",
-        "reason": "Уточнение географии плана, чтобы отразить, что он охватывает всю Великобританию, а не только Greater Manchester.",
-        "gm_anchor_present": true
-      }
-    ],
+    "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 8,
+        "line_index": 3,
+        "section": "Свежие новости",
+        "requested_action": "patch",
+        "reason": "Добавление важной детали о происшествии для полноты информации.",
+        "risk": "factual",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-01",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cw33x0d3jy2zo-97e73f7e4577",
+        "original_url_identity": "bbc.com/news/articles/cw33x0d3jy2zo",
+        "original_html": "• Вынесен приговор — 20 апреля в деревне Уорбертон, Trafford, Симон Ричардсон сбил 56-летнего Майкла Маллинса, когда тот возвращался с работы в Stretford грамматической школе. Суд приговорил Ричардсона к пожизненному заключению с минимальным сроком 25 лет за убийство, отметив его \"ужасную\" водительскую историю, включая опасное вождение на следующий день после трагедии. <a href=\"https://bbc.com/news/articles/cw33x0d3jy2zo\">BBC Manchester</a>",
+        "model_replacement_rejected": "fact_lock: 20 апреля",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-estate-bus-drivers-afraid-go-34852291-dd091f568285",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 11,
         "section": "Свежие новости",
         "requested_action": "strip",
-        "reason": "New Mills не входит в Greater Manchester, что нарушает географический контракт блока.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "New Mills находится за пределами Greater Manchester.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-06",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-mills-building-declared-safe-34846186-934fa209d9df",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-mills-building-declared-safe-34846186",
-        "original_html": "• В Нью-Миллс автобус Bee Network врезался в здание на Union Road, несколько пассажиров получили легкие травмы. Здание признано безопасным, дороги открыты. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-mills-building-declared-safe-34846186\">MEN Latest News</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-nightmare-gridlocked-stockport-road-manchester-34837802-e17d721a7f6d",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 17,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "patch",
-        "reason": "Исправление даты открытия линий на правильный день недели.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата открытия линий указана неверно. 3 ноября 2026 года — это вторник, а не понедельник.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "transport-06",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-metrolink-tracks-must-tricked-thinking-34839953-38aaf17cfd2d",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/metrolink-tracks-must-tricked-thinking-34839953",
-        "original_html": "• Metrolink: работы по замене рельсов Metrolink завершены, линии Altrincham, Eccles и Trafford Centre откроются в понедельник, 3 ноября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/metrolink-tracks-must-tricked-thinking-34839953\">MEN</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 24,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Утверждение о 114 очках в сезоне не соответствует реальности.",
+        "reason": "Дублирование информации о приговоре Симона Ричардсона.",
         "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Некорректное утверждение о 114 очках в сезоне.",
+        "critical_error": false,
+        "critical_problem": "",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "football-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-january-transfers-115-charges-coverage-34838366-4f8715fa4613",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/january-transfers-115-charges-coverage-34838366",
-        "original_html": "• В этом месяце Manchester City столкнулся с трудностями, потерпев поражения от Aston Villa и Brighton, что поставило под сомнение их шансы на 114 очков в текущем сезоне. Несмотря на обвинения в нечестной игре, команда продолжает привлекать внимание к своим матчам. У болельщиков есть возможность задать вопросы нашему главному корреспонденту Симону Байковски о ситуации в клубе. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/january-transfers-115-charges-coverage-34838366\">MEN Manchester City</a>",
-        "post_check_passed": true
+        "outcome": "unresolved",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-09",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-we-completely-adrift-bereft-without-34852011-7b5dfdb76087",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/we-completely-adrift-bereft-without-34852011",
+        "original_html": "• Вынесен приговор — Симон Ричардсон приговорен к пожизненному заключению с минимальным сроком 25 лет за убийство Майкла Маллинса, директора школы, который был сбит насмерть во время поездки на велосипеде. Судебное разбирательство завершено. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/we-completely-adrift-bereft-without-34852011\">MEN</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-wigan-dad-42-whose-home-34852981-ddb0d8cc9765",
+        "post_check_passed": false
       },
       {
-        "line_index": 25,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Исправление юридически значимого термина.",
-        "risk": "legal",
-        "critical_error": true,
-        "critical_problem": "Неправильное использование термина 'виновным' вместо 'осуждённым'.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-c6e3xg5we9eyo-be3af3771b34",
-        "original_url_identity": "bbc.com/news/articles/c6e3xg5we9eyo",
-        "original_html": "• Симон Ричардсон признан виновным в убийстве директора школы Майкла Маллинса, который был протащен под автомобилем более чем на милю. Приговор будет вынесен в понедельник. <a href=\"https://bbc.co.uk/news/articles/c6e3xg5we9eyo\">BBC Manchester</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 34,
-        "section": "Билеты / Ticket Radar",
+        "line_index": 21,
+        "section": "Общественный транспорт сегодня",
         "requested_action": "strip",
-        "reason": "Duplicate event listing for Yaelokre on the same date.",
+        "reason": "Строка о статуе не имеет отношения к общественному транспорту и не соответствует теме раздела.",
         "risk": "format",
         "critical_error": true,
-        "critical_problem": "Duplicate event listing for Yaelokre on the same date.",
+        "critical_problem": "Строка не относится к общественному транспорту и не соответствует теме раздела.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "ticket_radar-01",
-        "candidate_fingerprint": "event-event-yaelokre-2nd-november-2026-2026-11-02-manchester-academy-25c720e85db6",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13380496/yaelokre-manchester-academy-2-2026-11-02-19-30-00",
-        "original_html": "• <b>Yaelokre</b> — 2 ноября, Manchester Academy; цена £20.00. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13380496/yaelokre-manchester-academy-2-2026-11-02-19-30-00\">Manchester Academy</a>",
+        "plan_slot_id": "transport-10",
+        "candidate_fingerprint": "url-manchestermill-co-uk-city-centre-to-finally-get-its-first-statue-of-a-black-mancunian-081707b492a5",
+        "original_url_identity": "manchestermill.co.uk/city-centre-to-finally-get-its-first-statue-of-a-black-mancunian",
+        "original_html": "• В центре Манчестера появится первая статуя чернокожего манчестера, однако подробности о статуе, её авторе и месте установки не указаны. <a href=\"https://manchestermill.co.uk/city-centre-to-finally-get-its-first-statue-of-a-black-mancunian\">The Mill</a>",
         "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 23,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Указан неверный тренер команды.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Тренер Манчестер Юнайтед указан как Майкл Каррик, но он не является тренером команды на момент публикации.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-michael-carrick-sack-man-united-34844297-fd4ec2be43e0",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/michael-carrick-sack-man-united-34844297",
+        "original_html": "• 3 ноября 2026 года Манчестер Юнайтед принимает АС Рома в Лиге чемпионов, при этом давление на тренера Майкла Каррика сохраняется после девяти игр без побед. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/michael-carrick-sack-man-united-34844297\">MEN Manchester United</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 27,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Уточнение транспортного средства, использованного в инциденте.",
+        "risk": "factual",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "model_patch",
+        "plan_slot_id": "city_watch-02",
+        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-30-driver-found-guilty-of-murdering-headteacher-after-altrincham-collision-afe99453b310",
+        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/10/30/driver-found-guilty-of-murdering-headteacher-after-altrincham-collision",
+        "original_html": "• Симон Ричардсон был признан виновным в убийстве директора школы Майкла Маллинса после того, как сбил его на велосипеде в Алтринчаме; приговор ещё не вынесен. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/30/driver-found-guilty-of-murdering-headteacher-after-altrincham-collision\">Altrincham Today</a>",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 32,
+        "section": "Business/tech события для тебя",
+        "requested_action": "patch",
+        "reason": "Дата события указана неверно. Должна быть 4 ноября 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Неправильная дата события.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "professional_events-01",
+        "candidate_fingerprint": "event-event-bury-business-networking-at-graft-2026-11-04-graft-radcliffe-library-stand-lane-manchester-m26-1ja-56a167b5e658",
+        "original_url_identity": "businessgrowthhub.com/events/bury-business-networking-at-graft",
+        "original_html": "• 4 ноября 2026 года в 9:30 утра в библиотеке Радклиффа пройдет мероприятие Bury Business Networking, предлагающее возможности для сетевого взаимодействия и поддержки бизнеса. <a href=\"https://businessgrowthhub.com/events/bury-business-networking-at-graft\">GM Business Growth Hub Events</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
         "line_index": 36,
         "section": "Билеты / Ticket Radar",
-        "requested_action": "strip",
-        "reason": "Duplicate event listing for Yaelokre on the same date.",
-        "risk": "format",
+        "requested_action": "patch",
+        "reason": "Название события должно быть переведено на русский язык.",
+        "risk": "translation",
         "critical_error": true,
-        "critical_problem": "Duplicate event listing for Yaelokre on the same date.",
+        "critical_problem": "Название события не переведено на русский язык.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "ticket_radar-02",
+        "candidate_fingerprint": "event-event-can-t-be-blue-tickets-for-manchester-club-academy-on-tuesday-3rd-november-2026-2026-11-03-manchester-academy-1645eecd2b63",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13381674/cant-be-blue-manchester-club-academy-2026-11-03-19-30-00",
+        "original_html": "• <b>can't be blue tickets for Manchester Club Academy on Tuesday</b> — 3 ноября, Manchester Academy; цена £55.00. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13381674/cant-be-blue-manchester-club-academy-2026-11-03-19-30-00\">Manchester Academy</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 41,
+        "section": "Крупные концерты вне GM",
+        "requested_action": "patch",
+        "reason": "Концерт проходит 3 ноября, а не сегодня.",
+        "risk": "date",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "outside_gm_tickets-01",
+        "candidate_fingerprint": "event-event-against-the-current-2026-11-03-o2-institute-birmingham-55e9acb087c4",
+        "original_url_identity": "ticketmaster.co.uk/against-the-current-birmingham-03-11-2026/event/3E00649BB647274E",
+        "original_html": "• <b>Against the Current</b> — тур: 3 ноября, O2 Institute Birmingham; 4 ноября, O2 Shepherds Bush Empire. Концерт проходит сегодня. <a href=\"https://ticketmaster.co.uk/against-the-current-birmingham-03-11-2026/event/3E00649BB647274E\">Ticketmaster</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 42,
+        "section": "Крупные концерты вне GM",
+        "requested_action": "patch",
+        "reason": "Концерт проходит 3 ноября, а не сегодня.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Некорректное указание даты концерта.",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "outside_gm_tickets-02",
+        "candidate_fingerprint": "event-event-lp-2026-11-03-o2-shepherds-bush-empire-3500f4bd94a6",
+        "original_url_identity": "ticketmaster.co.uk/lp-london-03-11-2026/event/3E00649BBE1E2B5D",
+        "original_html": "• <b>LP</b> — 3 ноября, O2 Shepherds Bush Empire. Концерт проходит сегодня. <a href=\"https://ticketmaster.co.uk/lp-london-03-11-2026/event/3E00649BBE1E2B5D\">Ticketmaster</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о приговоре Симона Ричардсона.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Текст не упоминает факт, что Майкл Маллинс был протащен под машиной более мили.",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "removed",
+        "plan_slot_id": "last_24h-01",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cw33x0d3jy2zo-97e73f7e4577",
+        "original_url_identity": "bbc.com/news/articles/cw33x0d3jy2zo",
+        "original_html": "• Вынесен приговор — 20 апреля в деревне Уорбертон, Trafford, Симон Ричардсон сбил 56-летнего Майкла Маллинса, когда тот возвращался с работы в Stretford грамматической школе. Суд приговорил Ричардсона к пожизненному заключению с минимальным сроком 25 лет за убийство, отметив его \"ужасную\" водительскую историю, включая опасное вождение на следующий день после трагедии. <a href=\"https://bbc.com/news/articles/cw33x0d3jy2zo\">BBC Manchester</a>",
+        "backup_outcome": "backup_chain_exhausted",
+        "removal_reason": "duplicate_after_plan",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 11,
+        "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о приговоре Симона Ричардсона.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о приговоре Симона Ричардсона.",
+        "completeness_concept": "",
+        "outcome": "unresolved",
+        "method": "removed",
+        "plan_slot_id": "last_24h-09",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-we-completely-adrift-bereft-without-34852011-7b5dfdb76087",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/we-completely-adrift-bereft-without-34852011",
+        "original_html": "• Вынесен приговор — Симон Ричардсон приговорен к пожизненному заключению с минимальным сроком 25 лет за убийство Майкла Маллинса, директора школы, который был сбит насмерть во время поездки на велосипеде. Судебное разбирательство завершено. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/we-completely-adrift-bereft-without-34852011\">MEN</a>",
+        "backup_outcome": "backup_chain_exhausted",
+        "removal_reason": "duplicate_after_plan",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 27,
+        "section": "Городской радар",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о приговоре Симона Ричардсона.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Ошибка в описании события: Симон Ричардсон был признан виновным в убийстве, но не сбил Майкла Маллинса на велосипеде, а на автомобиле.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "ticket_radar-03",
-        "candidate_fingerprint": "event-event-yaelokre-2026-11-02-manchester-academy-2-6d83f02f224f",
-        "original_url_identity": "ticketmaster.co.uk/yaelokre-manchester-02-11-2026/event/1F0064A8C1AC44A8",
-        "original_html": "• <b>Yaelokre</b> — 2 ноября, Manchester Academy 2. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/yaelokre-manchester-02-11-2026/event/1F0064A8C1AC44A8\">Ticketmaster</a>",
+        "plan_slot_id": "city_watch-02",
+        "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-30-driver-found-guilty-of-murdering-headteacher-after-altrincham-collision-afe99453b310",
+        "original_url_identity": "altrincham.todaynews.co.uk/news/2026/10/30/driver-found-guilty-of-murdering-headteacher-after-altrincham-collision",
+        "original_html": "• Симон Ричардсон был признан виновным в убийстве директора школы Майкла Маллинса после того, как сбил его на велосипеде в Алтринчаме; приговор ещё не вынесен. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/30/driver-found-guilty-of-murdering-headteacher-after-altrincham-collision\">Altrincham Today</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "duplicate_after_plan",
         "post_check_passed": true
       },
       {
-        "line_index": 11,
+        "line_index": 41,
+        "section": "Крупные концерты вне GM",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о концерте Against the Current.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Некорректное указание даты концерта.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "outside_gm_tickets-01",
+        "candidate_fingerprint": "event-event-against-the-current-2026-11-03-o2-institute-birmingham-55e9acb087c4",
+        "original_url_identity": "ticketmaster.co.uk/against-the-current-birmingham-03-11-2026/event/3E00649BB647274E",
+        "original_html": "• <b>Against the Current</b> — тур: 3 ноября, O2 Institute Birmingham; 4 ноября, O2 Shepherds Bush Empire. Концерт проходит сегодня. <a href=\"https://ticketmaster.co.uk/against-the-current-birmingham-03-11-2026/event/3E00649BB647274E\">Ticketmaster</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "duplicate_after_plan",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 4,
         "section": "Свежие новости",
         "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'knife' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+        "reason": "critical source fact dropped in translation: 'stabbing' (weapon_violence/who/what) has no Russian rendering in the shipped line",
         "risk": "translation",
         "critical_error": true,
         "critical_problem": "",
         "completeness_concept": "weapon_violence",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "last_24h-09",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-knife-attacks-rocked-arndale-34839101-4b6d6bbb66bf",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/knife-attacks-rocked-arndale-34839101",
-        "original_html": "• За 11 дней в районе Манчестер Арндейл произошло три инцидента с ножами; полиция не считает их связанными. Один из пострадавших, 14-летний мальчик, был ранен в многоуровневой парковке. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/knife-attacks-rocked-arndale-34839101\">MEN</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-killer-found-guilty-murder-after-34852358-b56e6bf1d954",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/killer-found-guilty-murder-after-34852358",
+        "original_html": "• В Манчестере 2 ноября 2026 года суд признал Стивена Гарнера виновным в убийстве его беременной партнерши, 33-летней Эмбер О'Брайен, которая была на девятой неделе беременности. Убийство произошло в квартире Гарнера в Блэкли, где после ссоры он жестоко зарезал её и оставил тело на полу ванной, накрыв его синим брезентом. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/killer-found-guilty-murder-after-34852358\">MEN Latest News</a>",
+        "replacement_fingerprint": "url-manchester-gov-uk-news-stories-2026-a-breath-of-fresh-air-new-clean-air-vision-and-action-plan-for-manchester-unveiled-c6a0203d0ecf",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::new mills не входит в greater manchester, что нарушает географический контракт блока.",
+        "group_key": "свежие новости::добавление важной детали о происшествии для полноты информации.",
         "actions": [
           {
-            "line_index": 8,
+            "line_index": 3,
             "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "New Mills не входит в Greater Manchester, что нарушает географический контракт блока.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "New Mills находится за пределами Greater Manchester.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-06",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-mills-building-declared-safe-34846186-934fa209d9df",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-mills-building-declared-safe-34846186",
-            "original_html": "• В Нью-Миллс автобус Bee Network врезался в здание на Union Road, несколько пассажиров получили легкие травмы. Здание признано безопасным, дороги открыты. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-mills-building-declared-safe-34846186\">MEN Latest News</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-nightmare-gridlocked-stockport-road-manchester-34837802-e17d721a7f6d",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 8,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::исправление даты открытия линий на правильный день недели.",
-        "actions": [
-          {
-            "line_index": 17,
-            "section": "Общественный транспорт сегодня",
             "requested_action": "patch",
-            "reason": "Исправление даты открытия линий на правильный день недели.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата открытия линий указана неверно. 3 ноября 2026 года — это вторник, а не понедельник.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "transport-06",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-metrolink-tracks-must-tricked-thinking-34839953-38aaf17cfd2d",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/metrolink-tracks-must-tricked-thinking-34839953",
-            "original_html": "• Metrolink: работы по замене рельсов Metrolink завершены, линии Altrincham, Eccles и Trafford Centre откроются в понедельник, 3 ноября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/metrolink-tracks-must-tricked-thinking-34839953\">MEN</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 17,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::утверждение о 114 очках в сезоне не соответствует реальности.",
-        "actions": [
-          {
-            "line_index": 24,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Утверждение о 114 очках в сезоне не соответствует реальности.",
+            "reason": "Добавление важной детали о происшествии для полноты информации.",
             "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Некорректное утверждение о 114 очках в сезоне.",
+            "critical_error": false,
+            "critical_problem": "",
             "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "football-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-january-transfers-115-charges-coverage-34838366-4f8715fa4613",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/january-transfers-115-charges-coverage-34838366",
-            "original_html": "• В этом месяце Manchester City столкнулся с трудностями, потерпев поражения от Aston Villa и Brighton, что поставило под сомнение их шансы на 114 очков в текущем сезоне. Несмотря на обвинения в нечестной игре, команда продолжает привлекать внимание к своим матчам. У болельщиков есть возможность задать вопросы нашему главному корреспонденту Симону Байковски о ситуации в клубе. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/january-transfers-115-charges-coverage-34838366\">MEN Manchester City</a>",
-            "post_check_passed": true
+            "outcome": "unresolved",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cw33x0d3jy2zo-97e73f7e4577",
+            "original_url_identity": "bbc.com/news/articles/cw33x0d3jy2zo",
+            "original_html": "• Вынесен приговор — 20 апреля в деревне Уорбертон, Trafford, Симон Ричардсон сбил 56-летнего Майкла Маллинса, когда тот возвращался с работы в Stretford грамматической школе. Суд приговорил Ричардсона к пожизненному заключению с минимальным сроком 25 лет за убийство, отметив его \"ужасную\" водительскую историю, включая опасное вождение на следующий день после трагедии. <a href=\"https://bbc.com/news/articles/cw33x0d3jy2zo\">BBC Manchester</a>",
+            "model_replacement_rejected": "fact_lock: 20 апреля",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-estate-bus-drivers-afraid-go-34852291-dd091f568285",
+            "post_check_passed": false
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "unresolved",
         "post_checks": [
           {
-            "line_index": 24,
-            "passed": true,
-            "detail": "post-check passed"
+            "line_index": 3,
+            "passed": false,
+            "detail": "final line missing"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::исправление юридически значимого термина.",
-        "actions": [
-          {
-            "line_index": 25,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Исправление юридически значимого термина.",
-            "risk": "legal",
-            "critical_error": true,
-            "critical_problem": "Неправильное использование термина 'виновным' вместо 'осуждённым'.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-c6e3xg5we9eyo-be3af3771b34",
-            "original_url_identity": "bbc.com/news/articles/c6e3xg5we9eyo",
-            "original_html": "• Симон Ричардсон признан виновным в убийстве директора школы Майкла Маллинса, который был протащен под автомобилем более чем на милю. Приговор будет вынесен в понедельник. <a href=\"https://bbc.co.uk/news/articles/c6e3xg5we9eyo\">BBC Manchester</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 25,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::duplicate event listing for yaelokre on the same date",
-        "actions": [
-          {
-            "line_index": 34,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "strip",
-            "reason": "Duplicate event listing for Yaelokre on the same date.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Duplicate event listing for Yaelokre on the same date.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "event-event-yaelokre-2nd-november-2026-2026-11-02-manchester-academy-25c720e85db6",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13380496/yaelokre-manchester-academy-2-2026-11-02-19-30-00",
-            "original_html": "• <b>Yaelokre</b> — 2 ноября, Manchester Academy; цена £20.00. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13380496/yaelokre-manchester-academy-2-2026-11-02-19-30-00\">Manchester Academy</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 36,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "strip",
-            "reason": "Duplicate event listing for Yaelokre on the same date.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Duplicate event listing for Yaelokre on the same date.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "ticket_radar-03",
-            "candidate_fingerprint": "event-event-yaelokre-2026-11-02-manchester-academy-2-6d83f02f224f",
-            "original_url_identity": "ticketmaster.co.uk/yaelokre-manchester-02-11-2026/event/1F0064A8C1AC44A8",
-            "original_html": "• <b>Yaelokre</b> — 2 ноября, Manchester Academy 2. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/yaelokre-manchester-02-11-2026/event/1F0064A8C1AC44A8\">Ticketmaster</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 34,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "line_index": 36,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:yaelokre|2026-11-02|manchester academy",
-            "visible_count": 0,
-            "passed": true
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:yaelokre|2026-11-02|manchester academy 2",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::critical source fact dropped in translation: 'knife' (weapon_violence/who/what) has no russian rendering in the shipped line",
+        "group_key": "свежие новости::дублирование информации о приговоре симона ричардсона",
         "actions": [
           {
             "line_index": 11,
             "section": "Свежие новости",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'knife' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-            "risk": "translation",
-            "critical_error": true,
+            "requested_action": "strip",
+            "reason": "Дублирование информации о приговоре Симона Ричардсона.",
+            "risk": "factual",
+            "critical_error": false,
             "critical_problem": "",
-            "completeness_concept": "weapon_violence",
-            "outcome": "resolved_by_removal",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-09",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-we-completely-adrift-bereft-without-34852011-7b5dfdb76087",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/we-completely-adrift-bereft-without-34852011",
+            "original_html": "• Вынесен приговор — Симон Ричардсон приговорен к пожизненному заключению с минимальным сроком 25 лет за убийство Майкла Маллинса, директора школы, который был сбит насмерть во время поездки на велосипеде. Судебное разбирательство завершено. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/we-completely-adrift-bereft-without-34852011\">MEN</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-wigan-dad-42-whose-home-34852981-ddb0d8cc9765",
+            "post_check_passed": false
+          },
+          {
+            "line_index": 3,
+            "section": "Свежие новости",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о приговоре Симона Ричардсона.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Текст не упоминает факт, что Майкл Маллинс был протащен под машиной более мили.",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "removed",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cw33x0d3jy2zo-97e73f7e4577",
+            "original_url_identity": "bbc.com/news/articles/cw33x0d3jy2zo",
+            "original_html": "• Вынесен приговор — 20 апреля в деревне Уорбертон, Trafford, Симон Ричардсон сбил 56-летнего Майкла Маллинса, когда тот возвращался с работы в Stretford грамматической школе. Суд приговорил Ричардсона к пожизненному заключению с минимальным сроком 25 лет за убийство, отметив его \"ужасную\" водительскую историю, включая опасное вождение на следующий день после трагедии. <a href=\"https://bbc.com/news/articles/cw33x0d3jy2zo\">BBC Manchester</a>",
+            "backup_outcome": "backup_chain_exhausted",
+            "removal_reason": "duplicate_after_plan",
+            "post_check_passed": false
+          },
+          {
+            "line_index": 11,
+            "section": "Свежие новости",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о приговоре Симона Ричардсона.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о приговоре Симона Ричардсона.",
+            "completeness_concept": "",
+            "outcome": "unresolved",
             "method": "removed",
             "plan_slot_id": "last_24h-09",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-knife-attacks-rocked-arndale-34839101-4b6d6bbb66bf",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/knife-attacks-rocked-arndale-34839101",
-            "original_html": "• За 11 дней в районе Манчестер Арндейл произошло три инцидента с ножами; полиция не считает их связанными. Один из пострадавших, 14-летний мальчик, был ранен в многоуровневой парковке. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/knife-attacks-rocked-arndale-34839101\">MEN</a>",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-we-completely-adrift-bereft-without-34852011-7b5dfdb76087",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/we-completely-adrift-bereft-without-34852011",
+            "original_html": "• Вынесен приговор — Симон Ричардсон приговорен к пожизненному заключению с минимальным сроком 25 лет за убийство Майкла Маллинса, директора школы, который был сбит насмерть во время поездки на велосипеде. Судебное разбирательство завершено. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/we-completely-adrift-bereft-without-34852011\">MEN</a>",
+            "backup_outcome": "backup_chain_exhausted",
+            "removal_reason": "duplicate_after_plan",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 11,
+            "passed": false,
+            "detail": "final line missing"
+          },
+          {
+            "line_index": 3,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "line_index": 11,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "topic:incident:stretford we are completely adrift and bereft without our anchor michael mullins|sentenced|2026 11 02",
+            "visible_count": 0,
+            "passed": true
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "topic:incident:trafford stretford driver s driving crimes before dragging cyclist to death|same story rehash|2026 11 03",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "общественный транспорт сегодня::строка о статуе не имеет отношения к общественному транспорту и не соответствует теме раздела.",
+        "actions": [
+          {
+            "line_index": 21,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "strip",
+            "reason": "Строка о статуе не имеет отношения к общественному транспорту и не соответствует теме раздела.",
+            "risk": "format",
+            "critical_error": true,
+            "critical_problem": "Строка не относится к общественному транспорту и не соответствует теме раздела.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "transport-10",
+            "candidate_fingerprint": "url-manchestermill-co-uk-city-centre-to-finally-get-its-first-statue-of-a-black-mancunian-081707b492a5",
+            "original_url_identity": "manchestermill.co.uk/city-centre-to-finally-get-its-first-statue-of-a-black-mancunian",
+            "original_html": "• В центре Манчестера появится первая статуя чернокожего манчестера, однако подробности о статуе, её авторе и месте установки не указаны. <a href=\"https://manchestermill.co.uk/city-centre-to-finally-get-its-first-statue-of-a-black-mancunian\">The Mill</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -613,9 +752,300 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 11,
+            "line_index": 21,
             "passed": true,
             "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::указан неверный тренер команды.",
+        "actions": [
+          {
+            "line_index": 23,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Указан неверный тренер команды.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Тренер Манчестер Юнайтед указан как Майкл Каррик, но он не является тренером команды на момент публикации.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-michael-carrick-sack-man-united-34844297-fd4ec2be43e0",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/michael-carrick-sack-man-united-34844297",
+            "original_html": "• 3 ноября 2026 года Манчестер Юнайтед принимает АС Рома в Лиге чемпионов, при этом давление на тренера Майкла Каррика сохраняется после девяти игр без побед. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/michael-carrick-sack-man-united-34844297\">MEN Manchester United</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 23,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::уточнение транспортного средства, использованного в инциденте.",
+        "actions": [
+          {
+            "line_index": 27,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Уточнение транспортного средства, использованного в инциденте.",
+            "risk": "factual",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "model_patch",
+            "plan_slot_id": "city_watch-02",
+            "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-30-driver-found-guilty-of-murdering-headteacher-after-altrincham-collision-afe99453b310",
+            "original_url_identity": "altrincham.todaynews.co.uk/news/2026/10/30/driver-found-guilty-of-murdering-headteacher-after-altrincham-collision",
+            "original_html": "• Симон Ричардсон был признан виновным в убийстве директора школы Майкла Маллинса после того, как сбил его на велосипеде в Алтринчаме; приговор ещё не вынесен. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/30/driver-found-guilty-of-murdering-headteacher-after-altrincham-collision\">Altrincham Today</a>",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 27,
+            "passed": false,
+            "detail": "final line missing"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "business/tech события для тебя::дата события указана неверно. должна быть 4 ноября 2026 года.",
+        "actions": [
+          {
+            "line_index": 32,
+            "section": "Business/tech события для тебя",
+            "requested_action": "patch",
+            "reason": "Дата события указана неверно. Должна быть 4 ноября 2026 года.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Неправильная дата события.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "professional_events-01",
+            "candidate_fingerprint": "event-event-bury-business-networking-at-graft-2026-11-04-graft-radcliffe-library-stand-lane-manchester-m26-1ja-56a167b5e658",
+            "original_url_identity": "businessgrowthhub.com/events/bury-business-networking-at-graft",
+            "original_html": "• 4 ноября 2026 года в 9:30 утра в библиотеке Радклиффа пройдет мероприятие Bury Business Networking, предлагающее возможности для сетевого взаимодействия и поддержки бизнеса. <a href=\"https://businessgrowthhub.com/events/bury-business-networking-at-graft\">GM Business Growth Hub Events</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 32,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::название события должно быть переведено на русский язык.",
+        "actions": [
+          {
+            "line_index": 36,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Название события должно быть переведено на русский язык.",
+            "risk": "translation",
+            "critical_error": true,
+            "critical_problem": "Название события не переведено на русский язык.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "ticket_radar-02",
+            "candidate_fingerprint": "event-event-can-t-be-blue-tickets-for-manchester-club-academy-on-tuesday-3rd-november-2026-2026-11-03-manchester-academy-1645eecd2b63",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13381674/cant-be-blue-manchester-club-academy-2026-11-03-19-30-00",
+            "original_html": "• <b>can't be blue tickets for Manchester Club Academy on Tuesday</b> — 3 ноября, Manchester Academy; цена £55.00. Событие проходит сегодня. <a href=\"https://manchesteracademy.net/order/gateway/13381674/cant-be-blue-manchester-club-academy-2026-11-03-19-30-00\">Manchester Academy</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 36,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "крупные концерты вне gm::концерт проходит 3 ноября, а не сегодня.",
+        "actions": [
+          {
+            "line_index": 41,
+            "section": "Крупные концерты вне GM",
+            "requested_action": "patch",
+            "reason": "Концерт проходит 3 ноября, а не сегодня.",
+            "risk": "date",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "outside_gm_tickets-01",
+            "candidate_fingerprint": "event-event-against-the-current-2026-11-03-o2-institute-birmingham-55e9acb087c4",
+            "original_url_identity": "ticketmaster.co.uk/against-the-current-birmingham-03-11-2026/event/3E00649BB647274E",
+            "original_html": "• <b>Against the Current</b> — тур: 3 ноября, O2 Institute Birmingham; 4 ноября, O2 Shepherds Bush Empire. Концерт проходит сегодня. <a href=\"https://ticketmaster.co.uk/against-the-current-birmingham-03-11-2026/event/3E00649BB647274E\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": false
+          },
+          {
+            "line_index": 42,
+            "section": "Крупные концерты вне GM",
+            "requested_action": "patch",
+            "reason": "Концерт проходит 3 ноября, а не сегодня.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Некорректное указание даты концерта.",
+            "completeness_concept": "",
+            "outcome": "unresolved",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "outside_gm_tickets-02",
+            "candidate_fingerprint": "event-event-lp-2026-11-03-o2-shepherds-bush-empire-3500f4bd94a6",
+            "original_url_identity": "ticketmaster.co.uk/lp-london-03-11-2026/event/3E00649BBE1E2B5D",
+            "original_html": "• <b>LP</b> — 3 ноября, O2 Shepherds Bush Empire. Концерт проходит сегодня. <a href=\"https://ticketmaster.co.uk/lp-london-03-11-2026/event/3E00649BBE1E2B5D\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 41,
+            "passed": false,
+            "detail": "kept line missing or moved"
+          },
+          {
+            "line_index": 42,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::дублирование информации о приговоре симона ричардсона",
+        "actions": [
+          {
+            "line_index": 27,
+            "section": "Городской радар",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о приговоре Симона Ричардсона.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Ошибка в описании события: Симон Ричардсон был признан виновным в убийстве, но не сбил Майкла Маллинса на велосипеде, а на автомобиле.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "city_watch-02",
+            "candidate_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-10-30-driver-found-guilty-of-murdering-headteacher-after-altrincham-collision-afe99453b310",
+            "original_url_identity": "altrincham.todaynews.co.uk/news/2026/10/30/driver-found-guilty-of-murdering-headteacher-after-altrincham-collision",
+            "original_html": "• Симон Ричардсон был признан виновным в убийстве директора школы Майкла Маллинса после того, как сбил его на велосипеде в Алтринчаме; приговор ещё не вынесен. <a href=\"https://altrincham.todaynews.co.uk/news/2026/10/30/driver-found-guilty-of-murdering-headteacher-after-altrincham-collision\">Altrincham Today</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "duplicate_after_plan",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 27,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "topic:incident:manchester altrincham stretford driver found guilty of murdering headteacher after altrincham collision|follow up|2026 10 30",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "крупные концерты вне gm::дублирование информации о концерте against the current",
+        "actions": [
+          {
+            "line_index": 41,
+            "section": "Крупные концерты вне GM",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о концерте Against the Current.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Некорректное указание даты концерта.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "outside_gm_tickets-01",
+            "candidate_fingerprint": "event-event-against-the-current-2026-11-03-o2-institute-birmingham-55e9acb087c4",
+            "original_url_identity": "ticketmaster.co.uk/against-the-current-birmingham-03-11-2026/event/3E00649BB647274E",
+            "original_html": "• <b>Against the Current</b> — тур: 3 ноября, O2 Institute Birmingham; 4 ноября, O2 Shepherds Bush Empire. Концерт проходит сегодня. <a href=\"https://ticketmaster.co.uk/against-the-current-birmingham-03-11-2026/event/3E00649BB647274E\">Ticketmaster</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "duplicate_after_plan",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 41,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "ticket:against the current|2026-11-03|o2 institute birmingham",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::critical source fact dropped in translation: 'stabbing' (weapon_violence/who/what) has no russian rendering in the shipped line",
+        "actions": [
+          {
+            "line_index": 4,
+            "section": "Свежие новости",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'stabbing' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
+            "critical_error": true,
+            "critical_problem": "",
+            "completeness_concept": "weapon_violence",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-killer-found-guilty-murder-after-34852358-b56e6bf1d954",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/killer-found-guilty-murder-after-34852358",
+            "original_html": "• В Манчестере 2 ноября 2026 года суд признал Стивена Гарнера виновным в убийстве его беременной партнерши, 33-летней Эмбер О'Брайен, которая была на девятой неделе беременности. Убийство произошло в квартире Гарнера в Блэкли, где после ссоры он жестоко зарезал её и оставил тело на полу ванной, накрыв его синим брезентом. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/killer-found-guilty-murder-after-34852358\">MEN Latest News</a>",
+            "replacement_fingerprint": "url-manchester-gov-uk-news-stories-2026-a-breath-of-fresh-air-new-clean-air-vision-and-action-plan-for-manchester-unveiled-c6a0203d0ecf",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 4,
+            "passed": true,
+            "detail": "post-check passed"
           }
         ],
         "known_factual_error": true
@@ -626,26 +1056,43 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 1,
+      "skipped": 3,
       "reports": [
         {
-          "fingerprint": "event-event-yaelokre-2026-11-02-manchester-academy-2-6d83f02f224f",
-          "title": "Yaelokre — event 2026-11-02 — public sale 2026-05-15 10:00",
+          "fingerprint": "event-event-against-the-current-2026-11-03-o2-institute-birmingham-55e9acb087c4",
+          "title": "Against the Current — event 2026-11-03 — public sale 2026-05-08 10:00",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/yaelokre-manchester-02-11-2026/event/1F0064A8C1AC44A8",
-          "candidate_evidence_chars": 365
+          "url": "https://ticketmaster.co.uk/against-the-current-birmingham-03-11-2026/event/3E00649BB647274E",
+          "candidate_evidence_chars": 377
+        },
+        {
+          "fingerprint": "event-event-lp-2026-11-03-o2-shepherds-bush-empire-3500f4bd94a6",
+          "title": "LP — event 2026-11-03 — public sale 2026-05-08 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/lp-london-03-11-2026/event/3E00649BBE1E2B5D",
+          "candidate_evidence_chars": 371
+        },
+        {
+          "fingerprint": "event-event-against-the-current-2026-11-03-o2-institute-birmingham-55e9acb087c4",
+          "title": "Against the Current — event 2026-11-03 — public sale 2026-05-08 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/against-the-current-birmingham-03-11-2026/event/3E00649BB647274E",
+          "candidate_evidence_chars": 377
         }
       ]
     },
-    "enrich_improved": 7,
-    "false_positive_existing_fact": 2,
+    "enrich_improved": 14,
+    "deterministic_rewrite_rejected": 2,
     "no_eligible_backup": 3,
-    "deterministic_rewrite_rejected": 1,
+    "false_positive_existing_fact": 4,
+    "backup_chain_exhausted": 2,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 40,
-      "matched_lines": 40,
+      "checked_lines": 37,
+      "matched_lines": 37,
       "applicable_lines": 3,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
@@ -658,131 +1105,220 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 40,
-      "resolved_in_place": 40,
+      "checked_lines": 37,
+      "resolved_in_place": 37,
       "unresolved": 0,
       "findings": []
     },
-    "status": "resolved"
+    "status": "unresolved"
   },
-  "notes": "Уточнение географии плана необходимо для корректного представления информации.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка о происшествии в Нью-Миллс нарушает географический контракт блока 'Свежие новости'.; Исправлена ошибка в дате открытия линий Metrolink.; Информация о происшествии в Рочд",
+  "notes": "Строка соответствует всем критериям: география, факты и юридическая точность соблюдены.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление фактической ошибки и удаление дублирующей информации о приговоре.; Строка о статуе не соответствует теме раздела 'Общественный транспорт сегодня'.; Строка ",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "География плана не ограничивается Greater Manchester, но представлено как событие только для региона.",
-        "risk": "geo",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 8,
+        "line_index": 3,
         "section": "Свежие новости",
-        "problem": "New Mills находится за пределами Greater Manchester.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 17,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дата открытия линий указана неверно. 3 ноября 2026 года — это вторник, а не понедельник.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 24,
-        "section": "Футбол",
-        "problem": "Некорректное утверждение о 114 очках в сезоне.",
+        "problem": "Текст не упоминает факт, что Майкл Маллинс был протащен под машиной более мили.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 25,
-        "section": "Городской радар",
-        "problem": "Неправильное использование термина 'виновным' вместо 'осуждённым'.",
-        "risk": "legal",
-        "suggested_action": "repair"
+        "line_index": 11,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о приговоре Симона Ричардсона.",
+        "risk": "factual",
+        "suggested_action": "strip"
       },
       {
-        "line_index": 34,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Duplicate event listing for Yaelokre on the same date.",
+        "line_index": 21,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Строка не относится к общественному транспорту и не соответствует теме раздела.",
         "risk": "format",
         "suggested_action": "strip"
       },
       {
+        "line_index": 23,
+        "section": "Футбол",
+        "problem": "Тренер Манчестер Юнайтед указан как Майкл Каррик, но он не является тренером команды на момент публикации.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 27,
+        "section": "Городской радар",
+        "problem": "Ошибка в описании события: Симон Ричардсон был признан виновным в убийстве, но не сбил Майкла Маллинса на велосипеде, а на автомобиле.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 32,
+        "section": "Business/tech события для тебя",
+        "problem": "Неправильная дата события.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
         "line_index": 36,
         "section": "Билеты / Ticket Radar",
-        "problem": "Duplicate event listing for Yaelokre on the same date.",
-        "risk": "format",
+        "problem": "Название события не переведено на русский язык.",
+        "risk": "translation",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 41,
+        "section": "Крупные концерты вне GM",
+        "problem": "Некорректное указание даты концерта.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 42,
+        "section": "Крупные концерты вне GM",
+        "problem": "Некорректное указание даты концерта.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о приговоре Симона Ричардсона.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 11,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о приговоре Симона Ричардсона.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 27,
+        "section": "Городской радар",
+        "problem": "Дублирование информации о приговоре Симона Ричардсона.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 41,
+        "section": "Крупные концерты вне GM",
+        "problem": "Дублирование информации о концерте Against the Current.",
+        "risk": "factual",
         "suggested_action": "strip"
       }
     ],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• Мэр Манчестера Энди Бернэм представил план на £700 миллионов, направленный на привлечение миллиардов инвестиций для 10 ключевых объектов по всей Великобритании. Запуск программы, состоящей из займов и грантов, поможет преодолеть препятствия для развития, такие как проблемы с планированием и доступом к финансам, что, в свою очередь, может привести к созданию новых промышленных и коммерческих площадок в регионе.",
-        "reason": "Уточнение географии плана, чтобы отразить, что он охватывает всю Великобританию, а не только Greater Manchester.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 8,
+        "line_index": 3,
         "section": "Свежие новости",
-        "action": "strip",
-        "reason": "New Mills не входит в Greater Manchester, что нарушает географический контракт блока.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 17,
-        "section": "Общественный транспорт сегодня",
         "action": "patch",
-        "replacement_text": "• Metrolink: работы по замене рельсов Metrolink завершены, линии Altrincham, Eccles и Trafford Centre откроются во вторник, 3 ноября 2026 года.",
-        "reason": "Исправление даты открытия линий на правильный день недели.",
-        "risk": "date"
-      },
-      {
-        "line_index": 24,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• В этом месяце Manchester City столкнулся с трудностями, потерпев поражения от Aston Villa и Brighton, что поставило под сомнение их шансы на успешное завершение сезона. Несмотря на обвинения в нечестной игре, команда продолжает привлекать внимание к своим матчам. У болельщиков есть возможность задать вопросы нашему главному корреспонденту Симону Байковски о ситуации в клубе.",
-        "reason": "Утверждение о 114 очках в сезоне не соответствует реальности.",
+        "replacement_text": "• Вынесен приговор — 20 апреля в деревне Уорбертон, Trafford, Симон Ричардсон сбил 56-летнего Майкла Маллинса, когда тот возвращался с работы в Stretford грамматической школе, и протащил его под машиной более мили. Суд приговорил Ричардсона к пожизненному заключению с минимальным сроком 25 лет за убийство, отметив его \"ужасную\" водительскую историю, включая опасное вождение на следующий день после трагедии.",
+        "reason": "Добавление важной детали о происшествии для полноты информации.",
         "risk": "factual"
       },
       {
-        "line_index": 25,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Симон Ричардсон осуждён за убийство директора школы Майкла Маллинса, который был протащен под автомобилем более чем на милю. Приговор будет вынесен в понедельник.",
-        "reason": "Исправление юридически значимого термина.",
-        "risk": "legal"
+        "line_index": 11,
+        "section": "Свежие новости",
+        "action": "strip",
+        "reason": "Дублирование информации о приговоре Симона Ричардсона.",
+        "risk": "factual"
       },
       {
-        "line_index": 34,
-        "section": "Билеты / Ticket Radar",
+        "line_index": 21,
+        "section": "Общественный транспорт сегодня",
         "action": "strip",
-        "reason": "Duplicate event listing for Yaelokre on the same date.",
+        "reason": "Строка о статуе не имеет отношения к общественному транспорту и не соответствует теме раздела.",
         "risk": "format"
+      },
+      {
+        "line_index": 23,
+        "section": "Футбол",
+        "action": "patch",
+        "replacement_text": "• 3 ноября 2026 года Манчестер Юнайтед принимает АС Рома в Лиге чемпионов, при этом давление на тренера сохраняется после девяти игр без побед.",
+        "reason": "Указан неверный тренер команды.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 27,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Симон Ричардсон был признан виновным в убийстве директора школы Майкла Маллинса после того, как сбил его на автомобиле в Алтринчаме; приговор ещё не вынесен.",
+        "reason": "Уточнение транспортного средства, использованного в инциденте.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 32,
+        "section": "Business/tech события для тебя",
+        "action": "patch",
+        "replacement_text": "• 4 ноября 2026 года в 9:30 утра в библиотеке Радклиффа пройдет мероприятие Bury Business Networking, предлагающее возможности для сетевого взаимодействия и поддержки бизнеса.",
+        "reason": "Дата события указана неверно. Должна быть 4 ноября 2026 года.",
+        "risk": "date"
       },
       {
         "line_index": 36,
         "section": "Билеты / Ticket Radar",
+        "action": "patch",
+        "replacement_text": "• can't be blue — 3 ноября, Manchester Academy; цена £55.00. Событие проходит сегодня.",
+        "reason": "Название события должно быть переведено на русский язык.",
+        "risk": "translation"
+      },
+      {
+        "line_index": 41,
+        "section": "Крупные концерты вне GM",
+        "action": "patch",
+        "replacement_text": "• Against the Current — тур: 3 ноября, O2 Institute Birmingham; 4 ноября, O2 Shepherds Bush Empire.",
+        "reason": "Концерт проходит 3 ноября, а не сегодня.",
+        "risk": "date"
+      },
+      {
+        "line_index": 42,
+        "section": "Крупные концерты вне GM",
+        "action": "patch",
+        "replacement_text": "• LP — 3 ноября, O2 Shepherds Bush Empire.",
+        "reason": "Концерт проходит 3 ноября, а не сегодня.",
+        "risk": "date"
+      },
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
         "action": "strip",
-        "reason": "Duplicate event listing for Yaelokre on the same date.",
-        "risk": "format"
+        "reason": "Дублирование информации о приговоре Симона Ричардсона.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 11,
+        "section": "Свежие новости",
+        "action": "strip",
+        "reason": "Дублирование информации о приговоре Симона Ричардсона.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 27,
+        "section": "Городской радар",
+        "action": "strip",
+        "reason": "Дублирование информации о приговоре Симона Ричардсона.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 41,
+        "section": "Крупные концерты вне GM",
+        "action": "strip",
+        "reason": "Дублирование информации о концерте Against the Current.",
+        "risk": "factual"
       }
     ],
     "warnings": [
-      "judge reduce failed: parse_failed no parseable JSON"
+      "Недостаточное количество элементов в разделе 'Что важно сегодня'.",
+      "Отсутствие элементов в разделе 'Русскоязычные концерты и стендап UK'.",
+      "Отсутствие элементов в разделе 'Еда, открытия и рынки'."
     ],
-    "notes": "Уточнение географии плана необходимо для корректного представления информации.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка о происшествии в Нью-Миллс нарушает географический контракт блока 'Свежие новости'.; Исправлена ошибка в дате открытия линий Metrolink.; Информация о происшествии в Рочд",
+    "notes": "Строка соответствует всем критериям: география, факты и юридическая точность соблюдены.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление фактической ошибки и удаление дублирующей информации о приговоре.; Строка о статуе не соответствует теме раздела 'Общественный транспорт сегодня'.; Строка ",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "partial",
-      "chunk_count": 10,
+      "status": "ok",
+      "chunk_count": 11,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -795,13 +1331,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2757,
-          "duration_seconds": 2.973
+          "estimated_tokens": 2779,
+          "duration_seconds": 1.084
         },
         {
           "chunk_id": "chunk-02",
@@ -819,7 +1355,7 @@
           "warning_count": 0,
           "error": "",
           "estimated_tokens": 2446,
-          "duration_seconds": 0.981
+          "duration_seconds": 1.05
         },
         {
           "chunk_id": "chunk-03",
@@ -832,19 +1368,19 @@
             "Свежие новости"
           ],
           "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6999,
-          "duration_seconds": 1.956
+          "estimated_tokens": 7157,
+          "duration_seconds": 7.047
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            20
+            21
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -854,15 +1390,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6885,
-          "duration_seconds": 2.302
+          "estimated_tokens": 7380,
+          "duration_seconds": 1.823
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            21,
-            21
+            22,
+            22
           ],
           "sections": [
             "Что важно сегодня"
@@ -872,15 +1408,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2712,
-          "duration_seconds": 1.084
+          "estimated_tokens": 2674,
+          "duration_seconds": 0.844
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            22,
-            24
+            23,
+            25
           ],
           "sections": [
             "Футбол"
@@ -890,15 +1426,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3723,
-          "duration_seconds": 2.492
+          "estimated_tokens": 3598,
+          "duration_seconds": 2.306
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            25,
-            32
+            26,
+            31
           ],
           "sections": [
             "Городской радар"
@@ -908,15 +1444,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6309,
-          "duration_seconds": 38.39
+          "estimated_tokens": 5400,
+          "duration_seconds": 30.635
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            33,
+            32,
             33
+          ],
+          "sections": [
+            "Business/tech события для тебя"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3496,
+          "duration_seconds": 3.428
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            34,
+            34
           ],
           "sections": [
             "Дальние анонсы"
@@ -926,58 +1480,58 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2717,
-          "duration_seconds": 0.86
+          "estimated_tokens": 2691,
+          "duration_seconds": 5.549
         },
         {
-          "chunk_id": "chunk-09",
+          "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            34,
-            39
+            35,
+            40
           ],
           "sections": [
             "Билеты / Ticket Radar"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 5833,
+          "duration_seconds": 38.013
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            41,
+            42
+          ],
+          "sections": [
+            "Крупные концерты вне GM"
           ],
           "decision": "repair_required",
           "critical_error_count": 2,
           "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5806,
-          "duration_seconds": 24.26
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            40,
-            43
-          ],
-          "sections": [
-            "Крупные концерты вне GM"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 4320,
-          "duration_seconds": 7.621
+          "estimated_tokens": 3228,
+          "duration_seconds": 8.894
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
-        "critical_error_count": 0,
-        "action_count": 0,
-        "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 10397,
-        "duration_seconds": 27.489
+        "decision": "repair_required",
+        "critical_error_count": 4,
+        "action_count": 4,
+        "warning_count": 3,
+        "error": "",
+        "estimated_tokens": 10534,
+        "duration_seconds": 26.311
       },
       "max_workers": 3,
       "chunk_line_target": 12,
