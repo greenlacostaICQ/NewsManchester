@@ -1,166 +1,30 @@
 {
-  "status": "partial",
+  "status": "failed",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
+  "reason": "pre-send repair executor applied 1 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-11-06",
-  "pipeline_run_id": "20261106T080150+0000",
-  "digest_sha256": "e14abad3c93f26ec122f5588b1a1361615fd3f6f5b6e3bc7630159408ab32970",
-  "duration_seconds": 116.039,
-  "confidence": 0.9,
+  "run_date_london": "2026-11-07",
+  "pipeline_run_id": "20261107T080145+0000",
+  "digest_sha256": "24d73c0b4033ea7a976b8ccfbbe77dbf46194a7a2a6ddf870e4e9e2b25216ef0",
+  "duration_seconds": 96.414,
+  "confidence": 0.0,
   "critical_errors": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Ошибка в возрасте второго обвиняемого.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 10,
-      "section": "Свежие новости",
-      "problem": "Russell Brand's conviction is a sensitive legal matter and requires careful handling.",
-      "risk": "sensitive",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 14,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дата окончания работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 17,
-      "section": "Футбол",
-      "problem": "Неверное указание суммы трансфера и переплаты.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 21,
-      "section": "Выходные в GM",
-      "problem": "Некорректное описание события. 'A Man for All Seasons' не является фестивалем.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 33,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно. Указана дата 8 ноября, но в источнике указано, что событие проходит с 10 мая по 30 августа.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 46,
-      "section": "Городской радар",
-      "problem": "Дата события указана некорректно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 57,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дублирование события Papa Roach.",
-      "risk": "format",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 63,
-      "section": "Крупные концерты вне GM",
-      "problem": "Дата события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 5,
+      "line_index": 4,
       "section": "Свежие новости",
       "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no Russian rendering in the shipped line",
+      "problem": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
       "suggested_action": "repair",
-      "completeness_concept": "acquittal"
+      "completeness_concept": "weapon_violence"
     }
   ],
-  "actions": [
-    {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• Предъявлено обвинение — 34-летний Адриан Браун скончался в больнице после того, как его нашли с ножевыми ранениями в груди на улице Рэби в Moss Side в среду, 8 мая 2026 года. Полиция Большого Манчестера сообщила, что 17-летний подросток был обвинён в убийстве и хранении каннабиса, а 18-летний Таио Ли из Хилд Грина, Stockport, обвиняется в попытке причинения вреда. Оба находятся под стражей и должны предстать перед судом в Манчестере и Salford.",
-      "reason": "Исправление возраста второго обвиняемого на 18 лет.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 10,
-      "section": "Свежие новости",
-      "action": "patch",
-      "replacement_text": "• BBC опубликовала заявление и извинения после осуждения Рассела Бренда за преступления сексуального характера 6 ноября 2026 года.",
-      "reason": "Clarify the nature of the conviction to avoid potential legal issues.",
-      "risk": "sensitive"
-    },
-    {
-      "line_index": 14,
-      "section": "Общественный транспорт сегодня",
-      "action": "patch",
-      "replacement_text": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере были полностью приостановлены для проведения инженерных работ. Пассажиры должны планировать свои поездки заранее и использовать замещающие автобусы.",
-      "reason": "Дата окончания работ уже прошла, необходимо указать, что работы завершены.",
-      "risk": "date"
-    },
-    {
-      "line_index": 17,
-      "section": "Футбол",
-      "action": "patch",
-      "replacement_text": "• Трансферная политика Манчестер Юнайтед подверглась критике, поскольку соперники считают, что клуб переплатил за Андрея Сантоса на £25 млн.",
-      "reason": "Указана неверная сумма переплаты и общая стоимость трансфера.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 21,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 6 ноября в Lowry — A Man for All Seasons. На площадке: театральная постановка, подходит для семьи.",
-      "reason": "Исправление неверного описания события.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 33,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• Burnage RFC car boot sale проходит с 10 мая по 30 августа. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
-      "reason": "Дата события указана неверно, необходимо исправить на правильный период проведения.",
-      "risk": "date"
-    },
-    {
-      "line_index": 46,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• 12 ноября 2026 года в Courts Club в Манчестере вновь пройдет Winter Assembly, предлагающий баварский пивной зал, приватные караоке-кабинки, открытое рождественское кино и праздничную уличную еду.",
-      "reason": "Указана неверная дата события, исправлено на 12 ноября.",
-      "risk": "date"
-    },
-    {
-      "line_index": 57,
-      "section": "Билеты / Ticket Radar",
-      "action": "strip",
-      "reason": "Дублирование события Papa Roach.",
-      "risk": "format",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 63,
-      "section": "Крупные концерты вне GM",
-      "action": "patch",
-      "replacement_text": "• Tove Lo — 7 ноября, O2 Academy Brixton. Билеты и время указаны на официальной странице.",
-      "reason": "Дата события указана неверно. Должно быть 7 ноября.",
-      "risk": "date"
-    }
-  ],
+  "actions": [],
   "warnings": [
-    "judge reduce failed: parse_failed no parseable JSON"
+    "all judge calls failed: 14 failure(s)"
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -169,66 +33,66 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 4,
-      "Что важно сегодня": 1,
+      "Общественный транспорт сегодня": 3,
       "Футбол": 2,
-      "Выходные в GM": 12,
-      "Городской радар": 12,
-      "Еда, открытия и рынки": 3,
+      "Выходные в GM": 11,
+      "Городской радар": 5,
       "IT и бизнес": 3,
-      "Билеты / Ticket Radar": 10,
-      "Крупные концерты вне GM": 2
+      "Дальние анонсы": 1,
+      "Билеты / Ticket Radar": 9,
+      "Крупные концерты вне GM": 2,
+      "Русскоязычные концерты и стендап UK": 2
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 1,
+      "Что важно сегодня": 0,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 12,
-      "Выходные в GM": 12,
-      "Билеты / Ticket Radar": 10,
-      "Русскоязычные концерты и стендап UK": 0,
-      "Еда, открытия и рынки": 3,
+      "Городской радар": 5,
+      "Выходные в GM": 11,
+      "Билеты / Ticket Radar": 9,
+      "Русскоязычные концерты и стендап UK": 2,
+      "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
       "Футбол": 2
     },
-    "ticket_items": 12,
-    "core_items": 41,
+    "ticket_items": 13,
+    "core_items": 29,
     "writer_quality_counts": {
-      "included_candidates": 63,
-      "rendered_candidates": 60,
+      "included_candidates": 51,
+      "rendered_candidates": 49,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
       "dropped_low_quality": 2,
-      "replaced_from_plan_backup": 1,
+      "replaced_from_plan_backup": 0,
       "removed_with_reason": 2
     },
     "source_health_counts": {
-      "ok": 102,
+      "ok": 101,
       "partial": 2,
-      "stale": 10,
-      "empty": 12,
+      "stale": 9,
+      "empty": 13,
       "failed": 4,
-      "zero_yield": 69,
+      "zero_yield": 76,
       "no_contribution_breakdown": {
         "fetch_failed": 4,
-        "all_rejected": 69,
-        "idle_no_items": 22
+        "all_rejected": 76,
+        "idle_no_items": 17
       },
       "zero_contribution_by_stage": {
-        "written": 32,
-        "parsed": 22,
-        "selected": 37,
+        "written": 38,
+        "parsed": 17,
+        "selected": 38,
         "fetched": 4
       },
       "weekend_source_coverage_incidents": 51
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 1 item(s), emergency floor 3",
-      "Русскоязычные концерты и стендап UK: 0 item(s), emergency floor 1",
+      "Что важно сегодня: 0 item(s), emergency floor 3",
+      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "Business/tech события для тебя: 0 item(s), emergency floor 1",
       "source failures: 4"
     ]
@@ -237,22 +101,28 @@
     "errors": [],
     "warnings": [],
     "can_apply_actions": true,
-    "action_count": 9
+    "action_count": 0,
+    "model_unavailable_fallback": {
+      "status": "ran",
+      "mode": "model_unavailable_fallback",
+      "defect_count": 0,
+      "findings": []
+    }
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 60,
-    "matched_lines": 60,
+    "checked_lines": 49,
+    "matched_lines": 49,
     "applicable_lines": 4,
     "unmatched_lines": 4,
     "critical_omission_count": 1,
     "critical_omissions": [
       {
-        "line_index": 5,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/man-pleads-not-guilty-murder-34866538",
-        "concept": "acquittal",
-        "obligation": "charge/verdict/victim",
-        "source_hit": "not guilty"
+        "line_index": 4,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967",
+        "concept": "weapon_violence",
+        "obligation": "who/what",
+        "source_hit": "stabbed"
       }
     ],
     "noncritical_omissions": [],
@@ -264,529 +134,89 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 10,
-    "attempted": 5,
-    "applied": 5,
-    "model_patch_applied": 2,
+    "requested": 1,
+    "attempted": 1,
+    "applied": 1,
+    "model_patch_applied": 0,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 2,
-    "stripped": 1,
-    "unresolved": 1,
-    "blocking_unresolved": 1,
-    "resolved": 9,
-    "resolved_in_place": 7,
+    "reserve_replacement_used": 1,
+    "stripped": 0,
+    "unresolved": 0,
+    "blocking_unresolved": 0,
+    "resolved": 1,
+    "resolved_in_place": 0,
     "resolved_by_replacement": 1,
-    "resolved_by_removal": 1,
-    "fact_lock_rejected": 1,
-    "enrich_attempted": 10,
+    "resolved_by_removal": 0,
+    "fact_lock_rejected": 0,
+    "enrich_attempted": 1,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "requested_action": "patch",
-        "reason": "Исправление возраста второго обвиняемого на 18 лет.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Ошибка в возрасте второго обвиняемого.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cmq8nj1w752do-01effc6379df",
-        "original_url_identity": "bbc.com/news/articles/cmq8nj1w752do",
-        "original_html": "<b>Предъявлено обвинение — 34-летний Адриан Браун скончался в больнице после того, как его нашли с ножевыми ранениями в груди на улице Рэби в Moss Side в среду, 8 мая 2026 года.</b> Полиция Большого Манчестера сообщила, что 17-летний подросток был обвинён в убийстве и хранении каннабиса, а Таио Ли из Хилд Грина, Stockport, обвиняется в попытке причинения вреда. Оба находятся под стражей и должны предстать перед судом в Манчестере и Salford. <a href=\"https://bbc.com/news/articles/cmq8nj1w752do\">BBC Manchester</a>",
-        "model_replacement_rejected": "fact_lock: 8 мая 2026",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m62-traffic-live-drivers-face-34865658-9cbebbd4298b",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 10,
-        "section": "Свежие новости",
-        "requested_action": "patch",
-        "reason": "Clarify the nature of the conviction to avoid potential legal issues.",
-        "risk": "sensitive",
-        "critical_error": true,
-        "critical_problem": "Russell Brand's conviction is a sensitive legal matter and requires careful handling.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "last_24h-08",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bbc-statement-as-russell-brand-34870487-5b3d00a5097d",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/bbc-statement-as-russell-brand-34870487",
-        "original_html": "• BBC опубликовала заявление и извинения после осуждения Рассела Бренда за изнасилование и сексуальное насилие 6 ноября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/bbc-statement-as-russell-brand-34870487\">MEN Latest News</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 14,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "patch",
-        "reason": "Дата окончания работ уже прошла, необходимо указать, что работы завершены.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата окончания работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "transport-04",
-        "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
-        "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-        "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажиры должны планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "requested_action": "patch",
-        "reason": "Указана неверная сумма переплаты и общая стоимость трансфера.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неверное указание суммы трансфера и переплаты.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-jason-wilcox-man-united-santos-34869303-4ed2db9b64da",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/jason-wilcox-man-united-santos-34869303",
-        "original_html": "• Трансферная политика Манчестер Юнайтед подверглась критике, поскольку соперники считают, что клуб переплатил £25 млн за Андрея Сантоса, который обошелся в £50 млн. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/jason-wilcox-man-united-santos-34869303\">MEN Manchester United</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 21,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Исправление неверного описания события.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Некорректное описание события. 'A Man for All Seasons' не является фестивалем.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-12",
-        "candidate_fingerprint": "event-event-a-man-for-all-seasons-2026-11-06-lowry-f33f2f8737fb",
-        "original_url_identity": "thelowry.com/whats-on/a-man-for-all-seasons-mwnx",
-        "original_html": "• 6 ноября в Lowry — A Man for All Seasons. На площадке: фестиваль, подходит для семьи. <a href=\"https://thelowry.com/whats-on/a-man-for-all-seasons-mwnx\">The Lowry</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 33,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события указана неверно, необходимо исправить на правильный период проведения.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно. Указана дата 8 ноября, но в источнике указано, что событие проходит с 10 мая по 30 августа.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-10",
-        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2027-05-10-burnage-rfc-9a3e9cdf54f4",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-        "original_html": "• 8 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 46,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Указана неверная дата события, исправлено на 12 ноября.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана некорректно.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-12",
-        "candidate_fingerprint": "url-aboutmanchester-co-uk-manchesters-coolest-christmas-hangout-is-back-courts-club-welcomes-back-winter-assembly-b92e6d8ed788",
-        "original_url_identity": "aboutmanchester.co.uk/manchesters-coolest-christmas-hangout-is-back-courts-club-welcomes-back-winter-assembly",
-        "original_html": "• Ноября 2026 года в Courts Club в Манчестере вновь пройдет Winter Assembly, предлагающий баварский пивной зал, приватные караоке-кабинки, открытое рождественское кино и праздничную уличную еду. <a href=\"https://aboutmanchester.co.uk/manchesters-coolest-christmas-hangout-is-back-courts-club-welcomes-back-winter-assembly\">About Manchester News</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 57,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "strip",
-        "reason": "Дублирование события Papa Roach.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Дублирование события Papa Roach.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "ticket_radar-05",
-        "candidate_fingerprint": "event-event-papa-roach-rise-of-the-roach-fri-6-nov-2026-multiple-times-2026-11-06-co-op-live-f21299854e45",
-        "original_url_identity": "cooplive.com/events/papa-roach-qyrt",
-        "original_html": "• <b>Papa Roach Rise of the Roach</b> — 6 ноября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/papa-roach-qyrt\">Co-op Live</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 63,
-        "section": "Крупные концерты вне GM",
-        "requested_action": "patch",
-        "reason": "Дата события указана неверно. Должно быть 7 ноября.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "outside_gm_tickets-01",
-        "candidate_fingerprint": "event-event-tove-lo-estrus-tour-2026-11-07-o2-academy-brixton-ae9e52f03287",
-        "original_url_identity": "ticketmaster.co.uk/tove-lo-estrus-tour-london-07-11-2026/event/3E0064AB959719DE",
-        "original_html": "• <b>Tove Lo</b> — 7 ноября, O2 Academy Brixton. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/tove-lo-estrus-tour-london-07-11-2026/event/3E0064AB959719DE\">Ticketmaster</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 5,
+        "line_index": 4,
         "section": "Свежие новости",
         "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no Russian rendering in the shipped line",
+        "reason": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
         "risk": "translation",
         "critical_error": true,
         "critical_problem": "",
-        "completeness_concept": "acquittal",
-        "outcome": "unresolved",
+        "completeness_concept": "weapon_violence",
+        "outcome": "resolved_by_replacement",
         "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-pleads-not-guilty-murder-34866538-0cee80326ce4",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-pleads-not-guilty-murder-34866538",
-        "original_html": "• 23-летний Гленн Шитама не признал себя виновным в убийстве 24-летнего Жерко Расула Османа в парке Levenshulme. Судебное заседание прошло 4 ноября 2026 года в Королевском суде Миншулл-стрит в Манчестере. Осман получил серьезные ножевые ранения 15 августа, и, несмотря на усилия экстренных служб, скончался на месте происшествия. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-pleads-not-guilty-murder-34866538\">MEN Latest News</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-trial-live-nine-men-34843691-a3497ae4ad1c",
-        "post_check_passed": false
+        "plan_slot_id": "last_24h-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-murder-suspect-26-named-34876967-2951532a9aa0",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967",
+        "original_html": "• 26-летнему Эмилю Ли предъявлено обвинение в убийстве 34-летнего Адриана Брауна, зарезанного в Moss Side в мае; он должен предстать перед судом в понедельник, 9 ноября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967\">MEN</a>",
+        "reserve_rejections": [
+          {
+            "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-burst-water-hydrant-sends-gallons-34872477-e332edf2fb01",
+            "errors": [
+              "replacement drops weapon_violence"
+            ]
+          }
+        ],
+        "replacement_fingerprint": "url-bbc-com-news-articles-c6gm0kde8029o-764225452be9",
+        "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::исправление возраста второго обвиняемого на 18 лет.",
+        "group_key": "свежие новости::critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no russian rendering in the shipped line",
         "actions": [
           {
-            "line_index": 1,
-            "section": "Главная история дня",
-            "requested_action": "patch",
-            "reason": "Исправление возраста второго обвиняемого на 18 лет.",
-            "risk": "factual",
+            "line_index": 4,
+            "section": "Свежие новости",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
             "critical_error": true,
-            "critical_problem": "Ошибка в возрасте второго обвиняемого.",
-            "completeness_concept": "",
+            "critical_problem": "",
+            "completeness_concept": "weapon_violence",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cmq8nj1w752do-01effc6379df",
-            "original_url_identity": "bbc.com/news/articles/cmq8nj1w752do",
-            "original_html": "<b>Предъявлено обвинение — 34-летний Адриан Браун скончался в больнице после того, как его нашли с ножевыми ранениями в груди на улице Рэби в Moss Side в среду, 8 мая 2026 года.</b> Полиция Большого Манчестера сообщила, что 17-летний подросток был обвинён в убийстве и хранении каннабиса, а Таио Ли из Хилд Грина, Stockport, обвиняется в попытке причинения вреда. Оба находятся под стражей и должны предстать перед судом в Манчестере и Salford. <a href=\"https://bbc.com/news/articles/cmq8nj1w752do\">BBC Manchester</a>",
-            "model_replacement_rejected": "fact_lock: 8 мая 2026",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m62-traffic-live-drivers-face-34865658-9cbebbd4298b",
+            "plan_slot_id": "last_24h-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-murder-suspect-26-named-34876967-2951532a9aa0",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967",
+            "original_html": "• 26-летнему Эмилю Ли предъявлено обвинение в убийстве 34-летнего Адриана Брауна, зарезанного в Moss Side в мае; он должен предстать перед судом в понедельник, 9 ноября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967\">MEN</a>",
+            "reserve_rejections": [
+              {
+                "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-burst-water-hydrant-sends-gallons-34872477-e332edf2fb01",
+                "errors": [
+                  "replacement drops weapon_violence"
+                ]
+              }
+            ],
+            "replacement_fingerprint": "url-bbc-com-news-articles-c6gm0kde8029o-764225452be9",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 1,
+            "line_index": 4,
             "passed": true,
             "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::clarify the nature of the conviction to avoid potential legal issues.",
-        "actions": [
-          {
-            "line_index": 10,
-            "section": "Свежие новости",
-            "requested_action": "patch",
-            "reason": "Clarify the nature of the conviction to avoid potential legal issues.",
-            "risk": "sensitive",
-            "critical_error": true,
-            "critical_problem": "Russell Brand's conviction is a sensitive legal matter and requires careful handling.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "last_24h-08",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bbc-statement-as-russell-brand-34870487-5b3d00a5097d",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/bbc-statement-as-russell-brand-34870487",
-            "original_html": "• BBC опубликовала заявление и извинения после осуждения Рассела Бренда за изнасилование и сексуальное насилие 6 ноября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/bbc-statement-as-russell-brand-34870487\">MEN Latest News</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 10,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::дата окончания работ уже прошла, необходимо указать, что работы завершены.",
-        "actions": [
-          {
-            "line_index": 14,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "patch",
-            "reason": "Дата окончания работ уже прошла, необходимо указать, что работы завершены.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата окончания работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "transport-04",
-            "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
-            "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-            "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажиры должны планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 14,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::указана неверная сумма переплаты и общая стоимость трансфера.",
-        "actions": [
-          {
-            "line_index": 17,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Указана неверная сумма переплаты и общая стоимость трансфера.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неверное указание суммы трансфера и переплаты.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-jason-wilcox-man-united-santos-34869303-4ed2db9b64da",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/jason-wilcox-man-united-santos-34869303",
-            "original_html": "• Трансферная политика Манчестер Юнайтед подверглась критике, поскольку соперники считают, что клуб переплатил £25 млн за Андрея Сантоса, который обошелся в £50 млн. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/jason-wilcox-man-united-santos-34869303\">MEN Manchester United</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 17,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::исправление неверного описания события.",
-        "actions": [
-          {
-            "line_index": 21,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Исправление неверного описания события.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Некорректное описание события. 'A Man for All Seasons' не является фестивалем.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-12",
-            "candidate_fingerprint": "event-event-a-man-for-all-seasons-2026-11-06-lowry-f33f2f8737fb",
-            "original_url_identity": "thelowry.com/whats-on/a-man-for-all-seasons-mwnx",
-            "original_html": "• 6 ноября в Lowry — A Man for All Seasons. На площадке: фестиваль, подходит для семьи. <a href=\"https://thelowry.com/whats-on/a-man-for-all-seasons-mwnx\">The Lowry</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 21,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дата события указана неверно, необходимо исправить на правильный период проведения.",
-        "actions": [
-          {
-            "line_index": 33,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события указана неверно, необходимо исправить на правильный период проведения.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно. Указана дата 8 ноября, но в источнике указано, что событие проходит с 10 мая по 30 августа.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-10",
-            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2027-05-10-burnage-rfc-9a3e9cdf54f4",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-            "original_html": "• 8 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 33,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::указана неверная дата события, исправлено на 12 ноября.",
-        "actions": [
-          {
-            "line_index": 46,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Указана неверная дата события, исправлено на 12 ноября.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана некорректно.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-12",
-            "candidate_fingerprint": "url-aboutmanchester-co-uk-manchesters-coolest-christmas-hangout-is-back-courts-club-welcomes-back-winter-assembly-b92e6d8ed788",
-            "original_url_identity": "aboutmanchester.co.uk/manchesters-coolest-christmas-hangout-is-back-courts-club-welcomes-back-winter-assembly",
-            "original_html": "• Ноября 2026 года в Courts Club в Манчестере вновь пройдет Winter Assembly, предлагающий баварский пивной зал, приватные караоке-кабинки, открытое рождественское кино и праздничную уличную еду. <a href=\"https://aboutmanchester.co.uk/manchesters-coolest-christmas-hangout-is-back-courts-club-welcomes-back-winter-assembly\">About Manchester News</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 46,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::дублирование события papa roach",
-        "actions": [
-          {
-            "line_index": 57,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "strip",
-            "reason": "Дублирование события Papa Roach.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Дублирование события Papa Roach.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "ticket_radar-05",
-            "candidate_fingerprint": "event-event-papa-roach-rise-of-the-roach-fri-6-nov-2026-multiple-times-2026-11-06-co-op-live-f21299854e45",
-            "original_url_identity": "cooplive.com/events/papa-roach-qyrt",
-            "original_html": "• <b>Papa Roach Rise of the Roach</b> — 6 ноября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/papa-roach-qyrt\">Co-op Live</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 57,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:papa roach rise of the roach|2026-11-06|co op live",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "крупные концерты вне gm::дата события указана неверно. должно быть 7 ноября.",
-        "actions": [
-          {
-            "line_index": 63,
-            "section": "Крупные концерты вне GM",
-            "requested_action": "patch",
-            "reason": "Дата события указана неверно. Должно быть 7 ноября.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "outside_gm_tickets-01",
-            "candidate_fingerprint": "event-event-tove-lo-estrus-tour-2026-11-07-o2-academy-brixton-ae9e52f03287",
-            "original_url_identity": "ticketmaster.co.uk/tove-lo-estrus-tour-london-07-11-2026/event/3E0064AB959719DE",
-            "original_html": "• <b>Tove Lo</b> — 7 ноября, O2 Academy Brixton. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/tove-lo-estrus-tour-london-07-11-2026/event/3E0064AB959719DE\">Ticketmaster</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 63,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no russian rendering in the shipped line",
-        "actions": [
-          {
-            "line_index": 5,
-            "section": "Свежие новости",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'not guilty' (acquittal/charge/verdict/victim) has no Russian rendering in the shipped line",
-            "risk": "translation",
-            "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "acquittal",
-            "outcome": "unresolved",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-pleads-not-guilty-murder-34866538-0cee80326ce4",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-pleads-not-guilty-murder-34866538",
-            "original_html": "• 23-летний Гленн Шитама не признал себя виновным в убийстве 24-летнего Жерко Расула Османа в парке Levenshulme. Судебное заседание прошло 4 ноября 2026 года в Королевском суде Миншулл-стрит в Манчестере. Осман получил серьезные ножевые ранения 15 августа, и, несмотря на усилия экстренных служб, скончался на месте происшествия. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-pleads-not-guilty-murder-34866538\">MEN Latest News</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-trial-live-nine-men-34843691-a3497ae4ad1c",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 5,
-            "passed": false,
-            "detail": "shared prose policy still fails"
           }
         ],
         "known_factual_error": true
@@ -797,34 +227,15 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 2,
-      "reports": [
-        {
-          "fingerprint": "event-event-papa-roach-rise-of-the-roach-fri-6-nov-2026-multiple-times-2026-11-06-co-op-live-f21299854e45",
-          "title": "Papa Roach Rise of the Roach Fri 6 Nov 2026 Multiple times",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://cooplive.com/events/papa-roach-qyrt",
-          "candidate_evidence_chars": 0
-        },
-        {
-          "fingerprint": "event-event-tove-lo-estrus-tour-2026-11-07-o2-academy-brixton-ae9e52f03287",
-          "title": "Tove Lo: ESTRUS TOUR — event 2026-11-07 — public sale 2026-05-20 10:00",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/tove-lo-estrus-tour-london-07-11-2026/event/3E0064AB959719DE",
-          "candidate_evidence_chars": 357
-        }
-      ]
+      "skipped": 0
     },
-    "enrich_improved": 9,
-    "deterministic_rewrite_rejected": 2,
-    "false_positive_existing_fact": 5,
-    "no_eligible_backup": 1,
+    "enrich_improved": 1,
+    "deterministic_rewrite_rejected": 1,
+    "reserve_post_check_rejected": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 59,
-      "matched_lines": 59,
+      "checked_lines": 49,
+      "matched_lines": 49,
       "applicable_lines": 3,
       "unmatched_lines": 4,
       "critical_omission_count": 0,
@@ -837,176 +248,28 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 63,
-      "resolved_in_place": 62,
-      "unresolved": 1,
-      "findings": [
-        {
-          "line_index": 5,
-          "section": "Свежие новости",
-          "outcome": "unresolved",
-          "code": "language_policy_defect",
-          "severity": "warning"
-        }
-      ]
+      "checked_lines": 53,
+      "resolved_in_place": 53,
+      "unresolved": 0,
+      "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved"
   },
-  "notes": "Исправлен возраст второго обвиняемого на 18 лет для соответствия фактам.; Прогноз погоды соответствует источнику и географическому охвату.; Осуждение Рассела Бренда требует корректного описания для избежания юридических проблем.; Исправлена дата окончания работ на трамвайных линиях, чтобы отразить, что они уже завершен",
+  "notes": "pre-send judge failed before producing usable verdicts",
   "raw": {
-    "decision": "repair_required",
-    "confidence": 0.9,
-    "critical_errors": [
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Ошибка в возрасте второго обвиняемого.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 10,
-        "section": "Свежие новости",
-        "problem": "Russell Brand's conviction is a sensitive legal matter and requires careful handling.",
-        "risk": "sensitive",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 14,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дата окончания работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "problem": "Неверное указание суммы трансфера и переплаты.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 21,
-        "section": "Выходные в GM",
-        "problem": "Некорректное описание события. 'A Man for All Seasons' не является фестивалем.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 33,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно. Указана дата 8 ноября, но в источнике указано, что событие проходит с 10 мая по 30 августа.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 46,
-        "section": "Городской радар",
-        "problem": "Дата события указана некорректно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 57,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дублирование события Papa Roach.",
-        "risk": "format",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 63,
-        "section": "Крупные концерты вне GM",
-        "problem": "Дата события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      }
-    ],
-    "actions": [
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• Предъявлено обвинение — 34-летний Адриан Браун скончался в больнице после того, как его нашли с ножевыми ранениями в груди на улице Рэби в Moss Side в среду, 8 мая 2026 года. Полиция Большого Манчестера сообщила, что 17-летний подросток был обвинён в убийстве и хранении каннабиса, а 18-летний Таио Ли из Хилд Грина, Stockport, обвиняется в попытке причинения вреда. Оба находятся под стражей и должны предстать перед судом в Манчестере и Salford.",
-        "reason": "Исправление возраста второго обвиняемого на 18 лет.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 10,
-        "section": "Свежие новости",
-        "action": "patch",
-        "replacement_text": "• BBC опубликовала заявление и извинения после осуждения Рассела Бренда за преступления сексуального характера 6 ноября 2026 года.",
-        "reason": "Clarify the nature of the conviction to avoid potential legal issues.",
-        "risk": "sensitive"
-      },
-      {
-        "line_index": 14,
-        "section": "Общественный транспорт сегодня",
-        "action": "patch",
-        "replacement_text": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере были полностью приостановлены для проведения инженерных работ. Пассажиры должны планировать свои поездки заранее и использовать замещающие автобусы.",
-        "reason": "Дата окончания работ уже прошла, необходимо указать, что работы завершены.",
-        "risk": "date"
-      },
-      {
-        "line_index": 17,
-        "section": "Футбол",
-        "action": "patch",
-        "replacement_text": "• Трансферная политика Манчестер Юнайтед подверглась критике, поскольку соперники считают, что клуб переплатил за Андрея Сантоса на £25 млн.",
-        "reason": "Указана неверная сумма переплаты и общая стоимость трансфера.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 21,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 6 ноября в Lowry — A Man for All Seasons. На площадке: театральная постановка, подходит для семьи.",
-        "reason": "Исправление неверного описания события.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 33,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• Burnage RFC car boot sale проходит с 10 мая по 30 августа. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
-        "reason": "Дата события указана неверно, необходимо исправить на правильный период проведения.",
-        "risk": "date"
-      },
-      {
-        "line_index": 46,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• 12 ноября 2026 года в Courts Club в Манчестере вновь пройдет Winter Assembly, предлагающий баварский пивной зал, приватные караоке-кабинки, открытое рождественское кино и праздничную уличную еду.",
-        "reason": "Указана неверная дата события, исправлено на 12 ноября.",
-        "risk": "date"
-      },
-      {
-        "line_index": 57,
-        "section": "Билеты / Ticket Radar",
-        "action": "strip",
-        "reason": "Дублирование события Papa Roach.",
-        "risk": "format"
-      },
-      {
-        "line_index": 63,
-        "section": "Крупные концерты вне GM",
-        "action": "patch",
-        "replacement_text": "• Tove Lo — 7 ноября, O2 Academy Brixton. Билеты и время указаны на официальной странице.",
-        "reason": "Дата события указана неверно. Должно быть 7 ноября.",
-        "risk": "date"
-      }
-    ],
+    "decision": "block",
+    "confidence": 0.0,
+    "critical_errors": [],
+    "actions": [],
     "warnings": [
-      "judge reduce failed: parse_failed no parseable JSON"
+      "all judge calls failed: 14 failure(s)"
     ],
-    "notes": "Исправлен возраст второго обвиняемого на 18 лет для соответствия фактам.; Прогноз погоды соответствует источнику и географическому охвату.; Осуждение Рассела Бренда требует корректного описания для избежания юридических проблем.; Исправлена дата окончания работ на трамвайных линиях, чтобы отразить, что они уже завершен",
+    "notes": "pre-send judge failed before producing usable verdicts",
     "map_reduce": {
-      "mode": "map_reduce",
-      "status": "partial",
-      "chunk_count": 13,
-      "failed_chunk_count": 0,
       "chunks": [
         {
           "chunk_id": "chunk-01",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
             1,
             1
@@ -1014,17 +277,17 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2680,
-          "duration_seconds": 3.89
+          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+          "estimated_tokens": 2604,
+          "duration_seconds": 0.517
         },
         {
           "chunk_id": "chunk-02",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
             2,
             2
@@ -1032,17 +295,17 @@
           "sections": [
             "Погода"
           ],
-          "decision": "pass",
+          "decision": "",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2472,
-          "duration_seconds": 2.283
+          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+          "estimated_tokens": 2453,
+          "duration_seconds": 0.564
         },
         {
           "chunk_id": "chunk-03",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
             3,
             11
@@ -1050,207 +313,207 @@
           "sections": [
             "Свежие новости"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 7186,
-          "duration_seconds": 3.505
+          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+          "estimated_tokens": 6957,
+          "duration_seconds": 0.813
         },
         {
           "chunk_id": "chunk-04",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
             12,
-            15
+            14
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 4264,
-          "duration_seconds": 2.586
-        },
-        {
-          "chunk_id": "chunk-05",
-          "status": "ok",
-          "line_range": [
-            16,
-            16
-          ],
-          "sections": [
-            "Что важно сегодня"
-          ],
-          "decision": "pass",
+          "decision": "",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2708,
-          "duration_seconds": 1.365
+          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+          "estimated_tokens": 3694,
+          "duration_seconds": 0.729
         },
         {
-          "chunk_id": "chunk-06",
-          "status": "ok",
+          "chunk_id": "chunk-05",
+          "status": "failed",
           "line_range": [
-            17,
-            18
+            15,
+            16
           ],
           "sections": [
             "Футбол"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
+          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
           "estimated_tokens": 3153,
-          "duration_seconds": 2.588
+          "duration_seconds": 0.632
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "failed",
+          "line_range": [
+            17,
+            28
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+          "estimated_tokens": 7675,
+          "duration_seconds": 0.468
         },
         {
           "chunk_id": "chunk-07",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
-            19,
-            30
+            29,
+            31
           ],
           "sections": [
             "Выходные в GM"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 7506,
-          "duration_seconds": 31.08
+          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+          "estimated_tokens": 4029,
+          "duration_seconds": 21.46
         },
         {
           "chunk_id": "chunk-08",
-          "status": "ok",
+          "status": "failed",
           "line_range": [
-            31,
-            34
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 4635,
-          "duration_seconds": 2.489
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            35,
-            46
+            32,
+            36
           ],
           "sections": [
             "Городской радар"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 8413,
-          "duration_seconds": 74.175
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            47,
-            49
-          ],
-          "sections": [
-            "Еда, открытия и рынки"
-          ],
-          "decision": "pass",
+          "decision": "",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 4033,
-          "duration_seconds": 2.952
+          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+          "estimated_tokens": 4868,
+          "duration_seconds": 46.802
         },
         {
-          "chunk_id": "chunk-11",
-          "status": "ok",
+          "chunk_id": "chunk-09",
+          "status": "failed",
           "line_range": [
-            50,
-            52
+            37,
+            39
           ],
           "sections": [
             "IT и бизнес"
           ],
-          "decision": "pass",
+          "decision": "",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3703,
-          "duration_seconds": 8.424
+          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+          "estimated_tokens": 3726,
+          "duration_seconds": 6.545
         },
         {
-          "chunk_id": "chunk-12",
-          "status": "ok",
+          "chunk_id": "chunk-10",
+          "status": "failed",
           "line_range": [
-            53,
-            62
+            40,
+            40
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+          "estimated_tokens": 2656,
+          "duration_seconds": 5.891
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "failed",
+          "line_range": [
+            41,
+            49
           ],
           "sections": [
             "Билеты / Ticket Radar"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 7951,
-          "duration_seconds": 42.075
+          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+          "estimated_tokens": 7436,
+          "duration_seconds": 50.884
         },
         {
-          "chunk_id": "chunk-13",
-          "status": "ok",
+          "chunk_id": "chunk-12",
+          "status": "failed",
           "line_range": [
-            63,
-            64
+            50,
+            51
           ],
           "sections": [
             "Крупные концерты вне GM"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3275,
-          "duration_seconds": 8.153
+          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+          "estimated_tokens": 3248,
+          "duration_seconds": 7.217
+        },
+        {
+          "chunk_id": "chunk-13",
+          "status": "failed",
+          "line_range": [
+            52,
+            53
+          ],
+          "sections": [
+            "Русскоязычные концерты и стендап UK"
+          ],
+          "decision": "",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+          "estimated_tokens": 3334,
+          "duration_seconds": 7.339
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "failed",
         "line_range": [],
         "sections": [],
         "decision": "",
         "critical_error_count": 0,
         "action_count": 0,
         "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 11671,
-        "duration_seconds": 29.865
+        "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
+        "estimated_tokens": 11469,
+        "duration_seconds": 25.478
       },
       "max_workers": 3,
       "chunk_line_target": 12,
