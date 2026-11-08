@@ -1,30 +1,223 @@
 {
-  "status": "failed",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 1 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-11-07",
-  "pipeline_run_id": "20261107T080145+0000",
-  "digest_sha256": "24d73c0b4033ea7a976b8ccfbbe77dbf46194a7a2a6ddf870e4e9e2b25216ef0",
-  "duration_seconds": 96.414,
-  "confidence": 0.0,
+  "run_date_london": "2026-11-08",
+  "pipeline_run_id": "20261108T080147+0000",
+  "digest_sha256": "af81be9876d1c45546114a29f6ae8effaf74a708a7f82e9b685ab7d493ebafbc",
+  "duration_seconds": 97.657,
+  "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 4,
+      "line_index": 7,
       "section": "Свежие новости",
+      "problem": "Несоответствие географии: Прествич указан, но событие произошло в Миддлтоне.",
+      "risk": "geo",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 15,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Дата события уже прошла, информация не актуальна.",
+      "risk": "date",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 18,
+      "section": "Футбол",
+      "problem": "Неправильное указание травмированных игроков.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 33,
+      "section": "Городской радар",
+      "problem": "Текст утверждает, что женщина узнала о злоупотреблениях только после ареста мужа, но это может быть неправильно интерпретировано как факт, а не как заявление суда.",
+      "risk": "sensitive",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 35,
+      "section": "Городской радар",
+      "problem": "Дублирование информации о предъявлении обвинения Эмейлу Ли.",
+      "risk": "format",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 39,
+      "section": "IT и бизнес",
+      "problem": "Дата проведения опроса не соответствует дате публикации исследования.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 40,
+      "section": "Дальние анонсы",
+      "problem": "Неправильное имя артиста",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 50,
+      "section": "Крупные концерты вне GM",
+      "problem": "Дата концерта указана как 8 ноября, но текст утверждает, что он проходит сегодня, что неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 51,
+      "section": "Русскоязычные концерты и стендап UK",
+      "problem": "Событие не соответствует русскоязычному контенту.",
+      "risk": "factual",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 34,
+      "section": "Городской радар",
+      "problem": "Дублирование информации об обвинении в убийстве.",
+      "risk": "factual",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 35,
+      "section": "Городской радар",
+      "problem": "Дублирование информации об обвинении в убийстве.",
+      "risk": "factual",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 5,
+      "section": "Свежие новости",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'dead' (death/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "death"
+    },
+    {
+      "line_index": 10,
+      "section": "Свежие новости",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "death"
+    },
+    {
+      "line_index": 34,
+      "section": "Городской радар",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'stabbing' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "weapon_violence"
+    },
+    {
+      "line_index": 35,
+      "section": "Городской радар",
       "risk": "translation",
       "problem": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
       "suggested_action": "repair",
       "completeness_concept": "weapon_violence"
     }
   ],
-  "actions": [],
+  "actions": [
+    {
+      "line_index": 7,
+      "section": "Свежие новости",
+      "action": "patch",
+      "replacement_text": "• Пожарные боролись с огнем в квартире на Baguley Crescent в Миддлтоне, где пострадал мужчина.",
+      "reason": "Исправление географической ошибки: событие произошло в Миддлтоне, а не в Прествиче.",
+      "risk": "geo"
+    },
+    {
+      "line_index": 15,
+      "section": "Общественный транспорт сегодня",
+      "action": "strip",
+      "reason": "Информация о приостановке трамвайных линий с 19 октября по 1 ноября 2026 года уже не актуальна.",
+      "risk": "date",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 18,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• После поражения от Ноттингем Форест Манчестер Сити столкнулся с новыми травмами, включая Гвардиола и Семеньо. Команда должна восстановиться во время международного перерыва.",
+      "reason": "Гуэхи не является игроком Манчестер Сити.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 33,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Суд в Манчестере услышал, что женщина могла быть подсыпана наркотиками и изнасилована своим мужем на протяжении 20 лет; она узнала о возможных злоупотреблениях после его ареста.",
+      "reason": "Уточнение формулировки, чтобы отразить, что это заявление суда, а не установленный факт.",
+      "risk": "sensitive"
+    },
+    {
+      "line_index": 35,
+      "section": "Городской радар",
+      "action": "strip",
+      "reason": "Дублирование информации о предъявлении обвинения Эмейлу Ли.",
+      "risk": "format",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 39,
+      "section": "IT и бизнес",
+      "action": "patch",
+      "replacement_text": "• Исследование, опубликованное 4 ноября 2026 года, показало, что преподаватели и студенты по-разному оценивают использование AI в учебе. Опрос проводился с апреля по июнь 2026 года.",
+      "reason": "Дата проведения опроса должна соответствовать дате публикации исследования.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 40,
+      "section": "Дальние анонсы",
+      "action": "patch",
+      "replacement_text": "• Шоу You me & Comedy с Седриком Развлекательным (Cedric the Entertainer), Тиффани Хаддиш и другими пройдет 8 декабря 2026 года в 18:00 в AO Arena, Манчестер.",
+      "reason": "Исправление имени артиста на правильное.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 50,
+      "section": "Крупные концерты вне GM",
+      "action": "patch",
+      "replacement_text": "• Papa Roach — тур: 8 ноября, The O2; 9 ноября, Utilita Arena Cardiff. Концерт в жанре Rock проходит 8 ноября.",
+      "reason": "Дата концерта должна соответствовать фактической дате события.",
+      "risk": "date"
+    },
+    {
+      "line_index": 51,
+      "section": "Русскоязычные концерты и стендап UK",
+      "action": "strip",
+      "reason": "Мурат Далкылыч не является русскоязычным исполнителем, что не соответствует тематике раздела.",
+      "risk": "factual",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 34,
+      "section": "Городской радар",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации об обвинении в убийстве.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 35,
+      "section": "Городской радар",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации об обвинении в убийстве.",
+      "risk": "factual"
+    }
+  ],
   "warnings": [
-    "all judge calls failed: 14 failure(s)"
+    "Блок 'Выходные в GM' содержит только 6 событий, что является минимальным количеством по контракту. Рекомендуется добавить больше событий для улучшения полноты блока.",
+    "Секция 'Билеты / Ticket Radar' содержит много событий на одну и ту же дату (8 ноября), что может создать впечатление перегруженности. Возможно, стоит разнообразить даты или добавить больше информации о каждом событии.",
+    "Недостаток в секции 'Что важно сегодня': всего 2 элемента при минимуме 3.",
+    "Отсутствие секции 'Еда, открытия и рынки'."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -32,93 +225,111 @@
     "input_section_counts_before_judge": {
       "Главная история дня": 1,
       "Погода": 1,
-      "Свежие новости": 9,
-      "Общественный транспорт сегодня": 3,
-      "Футбол": 2,
-      "Выходные в GM": 11,
-      "Городской радар": 5,
-      "IT и бизнес": 3,
-      "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 9,
-      "Крупные концерты вне GM": 2,
+      "Свежие новости": 8,
+      "Общественный транспорт сегодня": 5,
+      "Что важно сегодня": 2,
+      "Футбол": 3,
+      "Выходные в GM": 9,
+      "Городской радар": 6,
+      "IT и бизнес": 1,
+      "Дальние анонсы": 2,
+      "Билеты / Ticket Radar": 8,
+      "Крупные концерты вне GM": 1,
       "Русскоязычные концерты и стендап UK": 2
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
-      "Свежие новости": 9,
+      "Что важно сегодня": 2,
+      "Свежие новости": 8,
       "Главная история дня": 1,
-      "Городской радар": 5,
-      "Выходные в GM": 11,
-      "Билеты / Ticket Radar": 9,
+      "Городской радар": 6,
+      "Выходные в GM": 9,
+      "Билеты / Ticket Radar": 8,
       "Русскоязычные концерты и стендап UK": 2,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
-      "Футбол": 2
+      "Футбол": 3
     },
-    "ticket_items": 13,
-    "core_items": 29,
+    "ticket_items": 11,
+    "core_items": 30,
     "writer_quality_counts": {
-      "included_candidates": 51,
+      "included_candidates": 52,
       "rendered_candidates": 49,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 2,
+      "dropped_low_quality": 3,
       "replaced_from_plan_backup": 0,
-      "removed_with_reason": 2
+      "removed_with_reason": 3
     },
     "source_health_counts": {
-      "ok": 101,
+      "ok": 99,
       "partial": 2,
-      "stale": 9,
+      "stale": 12,
       "empty": 13,
-      "failed": 4,
-      "zero_yield": 76,
+      "failed": 5,
+      "zero_yield": 68,
       "no_contribution_breakdown": {
-        "fetch_failed": 4,
-        "all_rejected": 76,
-        "idle_no_items": 17
+        "fetch_failed": 5,
+        "all_rejected": 68,
+        "idle_no_items": 31
       },
       "zero_contribution_by_stage": {
-        "written": 38,
-        "parsed": 17,
-        "selected": 38,
-        "fetched": 4
+        "written": 31,
+        "parsed": 31,
+        "selected": 37,
+        "fetched": 5
       },
-      "weekend_source_coverage_incidents": 51
+      "weekend_source_coverage_incidents": 53
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
+      "Что важно сегодня: 2 item(s), emergency floor 3",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "Business/tech события для тебя: 0 item(s), emergency floor 1",
-      "source failures: 4"
+      "source failures: 5"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [],
+    "warnings": [
+      "multiple actions target line 35"
+    ],
     "can_apply_actions": true,
-    "action_count": 0,
-    "model_unavailable_fallback": {
-      "status": "ran",
-      "mode": "model_unavailable_fallback",
-      "defect_count": 0,
-      "findings": []
-    }
+    "action_count": 11
   },
   "translation_completeness": {
     "version": "v1",
     "checked_lines": 49,
     "matched_lines": 49,
-    "applicable_lines": 4,
-    "unmatched_lines": 4,
-    "critical_omission_count": 1,
+    "applicable_lines": 6,
+    "unmatched_lines": 3,
+    "critical_omission_count": 4,
     "critical_omissions": [
       {
-        "line_index": 4,
+        "line_index": 5,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/man-who-went-missing-walking-34878053",
+        "concept": "death",
+        "obligation": "who/what",
+        "source_hit": "dead"
+      },
+      {
+        "line_index": 10,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/major-update-after-teacher-fighting-34878472",
+        "concept": "death",
+        "obligation": "who/what",
+        "source_hit": "death"
+      },
+      {
+        "line_index": 34,
+        "source_url_key": "bbc.com/news/articles/c674pp37xv3vo",
+        "concept": "weapon_violence",
+        "obligation": "who/what",
+        "source_hit": "stabbing"
+      },
+      {
+        "line_index": 35,
         "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967",
         "concept": "weapon_violence",
         "obligation": "who/what",
@@ -127,117 +338,738 @@
     ],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 1,
+    "pulled_for_rework": 4,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 1,
-    "attempted": 1,
-    "applied": 1,
-    "model_patch_applied": 0,
+    "requested": 13,
+    "attempted": 8,
+    "applied": 8,
+    "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 1,
-    "stripped": 0,
-    "unresolved": 0,
-    "blocking_unresolved": 0,
-    "resolved": 1,
-    "resolved_in_place": 0,
-    "resolved_by_replacement": 1,
-    "resolved_by_removal": 0,
+    "stripped": 6,
+    "unresolved": 1,
+    "blocking_unresolved": 1,
+    "resolved": 11,
+    "resolved_in_place": 6,
+    "resolved_by_replacement": 0,
+    "resolved_by_removal": 5,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 1,
+    "enrich_attempted": 13,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 4,
+        "line_index": 7,
+        "section": "Свежие новости",
+        "requested_action": "patch",
+        "reason": "Исправление географической ошибки: событие произошло в Миддлтоне, а не в Прествиче.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Несоответствие географии: Прествич указан, но событие произошло в Миддлтоне.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "last_24h-06",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-air-ambulance-called-firefighters-tackle-34879343-032ab160a749",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/air-ambulance-called-firefighters-tackle-34879343",
+        "original_html": "• Пожарные боролись с огнем в квартире на Baguley Crescent в Прествиче, где пострадал мужчина. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/air-ambulance-called-firefighters-tackle-34879343\">MEN</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "strip",
+        "reason": "Информация о приостановке трамвайных линий с 19 октября по 1 ноября 2026 года уже не актуальна.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события уже прошла, информация не актуальна.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "transport-05",
+        "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
+        "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
+        "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажирам рекомендуется планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 18,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Гуэхи не является игроком Манчестер Сити.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неправильное указание травмированных игроков.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-guehi-gvardiol-semenyo-man-city-34879533-188f944b0527",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/guehi-gvardiol-semenyo-man-city-34879533",
+        "original_html": "• После поражения от Ноттингем Форест Манчестер Сити столкнулся с новыми травмами, включая Гуэхи, Гвардиола и Семеньо. Команда должна восстановиться во время международного перерыва. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/guehi-gvardiol-semenyo-man-city-34879533\">MEN Manchester City</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 33,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Уточнение формулировки, чтобы отразить, что это заявление суда, а не установленный факт.",
+        "risk": "sensitive",
+        "critical_error": true,
+        "critical_problem": "Текст утверждает, что женщина узнала о злоупотреблениях только после ареста мужа, но это может быть неправильно интерпретировано как факт, а не как заявление суда.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "city_watch-01",
+        "candidate_fingerprint": "url-bbc-com-news-articles-ckm233eq9eelo-3b5d74224787",
+        "original_url_identity": "bbc.com/news/articles/ckm233eq9eelo",
+        "original_html": "• Суд в Манчестере услышал, что женщина была подсыпана наркотиками и изнасилована своим мужем на протяжении 20 лет; она узнала о злоупотреблениях только после его ареста. <a href=\"https://bbc.com/news/articles/ckm233eq9eelo\">BBC Manchester</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 35,
+        "section": "Городской радар",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о предъявлении обвинения Эмейлу Ли.",
+        "risk": "format",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "city_watch-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-murder-suspect-26-named-34876967-2951532a9aa0",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967",
+        "original_html": "• Предъявлено обвинение — 26-летний Эмейл Ли был обвинен в убийстве 34-летнего Адриана Брауна, который был смертельно ранен в Моссайде в мае. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967\">MEN</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "duplicate_after_plan",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 39,
+        "section": "IT и бизнес",
+        "requested_action": "patch",
+        "reason": "Дата проведения опроса должна соответствовать дате публикации исследования.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дата проведения опроса не соответствует дате публикации исследования.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "tech_business-01",
+        "candidate_fingerprint": "url-prolificnorth-co-uk-news-how-much-do-students-use-ai-for-their-studies-that-depends-who-you-ask-99233346bced",
+        "original_url_identity": "prolificnorth.co.uk/news/how-much-do-students-use-ai-for-their-studies-that-depends-who-you-ask",
+        "original_html": "• Исследование, опубликованное 4 ноября 2026 года, показало, что преподаватели и студенты по-разному оценивают использование AI в учебе. Опрос проводился с апреля по июнь 2024 года. <a href=\"https://prolificnorth.co.uk/news/how-much-do-students-use-ai-for-their-studies-that-depends-who-you-ask\">Prolific North Manchester</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 40,
+        "section": "Дальние анонсы",
+        "requested_action": "patch",
+        "reason": "Исправление имени артиста на правильное.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неправильное имя артиста",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "future_announcements-01",
+        "candidate_fingerprint": "event-id-skiddle-com-5895b8a888f3-bef9b1306c68",
+        "original_url_identity": "skiddle.com/whats-on/Manchester/AO-Arena/You-me--Comedy---Cedric-the-Entertainer-Tiffany-Haddish--more/42697808",
+        "original_html": "• Шоу You me & Comedy с Седриком Развлекательным, Тиффани Хаддиш и другими пройдет 8 декабря 2026 года в 18:00 в AO Arena, Манчестер. <a href=\"https://skiddle.com/whats-on/Manchester/AO-Arena/You-me--Comedy---Cedric-the-Entertainer-Tiffany-Haddish--more/42697808\">Skiddle Manchester Comedy</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 50,
+        "section": "Крупные концерты вне GM",
+        "requested_action": "patch",
+        "reason": "Дата концерта должна соответствовать фактической дате события.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата концерта указана как 8 ноября, но текст утверждает, что он проходит сегодня, что неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "outside_gm_tickets-01",
+        "candidate_fingerprint": "event-event-papa-roach-rise-of-the-roach-2026-11-08-the-o2-fcdde5e0ad10",
+        "original_url_identity": "ticketmaster.co.uk/papa-roach-rise-of-the-roach-london-08-11-2026/event/35006445EBD47181",
+        "original_html": "• <b>Papa Roach</b> — тур: 8 ноября, The O2; 9 ноября, Utilita Arena Cardiff. Концерт в жанре Rock проходит сегодня. <a href=\"https://ticketmaster.co.uk/papa-roach-rise-of-the-roach-london-08-11-2026/event/35006445EBD47181\">Ticketmaster</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 51,
+        "section": "Русскоязычные концерты и стендап UK",
+        "requested_action": "strip",
+        "reason": "Мурат Далкылыч не является русскоязычным исполнителем, что не соответствует тематике раздела.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Событие не соответствует русскоязычному контенту.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "russian_events-01",
+        "candidate_fingerprint": "event-event-murat-dalk-l-2027-01-29-indigo-at-the-o2-4bbf8e78aadc",
+        "original_url_identity": "mticket.uk/ru/london/murat-dalklc-4308.html",
+        "original_html": "• 29 января 2027 года в Indigo at The O2 в Лондоне выступит турецкий поп-певец Мурат Далкылыч. <a href=\"https://mticket.uk/ru/london/murat-dalklc-4308.html\">MTicket Russian Concerts</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 34,
+        "section": "Городской радар",
+        "requested_action": "strip",
+        "reason": "Дублирование информации об обвинении в убийстве.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации об обвинении в убийстве.",
+        "completeness_concept": "weapon_violence",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "city_watch-02",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c674pp37xv3vo-00082228093e",
+        "original_url_identity": "bbc.com/news/articles/c674pp37xv3vo",
+        "original_html": "• Предъявлено обвинение — Третий человек был обвинен в убийстве Адриана Брауна, который был смертельно ранен на улице Рэби в Moss Side 8 мая; Эмейл Ли, 26 лет, должен явиться в суд в понедельник. <a href=\"https://bbc.co.uk/news/articles/c674pp37xv3vo\">BBC Manchester</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "duplicate_after_plan",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 35,
+        "section": "Городской радар",
+        "requested_action": "strip",
+        "reason": "Дублирование информации об обвинении в убийстве.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о предъявлении обвинения Эмейлу Ли.",
+        "completeness_concept": "weapon_violence",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "city_watch-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-murder-suspect-26-named-34876967-2951532a9aa0",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967",
+        "original_html": "• Предъявлено обвинение — 26-летний Эмейл Ли был обвинен в убийстве 34-летнего Адриана Брауна, который был смертельно ранен в Моссайде в мае. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967\">MEN</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "duplicate_after_plan",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 5,
         "section": "Свежие новости",
         "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+        "reason": "critical source fact dropped in translation: 'dead' (death/who/what) has no Russian rendering in the shipped line",
         "risk": "translation",
         "critical_error": true,
         "critical_problem": "",
-        "completeness_concept": "weapon_violence",
-        "outcome": "resolved_by_replacement",
+        "completeness_concept": "death",
+        "outcome": "unresolved",
         "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-murder-suspect-26-named-34876967-2951532a9aa0",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967",
-        "original_html": "• 26-летнему Эмилю Ли предъявлено обвинение в убийстве 34-летнего Адриана Брауна, зарезанного в Moss Side в мае; он должен предстать перед судом в понедельник, 9 ноября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967\">MEN</a>",
-        "reserve_rejections": [
-          {
-            "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-burst-water-hydrant-sends-gallons-34872477-e332edf2fb01",
-            "errors": [
-              "replacement drops weapon_violence"
-            ]
-          }
-        ],
-        "replacement_fingerprint": "url-bbc-com-news-articles-c6gm0kde8029o-764225452be9",
+        "plan_slot_id": "last_24h-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-who-went-missing-walking-34878053-63ae9a1041e3",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-who-went-missing-walking-34878053",
+        "original_html": "• В Bury продолжается расследование трагической находки: тело 69-летнего Энтони, который пропал во время прогулки с собакой в Радклиффе, было обнаружено в резервуаре Уитинс 6 ноября. Энтони последний раз видел около 16:00 1 ноября, когда гулял с питомцем возле паба Royal Oak. Его собака была найдена позже, что привело к масштабной поисковой операции, включая подводную команду. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-who-went-missing-walking-34878053\">MEN</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-former-power-station-site-could-34869649-81e13ba3fd96",
+        "post_check_passed": false
+      },
+      {
+        "line_index": 10,
+        "section": "Свежие новости",
+        "requested_action": "replace",
+        "reason": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
+        "risk": "translation",
+        "critical_error": true,
+        "critical_problem": "",
+        "completeness_concept": "death",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "last_24h-09",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-major-update-after-teacher-fighting-34878472-cafb9472ea97",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/major-update-after-teacher-fighting-34878472",
+        "original_html": "• Учительница из Bury, Зои Кэмпбелл-Лаундс, вышла из комы в Дубае после потери ребенка, но остается в тяжелом состоянии. Ее медицинские счета уже превысили 100 000 фунтов стерлингов, и ей потребуется еще более 50 000 фунтов на лечение. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/major-update-after-teacher-fighting-34878472\">MEN Latest News</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no russian rendering in the shipped line",
+        "group_key": "свежие новости::исправление географической ошибки: событие произошло в миддлтоне, а не в прествиче.",
         "actions": [
           {
-            "line_index": 4,
+            "line_index": 7,
             "section": "Свежие новости",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-            "risk": "translation",
+            "requested_action": "patch",
+            "reason": "Исправление географической ошибки: событие произошло в Миддлтоне, а не в Прествиче.",
+            "risk": "geo",
             "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "weapon_violence",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-murder-suspect-26-named-34876967-2951532a9aa0",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967",
-            "original_html": "• 26-летнему Эмилю Ли предъявлено обвинение в убийстве 34-летнего Адриана Брауна, зарезанного в Moss Side в мае; он должен предстать перед судом в понедельник, 9 ноября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967\">MEN</a>",
-            "reserve_rejections": [
-              {
-                "fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-burst-water-hydrant-sends-gallons-34872477-e332edf2fb01",
-                "errors": [
-                  "replacement drops weapon_violence"
-                ]
-              }
-            ],
-            "replacement_fingerprint": "url-bbc-com-news-articles-c6gm0kde8029o-764225452be9",
+            "critical_problem": "Несоответствие географии: Прествич указан, но событие произошло в Миддлтоне.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "last_24h-06",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-air-ambulance-called-firefighters-tackle-34879343-032ab160a749",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/air-ambulance-called-firefighters-tackle-34879343",
+            "original_html": "• Пожарные боролись с огнем в квартире на Baguley Crescent в Прествиче, где пострадал мужчина. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/air-ambulance-called-firefighters-tackle-34879343\">MEN</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_by_replacement",
+        "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 4,
+            "line_index": 7,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "общественный транспорт сегодня::информация о приостановке трамвайных линий с 19 октября по 1 ноября 2026 года уже не актуальна.",
+        "actions": [
+          {
+            "line_index": 15,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "strip",
+            "reason": "Информация о приостановке трамвайных линий с 19 октября по 1 ноября 2026 года уже не актуальна.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события уже прошла, информация не актуальна.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "transport-05",
+            "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
+            "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
+            "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажирам рекомендуется планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 15,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::гуэхи не является игроком манчестер сити.",
+        "actions": [
+          {
+            "line_index": 18,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Гуэхи не является игроком Манчестер Сити.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильное указание травмированных игроков.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-guehi-gvardiol-semenyo-man-city-34879533-188f944b0527",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/guehi-gvardiol-semenyo-man-city-34879533",
+            "original_html": "• После поражения от Ноттингем Форест Манчестер Сити столкнулся с новыми травмами, включая Гуэхи, Гвардиола и Семеньо. Команда должна восстановиться во время международного перерыва. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/guehi-gvardiol-semenyo-man-city-34879533\">MEN Manchester City</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 18,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::уточнение формулировки, чтобы отразить, что это заявление суда, а не установленный факт.",
+        "actions": [
+          {
+            "line_index": 33,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Уточнение формулировки, чтобы отразить, что это заявление суда, а не установленный факт.",
+            "risk": "sensitive",
+            "critical_error": true,
+            "critical_problem": "Текст утверждает, что женщина узнала о злоупотреблениях только после ареста мужа, но это может быть неправильно интерпретировано как факт, а не как заявление суда.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "city_watch-01",
+            "candidate_fingerprint": "url-bbc-com-news-articles-ckm233eq9eelo-3b5d74224787",
+            "original_url_identity": "bbc.com/news/articles/ckm233eq9eelo",
+            "original_html": "• Суд в Манчестере услышал, что женщина была подсыпана наркотиками и изнасилована своим мужем на протяжении 20 лет; она узнала о злоупотреблениях только после его ареста. <a href=\"https://bbc.com/news/articles/ckm233eq9eelo\">BBC Manchester</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 33,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::дублирование информации о предъявлении обвинения эмейлу ли",
+        "actions": [
+          {
+            "line_index": 35,
+            "section": "Городской радар",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о предъявлении обвинения Эмейлу Ли.",
+            "risk": "format",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "city_watch-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-murder-suspect-26-named-34876967-2951532a9aa0",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967",
+            "original_html": "• Предъявлено обвинение — 26-летний Эмейл Ли был обвинен в убийстве 34-летнего Адриана Брауна, который был смертельно ранен в Моссайде в мае. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967\">MEN</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "duplicate_after_plan",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 35,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "story:hmp forest bank|charged|named|salford|charged|2026 11 06",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "it и бизнес::дата проведения опроса должна соответствовать дате публикации исследования.",
+        "actions": [
+          {
+            "line_index": 39,
+            "section": "IT и бизнес",
+            "requested_action": "patch",
+            "reason": "Дата проведения опроса должна соответствовать дате публикации исследования.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дата проведения опроса не соответствует дате публикации исследования.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "tech_business-01",
+            "candidate_fingerprint": "url-prolificnorth-co-uk-news-how-much-do-students-use-ai-for-their-studies-that-depends-who-you-ask-99233346bced",
+            "original_url_identity": "prolificnorth.co.uk/news/how-much-do-students-use-ai-for-their-studies-that-depends-who-you-ask",
+            "original_html": "• Исследование, опубликованное 4 ноября 2026 года, показало, что преподаватели и студенты по-разному оценивают использование AI в учебе. Опрос проводился с апреля по июнь 2024 года. <a href=\"https://prolificnorth.co.uk/news/how-much-do-students-use-ai-for-their-studies-that-depends-who-you-ask\">Prolific North Manchester</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 39,
             "passed": true,
             "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "дальние анонсы::исправление имени артиста на правильное.",
+        "actions": [
+          {
+            "line_index": 40,
+            "section": "Дальние анонсы",
+            "requested_action": "patch",
+            "reason": "Исправление имени артиста на правильное.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильное имя артиста",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "future_announcements-01",
+            "candidate_fingerprint": "event-id-skiddle-com-5895b8a888f3-bef9b1306c68",
+            "original_url_identity": "skiddle.com/whats-on/Manchester/AO-Arena/You-me--Comedy---Cedric-the-Entertainer-Tiffany-Haddish--more/42697808",
+            "original_html": "• Шоу You me & Comedy с Седриком Развлекательным, Тиффани Хаддиш и другими пройдет 8 декабря 2026 года в 18:00 в AO Arena, Манчестер. <a href=\"https://skiddle.com/whats-on/Manchester/AO-Arena/You-me--Comedy---Cedric-the-Entertainer-Tiffany-Haddish--more/42697808\">Skiddle Manchester Comedy</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 40,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "крупные концерты вне gm::дата концерта должна соответствовать фактической дате события.",
+        "actions": [
+          {
+            "line_index": 50,
+            "section": "Крупные концерты вне GM",
+            "requested_action": "patch",
+            "reason": "Дата концерта должна соответствовать фактической дате события.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата концерта указана как 8 ноября, но текст утверждает, что он проходит сегодня, что неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "outside_gm_tickets-01",
+            "candidate_fingerprint": "event-event-papa-roach-rise-of-the-roach-2026-11-08-the-o2-fcdde5e0ad10",
+            "original_url_identity": "ticketmaster.co.uk/papa-roach-rise-of-the-roach-london-08-11-2026/event/35006445EBD47181",
+            "original_html": "• <b>Papa Roach</b> — тур: 8 ноября, The O2; 9 ноября, Utilita Arena Cardiff. Концерт в жанре Rock проходит сегодня. <a href=\"https://ticketmaster.co.uk/papa-roach-rise-of-the-roach-london-08-11-2026/event/35006445EBD47181\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 50,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "русскоязычные концерты и стендап uk::мурат далкылыч не является русскоязычным исполнителем, что не соответствует тематике раздела.",
+        "actions": [
+          {
+            "line_index": 51,
+            "section": "Русскоязычные концерты и стендап UK",
+            "requested_action": "strip",
+            "reason": "Мурат Далкылыч не является русскоязычным исполнителем, что не соответствует тематике раздела.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Событие не соответствует русскоязычному контенту.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "russian_events-01",
+            "candidate_fingerprint": "event-event-murat-dalk-l-2027-01-29-indigo-at-the-o2-4bbf8e78aadc",
+            "original_url_identity": "mticket.uk/ru/london/murat-dalklc-4308.html",
+            "original_html": "• 29 января 2027 года в Indigo at The O2 в Лондоне выступит турецкий поп-певец Мурат Далкылыч. <a href=\"https://mticket.uk/ru/london/murat-dalklc-4308.html\">MTicket Russian Concerts</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 51,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::дублирование информации об обвинении в убийстве",
+        "actions": [
+          {
+            "line_index": 34,
+            "section": "Городской радар",
+            "requested_action": "strip",
+            "reason": "Дублирование информации об обвинении в убийстве.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации об обвинении в убийстве.",
+            "completeness_concept": "weapon_violence",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "city_watch-02",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c674pp37xv3vo-00082228093e",
+            "original_url_identity": "bbc.com/news/articles/c674pp37xv3vo",
+            "original_html": "• Предъявлено обвинение — Третий человек был обвинен в убийстве Адриана Брауна, который был смертельно ранен на улице Рэби в Moss Side 8 мая; Эмейл Ли, 26 лет, должен явиться в суд в понедельник. <a href=\"https://bbc.co.uk/news/articles/c674pp37xv3vo\">BBC Manchester</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "duplicate_after_plan",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 35,
+            "section": "Городской радар",
+            "requested_action": "strip",
+            "reason": "Дублирование информации об обвинении в убийстве.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о предъявлении обвинения Эмейлу Ли.",
+            "completeness_concept": "weapon_violence",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "city_watch-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-murder-suspect-26-named-34876967-2951532a9aa0",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967",
+            "original_html": "• Предъявлено обвинение — 26-летний Эмейл Ли был обвинен в убийстве 34-летнего Адриана Брауна, который был смертельно ранен в Моссайде в мае. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-murder-suspect-26-named-34876967\">MEN</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "duplicate_after_plan",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 34,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "line_index": 35,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "story:hmp forest bank|charged|named|salford|charged|2026 11 06",
+            "visible_count": 0,
+            "passed": true
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "story:hmp forest bank|appeal|charged|manchester|salford|charged|2026 11 06",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::critical source fact dropped in translation: 'dead' (death/who/what) has no russian rendering in the shipped line",
+        "actions": [
+          {
+            "line_index": 5,
+            "section": "Свежие новости",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'dead' (death/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
+            "critical_error": true,
+            "critical_problem": "",
+            "completeness_concept": "death",
+            "outcome": "unresolved",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-who-went-missing-walking-34878053-63ae9a1041e3",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-who-went-missing-walking-34878053",
+            "original_html": "• В Bury продолжается расследование трагической находки: тело 69-летнего Энтони, который пропал во время прогулки с собакой в Радклиффе, было обнаружено в резервуаре Уитинс 6 ноября. Энтони последний раз видел около 16:00 1 ноября, когда гулял с питомцем возле паба Royal Oak. Его собака была найдена позже, что привело к масштабной поисковой операции, включая подводную команду. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-who-went-missing-walking-34878053\">MEN</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-former-power-station-site-could-34869649-81e13ba3fd96",
+            "post_check_passed": false
+          }
+        ],
+        "outcome": "unresolved",
+        "post_checks": [
+          {
+            "line_index": 5,
+            "passed": false,
+            "detail": "shared prose policy still fails"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::critical source fact dropped in translation: 'death' (death/who/what) has no russian rendering in the shipped line",
+        "actions": [
+          {
+            "line_index": 10,
+            "section": "Свежие новости",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'death' (death/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
+            "critical_error": true,
+            "critical_problem": "",
+            "completeness_concept": "death",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "last_24h-09",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-major-update-after-teacher-fighting-34878472-cafb9472ea97",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/major-update-after-teacher-fighting-34878472",
+            "original_html": "• Учительница из Bury, Зои Кэмпбелл-Лаундс, вышла из комы в Дубае после потери ребенка, но остается в тяжелом состоянии. Ее медицинские счета уже превысили 100 000 фунтов стерлингов, и ей потребуется еще более 50 000 фунтов на лечение. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/major-update-after-teacher-fighting-34878472\">MEN Latest News</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 10,
+            "passed": true,
+            "detail": "slot removed and source absent"
           }
         ],
         "known_factual_error": true
       }
     ],
     "refetch": {
-      "attempted": 0,
+      "attempted": 1,
       "improved": 0,
       "failed": 0,
-      "empty_or_not_better": 0,
-      "skipped": 0
+      "empty_or_not_better": 1,
+      "skipped": 1,
+      "reports": [
+        {
+          "fingerprint": "event-id-skiddle-com-5895b8a888f3-bef9b1306c68",
+          "title": "You me & Comedy - Cedric the Entertainer, Tiffany Haddish + more",
+          "status": "empty",
+          "url": "https://skiddle.com/whats-on/Manchester/AO-Arena/You-me--Comedy---Cedric-the-Entertainer-Tiffany-Haddish--more/42697808",
+          "chars": 0
+        },
+        {
+          "fingerprint": "event-event-papa-roach-rise-of-the-roach-2026-11-08-the-o2-fcdde5e0ad10",
+          "title": "Papa Roach - Rise of the Roach — event 2026-11-08 — public sale 2026-02-13 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/papa-roach-rise-of-the-roach-london-08-11-2026/event/35006445EBD47181",
+          "candidate_evidence_chars": 329
+        }
+      ]
     },
-    "enrich_improved": 1,
-    "deterministic_rewrite_rejected": 1,
-    "reserve_post_check_rejected": 1,
+    "enrich_improved": 13,
+    "false_positive_existing_fact": 5,
+    "no_eligible_backup": 6,
+    "deterministic_rewrite_rejected": 2,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 49,
-      "matched_lines": 49,
-      "applicable_lines": 3,
-      "unmatched_lines": 4,
+      "checked_lines": 44,
+      "matched_lines": 44,
+      "applicable_lines": 2,
+      "unmatched_lines": 3,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -248,28 +1080,207 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 53,
-      "resolved_in_place": 53,
-      "unresolved": 0,
-      "findings": []
+      "checked_lines": 47,
+      "resolved_in_place": 46,
+      "unresolved": 1,
+      "findings": [
+        {
+          "line_index": 5,
+          "section": "Свежие новости",
+          "outcome": "unresolved",
+          "code": "language_policy_defect",
+          "severity": "warning"
+        }
+      ]
     },
-    "status": "resolved"
+    "status": "unresolved"
   },
-  "notes": "pre-send judge failed before producing usable verdicts",
+  "notes": "Строка соответствует требованиям: событие в GM, информация актуальна и соответствует источнику.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка географии в строке о пожаре в квартире.; Строка о приостановке трамвайных линий содержит устаревшую информацию.; Обе строки соответствуют тре",
   "raw": {
-    "decision": "block",
-    "confidence": 0.0,
-    "critical_errors": [],
-    "actions": [],
-    "warnings": [
-      "all judge calls failed: 14 failure(s)"
+    "decision": "repair_required",
+    "confidence": 0.9,
+    "critical_errors": [
+      {
+        "line_index": 7,
+        "section": "Свежие новости",
+        "problem": "Несоответствие географии: Прествич указан, но событие произошло в Миддлтоне.",
+        "risk": "geo",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дата события уже прошла, информация не актуальна.",
+        "risk": "date",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 18,
+        "section": "Футбол",
+        "problem": "Неправильное указание травмированных игроков.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 33,
+        "section": "Городской радар",
+        "problem": "Текст утверждает, что женщина узнала о злоупотреблениях только после ареста мужа, но это может быть неправильно интерпретировано как факт, а не как заявление суда.",
+        "risk": "sensitive",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 35,
+        "section": "Городской радар",
+        "problem": "Дублирование информации о предъявлении обвинения Эмейлу Ли.",
+        "risk": "format",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 39,
+        "section": "IT и бизнес",
+        "problem": "Дата проведения опроса не соответствует дате публикации исследования.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 40,
+        "section": "Дальние анонсы",
+        "problem": "Неправильное имя артиста",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 50,
+        "section": "Крупные концерты вне GM",
+        "problem": "Дата концерта указана как 8 ноября, но текст утверждает, что он проходит сегодня, что неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 51,
+        "section": "Русскоязычные концерты и стендап UK",
+        "problem": "Событие не соответствует русскоязычному контенту.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 34,
+        "section": "Городской радар",
+        "problem": "Дублирование информации об обвинении в убийстве.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 35,
+        "section": "Городской радар",
+        "problem": "Дублирование информации об обвинении в убийстве.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      }
     ],
-    "notes": "pre-send judge failed before producing usable verdicts",
+    "actions": [
+      {
+        "line_index": 7,
+        "section": "Свежие новости",
+        "action": "patch",
+        "replacement_text": "• Пожарные боролись с огнем в квартире на Baguley Crescent в Миддлтоне, где пострадал мужчина.",
+        "reason": "Исправление географической ошибки: событие произошло в Миддлтоне, а не в Прествиче.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
+        "action": "strip",
+        "reason": "Информация о приостановке трамвайных линий с 19 октября по 1 ноября 2026 года уже не актуальна.",
+        "risk": "date"
+      },
+      {
+        "line_index": 18,
+        "section": "Футбол",
+        "action": "patch",
+        "replacement_text": "• После поражения от Ноттингем Форест Манчестер Сити столкнулся с новыми травмами, включая Гвардиола и Семеньо. Команда должна восстановиться во время международного перерыва.",
+        "reason": "Гуэхи не является игроком Манчестер Сити.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 33,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Суд в Манчестере услышал, что женщина могла быть подсыпана наркотиками и изнасилована своим мужем на протяжении 20 лет; она узнала о возможных злоупотреблениях после его ареста.",
+        "reason": "Уточнение формулировки, чтобы отразить, что это заявление суда, а не установленный факт.",
+        "risk": "sensitive"
+      },
+      {
+        "line_index": 35,
+        "section": "Городской радар",
+        "action": "strip",
+        "reason": "Дублирование информации о предъявлении обвинения Эмейлу Ли.",
+        "risk": "format"
+      },
+      {
+        "line_index": 39,
+        "section": "IT и бизнес",
+        "action": "patch",
+        "replacement_text": "• Исследование, опубликованное 4 ноября 2026 года, показало, что преподаватели и студенты по-разному оценивают использование AI в учебе. Опрос проводился с апреля по июнь 2026 года.",
+        "reason": "Дата проведения опроса должна соответствовать дате публикации исследования.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 40,
+        "section": "Дальние анонсы",
+        "action": "patch",
+        "replacement_text": "• Шоу You me & Comedy с Седриком Развлекательным (Cedric the Entertainer), Тиффани Хаддиш и другими пройдет 8 декабря 2026 года в 18:00 в AO Arena, Манчестер.",
+        "reason": "Исправление имени артиста на правильное.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 50,
+        "section": "Крупные концерты вне GM",
+        "action": "patch",
+        "replacement_text": "• Papa Roach — тур: 8 ноября, The O2; 9 ноября, Utilita Arena Cardiff. Концерт в жанре Rock проходит 8 ноября.",
+        "reason": "Дата концерта должна соответствовать фактической дате события.",
+        "risk": "date"
+      },
+      {
+        "line_index": 51,
+        "section": "Русскоязычные концерты и стендап UK",
+        "action": "strip",
+        "reason": "Мурат Далкылыч не является русскоязычным исполнителем, что не соответствует тематике раздела.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 34,
+        "section": "Городской радар",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации об обвинении в убийстве.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 35,
+        "section": "Городской радар",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации об обвинении в убийстве.",
+        "risk": "factual"
+      }
+    ],
+    "warnings": [
+      "Блок 'Выходные в GM' содержит только 6 событий, что является минимальным количеством по контракту. Рекомендуется добавить больше событий для улучшения полноты блока.",
+      "Секция 'Билеты / Ticket Radar' содержит много событий на одну и ту же дату (8 ноября), что может создать впечатление перегруженности. Возможно, стоит разнообразить даты или добавить больше информации о каждом событии.",
+      "Недостаток в секции 'Что важно сегодня': всего 2 элемента при минимуме 3.",
+      "Отсутствие секции 'Еда, открытия и рынки'."
+    ],
+    "notes": "Строка соответствует требованиям: событие в GM, информация актуальна и соответствует источнику.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка географии в строке о пожаре в квартире.; Строка о приостановке трамвайных линий содержит устаревшую информацию.; Обе строки соответствуют тре",
     "map_reduce": {
+      "mode": "map_reduce",
+      "status": "ok",
+      "chunk_count": 13,
+      "failed_chunk_count": 0,
       "chunks": [
         {
           "chunk_id": "chunk-01",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
             1,
             1
@@ -277,17 +1288,17 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "",
+          "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
-          "estimated_tokens": 2604,
-          "duration_seconds": 0.517
+          "error": "",
+          "estimated_tokens": 2759,
+          "duration_seconds": 1.294
         },
         {
           "chunk_id": "chunk-02",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
             2,
             2
@@ -295,225 +1306,225 @@
           "sections": [
             "Погода"
           ],
-          "decision": "",
+          "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
-          "estimated_tokens": 2453,
-          "duration_seconds": 0.564
+          "error": "",
+          "estimated_tokens": 2445,
+          "duration_seconds": 1.157
         },
         {
           "chunk_id": "chunk-03",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
             3,
-            11
+            10
           ],
           "sections": [
             "Свежие новости"
           ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
-          "estimated_tokens": 6957,
-          "duration_seconds": 0.813
+          "error": "",
+          "estimated_tokens": 6861,
+          "duration_seconds": 2.471
         },
         {
           "chunk_id": "chunk-04",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
-            12,
-            14
+            11,
+            15
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
-          "estimated_tokens": 3694,
-          "duration_seconds": 0.729
+          "error": "",
+          "estimated_tokens": 4766,
+          "duration_seconds": 1.656
         },
         {
           "chunk_id": "chunk-05",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
-            15,
-            16
+            16,
+            17
+          ],
+          "sections": [
+            "Что важно сегодня"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3272,
+          "duration_seconds": 0.741
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "ok",
+          "line_range": [
+            18,
+            20
           ],
           "sections": [
             "Футбол"
           ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
-          "estimated_tokens": 3153,
-          "duration_seconds": 0.632
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "failed",
-          "line_range": [
-            17,
-            28
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
-          "estimated_tokens": 7675,
-          "duration_seconds": 0.468
+          "error": "",
+          "estimated_tokens": 3675,
+          "duration_seconds": 1.747
         },
         {
           "chunk_id": "chunk-07",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
-            29,
-            31
+            21,
+            32
           ],
           "sections": [
             "Выходные в GM"
           ],
-          "decision": "",
+          "decision": "warn",
           "critical_error_count": 0,
           "action_count": 0,
-          "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
-          "estimated_tokens": 4029,
-          "duration_seconds": 21.46
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 8066,
+          "duration_seconds": 62.995
         },
         {
           "chunk_id": "chunk-08",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
-            32,
-            36
+            33,
+            38
           ],
           "sections": [
             "Городской радар"
           ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
-          "estimated_tokens": 4868,
-          "duration_seconds": 46.802
+          "error": "",
+          "estimated_tokens": 5236,
+          "duration_seconds": 17.759
         },
         {
           "chunk_id": "chunk-09",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
-            37,
+            39,
             39
           ],
           "sections": [
             "IT и бизнес"
           ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
-          "estimated_tokens": 3726,
-          "duration_seconds": 6.545
+          "error": "",
+          "estimated_tokens": 2678,
+          "duration_seconds": 1.684
         },
         {
           "chunk_id": "chunk-10",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
             40,
-            40
+            41
           ],
           "sections": [
             "Дальние анонсы"
           ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
-          "estimated_tokens": 2656,
-          "duration_seconds": 5.891
+          "error": "",
+          "estimated_tokens": 3235,
+          "duration_seconds": 2.197
         },
         {
           "chunk_id": "chunk-11",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
-            41,
+            42,
             49
           ],
           "sections": [
             "Билеты / Ticket Radar"
           ],
-          "decision": "",
+          "decision": "warn",
           "critical_error_count": 0,
           "action_count": 0,
-          "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
-          "estimated_tokens": 7436,
-          "duration_seconds": 50.884
+          "warning_count": 1,
+          "error": "",
+          "estimated_tokens": 6782,
+          "duration_seconds": 39.86
         },
         {
           "chunk_id": "chunk-12",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
             50,
-            51
+            50
           ],
           "sections": [
             "Крупные концерты вне GM"
           ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
-          "estimated_tokens": 3248,
-          "duration_seconds": 7.217
+          "error": "",
+          "estimated_tokens": 2710,
+          "duration_seconds": 5.005
         },
         {
           "chunk_id": "chunk-13",
-          "status": "failed",
+          "status": "ok",
           "line_range": [
-            52,
-            53
+            51,
+            52
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
           ],
-          "decision": "",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
-          "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
-          "estimated_tokens": 3334,
-          "duration_seconds": 7.339
+          "error": "",
+          "estimated_tokens": 3288,
+          "duration_seconds": 7.253
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
-        "critical_error_count": 0,
-        "action_count": 0,
-        "warning_count": 0,
-        "error": "RateLimitError: Error code: 429 - You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
-        "estimated_tokens": 11469,
-        "duration_seconds": 25.478
+        "decision": "repair_required",
+        "critical_error_count": 2,
+        "action_count": 2,
+        "warning_count": 2,
+        "error": "",
+        "estimated_tokens": 11134,
+        "duration_seconds": 25.766
       },
       "max_workers": 3,
       "chunk_line_target": 12,
