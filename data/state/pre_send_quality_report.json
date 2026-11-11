@@ -1,111 +1,162 @@
 {
-  "status": "partial",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
+  "reason": "pre-send repair executor applied 9 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-11-10",
-  "pipeline_run_id": "20261110T080155+0000",
-  "digest_sha256": "71d89ca98b0aaa1f5c712c597549948755c2dfb60e265383c4a7c07546bf5454",
-  "duration_seconds": 80.524,
+  "run_date_london": "2026-11-11",
+  "pipeline_run_id": "20261111T080151+0000",
+  "digest_sha256": "2529260a667408e74c59ad2d1ade472958f5d4439216ab8abc48bd0b4b0a3872",
+  "duration_seconds": 76.557,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 3,
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Неправильное использование термина 'подозреваемый в убийстве'.",
+      "risk": "legal",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 5,
       "section": "Свежие новости",
-      "problem": "Текст утверждает, что Фрэнк Скотт был осуждён, но также говорит, что он освобождён под залог, что противоречит друг другу.",
+      "problem": "Текст утверждает, что муж признал вину, но это не подтверждается источником.",
       "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 16,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Дата окончания работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
+      "risk": "date",
       "suggested_action": "repair"
     },
     {
       "line_index": 17,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
-      "risk": "date",
+      "section": "Что важно сегодня",
+      "problem": "Географическая ошибка: событие произошло в Cheshire, а не в Greater Manchester.",
+      "risk": "geo",
       "suggested_action": "strip"
     },
     {
-      "line_index": 18,
+      "line_index": 19,
       "section": "Футбол",
-      "problem": "Неверное указание главного тренера Манчестер Сити.",
+      "problem": "Неправильное имя игрока и сумма трансфера.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 23,
+      "line_index": 20,
       "section": "Городской радар",
-      "problem": "Некорректное использование терминов 'обвиняемый' и 'осуждён'.",
-      "risk": "sensitive",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 32,
-      "section": "Business/tech события для тебя",
-      "problem": "Некорректная информация о стоимости участия.",
+      "problem": "Ошибка в количестве лет тюремного заключения.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 33,
+      "line_index": 22,
+      "section": "Городской радар",
+      "problem": "Неверное указание пола пострадавшего.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 28,
       "section": "Дальние анонсы",
       "problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
       "risk": "geo",
       "suggested_action": "strip"
     },
     {
-      "line_index": 36,
+      "line_index": 29,
+      "section": "Билеты / Ticket Radar",
+      "problem": "Дата события указана как 23 октября, но это уже прошло.",
+      "risk": "date",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 34,
+      "section": "Билеты / Ticket Radar",
+      "problem": "Дата события указана как 15 октября, но это уже прошло.",
+      "risk": "date",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 35,
       "section": "Крупные концерты вне GM",
       "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 36,
+      "section": "Русскоязычные концерты и стендап UK",
+      "problem": "Неправильная дата события",
       "risk": "date",
       "suggested_action": "repair"
     }
   ],
   "actions": [
     {
-      "line_index": 3,
+      "line_index": 1,
+      "section": "Главная история дня",
+      "action": "patch",
+      "replacement_text": "• В Чаддертоне, на улице Уитстейбл Клоуз, был найден мёртвым Грэм Боттомли. Полиция Манчестера проводила обыск в его доме в рамках расследования серии грабежей. Человек задержан по подозрению в убийстве и остаётся под стражей. Семья Боттомли выразила горе и попросила уважать их личное пространство в это трудное время.",
+      "reason": "Исправление термина 'подозреваемый в убийстве' на 'человек задержан по подозрению в убийстве' для корректного юридического описания.",
+      "risk": "legal"
+    },
+    {
+      "line_index": 5,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• Суд освободил под залог 48-летнего Фрэнка Скотта, обвиняемого в изнасиловании женщины и нападении на мужчину в Саквилле-Гарденс. Скотт, который нацеливался на уязвимых людей, обвиняется в нападениях на двух жертв, произошедших с разницей в шесть месяцев. В суде его жертвы держались за руки, когда он был приговорён. Прокурор Джессика Фостер рассказала, что первая жертва, находившаяся в состоянии алкогольного опьянения, была изнасилована в июне 2025 года.",
-      "reason": "Устранение противоречия между освобождением под залог и осуждением.",
+      "replacement_text": "• В Манчестере продолжается судебный процесс над девятью мужчинами, обвиняемыми в сексуальных преступлениях против женщины, которую более 20 лет подвергал насилию её муж. Суду стало известно, что 60-летний Дэвид Грейвс, один из обвиняемых, поощрял мужа снимать на видео акты насилия, когда женщина была без сознания после применения наркотиков. Мужчина признал вину по нескольким статьям, включая изнасилование и применение веществ с намерением лишить сознания, но это не подтверждено источником.",
+      "reason": "Утверждение о признании вины мужа требует уточнения, так как это не подтверждается источником.",
       "risk": "factual"
+    },
+    {
+      "line_index": 16,
+      "section": "Общественный транспорт сегодня",
+      "action": "patch",
+      "replacement_text": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере были полностью приостановлены для проведения инженерных работ. Пассажирам рекомендуется планировать свои поездки заранее и использовать замещающие автобусы.",
+      "reason": "Дата окончания работ уже прошла, необходимо указать, что работы завершены.",
+      "risk": "date"
     },
     {
       "line_index": 17,
-      "section": "Общественный транспорт сегодня",
+      "section": "Что важно сегодня",
       "action": "strip",
-      "reason": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
-      "risk": "date",
+      "reason": "Событие произошло в Cheshire, что не соответствует geo_scope 'gm'.",
+      "risk": "geo",
       "replacement_text": ""
     },
     {
-      "line_index": 18,
+      "line_index": 19,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Главный тренер Манчестер Сити Пеп Гвардиола столкнулся с новыми проблемами с травмами, так как двое игроков снялись с национальных команд во время международного перерыва в ноябре.",
-      "reason": "Неверно указан главный тренер Манчестер Сити. Энцо Мареска не является тренером Манчестер Сити.",
+      "replacement_text": "• Манчестер Сити сталкивается с проблемой в полузащите после трех подряд поражений в Премьер-лиге. Тренер Энцо Мареска должен решить, как использовать новобранца Айюба Буадди.",
+      "reason": "Исправлено имя игрока и удалена неверная сумма трансфера.",
       "risk": "factual"
     },
     {
-      "line_index": 23,
+      "line_index": 20,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Прокуроры представляют дело против девяти мужчин, обвиняемых в изнасиловании или насилии над женщиной, которую подсыпал наркотики ее муж; муж признал вину по 62 преступлениям, четверо других мужчин признали вину, а оставшиеся обвиняемые отрицают все обвинения и находятся под судом в Манчестере.",
-      "reason": "Исправление терминологии для корректного отражения статуса судебного процесса.",
-      "risk": "sensitive"
-    },
-    {
-      "line_index": 32,
-      "section": "Business/tech события для тебя",
-      "action": "patch",
-      "replacement_text": "• #networking Networking North - Rochdale - November Tuesday 10 Nov 9am - 11am — 10 ноября, Rochdale. Уровень: большая конференция/экспо; Доступ: бесплатно для членов, £22 для остальных. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь.",
-      "reason": "Уточнение стоимости участия для не-членов.",
+      "replacement_text": "• Два мужчины были приговорены к пятнадцати годам тюремного заключения за изнасилование 17-летней девушки в Манчестере. Приговор был вынесён 10 ноября 2026 года после единогласного вердикта жюри.",
+      "reason": "Уточнение количества лет тюремного заключения.",
       "risk": "factual"
     },
     {
-      "line_index": 33,
+      "line_index": 22,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• В результате коронерского расследования, проведённого 10 ноября 2026 года, выяснилось, что четверо человек, арестованных после смерти экс-игрока регби Майкла Мартиндейла, были освобождены без дальнейших действий.",
+      "reason": "Исправление неверного указания пола пострадавшего.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 28,
       "section": "Дальние анонсы",
       "action": "strip",
       "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
@@ -113,25 +164,64 @@
       "replacement_text": ""
     },
     {
-      "line_index": 35,
+      "line_index": 29,
       "section": "Билеты / Ticket Radar",
+      "action": "strip",
+      "reason": "Событие уже прошло, дата 23 октября 2027.",
+      "risk": "date",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 34,
+      "section": "Билеты / Ticket Radar",
+      "action": "strip",
+      "reason": "Событие уже прошло, дата 15 октября 2027.",
+      "risk": "date",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 35,
+      "section": "Крупные концерты вне GM",
       "action": "patch",
-      "replacement_text": "• Trevor Wallace — 11 ноября, Manchester Academy. Билеты и время указаны на официальной странице: https://manchesteracademy.net/order/gateway/13381189/trevor-wallace-the-alpha-beta-male-manchester-academy-2026-11-11-19-00-00",
-      "reason": "Добавление ссылки на покупку билетов для практической пользы.",
-      "risk": "product"
+      "replacement_text": "• Swae Lee — 12 ноября, O2 Forum Kentish Town. Билеты и время указаны на официальной странице.",
+      "reason": "Дата события должна быть 12 ноября 2026 года, как указано в источнике.",
+      "risk": "date"
     },
     {
       "line_index": 36,
-      "section": "Крупные концерты вне GM",
+      "section": "Русскоязычные концерты и стендап UK",
       "action": "patch",
-      "replacement_text": "• Noah Kahan — тур: 13 ноября, The O2. Билеты и время указаны на официальной странице.",
-      "reason": "Событие проходит только 13 ноября, согласно данным.",
+      "replacement_text": "• Событие 'Калигула' состоится 12 ноября 2026 года в театре The Broadway в Лондоне; билеты стоят £30.95.",
+      "reason": "Дата события указана неверно, должна быть 12 ноября 2026 года.",
       "risk": "date"
+    },
+    {
+      "line_index": 28,
+      "section": "Дальние анонсы",
+      "action": "strip",
+      "reason": "Событие в Ливерпуле не соответствует географическому контракту для раздела.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 29,
+      "section": "Билеты / Ticket Radar",
+      "action": "strip",
+      "reason": "Событие уже прошло.",
+      "risk": "date",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 34,
+      "section": "Билеты / Ticket Radar",
+      "action": "strip",
+      "reason": "Событие уже прошло.",
+      "risk": "date",
+      "replacement_text": ""
     }
   ],
   "warnings": [
-    "Строка о Trevor Wallace не содержит прямой ссылки на покупку билетов, что снижает практическую пользу.",
-    "judge reduce failed: parse_failed no parseable JSON"
+    "Раздел 'Что важно сегодня' содержит только один элемент, что ниже минимального порога."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -140,34 +230,33 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 6,
+      "Общественный транспорт сегодня": 5,
+      "Что важно сегодня": 1,
       "Футбол": 2,
-      "Городской радар": 8,
-      "Еда, открытия и рынки": 1,
-      "IT и бизнес": 3,
+      "Городской радар": 7,
       "Business/tech события для тебя": 1,
       "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 2,
+      "Билеты / Ticket Radar": 6,
       "Крупные концерты вне GM": 1,
       "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
+      "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 8,
-      "Билеты / Ticket Radar": 2,
+      "Городской радар": 7,
+      "Билеты / Ticket Radar": 6,
       "Русскоязычные концерты и стендап UK": 1,
-      "Еда, открытия и рынки": 1,
+      "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 1,
       "Футбол": 2
     },
-    "ticket_items": 4,
-    "core_items": 23,
+    "ticket_items": 8,
+    "core_items": 22,
     "writer_quality_counts": {
-      "included_candidates": 40,
-      "rendered_candidates": 37,
+      "included_candidates": 39,
+      "rendered_candidates": 36,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
@@ -180,42 +269,44 @@
     "source_health_counts": {
       "ok": 101,
       "partial": 2,
-      "stale": 8,
-      "empty": 14,
+      "stale": 9,
+      "empty": 13,
       "failed": 4,
-      "zero_yield": 80,
+      "zero_yield": 83,
       "no_contribution_breakdown": {
         "fetch_failed": 4,
-        "all_rejected": 80,
+        "all_rejected": 83,
         "idle_no_items": 24
       },
       "zero_contribution_by_stage": {
-        "selected": 37,
-        "written": 43,
+        "written": 47,
         "parsed": 24,
+        "selected": 36,
         "fetched": 4
       },
       "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
-      "Еда, открытия и рынки: 1 item(s), emergency floor 3",
+      "Что важно сегодня: 1 item(s), emergency floor 3",
+      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 3 has unchecked number/date token(s): 48"
+      "multiple actions target line 28",
+      "multiple actions target line 29",
+      "multiple actions target line 34"
     ],
     "can_apply_actions": true,
-    "action_count": 8
+    "action_count": 15
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 37,
-    "matched_lines": 37,
-    "applicable_lines": 3,
+    "checked_lines": 36,
+    "matched_lines": 36,
+    "applicable_lines": 6,
     "unmatched_lines": 0,
     "critical_omission_count": 0,
     "critical_omissions": [],
@@ -228,153 +319,211 @@
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 8,
-    "attempted": 6,
-    "applied": 6,
-    "model_patch_applied": 4,
+    "requested": 15,
+    "attempted": 9,
+    "applied": 9,
+    "model_patch_applied": 2,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 1,
-    "stripped": 1,
-    "unresolved": 1,
-    "blocking_unresolved": 1,
-    "resolved": 7,
-    "resolved_in_place": 6,
-    "resolved_by_replacement": 0,
-    "resolved_by_removal": 1,
+    "reserve_replacement_used": 2,
+    "stripped": 5,
+    "unresolved": 0,
+    "blocking_unresolved": 0,
+    "resolved": 14,
+    "resolved_in_place": 8,
+    "resolved_by_replacement": 2,
+    "resolved_by_removal": 4,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 8,
+    "enrich_attempted": 15,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 3,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "requested_action": "patch",
+        "reason": "Исправление термина 'подозреваемый в убийстве' на 'человек задержан по подозрению в убийстве' для корректного юридического описания.",
+        "risk": "legal",
+        "critical_error": true,
+        "critical_problem": "Неправильное использование термина 'подозреваемый в убийстве'.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c6r7y7km53zpo-0fd705f0385f",
+        "original_url_identity": "bbc.com/news/articles/c6r7y7km53zpo",
+        "original_html": "<b>В Чаддертоне, на улице Уитстейбл Клоуз, был найден мёртвым Грэм Боттомли.</b> Полиция Манчестера проводила обыск в его доме в рамках расследования серии грабежей. Подозреваемый в убийстве задержан по подозрению в совершении aggravated burglary и остаётся под стражей. Семья Боттомли выразила горе и попросила уважать их личное пространство в это трудное время. <a href=\"https://bbc.com/news/articles/c6r7y7km53zpo\">BBC Manchester</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 5,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Устранение противоречия между освобождением под залог и осуждением.",
+        "reason": "Утверждение о признании вины мужа требует уточнения, так как это не подтверждается источником.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Текст утверждает, что Фрэнк Скотт был осуждён, но также говорит, что он освобождён под залог, что противоречит друг другу.",
+        "critical_problem": "Текст утверждает, что муж признал вину, но это не подтверждается источником.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "last_24h-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-drug-rape-plotter-encouraged-husband-34892491-665112a796ac",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/drug-rape-plotter-encouraged-husband-34892491",
+        "original_html": "• В Манчестере продолжается судебный процесс над девятью мужчинами, обвиняемыми в сексуальных преступлениях против женщины, которую более 20 лет подвергал насилию её муж. Суду стало известно, что 60-летний Дэвид Грейвс, один из обвиняемых, поощрял мужа снимать на видео акты насилия, когда женщина была без сознания после применения наркотиков. Мужчина уже признал свою вину по нескольким статьям, включая изнасилование и применение веществ с намерением лишить сознания. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/drug-rape-plotter-encouraged-husband-34892491\">MEN Latest News</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 16,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "patch",
+        "reason": "Дата окончания работ уже прошла, необходимо указать, что работы завершены.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата окончания работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-predator-bail-after-raping-woman-34885745-fd4a1e6cc98d",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/predator-bail-after-raping-woman-34885745",
-        "original_html": "• Суд освободил под залог 48-летнего Фрэнка Скотта, обвиняемого в изнасиловании женщины и нападении на мужчину в Саквилле-Гарденс. Скотт, который нацеливался на уязвимых людей, был осуждён за нападения на двух жертв, произошедшие с разницей в шесть месяцев. В суде его жертвы держались за руки, когда он был приговорён. Прокурор Джессика Фостер рассказала, что первая жертва, находившаяся в состоянии алкогольного опьянения, была изнасилована в июне 2025 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/predator-bail-after-raping-woman-34885745\">MEN Latest News</a>",
+        "plan_slot_id": "transport-05",
+        "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
+        "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
+        "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажирам рекомендуется планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
         "post_check_passed": true
       },
       {
         "line_index": 17,
-        "section": "Общественный транспорт сегодня",
+        "section": "Что важно сегодня",
         "requested_action": "strip",
-        "reason": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
-        "risk": "date",
+        "reason": "Событие произошло в Cheshire, что не соответствует geo_scope 'gm'.",
+        "risk": "geo",
         "critical_error": true,
-        "critical_problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
+        "critical_problem": "Географическая ошибка: событие произошло в Cheshire, а не в Greater Manchester.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "transport-06",
-        "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
-        "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-        "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажиры должны были планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
+        "plan_slot_id": "today_focus-01",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cw05452pn025o-9bcc0ce4c2c4",
+        "original_url_identity": "bbc.com/news/articles/cw05452pn025o",
+        "original_html": "• Пожар автомобиля на M6 в южном направлении на развязке J21A M62 вызвал задержки в утренний час пик; все полосы открыты, заторы устранены. <a href=\"https://bbc.com/news/articles/cw05452pn025o\">BBC Manchester</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 18,
+        "line_index": 19,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Неверно указан главный тренер Манчестер Сити. Энцо Мареска не является тренером Манчестер Сити.",
+        "reason": "Исправлено имя игрока и удалена неверная сумма трансфера.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неверное указание главного тренера Манчестер Сити.",
+        "critical_problem": "Неправильное имя игрока и сумма трансфера.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-khusanov-guehi-gvardiol-man-city-34886691-3091353d1ffd",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/khusanov-guehi-gvardiol-man-city-34886691",
-        "original_html": "• Главный тренер Манчестер Сити Энцо Мареска столкнулся с новыми проблемами с травмами, так как двое игроков снялись с национальных команд во время международного перерыва в ноябре. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/khusanov-guehi-gvardiol-man-city-34886691\">MEN Manchester City</a>",
+        "plan_slot_id": "football-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-citys-ayyoub-bouaddi-conundrum-34891448-ed7ebd182899",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-citys-ayyoub-bouaddi-conundrum-34891448",
+        "original_html": "• Манчестер Сити сталкивается с проблемой в полузащите после трех подряд поражений в Премьер-лиге. Тренер Энцо Мареска должен решить, как использовать новобранца Энцо Фернандеса, подписанного за £125 миллионов. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-citys-ayyoub-bouaddi-conundrum-34891448\">MEN Manchester City</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 23,
+        "line_index": 20,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Исправление терминологии для корректного отражения статуса судебного процесса.",
-        "risk": "sensitive",
-        "critical_error": true,
-        "critical_problem": "Некорректное использование терминов 'обвиняемый' и 'осуждён'.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "city_watch-04",
-        "candidate_fingerprint": "url-bbc-com-news-articles-c8qlnwnzqgnyo-6ec604eec5d5",
-        "original_url_identity": "bbc.com/news/articles/c8qlnwnzqgnyo",
-        "original_html": "• Прокуроры представляют дело против девяти мужчин, обвиняемых в изнасиловании или насилии над женщиной, которую подсыпал наркотики ее муж; муж признал вину по 62 преступлениям, четверо других мужчин признали вину, а оставшиеся обвиняемые отрицают все обвинения и находятся на суде в Манчестере. <a href=\"https://bbc.co.uk/news/articles/c8qlnwnzqgnyo\">BBC Manchester</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 32,
-        "section": "Business/tech события для тебя",
-        "requested_action": "patch",
-        "reason": "Уточнение стоимости участия для не-членов.",
+        "reason": "Уточнение количества лет тюремного заключения.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Некорректная информация о стоимости участия.",
+        "critical_problem": "Ошибка в количестве лет тюремного заключения.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "professional_events-01",
-        "candidate_fingerprint": "event-event-networking-networking-north-rochdale-november-tuesday-10-nov-9am-11am-2026-11-10-rochdale-e464f1433e48",
-        "original_url_identity": "gmchamber.co.uk/events/networking-north-rochdale-november",
-        "original_html": "• #networking Networking North - Rochdale - November Tuesday 10 Nov 9am - 11am — 10 ноября, Rochdale. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь. <a href=\"https://gmchamber.co.uk/events/networking-north-rochdale-november\">GM Chamber Events</a>",
+        "plan_slot_id": "city_watch-01",
+        "candidate_fingerprint": "url-aboutmanchester-co-uk-two-jailed-for-rape-of-17-year-old-after-strong-survivors-bravery-has-secured-c80edbb91305",
+        "original_url_identity": "aboutmanchester.co.uk/two-jailed-for-rape-of-17-year-old-after-strong-survivors-bravery-has-secured",
+        "original_html": "• Два мужчины были приговореныгодам тюремного заключения за изнасилование 17-летней девушки в Манчестере. Приговор был вынесён 10 ноября 2026 года после единогласного вердикта жюри. <a href=\"https://aboutmanchester.co.uk/two-jailed-for-rape-of-17-year-old-after-strong-survivors-bravery-has-secured\">About Manchester News</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 33,
+        "line_index": 22,
+        "section": "Городской радар",
+        "requested_action": "patch",
+        "reason": "Исправление неверного указания пола пострадавшего.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неверное указание пола пострадавшего.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "city_watch-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mystery-surrounds-death-much-loved-34891258-ed47aca1c782",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mystery-surrounds-death-much-loved-34891258",
+        "original_html": "• В результате коронерского расследования, проведённого 10 ноября 2026 года, выяснилось, что четверо человек, арестованных после смерти экс-игрока регби Майкла Мартиндейла, были освобождены без дальнейших действий. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mystery-surrounds-death-much-loved-34891258\">MEN Latest News</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 28,
         "section": "Дальние анонсы",
         "requested_action": "strip",
         "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
         "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "reserve_replacement",
-        "plan_slot_id": "future_announcements-01",
-        "candidate_fingerprint": "event-event-the-luke-combs-experience-2026-12-04-o2-academy-2-liverpool-e1eab6e84f14",
-        "original_url_identity": "ticketmaster.co.uk/the-luke-combs-experience-liverpool-04-12-2026/event/3E006462FA8F69E6",
-        "original_html": "• <b>The Luke Combs Experience</b> — 4 декабря, O2 Academy 2 Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-luke-combs-experience-liverpool-04-12-2026/event/3E006462FA8F69E6\">Ticketmaster</a>",
-        "replacement_fingerprint": "event-event-handmade-at-hat-works-festive-edition-2026-12-05-arc-at-hat-works-wellington-road-south-0538fef18ed1",
-        "post_check_passed": false
-      },
-      {
-        "line_index": 35,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Добавление ссылки на покупку билетов для практической пользы.",
-        "risk": "product",
         "critical_error": false,
         "critical_problem": "",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "ticket_radar-02",
-        "candidate_fingerprint": "event-event-trevor-wallace-the-alpha-beta-male-11th-november-2026-2026-11-11-manchester-academy-e510450c9fe5",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13381189/trevor-wallace-the-alpha-beta-male-manchester-academy-2026-11-11-19-00-00",
-        "original_html": "• <b>Trevor Wallace</b> — 11 ноября, Manchester Academy. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381189/trevor-wallace-the-alpha-beta-male-manchester-academy-2026-11-11-19-00-00\">Manchester Academy</a>",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "future_announcements-01",
+        "candidate_fingerprint": "event-event-the-southmartins-2026-11-21-o2-academy-liverpool-2c06e3ea02a4",
+        "original_url_identity": "ticketmaster.co.uk/the-southmartins-liverpool-21-11-2026/event/3E00628EFE0E29B8",
+        "original_html": "• <b>The Southmartins</b> — 21 ноября, O2 Academy Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-southmartins-liverpool-21-11-2026/event/3E00628EFE0E29B8\">Ticketmaster</a>",
+        "replacement_fingerprint": "event-id-skiddle-com-8a02b634fda8-d539740a72c0",
         "post_check_passed": true
       },
       {
-        "line_index": 36,
+        "line_index": 29,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "strip",
+        "reason": "Событие уже прошло, дата 23 октября 2027.",
+        "risk": "date",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "ticket_radar-01",
+        "candidate_fingerprint": "event-event-newton-faulkner-23rd-october-2027-2027-10-23-manchester-academy-c5b74057c11a",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13382083/newton-faulkner-manchester-academy-2-2027-10-23-19-30-00",
+        "original_html": "• <b>Newton Faulkner</b> — 23 октября, Manchester Academy; цена £35.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13382083/newton-faulkner-manchester-academy-2-2027-10-23-19-30-00\">Manchester Academy</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "unrenderable_line",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 34,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "strip",
+        "reason": "Событие уже прошло, дата 15 октября 2027.",
+        "risk": "date",
+        "critical_error": false,
+        "critical_problem": "",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "ticket_radar-06",
+        "candidate_fingerprint": "event-event-robert-jon-the-wreck-15th-october-2027-2027-10-15-manchester-academy-3cc350115ab8",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13381991/robert-jon-and-the-wreck-manchester-academy-2-2027-10-15-19-30-00",
+        "original_html": "• <b>Robert Jon & The Wreck</b> — 15 октября, Manchester Academy; цена £29.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381991/robert-jon-and-the-wreck-manchester-academy-2-2027-10-15-19-30-00\">Manchester Academy</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "unrenderable_line",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 35,
         "section": "Крупные концерты вне GM",
         "requested_action": "patch",
-        "reason": "Событие проходит только 13 ноября, согласно данным.",
+        "reason": "Дата события должна быть 12 ноября 2026 года, как указано в источнике.",
         "risk": "date",
         "critical_error": true,
         "critical_problem": "Дата события указана неверно.",
@@ -382,39 +531,177 @@
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
         "plan_slot_id": "outside_gm_tickets-01",
-        "candidate_fingerprint": "event-event-noah-kahan-the-great-divide-tour-2026-11-13-the-o2-015b667d6e95",
-        "original_url_identity": "ticketmaster.co.uk/noah-kahan-the-great-divide-tour-london-13-11-2026/event/350064899C2A4C19",
-        "original_html": "• <b>Noah Kahan</b> — тур: 13 и 14 ноября, The O2. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/noah-kahan-the-great-divide-tour-london-13-11-2026/event/350064899C2A4C19\">Ticketmaster</a>",
+        "candidate_fingerprint": "event-event-swae-lee-2026-11-12-o2-forum-kentish-town-8aebae9b3047",
+        "original_url_identity": "ticketmaster.co.uk/swae-lee-london-12-11-2026/event/3E006535C49C507F",
+        "original_html": "• <b>Swae Lee</b> — 12 ноября, O2 Forum Kentish Town. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/swae-lee-london-12-11-2026/event/3E006535C49C507F\">Ticketmaster</a>",
         "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 36,
+        "section": "Русскоязычные концерты и стендап UK",
+        "requested_action": "patch",
+        "reason": "Дата события указана неверно, должна быть 12 ноября 2026 года.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Неправильная дата события",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "russian_events-01",
+        "candidate_fingerprint": "event-id-jsonld-event-0e9dbc6bbdae-dfba8ff7f074",
+        "original_url_identity": "mticket.uk/ru/london/caligula-4302.html",
+        "original_html": "• Событие 'Калигула' состоится 12 ноября 2026 года в театре The Broadway в Лондоне; билеты стоят £30.95. <a href=\"https://mticket.uk/ru/london/caligula-4302.html\">MTicket Russian Concerts</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 28,
+        "section": "Дальние анонсы",
+        "requested_action": "strip",
+        "reason": "Событие в Ливерпуле не соответствует географическому контракту для раздела.",
+        "risk": "geo",
+        "critical_error": true,
+        "critical_problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "future_announcements-01",
+        "candidate_fingerprint": "event-event-the-southmartins-2026-11-21-o2-academy-liverpool-2c06e3ea02a4",
+        "original_url_identity": "ticketmaster.co.uk/the-southmartins-liverpool-21-11-2026/event/3E00628EFE0E29B8",
+        "original_html": "• <b>The Southmartins</b> — 21 ноября, O2 Academy Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-southmartins-liverpool-21-11-2026/event/3E00628EFE0E29B8\">Ticketmaster</a>",
+        "replacement_fingerprint": "event-event-inclusive-accessible-service-2026-12-06-st-peter-s-church-16-green-lane-87649552f2fb",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 29,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "strip",
+        "reason": "Событие уже прошло.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана как 23 октября, но это уже прошло.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "ticket_radar-01",
+        "candidate_fingerprint": "event-event-newton-faulkner-23rd-october-2027-2027-10-23-manchester-academy-c5b74057c11a",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13382083/newton-faulkner-manchester-academy-2-2027-10-23-19-30-00",
+        "original_html": "• <b>Newton Faulkner</b> — 23 октября, Manchester Academy; цена £35.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13382083/newton-faulkner-manchester-academy-2-2027-10-23-19-30-00\">Manchester Academy</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 34,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "strip",
+        "reason": "Событие уже прошло.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана как 15 октября, но это уже прошло.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "ticket_radar-06",
+        "candidate_fingerprint": "event-event-robert-jon-the-wreck-15th-october-2027-2027-10-15-manchester-academy-3cc350115ab8",
+        "original_url_identity": "manchesteracademy.net/order/gateway/13381991/robert-jon-and-the-wreck-manchester-academy-2-2027-10-15-19-30-00",
+        "original_html": "• <b>Robert Jon & The Wreck</b> — 15 октября, Manchester Academy; цена £29.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381991/robert-jon-and-the-wreck-manchester-academy-2-2027-10-15-19-30-00\">Manchester Academy</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::устранение противоречия между освобождением под залог и осуждением.",
+        "group_key": "главная история дня::исправление термина 'подозреваемый в убийстве' на 'человек задержан по подозрению в убийстве' для корректного юридического описания.",
         "actions": [
           {
-            "line_index": 3,
-            "section": "Свежие новости",
+            "line_index": 1,
+            "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Устранение противоречия между освобождением под залог и осуждением.",
-            "risk": "factual",
+            "reason": "Исправление термина 'подозреваемый в убийстве' на 'человек задержан по подозрению в убийстве' для корректного юридического описания.",
+            "risk": "legal",
             "critical_error": true,
-            "critical_problem": "Текст утверждает, что Фрэнк Скотт был осуждён, но также говорит, что он освобождён под залог, что противоречит друг другу.",
+            "critical_problem": "Неправильное использование термина 'подозреваемый в убийстве'.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-predator-bail-after-raping-woman-34885745-fd4a1e6cc98d",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/predator-bail-after-raping-woman-34885745",
-            "original_html": "• Суд освободил под залог 48-летнего Фрэнка Скотта, обвиняемого в изнасиловании женщины и нападении на мужчину в Саквилле-Гарденс. Скотт, который нацеливался на уязвимых людей, был осуждён за нападения на двух жертв, произошедшие с разницей в шесть месяцев. В суде его жертвы держались за руки, когда он был приговорён. Прокурор Джессика Фостер рассказала, что первая жертва, находившаяся в состоянии алкогольного опьянения, была изнасилована в июне 2025 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/predator-bail-after-raping-woman-34885745\">MEN Latest News</a>",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c6r7y7km53zpo-0fd705f0385f",
+            "original_url_identity": "bbc.com/news/articles/c6r7y7km53zpo",
+            "original_html": "<b>В Чаддертоне, на улице Уитстейбл Клоуз, был найден мёртвым Грэм Боттомли.</b> Полиция Манчестера проводила обыск в его доме в рамках расследования серии грабежей. Подозреваемый в убийстве задержан по подозрению в совершении aggravated burglary и остаётся под стражей. Семья Боттомли выразила горе и попросила уважать их личное пространство в это трудное время. <a href=\"https://bbc.com/news/articles/c6r7y7km53zpo\">BBC Manchester</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 3,
+            "line_index": 1,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::утверждение о признании вины мужа требует уточнения, так как это не подтверждается источником.",
+        "actions": [
+          {
+            "line_index": 5,
+            "section": "Свежие новости",
+            "requested_action": "patch",
+            "reason": "Утверждение о признании вины мужа требует уточнения, так как это не подтверждается источником.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Текст утверждает, что муж признал вину, но это не подтверждается источником.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "last_24h-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-drug-rape-plotter-encouraged-husband-34892491-665112a796ac",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/drug-rape-plotter-encouraged-husband-34892491",
+            "original_html": "• В Манчестере продолжается судебный процесс над девятью мужчинами, обвиняемыми в сексуальных преступлениях против женщины, которую более 20 лет подвергал насилию её муж. Суду стало известно, что 60-летний Дэвид Грейвс, один из обвиняемых, поощрял мужа снимать на видео акты насилия, когда женщина была без сознания после применения наркотиков. Мужчина уже признал свою вину по нескольким статьям, включая изнасилование и применение веществ с намерением лишить сознания. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/drug-rape-plotter-encouraged-husband-34892491\">MEN Latest News</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 5,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "общественный транспорт сегодня::дата окончания работ уже прошла, необходимо указать, что работы завершены.",
+        "actions": [
+          {
+            "line_index": 16,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "patch",
+            "reason": "Дата окончания работ уже прошла, необходимо указать, что работы завершены.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата окончания работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "transport-05",
+            "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
+            "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
+            "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажирам рекомендуется планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 16,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -422,23 +709,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
+        "group_key": "что важно сегодня::событие произошло в cheshire, что не соответствует geo_scope 'gm'.",
         "actions": [
           {
             "line_index": 17,
-            "section": "Общественный транспорт сегодня",
+            "section": "Что важно сегодня",
             "requested_action": "strip",
-            "reason": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
-            "risk": "date",
+            "reason": "Событие произошло в Cheshire, что не соответствует geo_scope 'gm'.",
+            "risk": "geo",
             "critical_error": true,
-            "critical_problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
+            "critical_problem": "Географическая ошибка: событие произошло в Cheshire, а не в Greater Manchester.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "transport-06",
-            "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
-            "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-            "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажиры должны были планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
+            "plan_slot_id": "today_focus-01",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cw05452pn025o-9bcc0ce4c2c4",
+            "original_url_identity": "bbc.com/news/articles/cw05452pn025o",
+            "original_html": "• Пожар автомобиля на M6 в южном направлении на развязке J21A M62 вызвал задержки в утренний час пик; все полосы открыты, заторы устранены. <a href=\"https://bbc.com/news/articles/cw05452pn025o\">BBC Manchester</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -455,23 +742,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::неверно указан главный тренер манчестер сити. энцо мареска не является тренером манчестер сити.",
+        "group_key": "футбол::исправлено имя игрока и удалена неверная сумма трансфера.",
         "actions": [
           {
-            "line_index": 18,
+            "line_index": 19,
             "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Неверно указан главный тренер Манчестер Сити. Энцо Мареска не является тренером Манчестер Сити.",
+            "reason": "Исправлено имя игрока и удалена неверная сумма трансфера.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неверное указание главного тренера Манчестер Сити.",
+            "critical_problem": "Неправильное имя игрока и сумма трансфера.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-khusanov-guehi-gvardiol-man-city-34886691-3091353d1ffd",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/khusanov-guehi-gvardiol-man-city-34886691",
-            "original_html": "• Главный тренер Манчестер Сити Энцо Мареска столкнулся с новыми проблемами с травмами, так как двое игроков снялись с национальных команд во время международного перерыва в ноябре. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/khusanov-guehi-gvardiol-man-city-34886691\">MEN Manchester City</a>",
+            "plan_slot_id": "football-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-citys-ayyoub-bouaddi-conundrum-34891448-ed7ebd182899",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-citys-ayyoub-bouaddi-conundrum-34891448",
+            "original_html": "• Манчестер Сити сталкивается с проблемой в полузащите после трех подряд поражений в Премьер-лиге. Тренер Энцо Мареска должен решить, как использовать новобранца Энцо Фернандеса, подписанного за £125 миллионов. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-citys-ayyoub-bouaddi-conundrum-34891448\">MEN Manchester City</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -479,7 +766,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 18,
+            "line_index": 19,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -487,30 +774,30 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::исправление терминологии для корректного отражения статуса судебного процесса.",
+        "group_key": "городской радар::уточнение количества лет тюремного заключения.",
         "actions": [
           {
-            "line_index": 23,
+            "line_index": 20,
             "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Исправление терминологии для корректного отражения статуса судебного процесса.",
-            "risk": "sensitive",
+            "reason": "Уточнение количества лет тюремного заключения.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Некорректное использование терминов 'обвиняемый' и 'осуждён'.",
+            "critical_problem": "Ошибка в количестве лет тюремного заключения.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "city_watch-04",
-            "candidate_fingerprint": "url-bbc-com-news-articles-c8qlnwnzqgnyo-6ec604eec5d5",
-            "original_url_identity": "bbc.com/news/articles/c8qlnwnzqgnyo",
-            "original_html": "• Прокуроры представляют дело против девяти мужчин, обвиняемых в изнасиловании или насилии над женщиной, которую подсыпал наркотики ее муж; муж признал вину по 62 преступлениям, четверо других мужчин признали вину, а оставшиеся обвиняемые отрицают все обвинения и находятся на суде в Манчестере. <a href=\"https://bbc.co.uk/news/articles/c8qlnwnzqgnyo\">BBC Manchester</a>",
+            "plan_slot_id": "city_watch-01",
+            "candidate_fingerprint": "url-aboutmanchester-co-uk-two-jailed-for-rape-of-17-year-old-after-strong-survivors-bravery-has-secured-c80edbb91305",
+            "original_url_identity": "aboutmanchester.co.uk/two-jailed-for-rape-of-17-year-old-after-strong-survivors-bravery-has-secured",
+            "original_html": "• Два мужчины были приговореныгодам тюремного заключения за изнасилование 17-летней девушки в Манчестере. Приговор был вынесён 10 ноября 2026 года после единогласного вердикта жюри. <a href=\"https://aboutmanchester.co.uk/two-jailed-for-rape-of-17-year-old-after-strong-survivors-bravery-has-secured\">About Manchester News</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 23,
+            "line_index": 20,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -518,32 +805,33 @@
         "known_factual_error": true
       },
       {
-        "group_key": "business/tech события для тебя::уточнение стоимости участия для не-членов.",
+        "group_key": "городской радар::исправление неверного указания пола пострадавшего.",
         "actions": [
           {
-            "line_index": 32,
-            "section": "Business/tech события для тебя",
+            "line_index": 22,
+            "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Уточнение стоимости участия для не-членов.",
+            "reason": "Исправление неверного указания пола пострадавшего.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Некорректная информация о стоимости участия.",
+            "critical_problem": "Неверное указание пола пострадавшего.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "professional_events-01",
-            "candidate_fingerprint": "event-event-networking-networking-north-rochdale-november-tuesday-10-nov-9am-11am-2026-11-10-rochdale-e464f1433e48",
-            "original_url_identity": "gmchamber.co.uk/events/networking-north-rochdale-november",
-            "original_html": "• #networking Networking North - Rochdale - November Tuesday 10 Nov 9am - 11am — 10 ноября, Rochdale. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь. <a href=\"https://gmchamber.co.uk/events/networking-north-rochdale-november\">GM Chamber Events</a>",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "city_watch-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mystery-surrounds-death-much-loved-34891258-ed47aca1c782",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mystery-surrounds-death-much-loved-34891258",
+            "original_html": "• В результате коронерского расследования, проведённого 10 ноября 2026 года, выяснилось, что четверо человек, арестованных после смерти экс-игрока регби Майкла Мартиндейла, были освобождены без дальнейших действий. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mystery-surrounds-death-much-loved-34891258\">MEN Latest News</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 32,
+            "line_index": 22,
             "passed": true,
-            "detail": "post-check passed"
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
@@ -552,52 +840,119 @@
         "group_key": "дальние анонсы::событие проходит в ливерпуле, что не соответствует требованию geo_scope 'gm'.",
         "actions": [
           {
-            "line_index": 33,
+            "line_index": 28,
             "section": "Дальние анонсы",
             "requested_action": "strip",
             "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
             "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "reserve_replacement",
-            "plan_slot_id": "future_announcements-01",
-            "candidate_fingerprint": "event-event-the-luke-combs-experience-2026-12-04-o2-academy-2-liverpool-e1eab6e84f14",
-            "original_url_identity": "ticketmaster.co.uk/the-luke-combs-experience-liverpool-04-12-2026/event/3E006462FA8F69E6",
-            "original_html": "• <b>The Luke Combs Experience</b> — 4 декабря, O2 Academy 2 Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-luke-combs-experience-liverpool-04-12-2026/event/3E006462FA8F69E6\">Ticketmaster</a>",
-            "replacement_fingerprint": "event-event-handmade-at-hat-works-festive-edition-2026-12-05-arc-at-hat-works-wellington-road-south-0538fef18ed1",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 33,
-            "passed": false,
-            "detail": "shared prose policy still fails"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::добавление ссылки на покупку билетов для практической пользы.",
-        "actions": [
-          {
-            "line_index": 35,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "patch",
-            "reason": "Добавление ссылки на покупку билетов для практической пользы.",
-            "risk": "product",
             "critical_error": false,
             "critical_problem": "",
             "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "future_announcements-01",
+            "candidate_fingerprint": "event-event-the-southmartins-2026-11-21-o2-academy-liverpool-2c06e3ea02a4",
+            "original_url_identity": "ticketmaster.co.uk/the-southmartins-liverpool-21-11-2026/event/3E00628EFE0E29B8",
+            "original_html": "• <b>The Southmartins</b> — 21 ноября, O2 Academy Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-southmartins-liverpool-21-11-2026/event/3E00628EFE0E29B8\">Ticketmaster</a>",
+            "replacement_fingerprint": "event-id-skiddle-com-8a02b634fda8-d539740a72c0",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 28,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "билеты / ticket radar::событие уже прошло, дата 23 октября 2027.",
+        "actions": [
+          {
+            "line_index": 29,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "strip",
+            "reason": "Событие уже прошло, дата 23 октября 2027.",
+            "risk": "date",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "ticket_radar-01",
+            "candidate_fingerprint": "event-event-newton-faulkner-23rd-october-2027-2027-10-23-manchester-academy-c5b74057c11a",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13382083/newton-faulkner-manchester-academy-2-2027-10-23-19-30-00",
+            "original_html": "• <b>Newton Faulkner</b> — 23 октября, Manchester Academy; цена £35.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13382083/newton-faulkner-manchester-academy-2-2027-10-23-19-30-00\">Manchester Academy</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "unrenderable_line",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 29,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "билеты / ticket radar::событие уже прошло, дата 15 октября 2027.",
+        "actions": [
+          {
+            "line_index": 34,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "strip",
+            "reason": "Событие уже прошло, дата 15 октября 2027.",
+            "risk": "date",
+            "critical_error": false,
+            "critical_problem": "",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "ticket_radar-06",
+            "candidate_fingerprint": "event-event-robert-jon-the-wreck-15th-october-2027-2027-10-15-manchester-academy-3cc350115ab8",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13381991/robert-jon-and-the-wreck-manchester-academy-2-2027-10-15-19-30-00",
+            "original_html": "• <b>Robert Jon & The Wreck</b> — 15 октября, Manchester Academy; цена £29.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381991/robert-jon-and-the-wreck-manchester-academy-2-2027-10-15-19-30-00\">Manchester Academy</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "unrenderable_line",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 34,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": false
+      },
+      {
+        "group_key": "крупные концерты вне gm::дата события должна быть 12 ноября 2026 года, как указано в источнике.",
+        "actions": [
+          {
+            "line_index": 35,
+            "section": "Крупные концерты вне GM",
+            "requested_action": "patch",
+            "reason": "Дата события должна быть 12 ноября 2026 года, как указано в источнике.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "ticket_radar-02",
-            "candidate_fingerprint": "event-event-trevor-wallace-the-alpha-beta-male-11th-november-2026-2026-11-11-manchester-academy-e510450c9fe5",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13381189/trevor-wallace-the-alpha-beta-male-manchester-academy-2026-11-11-19-00-00",
-            "original_html": "• <b>Trevor Wallace</b> — 11 ноября, Manchester Academy. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381189/trevor-wallace-the-alpha-beta-male-manchester-academy-2026-11-11-19-00-00\">Manchester Academy</a>",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "outside_gm_tickets-01",
+            "candidate_fingerprint": "event-event-swae-lee-2026-11-12-o2-forum-kentish-town-8aebae9b3047",
+            "original_url_identity": "ticketmaster.co.uk/swae-lee-london-12-11-2026/event/3E006535C49C507F",
+            "original_html": "• <b>Swae Lee</b> — 12 ноября, O2 Forum Kentish Town. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/swae-lee-london-12-11-2026/event/3E006535C49C507F\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
@@ -606,29 +961,29 @@
           {
             "line_index": 35,
             "passed": true,
-            "detail": "post-check passed"
+            "detail": "existing fact verified"
           }
         ],
-        "known_factual_error": false
+        "known_factual_error": true
       },
       {
-        "group_key": "крупные концерты вне gm::событие проходит только 13 ноября, согласно данным.",
+        "group_key": "русскоязычные концерты и стендап uk::дата события указана неверно, должна быть 12 ноября 2026 года.",
         "actions": [
           {
             "line_index": 36,
-            "section": "Крупные концерты вне GM",
+            "section": "Русскоязычные концерты и стендап UK",
             "requested_action": "patch",
-            "reason": "Событие проходит только 13 ноября, согласно данным.",
+            "reason": "Дата события указана неверно, должна быть 12 ноября 2026 года.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
+            "critical_problem": "Неправильная дата события",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "outside_gm_tickets-01",
-            "candidate_fingerprint": "event-event-noah-kahan-the-great-divide-tour-2026-11-13-the-o2-015b667d6e95",
-            "original_url_identity": "ticketmaster.co.uk/noah-kahan-the-great-divide-tour-london-13-11-2026/event/350064899C2A4C19",
-            "original_html": "• <b>Noah Kahan</b> — тур: 13 и 14 ноября, The O2. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/noah-kahan-the-great-divide-tour-london-13-11-2026/event/350064899C2A4C19\">Ticketmaster</a>",
+            "plan_slot_id": "russian_events-01",
+            "candidate_fingerprint": "event-id-jsonld-event-0e9dbc6bbdae-dfba8ff7f074",
+            "original_url_identity": "mticket.uk/ru/london/caligula-4302.html",
+            "original_html": "• Событие 'Калигула' состоится 12 ноября 2026 года в театре The Broadway в Лондоне; билеты стоят £30.95. <a href=\"https://mticket.uk/ru/london/caligula-4302.html\">MTicket Russian Concerts</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -642,41 +997,145 @@
           }
         ],
         "known_factual_error": true
+      },
+      {
+        "group_key": "дальние анонсы::событие в ливерпуле не соответствует географическому контракту для раздела.",
+        "actions": [
+          {
+            "line_index": 28,
+            "section": "Дальние анонсы",
+            "requested_action": "strip",
+            "reason": "Событие в Ливерпуле не соответствует географическому контракту для раздела.",
+            "risk": "geo",
+            "critical_error": true,
+            "critical_problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "future_announcements-01",
+            "candidate_fingerprint": "event-event-the-southmartins-2026-11-21-o2-academy-liverpool-2c06e3ea02a4",
+            "original_url_identity": "ticketmaster.co.uk/the-southmartins-liverpool-21-11-2026/event/3E00628EFE0E29B8",
+            "original_html": "• <b>The Southmartins</b> — 21 ноября, O2 Academy Liverpool. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/the-southmartins-liverpool-21-11-2026/event/3E00628EFE0E29B8\">Ticketmaster</a>",
+            "replacement_fingerprint": "event-event-inclusive-accessible-service-2026-12-06-st-peter-s-church-16-green-lane-87649552f2fb",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 28,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::событие уже прошло.",
+        "actions": [
+          {
+            "line_index": 29,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "strip",
+            "reason": "Событие уже прошло.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана как 23 октября, но это уже прошло.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "ticket_radar-01",
+            "candidate_fingerprint": "event-event-newton-faulkner-23rd-october-2027-2027-10-23-manchester-academy-c5b74057c11a",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13382083/newton-faulkner-manchester-academy-2-2027-10-23-19-30-00",
+            "original_html": "• <b>Newton Faulkner</b> — 23 октября, Manchester Academy; цена £35.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13382083/newton-faulkner-manchester-academy-2-2027-10-23-19-30-00\">Manchester Academy</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 34,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "strip",
+            "reason": "Событие уже прошло.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана как 15 октября, но это уже прошло.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "ticket_radar-06",
+            "candidate_fingerprint": "event-event-robert-jon-the-wreck-15th-october-2027-2027-10-15-manchester-academy-3cc350115ab8",
+            "original_url_identity": "manchesteracademy.net/order/gateway/13381991/robert-jon-and-the-wreck-manchester-academy-2-2027-10-15-19-30-00",
+            "original_html": "• <b>Robert Jon & The Wreck</b> — 15 октября, Manchester Academy; цена £29.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13381991/robert-jon-and-the-wreck-manchester-academy-2-2027-10-15-19-30-00\">Manchester Academy</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 29,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "line_index": 34,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
       }
     ],
     "refetch": {
-      "attempted": 0,
+      "attempted": 1,
       "improved": 0,
       "failed": 0,
-      "empty_or_not_better": 0,
-      "skipped": 2,
+      "empty_or_not_better": 1,
+      "skipped": 3,
       "reports": [
         {
-          "fingerprint": "event-event-the-luke-combs-experience-2026-12-04-o2-academy-2-liverpool-e1eab6e84f14",
-          "title": "The Luke Combs Experience — event 2026-12-04 — public sale 2026-03-06 10:00",
+          "fingerprint": "event-event-the-southmartins-2026-11-21-o2-academy-liverpool-2c06e3ea02a4",
+          "title": "The Southmartins — event 2026-11-21 — public sale 2025-04-25 10:00",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/the-luke-combs-experience-liverpool-04-12-2026/event/3E006462FA8F69E6",
-          "candidate_evidence_chars": 357
+          "url": "https://ticketmaster.co.uk/the-southmartins-liverpool-21-11-2026/event/3E00628EFE0E29B8",
+          "candidate_evidence_chars": 353
         },
         {
-          "fingerprint": "event-event-noah-kahan-the-great-divide-tour-2026-11-13-the-o2-015b667d6e95",
-          "title": "Noah Kahan - The Great Divide Tour — event 2026-11-13 — public sale 2026-04-17 10:00",
+          "fingerprint": "event-event-swae-lee-2026-11-12-o2-forum-kentish-town-8aebae9b3047",
+          "title": "Swae Lee — event 2026-11-12 — public sale 2026-09-25 10:00",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/noah-kahan-the-great-divide-tour-london-13-11-2026/event/350064899C2A4C19",
-          "candidate_evidence_chars": 329
+          "url": "https://ticketmaster.co.uk/swae-lee-london-12-11-2026/event/3E006535C49C507F",
+          "candidate_evidence_chars": 379
+        },
+        {
+          "fingerprint": "event-id-jsonld-event-0e9dbc6bbdae-dfba8ff7f074",
+          "title": "Caligula",
+          "status": "empty",
+          "url": "https://mticket.uk/ru/london/caligula-4302.html",
+          "chars": 0
+        },
+        {
+          "fingerprint": "event-event-the-southmartins-2026-11-21-o2-academy-liverpool-2c06e3ea02a4",
+          "title": "The Southmartins — event 2026-11-21 — public sale 2025-04-25 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/the-southmartins-liverpool-21-11-2026/event/3E00628EFE0E29B8",
+          "candidate_evidence_chars": 353
         }
       ]
     },
-    "enrich_improved": 8,
-    "no_eligible_backup": 1,
-    "false_positive_existing_fact": 2,
+    "enrich_improved": 15,
+    "false_positive_existing_fact": 6,
+    "no_eligible_backup": 5,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 36,
-      "matched_lines": 36,
-      "applicable_lines": 3,
+      "checked_lines": 33,
+      "matched_lines": 33,
+      "applicable_lines": 6,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -688,149 +1147,254 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 36,
-      "resolved_in_place": 35,
-      "unresolved": 1,
-      "findings": [
-        {
-          "line_index": 32,
-          "section": "Дальние анонсы",
-          "outcome": "unresolved",
-          "code": "language_policy_defect",
-          "severity": "warning"
-        }
-      ]
+      "checked_lines": 33,
+      "resolved_in_place": 33,
+      "unresolved": 0,
+      "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved"
   },
-  "notes": "Строка соответствует требованиям: событие в GM, информация актуальна и понятна.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлено противоречие в описании статуса Фрэнка Скотта.; Строка о Metrolink содержит устаревшую информацию, так как указанные даты уже прошли.; Исправление необходимо для ко",
+  "notes": "Исправление необходимо для корректного юридического описания статуса задержанного.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Ошибка в строке 5 требует исправления, чтобы избежать неверной информации о признании вины.; Исправлена дата окончания работ на трамвайных линиях, чтобы отразить, что они у",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 3,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Неправильное использование термина 'подозреваемый в убийстве'.",
+        "risk": "legal",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 5,
         "section": "Свежие новости",
-        "problem": "Текст утверждает, что Фрэнк Скотт был осуждён, но также говорит, что он освобождён под залог, что противоречит друг другу.",
+        "problem": "Текст утверждает, что муж признал вину, но это не подтверждается источником.",
         "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 16,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дата окончания работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
+        "risk": "date",
         "suggested_action": "repair"
       },
       {
         "line_index": 17,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
-        "risk": "date",
+        "section": "Что важно сегодня",
+        "problem": "Географическая ошибка: событие произошло в Cheshire, а не в Greater Manchester.",
+        "risk": "geo",
         "suggested_action": "strip"
       },
       {
-        "line_index": 18,
+        "line_index": 19,
         "section": "Футбол",
-        "problem": "Неверное указание главного тренера Манчестер Сити.",
+        "problem": "Неправильное имя игрока и сумма трансфера.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 23,
+        "line_index": 20,
         "section": "Городской радар",
-        "problem": "Некорректное использование терминов 'обвиняемый' и 'осуждён'.",
-        "risk": "sensitive",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 32,
-        "section": "Business/tech события для тебя",
-        "problem": "Некорректная информация о стоимости участия.",
+        "problem": "Ошибка в количестве лет тюремного заключения.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 33,
+        "line_index": 22,
+        "section": "Городской радар",
+        "problem": "Неверное указание пола пострадавшего.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 28,
         "section": "Дальние анонсы",
         "problem": "Событие находится в Ливерпуле, что не соответствует geo_scope 'gm'.",
         "risk": "geo",
         "suggested_action": "strip"
       },
       {
-        "line_index": 36,
+        "line_index": 29,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Дата события указана как 23 октября, но это уже прошло.",
+        "risk": "date",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 34,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Дата события указана как 15 октября, но это уже прошло.",
+        "risk": "date",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 35,
         "section": "Крупные концерты вне GM",
         "problem": "Дата события указана неверно.",
         "risk": "date",
         "suggested_action": "repair"
+      },
+      {
+        "line_index": 36,
+        "section": "Русскоязычные концерты и стендап UK",
+        "problem": "Неправильная дата события",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 17,
+        "section": "Что важно сегодня",
+        "problem": "Недостаточное количество элементов в разделе.",
+        "risk": "product",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 28,
+        "section": "Дальние анонсы",
+        "problem": "Событие не соответствует географическому контракту.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 29,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Дата события в прошлом.",
+        "risk": "date",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 34,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Дата события в прошлом.",
+        "risk": "date",
+        "suggested_action": "strip"
       }
     ],
     "actions": [
       {
-        "line_index": 3,
+        "line_index": 1,
+        "section": "Главная история дня",
+        "action": "patch",
+        "replacement_text": "• В Чаддертоне, на улице Уитстейбл Клоуз, был найден мёртвым Грэм Боттомли. Полиция Манчестера проводила обыск в его доме в рамках расследования серии грабежей. Человек задержан по подозрению в убийстве и остаётся под стражей. Семья Боттомли выразила горе и попросила уважать их личное пространство в это трудное время.",
+        "reason": "Исправление термина 'подозреваемый в убийстве' на 'человек задержан по подозрению в убийстве' для корректного юридического описания.",
+        "risk": "legal"
+      },
+      {
+        "line_index": 5,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• Суд освободил под залог 48-летнего Фрэнка Скотта, обвиняемого в изнасиловании женщины и нападении на мужчину в Саквилле-Гарденс. Скотт, который нацеливался на уязвимых людей, обвиняется в нападениях на двух жертв, произошедших с разницей в шесть месяцев. В суде его жертвы держались за руки, когда он был приговорён. Прокурор Джессика Фостер рассказала, что первая жертва, находившаяся в состоянии алкогольного опьянения, была изнасилована в июне 2025 года.",
-        "reason": "Устранение противоречия между освобождением под залог и осуждением.",
+        "replacement_text": "• В Манчестере продолжается судебный процесс над девятью мужчинами, обвиняемыми в сексуальных преступлениях против женщины, которую более 20 лет подвергал насилию её муж. Суду стало известно, что 60-летний Дэвид Грейвс, один из обвиняемых, поощрял мужа снимать на видео акты насилия, когда женщина была без сознания после применения наркотиков. Мужчина признал вину по нескольким статьям, включая изнасилование и применение веществ с намерением лишить сознания, но это не подтверждено источником.",
+        "reason": "Утверждение о признании вины мужа требует уточнения, так как это не подтверждается источником.",
         "risk": "factual"
       },
       {
-        "line_index": 17,
+        "line_index": 16,
         "section": "Общественный транспорт сегодня",
-        "action": "strip",
-        "reason": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
+        "action": "patch",
+        "replacement_text": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере были полностью приостановлены для проведения инженерных работ. Пассажирам рекомендуется планировать свои поездки заранее и использовать замещающие автобусы.",
+        "reason": "Дата окончания работ уже прошла, необходимо указать, что работы завершены.",
         "risk": "date"
       },
       {
-        "line_index": 18,
+        "line_index": 17,
+        "section": "Что важно сегодня",
+        "action": "strip",
+        "reason": "Событие произошло в Cheshire, что не соответствует geo_scope 'gm'.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 19,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Главный тренер Манчестер Сити Пеп Гвардиола столкнулся с новыми проблемами с травмами, так как двое игроков снялись с национальных команд во время международного перерыва в ноябре.",
-        "reason": "Неверно указан главный тренер Манчестер Сити. Энцо Мареска не является тренером Манчестер Сити.",
+        "replacement_text": "• Манчестер Сити сталкивается с проблемой в полузащите после трех подряд поражений в Премьер-лиге. Тренер Энцо Мареска должен решить, как использовать новобранца Айюба Буадди.",
+        "reason": "Исправлено имя игрока и удалена неверная сумма трансфера.",
         "risk": "factual"
       },
       {
-        "line_index": 23,
+        "line_index": 20,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Прокуроры представляют дело против девяти мужчин, обвиняемых в изнасиловании или насилии над женщиной, которую подсыпал наркотики ее муж; муж признал вину по 62 преступлениям, четверо других мужчин признали вину, а оставшиеся обвиняемые отрицают все обвинения и находятся под судом в Манчестере.",
-        "reason": "Исправление терминологии для корректного отражения статуса судебного процесса.",
-        "risk": "sensitive"
-      },
-      {
-        "line_index": 32,
-        "section": "Business/tech события для тебя",
-        "action": "patch",
-        "replacement_text": "• #networking Networking North - Rochdale - November Tuesday 10 Nov 9am - 11am — 10 ноября, Rochdale. Уровень: большая конференция/экспо; Доступ: бесплатно для членов, £22 для остальных. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь.",
-        "reason": "Уточнение стоимости участия для не-членов.",
+        "replacement_text": "• Два мужчины были приговорены к пятнадцати годам тюремного заключения за изнасилование 17-летней девушки в Манчестере. Приговор был вынесён 10 ноября 2026 года после единогласного вердикта жюри.",
+        "reason": "Уточнение количества лет тюремного заключения.",
         "risk": "factual"
       },
       {
-        "line_index": 33,
+        "line_index": 22,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• В результате коронерского расследования, проведённого 10 ноября 2026 года, выяснилось, что четверо человек, арестованных после смерти экс-игрока регби Майкла Мартиндейла, были освобождены без дальнейших действий.",
+        "reason": "Исправление неверного указания пола пострадавшего.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 28,
         "section": "Дальние анонсы",
         "action": "strip",
         "reason": "Событие проходит в Ливерпуле, что не соответствует требованию geo_scope 'gm'.",
         "risk": "geo"
       },
       {
-        "line_index": 35,
+        "line_index": 29,
         "section": "Билеты / Ticket Radar",
+        "action": "strip",
+        "reason": "Событие уже прошло, дата 23 октября 2027.",
+        "risk": "date"
+      },
+      {
+        "line_index": 34,
+        "section": "Билеты / Ticket Radar",
+        "action": "strip",
+        "reason": "Событие уже прошло, дата 15 октября 2027.",
+        "risk": "date"
+      },
+      {
+        "line_index": 35,
+        "section": "Крупные концерты вне GM",
         "action": "patch",
-        "replacement_text": "• Trevor Wallace — 11 ноября, Manchester Academy. Билеты и время указаны на официальной странице: https://manchesteracademy.net/order/gateway/13381189/trevor-wallace-the-alpha-beta-male-manchester-academy-2026-11-11-19-00-00",
-        "reason": "Добавление ссылки на покупку билетов для практической пользы.",
-        "risk": "product"
+        "replacement_text": "• Swae Lee — 12 ноября, O2 Forum Kentish Town. Билеты и время указаны на официальной странице.",
+        "reason": "Дата события должна быть 12 ноября 2026 года, как указано в источнике.",
+        "risk": "date"
       },
       {
         "line_index": 36,
-        "section": "Крупные концерты вне GM",
+        "section": "Русскоязычные концерты и стендап UK",
         "action": "patch",
-        "replacement_text": "• Noah Kahan — тур: 13 ноября, The O2. Билеты и время указаны на официальной странице.",
-        "reason": "Событие проходит только 13 ноября, согласно данным.",
+        "replacement_text": "• Событие 'Калигула' состоится 12 ноября 2026 года в театре The Broadway в Лондоне; билеты стоят £30.95.",
+        "reason": "Дата события указана неверно, должна быть 12 ноября 2026 года.",
+        "risk": "date"
+      },
+      {
+        "line_index": 28,
+        "section": "Дальние анонсы",
+        "action": "strip",
+        "reason": "Событие в Ливерпуле не соответствует географическому контракту для раздела.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 29,
+        "section": "Билеты / Ticket Radar",
+        "action": "strip",
+        "reason": "Событие уже прошло.",
+        "risk": "date"
+      },
+      {
+        "line_index": 34,
+        "section": "Билеты / Ticket Radar",
+        "action": "strip",
+        "reason": "Событие уже прошло.",
         "risk": "date"
       }
     ],
     "warnings": [
-      "Строка о Trevor Wallace не содержит прямой ссылки на покупку билетов, что снижает практическую пользу.",
-      "judge reduce failed: parse_failed no parseable JSON"
+      "Раздел 'Что важно сегодня' содержит только один элемент, что ниже минимального порога."
     ],
-    "notes": "Строка соответствует требованиям: событие в GM, информация актуальна и понятна.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлено противоречие в описании статуса Фрэнка Скотта.; Строка о Metrolink содержит устаревшую информацию, так как указанные даты уже прошли.; Исправление необходимо для ко",
+    "notes": "Исправление необходимо для корректного юридического описания статуса задержанного.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Ошибка в строке 5 требует исправления, чтобы избежать неверной информации о признании вины.; Исправлена дата окончания работ на трамвайных линиях, чтобы отразить, что они у",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "partial",
-      "chunk_count": 13,
+      "status": "ok",
+      "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -843,13 +1407,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2589,
-          "duration_seconds": 0.931
+          "estimated_tokens": 2704,
+          "duration_seconds": 3.096
         },
         {
           "chunk_id": "chunk-02",
@@ -866,8 +1430,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2446,
-          "duration_seconds": 0.929
+          "estimated_tokens": 2435,
+          "duration_seconds": 1.244
         },
         {
           "chunk_id": "chunk-03",
@@ -884,15 +1448,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7612,
-          "duration_seconds": 2.924
+          "estimated_tokens": 7439,
+          "duration_seconds": 3.583
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            17
+            16
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -902,11 +1466,29 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5058,
-          "duration_seconds": 1.869
+          "estimated_tokens": 4444,
+          "duration_seconds": 2.376
         },
         {
           "chunk_id": "chunk-05",
+          "status": "ok",
+          "line_range": [
+            17,
+            17
+          ],
+          "sections": [
+            "Что важно сегодня"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2642,
+          "duration_seconds": 1.698
+        },
+        {
+          "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
             18,
@@ -920,87 +1502,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3168,
-          "duration_seconds": 2.902
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "ok",
-          "line_range": [
-            20,
-            27
-          ],
-          "sections": [
-            "Городской радар"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 6235,
-          "duration_seconds": 2.424
+          "estimated_tokens": 3147,
+          "duration_seconds": 2.32
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            28,
-            28
+            20,
+            26
           ],
           "sections": [
-            "Еда, открытия и рынки"
+            "Городской радар"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2742,
-          "duration_seconds": 4.176
+          "estimated_tokens": 5909,
+          "duration_seconds": 3.537
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            29,
-            31
+            27,
+            27
           ],
           "sections": [
-            "IT и бизнес"
+            "Business/tech события для тебя"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3714,
-          "duration_seconds": 43.926
+          "estimated_tokens": 2895,
+          "duration_seconds": 24.19
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            32,
-            32
-          ],
-          "sections": [
-            "Business/tech события для тебя"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2861,
-          "duration_seconds": 15.685
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            33,
-            33
+            28,
+            28
           ],
           "sections": [
             "Дальние анонсы"
@@ -1010,33 +1556,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2686,
-          "duration_seconds": 6.87
+          "estimated_tokens": 2660,
+          "duration_seconds": 5.885
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            29,
+            34
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 5910,
+          "duration_seconds": 36.79
         },
         {
           "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            34,
+            35,
             35
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 1,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 3473,
-          "duration_seconds": 26.393
-        },
-        {
-          "chunk_id": "chunk-12",
-          "status": "ok",
-          "line_range": [
-            36,
-            36
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -1046,40 +1592,40 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2714,
-          "duration_seconds": 5.839
+          "estimated_tokens": 2670,
+          "duration_seconds": 5.956
         },
         {
-          "chunk_id": "chunk-13",
+          "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
-            37,
-            37
+            36,
+            36
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2806,
-          "duration_seconds": 5.039
+          "estimated_tokens": 2661,
+          "duration_seconds": 5.964
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
-        "critical_error_count": 0,
-        "action_count": 0,
-        "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 10593,
-        "duration_seconds": 28.741
+        "decision": "repair_required",
+        "critical_error_count": 4,
+        "action_count": 3,
+        "warning_count": 1,
+        "error": "",
+        "estimated_tokens": 10207,
+        "duration_seconds": 24.248
       },
       "max_workers": 3,
       "chunk_line_target": 12,
