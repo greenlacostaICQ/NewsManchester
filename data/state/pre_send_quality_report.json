@@ -1,5 +1,5 @@
 {
-  "status": "ok",
+  "status": "partial",
   "decision": "warn",
   "can_send": true,
   "reason": "pre-send repair executor applied 4 repair(s); every operation passed its post-check",
@@ -7,138 +7,130 @@
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-11-12",
-  "pipeline_run_id": "20261112T080206+0000",
-  "digest_sha256": "3855b646ef95da35ba4a6fd9902eb617fcdd8a9c691f8d5691a7161f2357c505",
-  "duration_seconds": 95.245,
+  "run_date_london": "2026-11-13",
+  "pipeline_run_id": "20261113T080148+0000",
+  "digest_sha256": "112c0a4083551b5952f96182f7ed1a3e2d27d3dc80c89de57e87aadd27508619",
+  "duration_seconds": 111.931,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 4,
-      "section": "Свежие новости",
-      "problem": "Указано, что Дженсен Уэстхед скончался в отеле в Дубае, но это не соответствует географическому контракту GM.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
       "line_index": 9,
       "section": "Свежие новости",
-      "problem": "Глоссоп не входит в Greater Manchester, но указан как часть GM.",
-      "risk": "geo",
-      "suggested_action": "strip"
+      "problem": "Дата осуждения указана неверно. 13 ноября 2026 года — это пятница, а не четверг.",
+      "risk": "date",
+      "suggested_action": "repair"
     },
     {
-      "line_index": 14,
+      "line_index": 17,
       "section": "Общественный транспорт сегодня",
-      "problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+      "problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
       "risk": "date",
       "suggested_action": "strip"
     },
     {
-      "line_index": 15,
+      "line_index": 21,
       "section": "Футбол",
-      "problem": "Слухи о замене тренера представлены как факт.",
+      "problem": "Michael Carrick не был главным тренером Manchester United в сезоне 2026/27.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 25,
+      "line_index": 35,
       "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
+      "problem": "Дата события указана неверно. Указана дата 15 ноября, но в данных события указана дата 10 мая 2027 года.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 30,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 39,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дата события указана как 24 июня, но год не указан, что может ввести в заблуждение.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 25,
-      "section": "Выходные в GM",
-      "problem": "Duplicate event listing for Stockport Makers Market.",
+      "line_index": 42,
+      "section": "Городской радар",
+      "problem": "Строка не содержит информации о событии или факте, только дату объявления.",
       "risk": "format",
       "suggested_action": "strip"
+    },
+    {
+      "line_index": 49,
+      "section": "Дальние анонсы",
+      "problem": "Дата события указана как сегодняшняя, но это не соответствует текущей дате.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 58,
+      "section": "Крупные концерты вне GM",
+      "problem": "Дата указана как 13 и 14 ноября, но текст утверждает, что концерт проходит сегодня, что неверно для 13 ноября.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 3,
+      "section": "Свежие новости",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'raped' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "sexual_offence"
     }
   ],
   "actions": [
     {
-      "line_index": 4,
-      "section": "Свежие новости",
-      "action": "strip",
-      "reason": "Событие произошло в Дубае, что не соответствует географическому контракту GM.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
       "line_index": 9,
       "section": "Свежие новости",
-      "action": "strip",
-      "reason": "Глоссоп не является частью Greater Manchester, что нарушает географический контракт.",
-      "risk": "geo",
-      "replacement_text": ""
+      "action": "patch",
+      "replacement_text": "• 55-летний Джон Гидзи, известный как 'Mr Big', был осуждён в пятницу, 13 ноября 2026 года, в суде Молда за жестокое обращение с партнёршей Наташей Фарах и её сестрой. Он получил четыре года тюрьмы за контролирующее поведение и 11 месяцев за удушение сестры. Судья назвал его действия \"самым худшим случаем\" домашнего насилия, который он когда-либо видел.",
+      "reason": "Исправление дня недели на правильный.",
+      "risk": "date"
     },
     {
-      "line_index": 14,
+      "line_index": 17,
       "section": "Общественный транспорт сегодня",
       "action": "strip",
-      "reason": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+      "reason": "Дата завершения работ уже прошла, информация неактуальна.",
       "risk": "date",
       "replacement_text": ""
     },
     {
-      "line_index": 15,
+      "line_index": 21,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• 12 ноября 2026 года появились слухи о том, что Маурисио Почеттино может заменить Майкла Каррика на посту тренера Манчестер Юнайтед, но официального подтверждения нет.",
-      "reason": "Уточнение, что это слухи, а не подтверждённый факт.",
+      "replacement_text": "• Майкл Каррик был уволен с поста тренера Манчестер Юнайтед после неудачного старта сезона 2026/27, но отказался публично критиковать руководство клуба.",
+      "reason": "Каррик не был главным тренером в сезоне 2026/27.",
       "risk": "factual"
     },
     {
-      "line_index": 25,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 14 ноября в Market Place Stockport — Stockport Makers Market. На площадке: рынок, вход свободный, ремесленные товары, еда, можно с собакой.",
-      "reason": "Дата события должна быть 14 ноября, а не 10 октября.",
-      "risk": "date"
-    },
-    {
-      "line_index": 30,
+      "line_index": 35,
       "section": "Выходные в GM",
       "action": "patch",
       "replacement_text": "• 10 мая — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
-      "reason": "Дата события указана неверно, согласно данным, событие проходит с 10 мая.",
+      "reason": "Дата события указана неверно. Указана дата 15 ноября, но в данных события указана дата 10 мая 2027 года.",
       "risk": "date"
     },
     {
-      "line_index": 39,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• The Avalanches — 24 июня 2027 года, Manchester Academy; цена £37.25. Билеты и время указаны на официальной странице.",
-      "reason": "Уточнение года события для предотвращения путаницы.",
-      "risk": "date"
-    },
-    {
-      "line_index": 25,
-      "section": "Выходные в GM",
+      "line_index": 42,
+      "section": "Городской радар",
       "action": "strip",
-      "replacement_text": "",
-      "reason": "Duplicate entry for the same event, causing redundancy.",
-      "risk": "format"
+      "reason": "Строка не содержит полезной информации для читателей.",
+      "risk": "format",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 49,
+      "section": "Дальние анонсы",
+      "action": "patch",
+      "replacement_text": "• OK Go — 13 ноября, Manchester New Century Hall. Концерт состоится сегодня.",
+      "reason": "Уточнение, что событие происходит сегодня, чтобы избежать путаницы.",
+      "risk": "date"
+    },
+    {
+      "line_index": 58,
+      "section": "Крупные концерты вне GM",
+      "action": "patch",
+      "replacement_text": "• Noah Kahan — тур: 13 и 14 ноября, The O2. Концерт проходит 13 ноября.",
+      "reason": "Уточнение даты проведения концерта, чтобы избежать путаницы.",
+      "risk": "date"
     }
   ],
   "warnings": [
-    "Что важно сегодня: отсутствует, нарушая продуктовую полноту.",
-    "Городской радар: только один элемент, ниже минимального порога."
+    "judge reduce failed: parse_failed no parseable JSON"
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -147,90 +139,94 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 3,
-      "Футбол": 2,
-      "Выходные в GM": 11,
-      "Городской радар": 1,
-      "Еда, открытия и рынки": 1,
-      "IT и бизнес": 4,
+      "Общественный транспорт сегодня": 6,
+      "Что важно сегодня": 3,
+      "Футбол": 3,
+      "Выходные в GM": 9,
+      "Городской радар": 9,
       "Business/tech события для тебя": 1,
-      "Билеты / Ticket Radar": 6,
+      "Дальние анонсы": 4,
+      "Билеты / Ticket Radar": 7,
       "Крупные концерты вне GM": 2,
       "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
+      "Что важно сегодня": 3,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 1,
-      "Выходные в GM": 11,
-      "Билеты / Ticket Radar": 6,
+      "Городской радар": 9,
+      "Выходные в GM": 9,
+      "Билеты / Ticket Radar": 7,
       "Русскоязычные концерты и стендап UK": 1,
-      "Еда, открытия и рынки": 1,
+      "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 1,
-      "Футбол": 2
+      "Футбол": 3
     },
-    "ticket_items": 9,
-    "core_items": 27,
+    "ticket_items": 10,
+    "core_items": 36,
     "writer_quality_counts": {
-      "included_candidates": 47,
-      "rendered_candidates": 43,
+      "included_candidates": 58,
+      "rendered_candidates": 56,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 4,
+      "dropped_low_quality": 2,
       "replaced_from_plan_backup": 0,
-      "removed_with_reason": 4
+      "removed_with_reason": 2
     },
     "source_health_counts": {
       "ok": 102,
       "partial": 2,
-      "stale": 9,
+      "stale": 10,
       "empty": 13,
       "failed": 4,
-      "zero_yield": 76,
+      "zero_yield": 70,
       "no_contribution_breakdown": {
         "fetch_failed": 4,
-        "all_rejected": 76,
-        "idle_no_items": 21
+        "all_rejected": 70,
+        "idle_no_items": 27
       },
       "zero_contribution_by_stage": {
-        "selected": 38,
-        "written": 38,
-        "parsed": 21,
+        "written": 33,
+        "parsed": 27,
+        "selected": 37,
         "fetched": 4
       },
-      "weekend_source_coverage_incidents": 51
+      "weekend_source_coverage_incidents": 53
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
-      "Городской радар: 1 item(s), emergency floor 5",
-      "Еда, открытия и рынки: 1 item(s), emergency floor 3",
+      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [
-      "multiple actions target line 25"
-    ],
+    "warnings": [],
     "can_apply_actions": true,
-    "action_count": 8
+    "action_count": 7
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 43,
-    "matched_lines": 43,
-    "applicable_lines": 5,
+    "checked_lines": 56,
+    "matched_lines": 56,
+    "applicable_lines": 1,
     "unmatched_lines": 4,
-    "critical_omission_count": 0,
-    "critical_omissions": [],
+    "critical_omission_count": 1,
+    "critical_omissions": [
+      {
+        "line_index": 3,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/manhunt-underway-after-woman-raped-34903160",
+        "concept": "sexual_offence",
+        "obligation": "charge/verdict/victim",
+        "source_hit": "raped"
+      }
+    ],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 0,
+    "pulled_for_rework": 1,
     "still_missing": 0
   },
   "repair_executor": {
@@ -240,16 +236,16 @@
     "requested": 8,
     "attempted": 4,
     "applied": 4,
-    "model_patch_applied": 0,
+    "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 3,
-    "stripped": 1,
+    "reserve_replacement_used": 1,
+    "stripped": 2,
     "unresolved": 0,
     "blocking_unresolved": 0,
     "resolved": 8,
-    "resolved_in_place": 4,
-    "resolved_by_replacement": 3,
-    "resolved_by_removal": 1,
+    "resolved_in_place": 5,
+    "resolved_by_replacement": 1,
+    "resolved_by_removal": 2,
     "fact_lock_rejected": 0,
     "enrich_attempted": 8,
     "post_check_errors": [],
@@ -257,53 +253,35 @@
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 4,
-        "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Событие произошло в Дубае, что не соответствует географическому контракту GM.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Указано, что Дженсен Уэстхед скончался в отеле в Дубае, но это не соответствует географическому контракту GM.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mum-involved-drug-smuggling-plot-34896842-fd52afffbc4d",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mum-involved-drug-smuggling-plot-34896842",
-        "original_html": "• На суде в Preston Crown Court было услышано, что 20-летний Дженсен Уэстхед скончался в отеле в Дубае после того, как пакет с кокаином, который он проглотил, лопнул. Пять человек, включая его мать и отчима, отрицают непредумышленное убийство и преступления, связанные с наркотиками. Судебный процесс продолжается. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mum-involved-drug-smuggling-plot-34896842\">MEN Latest News</a>",
-        "replacement_fingerprint": "url-aboutmanchester-co-uk-gmfrs-welcomes-22-new-firefighters-ready-to-serve-and-protect-the-communities-of-greater-manchester-150a4ca5a8a5",
-        "post_check_passed": true
-      },
-      {
         "line_index": 9,
         "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Глоссоп не является частью Greater Manchester, что нарушает географический контракт.",
-        "risk": "geo",
+        "requested_action": "patch",
+        "reason": "Исправление дня недели на правильный.",
+        "risk": "date",
         "critical_error": true,
-        "critical_problem": "Глоссоп не входит в Greater Manchester, но указан как часть GM.",
+        "critical_problem": "Дата осуждения указана неверно. 13 ноября 2026 года — это пятница, а не четверг.",
         "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
         "plan_slot_id": "last_24h-07",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-urgent-999-appeal-over-missing-34899218-1209bd6574ca",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/urgent-999-appeal-over-missing-34899218",
-        "original_html": "• Появилось обновление по обращению — Полиция объявила срочный призыв о помощи в поисках 69-летнего Рассела, пропавшего из Глоссопа с понедельника, 9 ноября 2026 года. Последний раз его видели в районе Wren Nest Retail Park на Glossop Brook Road. Полиция выражает все большее беспокойство о его благополучии. Если вы видите Рассела, немедленно позвоните по номеру 999. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/urgent-999-appeal-over-missing-34899218\">MEN</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-two-arrested-after-break-wigan-34897816-d2a80d78f81d",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mr-big-branded-devil-disguise-34905037-0ade3cfee628",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mr-big-branded-devil-disguise-34905037",
+        "original_html": "• 55-летний Джон Гидзи, известный как 'Mr Big', был осуждён в четверг, 13 ноября 2026 года, в суде Молда за жестокое обращение с партнёршей Наташей Фарах и её сестрой. Он получил четыре года тюрьмы за контролирующее поведение и 11 месяцев за удушение сестры. Судья назвал его действия \"самым худшим случаем\" домашнего насилия, который он когда-либо видел. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mr-big-branded-devil-disguise-34905037\">MEN</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 14,
+        "line_index": 17,
         "section": "Общественный транспорт сегодня",
         "requested_action": "strip",
-        "reason": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+        "reason": "Дата завершения работ уже прошла, информация неактуальна.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+        "critical_problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "transport-03",
+        "plan_slot_id": "transport-06",
         "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
         "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
         "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажиры должны планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
@@ -312,53 +290,34 @@
         "post_check_passed": true
       },
       {
-        "line_index": 15,
+        "line_index": 21,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Уточнение, что это слухи, а не подтверждённый факт.",
+        "reason": "Каррик не был главным тренером в сезоне 2026/27.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Слухи о замене тренера представлены как факт.",
+        "critical_problem": "Michael Carrick не был главным тренером Manchester United в сезоне 2026/27.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
+        "method": "model_patch",
         "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-mauricio-pochettinos-link-glazers-manchester-34897060-f3fa166fc12b",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/mauricio-pochettinos-link-glazers-manchester-34897060",
-        "original_html": "• 12 ноября 2026 года появились слухи о том, что Маурисио Почеттино может заменить Майкла Каррика на посту тренера Манчестер Юнайтед. <a href=\"https://manchestereveningnews.co.uk/sport/football/mauricio-pochettinos-link-glazers-manchester-34897060\">MEN Manchester United</a>",
-        "verification": "structured fact already rendered correctly",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-michael-carrick-refused-say-what-34816601-8f62e1bf2741",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/michael-carrick-refused-say-what-34816601",
+        "original_html": "• Майкл Каррик был уволен с поста главного тренера Манчестер Юнайтед после неудачного старта сезона 2026/27, но отказался публично критиковать руководство клуба. <a href=\"https://manchestereveningnews.co.uk/sport/football/michael-carrick-refused-say-what-34816601\">MEN Manchester United</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 25,
+        "line_index": 35,
         "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Дата события должна быть 14 ноября, а не 10 октября.",
-        "risk": "date",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-03",
-        "candidate_fingerprint": "event-event-stockport-makers-market-october-2026-the-sk-lowdown-2026-10-10-market-place-stockport-england-united-kingdom-f40234fe398f",
-        "original_url_identity": "sklowdown.co.uk/whats-on-stockport/stockport-makers-market-october",
-        "original_html": "• 14 ноября в Market Place Stockport — Stockport Makers Market October 2026. На площадке: рынок, вход свободный, ремесленные товары, еда, можно с собакой. <a href=\"https://sklowdown.co.uk/whats-on-stockport/stockport-makers-market-october\">SK Lowdown Markets</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 30,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события указана неверно, согласно данным, событие проходит с 10 мая.",
+        "reason": "Дата события указана неверно. Указана дата 15 ноября, но в данных события указана дата 10 мая 2027 года.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
+        "critical_problem": "Дата события указана неверно. Указана дата 15 ноября, но в данных события указана дата 10 мая 2027 года.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-07",
+        "plan_slot_id": "weekend_activities-06",
         "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2027-05-10-burnage-rfc-9a3e9cdf54f4",
         "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
         "original_html": "• 15 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
@@ -366,122 +325,127 @@
         "post_check_passed": true
       },
       {
-        "line_index": 39,
-        "section": "Билеты / Ticket Radar",
+        "line_index": 42,
+        "section": "Городской радар",
+        "requested_action": "strip",
+        "reason": "Строка не содержит полезной информации для читателей.",
+        "risk": "format",
+        "critical_error": true,
+        "critical_problem": "Строка не содержит информации о событии или факте, только дату объявления.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "city_watch-06",
+        "candidate_fingerprint": "url-prolificnorth-co-uk-news-manchester-edtech-start-up-secures-450k-investment-following-accelerator-participation-49b4663c6c66",
+        "original_url_identity": "prolificnorth.co.uk/news/manchester-edtech-start-up-secures-450k-investment-following-accelerator-participation",
+        "original_html": "• Об этом было объявлено 12 ноября 2026 года. <a href=\"https://prolificnorth.co.uk/news/manchester-edtech-start-up-secures-450k-investment-following-accelerator-participation\">Prolific North Manchester</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 49,
+        "section": "Дальние анонсы",
         "requested_action": "patch",
-        "reason": "Уточнение года события для предотвращения путаницы.",
+        "reason": "Уточнение, что событие происходит сегодня, чтобы избежать путаницы.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события указана как 24 июня, но год не указан, что может ввести в заблуждение.",
+        "critical_problem": "Дата события указана как сегодняшняя, но это не соответствует текущей дате.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "ticket_radar-01",
-        "candidate_fingerprint": "event-event-the-avalanches-24th-june-2027-2027-06-24-manchester-academy-565026c2925c",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13382111/the-avalanches-manchester-academy-2027-06-24-19-00-00",
-        "original_html": "• <b>The Avalanches</b> — 24 июня, Manchester Academy; цена £37.25. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13382111/the-avalanches-manchester-academy-2027-06-24-19-00-00\">Manchester Academy</a>",
+        "plan_slot_id": "future_announcements-03",
+        "candidate_fingerprint": "event-event-ok-go-2026-11-13-manchester-new-century-hall-e9098d477ddf",
+        "original_url_identity": "ticketmaster.co.uk/ok-go-manchester-13-11-2026/event/37006426C113171D",
+        "original_html": "• <b>OK Go</b> — 13 ноября, Manchester New Century Hall. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/ok-go-manchester-13-11-2026/event/37006426C113171D\">Ticketmaster</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 25,
-        "section": "Выходные в GM",
-        "requested_action": "strip",
-        "reason": "Duplicate entry for the same event, causing redundancy.",
-        "risk": "format",
+        "line_index": 58,
+        "section": "Крупные концерты вне GM",
+        "requested_action": "patch",
+        "reason": "Уточнение даты проведения концерта, чтобы избежать путаницы.",
+        "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
+        "critical_problem": "Дата указана как 13 и 14 ноября, но текст утверждает, что концерт проходит сегодня, что неверно для 13 ноября.",
         "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "outside_gm_tickets-01",
+        "candidate_fingerprint": "event-event-noah-kahan-the-great-divide-tour-2026-11-13-the-o2-015b667d6e95",
+        "original_url_identity": "ticketmaster.co.uk/noah-kahan-the-great-divide-tour-london-13-11-2026/event/350064899C2A4C19",
+        "original_html": "• <b>Noah Kahan</b> — тур: 13 и 14 ноября, The O2. Концерт проходит сегодня. <a href=\"https://ticketmaster.co.uk/noah-kahan-the-great-divide-tour-london-13-11-2026/event/350064899C2A4C19\">Ticketmaster</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "requested_action": "replace",
+        "reason": "critical source fact dropped in translation: 'raped' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
+        "risk": "translation",
+        "critical_error": true,
+        "critical_problem": "",
+        "completeness_concept": "sexual_offence",
         "outcome": "resolved_by_replacement",
         "method": "reserve_replacement",
-        "plan_slot_id": "weekend_activities-03",
-        "candidate_fingerprint": "event-event-stockport-makers-market-october-2026-the-sk-lowdown-2026-10-10-market-place-stockport-england-united-kingdom-f40234fe398f",
-        "original_url_identity": "sklowdown.co.uk/whats-on-stockport/stockport-makers-market-october",
-        "original_html": "• 14 ноября в Market Place Stockport — Stockport Makers Market October 2026. На площадке: рынок, вход свободный, ремесленные товары, еда, можно с собакой. <a href=\"https://sklowdown.co.uk/whats-on-stockport/stockport-makers-market-october\">SK Lowdown Markets</a>",
-        "replacement_fingerprint": "event-id-skiddle-com-f4cbf42f4037-82a83c96fbd4",
+        "plan_slot_id": "last_24h-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manhunt-underway-after-woman-raped-34903160-fcbfbbb6ff49",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manhunt-underway-after-woman-raped-34903160",
+        "original_html": "• В Tameside разыскивается подозреваемый после того, как женщина стала жертвой 'ужасной' атаки на тропе между Turner Lane и Cranbourne Road 10 ноября 2026 года. Полиция призывает к бдительности. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manhunt-underway-after-woman-raped-34903160\">MEN Latest News</a>",
+        "replacement_fingerprint": "url-oldham-gov-uk-news-article-2978-saddleworth-residents-to-vote-on-neighbourhood-plan-in-december-f2c7264fe38f",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::событие произошло в дубае, что не соответствует географическому контракту gm.",
-        "actions": [
-          {
-            "line_index": 4,
-            "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "Событие произошло в Дубае, что не соответствует географическому контракту GM.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Указано, что Дженсен Уэстхед скончался в отеле в Дубае, но это не соответствует географическому контракту GM.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mum-involved-drug-smuggling-plot-34896842-fd52afffbc4d",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mum-involved-drug-smuggling-plot-34896842",
-            "original_html": "• На суде в Preston Crown Court было услышано, что 20-летний Дженсен Уэстхед скончался в отеле в Дубае после того, как пакет с кокаином, который он проглотил, лопнул. Пять человек, включая его мать и отчима, отрицают непредумышленное убийство и преступления, связанные с наркотиками. Судебный процесс продолжается. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mum-involved-drug-smuggling-plot-34896842\">MEN Latest News</a>",
-            "replacement_fingerprint": "url-aboutmanchester-co-uk-gmfrs-welcomes-22-new-firefighters-ready-to-serve-and-protect-the-communities-of-greater-manchester-150a4ca5a8a5",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 4,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::глоссоп не является частью greater manchester, что нарушает географический контракт.",
+        "group_key": "свежие новости::исправление дня недели на правильный.",
         "actions": [
           {
             "line_index": 9,
             "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "Глоссоп не является частью Greater Manchester, что нарушает географический контракт.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Глоссоп не входит в Greater Manchester, но указан как часть GM.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-07",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-urgent-999-appeal-over-missing-34899218-1209bd6574ca",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/urgent-999-appeal-over-missing-34899218",
-            "original_html": "• Появилось обновление по обращению — Полиция объявила срочный призыв о помощи в поисках 69-летнего Рассела, пропавшего из Глоссопа с понедельника, 9 ноября 2026 года. Последний раз его видели в районе Wren Nest Retail Park на Glossop Brook Road. Полиция выражает все большее беспокойство о его благополучии. Если вы видите Рассела, немедленно позвоните по номеру 999. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/urgent-999-appeal-over-missing-34899218\">MEN</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-two-arrested-after-break-wigan-34897816-d2a80d78f81d",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 9,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
-        "actions": [
-          {
-            "line_index": 14,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+            "requested_action": "patch",
+            "reason": "Исправление дня недели на правильный.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+            "critical_problem": "Дата осуждения указана неверно. 13 ноября 2026 года — это пятница, а не четверг.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "last_24h-07",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-mr-big-branded-devil-disguise-34905037-0ade3cfee628",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/mr-big-branded-devil-disguise-34905037",
+            "original_html": "• 55-летний Джон Гидзи, известный как 'Mr Big', был осуждён в четверг, 13 ноября 2026 года, в суде Молда за жестокое обращение с партнёршей Наташей Фарах и её сестрой. Он получил четыре года тюрьмы за контролирующее поведение и 11 месяцев за удушение сестры. Судья назвал его действия \"самым худшим случаем\" домашнего насилия, который он когда-либо видел. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/mr-big-branded-devil-disguise-34905037\">MEN</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 9,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "общественный транспорт сегодня::дата завершения работ уже прошла, информация неактуальна.",
+        "actions": [
+          {
+            "line_index": 17,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "strip",
+            "reason": "Дата завершения работ уже прошла, информация неактуальна.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "transport-03",
+            "plan_slot_id": "transport-06",
             "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
             "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
             "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажиры должны планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
@@ -493,7 +457,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 14,
+            "line_index": 17,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -501,84 +465,51 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::уточнение, что это слухи, а не подтверждённый факт.",
+        "group_key": "футбол::каррик не был главным тренером в сезоне 2026/27.",
         "actions": [
           {
-            "line_index": 15,
+            "line_index": 21,
             "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Уточнение, что это слухи, а не подтверждённый факт.",
+            "reason": "Каррик не был главным тренером в сезоне 2026/27.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Слухи о замене тренера представлены как факт.",
+            "critical_problem": "Michael Carrick не был главным тренером Manchester United в сезоне 2026/27.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
+            "method": "model_patch",
             "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-mauricio-pochettinos-link-glazers-manchester-34897060-f3fa166fc12b",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/mauricio-pochettinos-link-glazers-manchester-34897060",
-            "original_html": "• 12 ноября 2026 года появились слухи о том, что Маурисио Почеттино может заменить Майкла Каррика на посту тренера Манчестер Юнайтед. <a href=\"https://manchestereveningnews.co.uk/sport/football/mauricio-pochettinos-link-glazers-manchester-34897060\">MEN Manchester United</a>",
-            "verification": "structured fact already rendered correctly",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-michael-carrick-refused-say-what-34816601-8f62e1bf2741",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/michael-carrick-refused-say-what-34816601",
+            "original_html": "• Майкл Каррик был уволен с поста главного тренера Манчестер Юнайтед после неудачного старта сезона 2026/27, но отказался публично критиковать руководство клуба. <a href=\"https://manchestereveningnews.co.uk/sport/football/michael-carrick-refused-say-what-34816601\">MEN Manchester United</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 15,
+            "line_index": 21,
             "passed": true,
-            "detail": "existing fact verified"
+            "detail": "post-check passed"
           }
         ],
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::дата события должна быть 14 ноября, а не 10 октября.",
+        "group_key": "выходные в gm::дата события указана неверно. указана дата 15 ноября, но в данных события указана дата 10 мая 2027 года.",
         "actions": [
           {
-            "line_index": 25,
+            "line_index": 35,
             "section": "Выходные в GM",
             "requested_action": "patch",
-            "reason": "Дата события должна быть 14 ноября, а не 10 октября.",
-            "risk": "date",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-03",
-            "candidate_fingerprint": "event-event-stockport-makers-market-october-2026-the-sk-lowdown-2026-10-10-market-place-stockport-england-united-kingdom-f40234fe398f",
-            "original_url_identity": "sklowdown.co.uk/whats-on-stockport/stockport-makers-market-october",
-            "original_html": "• 14 ноября в Market Place Stockport — Stockport Makers Market October 2026. На площадке: рынок, вход свободный, ремесленные товары, еда, можно с собакой. <a href=\"https://sklowdown.co.uk/whats-on-stockport/stockport-makers-market-october\">SK Lowdown Markets</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 25,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "выходные в gm::дата события указана неверно, согласно данным, событие проходит с 10 мая.",
-        "actions": [
-          {
-            "line_index": 30,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события указана неверно, согласно данным, событие проходит с 10 мая.",
+            "reason": "Дата события указана неверно. Указана дата 15 ноября, но в данных события указана дата 10 мая 2027 года.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
+            "critical_problem": "Дата события указана неверно. Указана дата 15 ноября, но в данных события указана дата 10 мая 2027 года.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-07",
+            "plan_slot_id": "weekend_activities-06",
             "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2027-05-10-burnage-rfc-9a3e9cdf54f4",
             "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
             "original_html": "• 15 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
@@ -589,7 +520,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 30,
+            "line_index": 35,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -597,23 +528,56 @@
         "known_factual_error": true
       },
       {
-        "group_key": "билеты / ticket radar::уточнение года события для предотвращения путаницы.",
+        "group_key": "городской радар::строка не содержит полезной информации для читателей.",
         "actions": [
           {
-            "line_index": 39,
-            "section": "Билеты / Ticket Radar",
+            "line_index": 42,
+            "section": "Городской радар",
+            "requested_action": "strip",
+            "reason": "Строка не содержит полезной информации для читателей.",
+            "risk": "format",
+            "critical_error": true,
+            "critical_problem": "Строка не содержит информации о событии или факте, только дату объявления.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "city_watch-06",
+            "candidate_fingerprint": "url-prolificnorth-co-uk-news-manchester-edtech-start-up-secures-450k-investment-following-accelerator-participation-49b4663c6c66",
+            "original_url_identity": "prolificnorth.co.uk/news/manchester-edtech-start-up-secures-450k-investment-following-accelerator-participation",
+            "original_html": "• Об этом было объявлено 12 ноября 2026 года. <a href=\"https://prolificnorth.co.uk/news/manchester-edtech-start-up-secures-450k-investment-following-accelerator-participation\">Prolific North Manchester</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 42,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "дальние анонсы::уточнение, что событие происходит сегодня, чтобы избежать путаницы.",
+        "actions": [
+          {
+            "line_index": 49,
+            "section": "Дальние анонсы",
             "requested_action": "patch",
-            "reason": "Уточнение года события для предотвращения путаницы.",
+            "reason": "Уточнение, что событие происходит сегодня, чтобы избежать путаницы.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата события указана как 24 июня, но год не указан, что может ввести в заблуждение.",
+            "critical_problem": "Дата события указана как сегодняшняя, но это не соответствует текущей дате.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "event-event-the-avalanches-24th-june-2027-2027-06-24-manchester-academy-565026c2925c",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13382111/the-avalanches-manchester-academy-2027-06-24-19-00-00",
-            "original_html": "• <b>The Avalanches</b> — 24 июня, Manchester Academy; цена £37.25. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13382111/the-avalanches-manchester-academy-2027-06-24-19-00-00\">Manchester Academy</a>",
+            "plan_slot_id": "future_announcements-03",
+            "candidate_fingerprint": "event-event-ok-go-2026-11-13-manchester-new-century-hall-e9098d477ddf",
+            "original_url_identity": "ticketmaster.co.uk/ok-go-manchester-13-11-2026/event/37006426C113171D",
+            "original_html": "• <b>OK Go</b> — 13 ноября, Manchester New Century Hall. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/ok-go-manchester-13-11-2026/event/37006426C113171D\">Ticketmaster</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -621,7 +585,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 39,
+            "line_index": 49,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -629,39 +593,65 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::duplicate entry for the same event, causing redundancy",
+        "group_key": "крупные концерты вне gm::уточнение даты проведения концерта, чтобы избежать путаницы.",
         "actions": [
           {
-            "line_index": 25,
-            "section": "Выходные в GM",
-            "requested_action": "strip",
-            "reason": "Duplicate entry for the same event, causing redundancy.",
-            "risk": "format",
+            "line_index": 58,
+            "section": "Крупные концерты вне GM",
+            "requested_action": "patch",
+            "reason": "Уточнение даты проведения концерта, чтобы избежать путаницы.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
+            "critical_problem": "Дата указана как 13 и 14 ноября, но текст утверждает, что концерт проходит сегодня, что неверно для 13 ноября.",
             "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "outside_gm_tickets-01",
+            "candidate_fingerprint": "event-event-noah-kahan-the-great-divide-tour-2026-11-13-the-o2-015b667d6e95",
+            "original_url_identity": "ticketmaster.co.uk/noah-kahan-the-great-divide-tour-london-13-11-2026/event/350064899C2A4C19",
+            "original_html": "• <b>Noah Kahan</b> — тур: 13 и 14 ноября, The O2. Концерт проходит сегодня. <a href=\"https://ticketmaster.co.uk/noah-kahan-the-great-divide-tour-london-13-11-2026/event/350064899C2A4C19\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 58,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::critical source fact dropped in translation: 'raped' (sexual_offence/charge/verdict/victim) has no russian rendering in the shipped line",
+        "actions": [
+          {
+            "line_index": 3,
+            "section": "Свежие новости",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'raped' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
+            "risk": "translation",
+            "critical_error": true,
+            "critical_problem": "",
+            "completeness_concept": "sexual_offence",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "weekend_activities-03",
-            "candidate_fingerprint": "event-event-stockport-makers-market-october-2026-the-sk-lowdown-2026-10-10-market-place-stockport-england-united-kingdom-f40234fe398f",
-            "original_url_identity": "sklowdown.co.uk/whats-on-stockport/stockport-makers-market-october",
-            "original_html": "• 14 ноября в Market Place Stockport — Stockport Makers Market October 2026. На площадке: рынок, вход свободный, ремесленные товары, еда, можно с собакой. <a href=\"https://sklowdown.co.uk/whats-on-stockport/stockport-makers-market-october\">SK Lowdown Markets</a>",
-            "replacement_fingerprint": "event-id-skiddle-com-f4cbf42f4037-82a83c96fbd4",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manhunt-underway-after-woman-raped-34903160-fcbfbbb6ff49",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manhunt-underway-after-woman-raped-34903160",
+            "original_html": "• В Tameside разыскивается подозреваемый после того, как женщина стала жертвой 'ужасной' атаки на тропе между Turner Lane и Cranbourne Road 10 ноября 2026 года. Полиция призывает к бдительности. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manhunt-underway-after-woman-raped-34903160\">MEN Latest News</a>",
+            "replacement_fingerprint": "url-oldham-gov-uk-news-article-2978-saddleworth-residents-to-vote-on-neighbourhood-plan-in-december-f2c7264fe38f",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 25,
+            "line_index": 3,
             "passed": true,
             "detail": "post-check passed"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:stockport makers market october 2026 the sk lowdown|2026-10-10|market place stockport england united kingdom",
-            "visible_count": 0,
-            "passed": true
           }
         ],
         "known_factual_error": true
@@ -672,16 +662,35 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 0
+      "skipped": 2,
+      "reports": [
+        {
+          "fingerprint": "event-event-ok-go-2026-11-13-manchester-new-century-hall-e9098d477ddf",
+          "title": "OK Go — event 2026-11-13 — public sale 2026-01-23 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/ok-go-manchester-13-11-2026/event/37006426C113171D",
+          "candidate_evidence_chars": 357
+        },
+        {
+          "fingerprint": "event-event-noah-kahan-the-great-divide-tour-2026-11-13-the-o2-015b667d6e95",
+          "title": "Noah Kahan - The Great Divide Tour — event 2026-11-13 — public sale 2026-04-17 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/noah-kahan-the-great-divide-tour-london-13-11-2026/event/350064899C2A4C19",
+          "candidate_evidence_chars": 329
+        }
+      ]
     },
     "enrich_improved": 8,
-    "no_eligible_backup": 1,
     "false_positive_existing_fact": 4,
+    "no_eligible_backup": 2,
+    "deterministic_rewrite_rejected": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 42,
-      "matched_lines": 42,
-      "applicable_lines": 5,
+      "checked_lines": 54,
+      "matched_lines": 54,
+      "applicable_lines": 0,
       "unmatched_lines": 4,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -693,146 +702,131 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 46,
-      "resolved_in_place": 46,
+      "checked_lines": 58,
+      "resolved_in_place": 58,
       "unresolved": 0,
       "findings": []
     },
     "status": "resolved"
   },
-  "notes": "Строка соответствует всем требованиям: география, факты и юридическая точность соблюдены.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Две строки нарушают географический контракт GM и требуют удаления.; Строка о Metrolink содержит устаревшую информацию о датах работ.; Слухи о замене тренера должны б",
+  "notes": "Строка соответствует требованиям: событие в GM, информация точная и актуальная.; Прогноз погоды соответствует источнику и географическому охвату.; Исправлена ошибка в дате осуждения Джона Гидзи.; Строка о завершённых работах Metrolink неактуальна, требуется удаление.; Все строки соответствуют требованиям географии и со",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 4,
-        "section": "Свежие новости",
-        "problem": "Указано, что Дженсен Уэстхед скончался в отеле в Дубае, но это не соответствует географическому контракту GM.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
         "line_index": 9,
         "section": "Свежие новости",
-        "problem": "Глоссоп не входит в Greater Manchester, но указан как часть GM.",
-        "risk": "geo",
-        "suggested_action": "strip"
+        "problem": "Дата осуждения указана неверно. 13 ноября 2026 года — это пятница, а не четверг.",
+        "risk": "date",
+        "suggested_action": "repair"
       },
       {
-        "line_index": 14,
+        "line_index": 17,
         "section": "Общественный транспорт сегодня",
-        "problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+        "problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
         "risk": "date",
         "suggested_action": "strip"
       },
       {
-        "line_index": 15,
+        "line_index": 21,
         "section": "Футбол",
-        "problem": "Слухи о замене тренера представлены как факт.",
+        "problem": "Michael Carrick не был главным тренером Manchester United в сезоне 2026/27.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 25,
+        "line_index": 35,
         "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
+        "problem": "Дата события указана неверно. Указана дата 15 ноября, но в данных события указана дата 10 мая 2027 года.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 30,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 39,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дата события указана как 24 июня, но год не указан, что может ввести в заблуждение.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 25,
-        "section": "Выходные в GM",
-        "problem": "Duplicate event listing for Stockport Makers Market.",
+        "line_index": 42,
+        "section": "Городской радар",
+        "problem": "Строка не содержит информации о событии или факте, только дату объявления.",
         "risk": "format",
         "suggested_action": "strip"
+      },
+      {
+        "line_index": 49,
+        "section": "Дальние анонсы",
+        "problem": "Дата события указана как сегодняшняя, но это не соответствует текущей дате.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 58,
+        "section": "Крупные концерты вне GM",
+        "problem": "Дата указана как 13 и 14 ноября, но текст утверждает, что концерт проходит сегодня, что неверно для 13 ноября.",
+        "risk": "date",
+        "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 4,
-        "section": "Свежие новости",
-        "action": "strip",
-        "reason": "Событие произошло в Дубае, что не соответствует географическому контракту GM.",
-        "risk": "geo"
-      },
-      {
         "line_index": 9,
         "section": "Свежие новости",
-        "action": "strip",
-        "reason": "Глоссоп не является частью Greater Manchester, что нарушает географический контракт.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 14,
-        "section": "Общественный транспорт сегодня",
-        "action": "strip",
-        "reason": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+        "action": "patch",
+        "replacement_text": "• 55-летний Джон Гидзи, известный как 'Mr Big', был осуждён в пятницу, 13 ноября 2026 года, в суде Молда за жестокое обращение с партнёршей Наташей Фарах и её сестрой. Он получил четыре года тюрьмы за контролирующее поведение и 11 месяцев за удушение сестры. Судья назвал его действия \"самым худшим случаем\" домашнего насилия, который он когда-либо видел.",
+        "reason": "Исправление дня недели на правильный.",
         "risk": "date"
       },
       {
-        "line_index": 15,
+        "line_index": 17,
+        "section": "Общественный транспорт сегодня",
+        "action": "strip",
+        "reason": "Дата завершения работ уже прошла, информация неактуальна.",
+        "risk": "date"
+      },
+      {
+        "line_index": 21,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• 12 ноября 2026 года появились слухи о том, что Маурисио Почеттино может заменить Майкла Каррика на посту тренера Манчестер Юнайтед, но официального подтверждения нет.",
-        "reason": "Уточнение, что это слухи, а не подтверждённый факт.",
+        "replacement_text": "• Майкл Каррик был уволен с поста тренера Манчестер Юнайтед после неудачного старта сезона 2026/27, но отказался публично критиковать руководство клуба.",
+        "reason": "Каррик не был главным тренером в сезоне 2026/27.",
         "risk": "factual"
       },
       {
-        "line_index": 25,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 14 ноября в Market Place Stockport — Stockport Makers Market. На площадке: рынок, вход свободный, ремесленные товары, еда, можно с собакой.",
-        "reason": "Дата события должна быть 14 ноября, а не 10 октября.",
-        "risk": "date"
-      },
-      {
-        "line_index": 30,
+        "line_index": 35,
         "section": "Выходные в GM",
         "action": "patch",
         "replacement_text": "• 10 мая — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
-        "reason": "Дата события указана неверно, согласно данным, событие проходит с 10 мая.",
+        "reason": "Дата события указана неверно. Указана дата 15 ноября, но в данных события указана дата 10 мая 2027 года.",
         "risk": "date"
       },
       {
-        "line_index": 39,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• The Avalanches — 24 июня 2027 года, Manchester Academy; цена £37.25. Билеты и время указаны на официальной странице.",
-        "reason": "Уточнение года события для предотвращения путаницы.",
-        "risk": "date"
-      },
-      {
-        "line_index": 25,
-        "section": "Выходные в GM",
+        "line_index": 42,
+        "section": "Городской радар",
         "action": "strip",
-        "replacement_text": "",
-        "reason": "Duplicate entry for the same event, causing redundancy.",
+        "reason": "Строка не содержит полезной информации для читателей.",
         "risk": "format"
+      },
+      {
+        "line_index": 49,
+        "section": "Дальние анонсы",
+        "action": "patch",
+        "replacement_text": "• OK Go — 13 ноября, Manchester New Century Hall. Концерт состоится сегодня.",
+        "reason": "Уточнение, что событие происходит сегодня, чтобы избежать путаницы.",
+        "risk": "date"
+      },
+      {
+        "line_index": 58,
+        "section": "Крупные концерты вне GM",
+        "action": "patch",
+        "replacement_text": "• Noah Kahan — тур: 13 и 14 ноября, The O2. Концерт проходит 13 ноября.",
+        "reason": "Уточнение даты проведения концерта, чтобы избежать путаницы.",
+        "risk": "date"
       }
     ],
     "warnings": [
-      "Что важно сегодня: отсутствует, нарушая продуктовую полноту.",
-      "Городской радар: только один элемент, ниже минимального порога."
+      "judge reduce failed: parse_failed no parseable JSON"
     ],
-    "notes": "Строка соответствует всем требованиям: география, факты и юридическая точность соблюдены.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Две строки нарушают географический контракт GM и требуют удаления.; Строка о Metrolink содержит устаревшую информацию о датах работ.; Слухи о замене тренера должны б",
+    "notes": "Строка соответствует требованиям: событие в GM, информация точная и актуальная.; Прогноз погоды соответствует источнику и географическому охвату.; Исправлена ошибка в дате осуждения Джона Гидзи.; Строка о завершённых работах Metrolink неактуальна, требуется удаление.; Все строки соответствуют требованиям географии и со",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "ok",
+      "status": "partial",
       "chunk_count": 14,
       "failed_chunk_count": 0,
       "chunks": [
@@ -851,7 +845,7 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2771,
+          "estimated_tokens": 2733,
           "duration_seconds": 1.325
         },
         {
@@ -869,8 +863,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2435,
-          "duration_seconds": 1.133
+          "estimated_tokens": 2447,
+          "duration_seconds": 1.323
         },
         {
           "chunk_id": "chunk-03",
@@ -883,19 +877,19 @@
             "Свежие новости"
           ],
           "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7441,
-          "duration_seconds": 2.956
+          "estimated_tokens": 7327,
+          "duration_seconds": 2.529
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            14
+            17
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -905,15 +899,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3759,
-          "duration_seconds": 1.814
+          "estimated_tokens": 5231,
+          "duration_seconds": 5.256
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            15,
-            16
+            18,
+            20
+          ],
+          "sections": [
+            "Что важно сегодня"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3788,
+          "duration_seconds": 1.202
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "ok",
+          "line_range": [
+            21,
+            23
           ],
           "sections": [
             "Футбол"
@@ -923,33 +935,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3122,
-          "duration_seconds": 2.097
-        },
-        {
-          "chunk_id": "chunk-06",
-          "status": "ok",
-          "line_range": [
-            17,
-            28
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 7478,
-          "duration_seconds": 1.757
+          "estimated_tokens": 3617,
+          "duration_seconds": 1.832
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            29,
-            31
+            24,
+            35
           ],
           "sections": [
             "Выходные в GM"
@@ -959,69 +953,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4026,
-          "duration_seconds": 26.657
+          "estimated_tokens": 7496,
+          "duration_seconds": 76.33
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            32,
-            32
+            36,
+            36
           ],
           "sections": [
-            "Городской радар"
+            "Выходные в GM"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2680,
-          "duration_seconds": 3.395
+          "estimated_tokens": 2747,
+          "duration_seconds": 0.827
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            33,
-            33
+            37,
+            45
           ],
           "sections": [
-            "Еда, открытия и рынки"
+            "Городской радар"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2795,
-          "duration_seconds": 8.555
+          "estimated_tokens": 6720,
+          "duration_seconds": 56.815
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            34,
-            37
-          ],
-          "sections": [
-            "IT и бизнес"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 4186,
-          "duration_seconds": 44.246
-        },
-        {
-          "chunk_id": "chunk-11",
-          "status": "ok",
-          "line_range": [
-            38,
-            38
+            46,
+            46
           ],
           "sections": [
             "Business/tech события для тебя"
@@ -1031,51 +1007,69 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2866,
-          "duration_seconds": 6.232
+          "estimated_tokens": 2895,
+          "duration_seconds": 2.735
         },
         {
-          "chunk_id": "chunk-12",
+          "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            39,
-            44
+            47,
+            50
           ],
           "sections": [
-            "Билеты / Ticket Radar"
+            "Дальние анонсы"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5728,
-          "duration_seconds": 46.685
+          "estimated_tokens": 4342,
+          "duration_seconds": 10.786
         },
         {
-          "chunk_id": "chunk-13",
+          "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
-            45,
-            46
+            51,
+            57
           ],
           "sections": [
-            "Крупные концерты вне GM"
+            "Билеты / Ticket Radar"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3241,
-          "duration_seconds": 6.11
+          "estimated_tokens": 6208,
+          "duration_seconds": 13.533
+        },
+        {
+          "chunk_id": "chunk-13",
+          "status": "ok",
+          "line_range": [
+            58,
+            59
+          ],
+          "sections": [
+            "Крупные концерты вне GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3222,
+          "duration_seconds": 8.868
         },
         {
           "chunk_id": "chunk-14",
           "status": "ok",
           "line_range": [
-            47,
-            47
+            60,
+            60
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
@@ -1085,22 +1079,22 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2737,
-          "duration_seconds": 6.043
+          "estimated_tokens": 2749,
+          "duration_seconds": 3.73
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "ok",
+        "status": "parse_failed",
         "line_range": [],
         "sections": [],
-        "decision": "repair_required",
-        "critical_error_count": 1,
-        "action_count": 1,
-        "warning_count": 2,
-        "error": "",
-        "estimated_tokens": 10648,
-        "duration_seconds": 23.063
+        "decision": "",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 0,
+        "error": "no parseable JSON",
+        "estimated_tokens": 11489,
+        "duration_seconds": 29.583
       },
       "max_workers": 3,
       "chunk_line_target": 12,
