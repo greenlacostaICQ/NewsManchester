@@ -2,181 +2,158 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
+  "reason": "pre-send repair executor applied 8 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-11-16",
-  "pipeline_run_id": "20261116T080152+0000",
-  "digest_sha256": "32dce62b19a4e8c90cac56dc7d6c2c3eb66fdf835b61a5435346aa1110a5a586",
-  "duration_seconds": 61.647,
+  "run_date_london": "2026-11-17",
+  "pipeline_run_id": "20261117T080156+0000",
+  "digest_sha256": "36c4dc696ccc45b1c0e3886926c7ac179759d0467d3273bd7182de7d25c05290",
+  "duration_seconds": 80.672,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Повторение текста в начале строки.",
-      "risk": "format",
-      "suggested_action": "repair"
-    },
-    {
       "line_index": 3,
       "section": "Свежие новости",
-      "problem": "Ошибка географии: Крампсал указан как часть Солфорда, но это отдельный район.",
-      "risk": "geo",
+      "problem": "Неправильное использование термина 'депутат'.",
+      "risk": "factual",
       "suggested_action": "repair"
     },
     {
       "line_index": 13,
       "section": "Общественный транспорт сегодня",
-      "problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
+      "problem": "Дата завершения работ указана как 1 ноября 2026 года, но текущая дата 17 ноября 2026 года, что делает информацию устаревшей.",
+      "risk": "date",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 15,
+      "section": "Футбол",
+      "problem": "Дата матча противоречит источнику.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 16,
+      "section": "Футбол",
+      "problem": "Дата матча противоречит источнику.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
       "line_index": 18,
       "section": "Городской радар",
-      "problem": "Некорректное указание даты смерти.",
-      "risk": "factual",
+      "problem": "Дата протестов указана неверно.",
+      "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 24,
-      "section": "Дальние анонсы",
-      "problem": "Отсутствует название исполнителя в тексте анонса.",
-      "risk": "factual",
+      "line_index": 21,
+      "section": "Городской радар",
+      "problem": "Не указано имя обвиняемого, что может быть важно для идентификации.",
+      "risk": "sensitive",
       "suggested_action": "repair"
+    },
+    {
+      "line_index": 6,
+      "section": "Свежие новости",
+      "problem": "Дублирование информации о сносе башен Seven Sisters.",
+      "risk": "format",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 20,
+      "section": "Городской радар",
+      "problem": "Дублирование информации о сносе башен Seven Sisters.",
+      "risk": "format",
+      "suggested_action": "strip"
     },
     {
       "line_index": 1,
       "section": "Главная история дня",
-      "problem": "Повторение текста в начале строки.",
-      "risk": "format",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 3,
-      "section": "Свежие новости",
-      "problem": "Текст обрывается на середине предложения.",
-      "risk": "format",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 12,
-      "section": "Общественный транспорт сегодня",
-      "problem": "Дата отмены поездов не соответствует текущей дате.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 18,
-      "section": "Городской радар",
-      "problem": "Некорректное указание даты события.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 24,
-      "section": "Дальние анонсы",
-      "problem": "Отсутствие информации о месте проведения.",
-      "risk": "format",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 3,
-      "section": "Свежие новости",
       "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'murder' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
+      "problem": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
       "suggested_action": "repair",
-      "completeness_concept": "homicide"
+      "completeness_concept": "weapon_violence"
+    },
+    {
+      "line_index": 34,
+      "section": "Билеты / Ticket Radar",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'Death' (death/who/what) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "death"
     }
   ],
   "actions": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• Полиция Bolton срочно обращается за помощью в поисках 14-летней Фиби, которая в последний раз была замечена 15 ноября 2026 года в полдень у Пожарной станции на Chorley New Road.",
-      "reason": "Удаление повторяющегося текста в начале строки.",
-      "risk": "format"
-    },
-    {
       "line_index": 3,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• В субботу, 14 ноября, в 1:30 ночи, полиция получила сообщение о ножевом ранении 27-летнего мужчины в Крампсале, который позже скончался в больнице. В ответ на это вооруженные полицейские провели обыск в жилом комплексе Cherry Tree Court на Kiwi Street в Солфорде, однако арестов не было, и расследование продолжается.",
-      "reason": "Крампсал и Солфорд — разные районы, ошибка в географии.",
-      "risk": "geo"
+      "replacement_text": "• Гостиница Cresta Court в Алтринчаме, по словам местного члена парламента Коннора Рэнда, прекратит размещение искателей убежища в течение следующих трех месяцев. Это решение стало результатом двухлетних протестов и кампаний против размещения мигрантов в отелях, которые, по мнению Рэнда, не подходят для таких целей и негативно сказываются на местном сообществе.",
+      "reason": "Использование термина 'депутат' вместо 'член парламента' может ввести в заблуждение, так как в контексте Великобритании 'депутат' обычно относится к местным советникам, а не к членам парламента.",
+      "risk": "factual"
     },
     {
       "line_index": 13,
       "section": "Общественный транспорт сегодня",
+      "action": "strip",
+      "reason": "Информация о приостановке трамвайных линий устарела, так как указанный период завершился до текущей даты.",
+      "risk": "date",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 15,
+      "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере были полностью приостановлены для проведения инженерных работ. Пассажирам рекомендуется планировать свои поездки заранее и использовать замещающие автобусы.",
-      "reason": "Дата завершения работ уже прошла, необходимо указать, что работы завершены.",
+      "replacement_text": "• Маурисио Почеттино готовится занять пост главного тренера Манчестер Юнайтед после своего последнего матча с национальной сборной США; его первый матч с Юнайтед пройдет в воскресенье против Ливерпуля 22 ноября.",
+      "reason": "Дата матча должна быть 22 ноября, как указано в источнике.",
+      "risk": "date"
+    },
+    {
+      "line_index": 16,
+      "section": "Футбол",
+      "action": "patch",
+      "replacement_text": "• Стивен Джеррард предупредил, что поздний приход Маурисио Почеттино в Манчестер Юнайтед может негативно сказаться на их шансах в матче против Ливерпуля в воскресенье.",
+      "reason": "Уточнение даты матча в соответствии с источником.",
       "risk": "date"
     },
     {
       "line_index": 18,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Семья Льюиса Кента, 29 лет, из Салфорда, выразила обеспокоенность по поводу практик охраны полиции на коронерском расследовании его смерти, произошедшей в Страстную пятницу, 3 апреля 2025 года.",
-      "reason": "Дата смерти указана неверно, так как Страстная пятница в 2026 году выпадает на 10 апреля.",
-      "risk": "factual"
+      "replacement_text": "• Более 400 сотрудников театров в четырех больницах Greater Manchester начнут забастовку с 18 ноября из-за спора о зарплате, с дальнейшими забастовками 23, 24 и 27 ноября; протест запланирован в центре Манчестера в следующую пятницу (24 ноября).",
+      "reason": "Дата протестов указана неверно.",
+      "risk": "date"
     },
     {
-      "line_index": 24,
-      "section": "Дальние анонсы",
+      "line_index": 21,
+      "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Del Amitri: Four Decades Of Their Greatest Music — 27 ноября, Bridgewater Hall. Билеты уже в продаже на официальной странице.",
-      "reason": "Добавлено название исполнителя для ясности.",
-      "risk": "factual"
+      "replacement_text": "• Предъявлено обвинение — 32-летний Аарон МакКолл обвиняется в изнасиловании 15-летней девочки рядом с рекреационной площадкой Эклс в Salford; он предстанет перед судом в понедельник.",
+      "reason": "Добавлено имя обвиняемого для точности.",
+      "risk": "sensitive"
     },
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• Полиция Bolton срочно обращается за помощью в поисках 14-летней Фиби, которая в последний раз была замечена 15 ноября 2026 года в полдень у Пожарной станции на Chorley New Road.",
-      "reason": "Удаление повторяющегося текста.",
-      "risk": "format"
-    },
-    {
-      "line_index": 3,
+      "line_index": 6,
       "section": "Свежие новости",
       "action": "strip",
       "replacement_text": "",
-      "reason": "Текст обрывается, требуется полное предложение.",
+      "reason": "Дублирование информации о сносе башен Seven Sisters.",
       "risk": "format"
     },
     {
-      "line_index": 12,
-      "section": "Общественный транспорт сегодня",
-      "action": "patch",
-      "replacement_text": "• Northern: до 19 ноября отменены поздние вечерние поезда между Manchester Oxford Road и Liverpool Lime Street. Вместо них будут курсировать автобусы.",
-      "reason": "Дата отмены поездов не соответствует текущей дате.",
-      "risk": "date"
-    },
-    {
-      "line_index": 18,
+      "line_index": 20,
       "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Семья Льюиса Кента, 29 лет, из Салфорда, выразила обеспокоенность по поводу практик охраны полиции на коронерском расследовании его смерти, произошедшей в Страстную пятницу, 3 апреля 2026 года.",
-      "reason": "Некорректное указание даты события.",
-      "risk": "date"
-    },
-    {
-      "line_index": 24,
-      "section": "Дальние анонсы",
-      "action": "patch",
-      "replacement_text": "• Four Decades Of Their Greatest Music — 27 ноября, Bridgewater Hall. Билеты уже в продаже на официальной странице.",
-      "reason": "Отсутствие информации о месте проведения.",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации о сносе башен Seven Sisters.",
       "risk": "format"
     }
   ],
   "warnings": [
-    "Недостаточное количество элементов в разделе 'Что важно сегодня'.",
-    "Отсутствие блока 'Еда, открытия и рынки'."
+    "Секция 'Что важно сегодня' содержит только один элемент, что ниже минимального порога."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -188,10 +165,11 @@
       "Общественный транспорт сегодня": 2,
       "Что важно сегодня": 1,
       "Футбол": 3,
-      "Городской радар": 5,
-      "IT и бизнес": 1,
-      "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 3,
+      "Городской радар": 11,
+      "Еда, открытия и рынки": 1,
+      "IT и бизнес": 2,
+      "Business/tech события для тебя": 1,
+      "Билеты / Ticket Radar": 4,
       "Крупные концерты вне GM": 1,
       "Русскоязычные концерты и стендап UK": 1
     },
@@ -200,325 +178,388 @@
       "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 5,
-      "Билеты / Ticket Radar": 3,
+      "Городской радар": 11,
+      "Билеты / Ticket Radar": 4,
       "Русскоязычные концерты и стендап UK": 1,
-      "Еда, открытия и рынки": 0,
-      "Business/tech события для тебя": 0,
+      "Еда, открытия и рынки": 1,
+      "Business/tech события для тебя": 1,
       "Футбол": 3
     },
-    "ticket_items": 5,
-    "core_items": 20,
+    "ticket_items": 6,
+    "core_items": 28,
     "writer_quality_counts": {
-      "included_candidates": 32,
-      "rendered_candidates": 29,
+      "included_candidates": 38,
+      "rendered_candidates": 38,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 3,
+      "dropped_low_quality": 0,
       "replaced_from_plan_backup": 0,
-      "removed_with_reason": 3
+      "removed_with_reason": 0
     },
     "source_health_counts": {
-      "ok": 102,
+      "ok": 105,
       "partial": 2,
-      "stale": 8,
-      "empty": 14,
+      "stale": 7,
+      "empty": 12,
       "failed": 4,
-      "zero_yield": 82,
+      "zero_yield": 79,
       "no_contribution_breakdown": {
         "fetch_failed": 4,
-        "all_rejected": 82,
-        "idle_no_items": 30
+        "all_rejected": 79,
+        "idle_no_items": 26
       },
       "zero_contribution_by_stage": {
-        "selected": 38,
-        "written": 44,
-        "parsed": 30,
+        "selected": 36,
+        "written": 43,
+        "parsed": 26,
         "fetched": 4
       },
       "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 1 item(s), emergency floor 3",
-      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "Business/tech события для тебя: 0 item(s), emergency floor 1",
+      "Еда, открытия и рынки: 1 item(s), emergency floor 3",
       "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 3 has unchecked number/date token(s): 1:30",
-      "patch for line 18 has unchecked number/date token(s): 2025, 29, 3",
-      "multiple actions target line 1",
-      "multiple actions target line 3",
-      "multiple actions target line 18",
-      "patch for line 18 has unchecked number/date token(s): 29, 3",
-      "multiple actions target line 24"
+      "patch for line 15 has unchecked number/date token(s): 22"
     ],
     "can_apply_actions": true,
-    "action_count": 10
+    "action_count": 8
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 29,
-    "matched_lines": 29,
-    "applicable_lines": 2,
+    "checked_lines": 38,
+    "matched_lines": 38,
+    "applicable_lines": 4,
     "unmatched_lines": 0,
-    "critical_omission_count": 1,
+    "critical_omission_count": 2,
     "critical_omissions": [
       {
-        "line_index": 3,
-        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/armed-police-swarm-salford-estate-34915021",
-        "concept": "homicide",
-        "obligation": "charge/verdict/victim",
-        "source_hit": "murder"
+        "line_index": 1,
+        "source_url_key": "bbc.com/news/articles/cwq6e2883d99o",
+        "concept": "weapon_violence",
+        "obligation": "who/what",
+        "source_hit": "stabbed"
+      },
+      {
+        "line_index": 34,
+        "source_url_key": "ticketmaster.co.uk/eagles-of-death-metal-manchester-17-11-2026/event/37006454E6E4BD4C",
+        "concept": "death",
+        "obligation": "who/what",
+        "source_hit": "Death"
       }
     ],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 0,
-    "still_missing": 1
+    "pulled_for_rework": 2,
+    "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 8,
-    "attempted": 7,
-    "applied": 4,
-    "model_patch_applied": 4,
+    "requested": 10,
+    "attempted": 8,
+    "applied": 8,
+    "model_patch_applied": 2,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 0,
-    "stripped": 0,
+    "reserve_replacement_used": 4,
+    "stripped": 2,
     "unresolved": 0,
-    "blocking_unresolved": 1,
-    "resolved": 8,
-    "resolved_in_place": 8,
-    "resolved_by_replacement": 0,
-    "resolved_by_removal": 0,
-    "fact_lock_rejected": 0,
-    "enrich_attempted": 8,
+    "blocking_unresolved": 0,
+    "resolved": 10,
+    "resolved_in_place": 4,
+    "resolved_by_replacement": 4,
+    "resolved_by_removal": 2,
+    "fact_lock_rejected": 1,
+    "enrich_attempted": 10,
     "post_check_errors": [],
-    "geo_contract_rejected": [
-      {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "geo_scope": "gm",
-        "reason": "Крампсал и Солфорд — разные районы, ошибка в географии.",
-        "gm_anchor_present": true
-      },
-      {
-        "line_index": 3,
-        "section": "Свежие новости",
-        "geo_scope": "gm",
-        "reason": "Текст обрывается, требуется полное предложение.",
-        "gm_anchor_present": true
-      }
-    ],
+    "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
+        "line_index": 3,
+        "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Удаление повторяющегося текста в начале строки.",
-        "risk": "format",
-        "critical_error": false,
-        "critical_problem": "",
+        "reason": "Использование термина 'депутат' вместо 'член парламента' может ввести в заблуждение, так как в контексте Великобритании 'депутат' обычно относится к местным советникам, а не к членам парламента.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неправильное использование термина 'депутат'.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-urgent-appeal-find-missing-bolton-34915634-82ab3342da36",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/urgent-appeal-find-missing-bolton-34915634",
-        "original_html": "<b>Появилось обновление по обращению — Появилось обновление по обращению — Полиция Bolton срочно обращается за помощью в поисках 14-летней Фиби, которая в последний раз была замечена 15 ноября 2026 года в полдень у Пожарной станции на Chorley New Road.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/urgent-appeal-find-missing-bolton-34915634\">MEN Latest News</a>",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "last_24h-01",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c639g07v2n13o-fcd6bf851fd6",
+        "original_url_identity": "bbc.com/news/articles/c639g07v2n13o",
+        "original_html": "• Гостиница Cresta Court в Алтринчаме, по словам местного депутата Коннора Рэнда, прекратит размещение искателей убежища в течение следующих трех месяцев. Это решение стало результатом двухлетних протестов и кампаний против размещения мигрантов в отелях, которые, по мнению Рэнда, не подходят для таких целей и негативно сказываются на местном сообществе. <a href=\"https://bbc.co.uk/news/articles/c639g07v2n13o\">BBC Manchester</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
         "line_index": 13,
         "section": "Общественный транспорт сегодня",
-        "requested_action": "patch",
-        "reason": "Дата завершения работ уже прошла, необходимо указать, что работы завершены.",
+        "requested_action": "strip",
+        "reason": "Информация о приостановке трамвайных линий устарела, так как указанный период завершился до текущей даты.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
+        "critical_problem": "Дата завершения работ указана как 1 ноября 2026 года, но текущая дата 17 ноября 2026 года, что делает информацию устаревшей.",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
         "plan_slot_id": "transport-02",
         "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
         "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
         "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажирам рекомендуется планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 15,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Дата матча должна быть 22 ноября, как указано в источнике.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата матча противоречит источнику.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-news-live-pochettino-34915986-fb56454d2a2c",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-news-live-pochettino-34915986",
+        "original_html": "• Маурисио Почеттино готовится занять пост главного тренера Манчестер Юнайтед после своего последнего матча с национальной сборной США; его первый матч с Юнайтед пройдет в воскресенье против Ливерпуля. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-news-live-pochettino-34915986\">MEN Manchester United</a>",
+        "model_replacement_rejected": "fact_lock: 22 ноября",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-city-charges-premier-league-34921178-2aeeb94799f8",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 16,
+        "section": "Футбол",
+        "requested_action": "patch",
+        "reason": "Уточнение даты матча в соответствии с источником.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата матча противоречит источнику.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "football-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-united-mauricio-pochettino-liverpool-34921646-ab63bc03c4ba",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-united-mauricio-pochettino-liverpool-34921646",
+        "original_html": "• Стивен Джеррард предупредил, что поздний приход Маурисио Почеттино в Манчестер Юнайтед может негативно сказаться на их шансах в матче против Ливерпуля 22 ноября. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-united-mauricio-pochettino-liverpool-34921646\">MEN Manchester United</a>",
         "post_check_passed": true
       },
       {
         "line_index": 18,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Дата смерти указана неверно, так как Страстная пятница в 2026 году выпадает на 10 апреля.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
+        "reason": "Дата протестов указана неверно.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата протестов указана неверно.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
         "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-the-only-witness-deceased-son-34904436-f3eb191e5328",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/the-only-witness-deceased-son-34904436",
-        "original_html": "• Семья Льюиса Кента, 29 лет, из Салфорда, выразила обеспокоенность по поводу практик охраны полиции на коронерском расследовании его смерти, произошедшей в Страстную пятницу, 3 апреля 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/the-only-witness-deceased-son-34904436\">MEN Latest News</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-hospitals-pay-row-34921047-637347c7440f",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/greater-manchester-hospitals-pay-row-34921047",
+        "original_html": "• Более 400 сотрудников театров в четырех больницах Greater Manchester начнут забастовку с 18 ноября из-за спора о зарплате, с дальнейшими забастовками 23, 24 и 27 ноября; протест запланирован в центре Манчестера в следующую пятницу (27 ноября). <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/greater-manchester-hospitals-pay-row-34921047\">MEN</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 24,
-        "section": "Дальние анонсы",
+        "line_index": 21,
+        "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Добавлено название исполнителя для ясности.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
+        "reason": "Добавлено имя обвиняемого для точности.",
+        "risk": "sensitive",
+        "critical_error": true,
+        "critical_problem": "Не указано имя обвиняемого, что может быть важно для идентификации.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "future_announcements-01",
-        "candidate_fingerprint": "event-event-del-amitri-past-to-present-four-decades-of-their-greatest-music-2026-11-27-bridgewater-hall-7465ed0c8f16",
-        "original_url_identity": "ticketmaster.co.uk/del-amitri-past-to-present-four-manchester-27-11-2026/event/1F006454EB109A8A",
-        "original_html": "• <b>Four Decades Of Their Greatest Music</b> — 27 ноября, Bridgewater Hall. Билеты уже в продаже на официальной странице. <a href=\"https://ticketmaster.co.uk/del-amitri-past-to-present-four-manchester-27-11-2026/event/1F006454EB109A8A\">Ticketmaster</a>",
+        "plan_slot_id": "city_watch-04",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c6m2lmx8zewgo-7ca5becc266f",
+        "original_url_identity": "bbc.com/news/articles/c6m2lmx8zewgo",
+        "original_html": "• Предъявлено обвинение — 32-летний мужчина обвиняется в изнасиловании 15-летней девочки рядом с рекреационной площадкой Эклс в Salford; он предстанет перед судом в понедельник. <a href=\"https://bbc.co.uk/news/articles/c6m2lmx8zewgo\">BBC Manchester</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 6,
+        "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о сносе башен Seven Sisters.",
+        "risk": "format",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о сносе башен Seven Sisters.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-04",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cvj6lzy6ng0xo-1a553fc965c6",
+        "original_url_identity": "bbc.com/news/articles/cvj6lzy6ng0xo",
+        "original_html": "• Rochdale Boroughwide Housing подтвердила снос башен Seven Sisters, которые содержат 766 квартир, чтобы заменить их примерно 600 домами. Жители продолжают бороться с этим решением. <a href=\"https://bbc.co.uk/news/articles/cvj6lzy6ng0xo\">BBC Manchester</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchesters-400-clean-air-34920877-db1263258b60",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 20,
+        "section": "Городской радар",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о сносе башен Seven Sisters.",
+        "risk": "format",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о сносе башен Seven Sisters.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "city_watch-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-a-sad-day-college-bank-34921202-e8d983e45f57",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/a-sad-day-college-bank-34921202",
+        "original_html": "• Rochdale Boroughwide Housing приняло решение о сносе башен-близнецов Seven Sisters в College Bank и замене их на 601 новое жилье, что завершает десятилетие неопределенности для жителей. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/a-sad-day-college-bank-34921202\">MEN Latest News</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-borough-hour-hour-34920541-f1c330b910e1",
         "post_check_passed": true
       },
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "requested_action": "patch",
-        "reason": "Удаление повторяющегося текста.",
-        "risk": "format",
+        "requested_action": "replace",
+        "reason": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+        "risk": "translation",
         "critical_error": true,
-        "critical_problem": "Повторение текста в начале строки.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
+        "critical_problem": "",
+        "completeness_concept": "weapon_violence",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
         "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-urgent-appeal-find-missing-bolton-34915634-82ab3342da36",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/urgent-appeal-find-missing-bolton-34915634",
-        "original_html": "<b>Появилось обновление по обращению — Появилось обновление по обращению — Полиция Bolton срочно обращается за помощью в поисках 14-летней Фиби, которая в последний раз была замечена 15 ноября 2026 года в полдень у Пожарной станции на Chorley New Road.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/urgent-appeal-find-missing-bolton-34915634\">MEN Latest News</a>",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cwq6e2883d99o-72f59ec282b2",
+        "original_url_identity": "bbc.com/news/articles/cwq6e2883d99o",
+        "original_html": "<b>В Крампсале 27-летний мужчина был смертельно ранен группой в балаклавах; 26-летний подозреваемый задержан по подозрению в убийстве.</b> <a href=\"https://bbc.com/news/articles/cwq6e2883d99o\">BBC Manchester</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-alleged-abusers-charged-sex-offences-34920463-7527ae17dc05",
         "post_check_passed": true
       },
       {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
-        "requested_action": "patch",
-        "reason": "Дата отмены поездов не соответствует текущей дате.",
-        "risk": "date",
+        "line_index": 34,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "replace",
+        "reason": "critical source fact dropped in translation: 'Death' (death/who/what) has no Russian rendering in the shipped line",
+        "risk": "translation",
         "critical_error": true,
-        "critical_problem": "Дата отмены поездов не соответствует текущей дате.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "transport-01",
-        "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-buses-replace-late-night-northern-services-between-manchester-oxford-road-and-li-d21216c70875",
-        "original_url_identity": "tfgm.com/travel-updates/travel-alerts/buses-replace-late-night-northern-services-between-manchester-oxford-road-and-li",
-        "original_html": "• Northern: до 19 ноября отменены поздние вечерние поезда между Manchester Oxford Road и Liverpool Lime Street. Вместо них будут курсировать автобусы. <a href=\"https://tfgm.com/travel-updates/travel-alerts/buses-replace-late-night-northern-services-between-manchester-oxford-road-and-li\">TfGM</a>",
-        "verification": "judge correction matches the existing visible facts",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 18,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Некорректное указание даты события.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Некорректное указание даты смерти.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-the-only-witness-deceased-son-34904436-f3eb191e5328",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/the-only-witness-deceased-son-34904436",
-        "original_html": "• Семья Льюиса Кента, 29 лет, из Салфорда, выразила обеспокоенность по поводу практик охраны полиции на коронерском расследовании его смерти, произошедшей в Страстную пятницу, 3 апреля 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/the-only-witness-deceased-son-34904436\">MEN Latest News</a>",
-        "verification": "judge correction matches the existing visible facts",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 24,
-        "section": "Дальние анонсы",
-        "requested_action": "patch",
-        "reason": "Отсутствие информации о месте проведения.",
-        "risk": "format",
-        "critical_error": true,
-        "critical_problem": "Отсутствует название исполнителя в тексте анонса.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "future_announcements-01",
-        "candidate_fingerprint": "event-event-del-amitri-past-to-present-four-decades-of-their-greatest-music-2026-11-27-bridgewater-hall-7465ed0c8f16",
-        "original_url_identity": "ticketmaster.co.uk/del-amitri-past-to-present-four-manchester-27-11-2026/event/1F006454EB109A8A",
-        "original_html": "• <b>Four Decades Of Their Greatest Music</b> — 27 ноября, Bridgewater Hall. Билеты уже в продаже на официальной странице. <a href=\"https://ticketmaster.co.uk/del-amitri-past-to-present-four-manchester-27-11-2026/event/1F006454EB109A8A\">Ticketmaster</a>",
-        "verification": "judge correction matches the existing visible facts",
+        "critical_problem": "",
+        "completeness_concept": "death",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "ticket_radar-02",
+        "candidate_fingerprint": "event-event-eagles-of-death-metal-2026-11-17-manchester-new-century-hall-7d0cf59accd0",
+        "original_url_identity": "ticketmaster.co.uk/eagles-of-death-metal-manchester-17-11-2026/event/37006454E6E4BD4C",
+        "original_html": "• <b>Eagles of Death Metal</b> — 17 ноября, Manchester New Century Hall. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/eagles-of-death-metal-manchester-17-11-2026/event/37006454E6E4BD4C\">Ticketmaster</a>",
+        "deterministic_rewrite_rejected": "post_check: critical concept still absent: death, replacement drops death",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::удаление повторяющегося текста в начале строки.",
+        "group_key": "свежие новости::использование термина 'депутат' вместо 'член парламента' может ввести в заблуждение, так как в контексте великобритании 'депутат' обычно относится к местным советникам, а не к членам парламента.",
         "actions": [
           {
-            "line_index": 1,
-            "section": "Главная история дня",
+            "line_index": 3,
+            "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Удаление повторяющегося текста в начале строки.",
-            "risk": "format",
-            "critical_error": false,
-            "critical_problem": "",
+            "reason": "Использование термина 'депутат' вместо 'член парламента' может ввести в заблуждение, так как в контексте Великобритании 'депутат' обычно относится к местным советникам, а не к членам парламента.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильное использование термина 'депутат'.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-urgent-appeal-find-missing-bolton-34915634-82ab3342da36",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/urgent-appeal-find-missing-bolton-34915634",
-            "original_html": "<b>Появилось обновление по обращению — Появилось обновление по обращению — Полиция Bolton срочно обращается за помощью в поисках 14-летней Фиби, которая в последний раз была замечена 15 ноября 2026 года в полдень у Пожарной станции на Chorley New Road.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/urgent-appeal-find-missing-bolton-34915634\">MEN Latest News</a>",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c639g07v2n13o-fcd6bf851fd6",
+            "original_url_identity": "bbc.com/news/articles/c639g07v2n13o",
+            "original_html": "• Гостиница Cresta Court в Алтринчаме, по словам местного депутата Коннора Рэнда, прекратит размещение искателей убежища в течение следующих трех месяцев. Это решение стало результатом двухлетних протестов и кампаний против размещения мигрантов в отелях, которые, по мнению Рэнда, не подходят для таких целей и негативно сказываются на местном сообществе. <a href=\"https://bbc.co.uk/news/articles/c639g07v2n13o\">BBC Manchester</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 1,
+            "line_index": 3,
             "passed": true,
-            "detail": "post-check passed"
+            "detail": "existing fact verified"
           }
         ],
-        "known_factual_error": false
+        "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::дата завершения работ уже прошла, необходимо указать, что работы завершены.",
+        "group_key": "общественный транспорт сегодня::информация о приостановке трамвайных линий устарела, так как указанный период завершился до текущей даты.",
         "actions": [
           {
             "line_index": 13,
             "section": "Общественный транспорт сегодня",
-            "requested_action": "patch",
-            "reason": "Дата завершения работ уже прошла, необходимо указать, что работы завершены.",
+            "requested_action": "strip",
+            "reason": "Информация о приостановке трамвайных линий устарела, так как указанный период завершился до текущей даты.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
+            "critical_problem": "Дата завершения работ указана как 1 ноября 2026 года, но текущая дата 17 ноября 2026 года, что делает информацию устаревшей.",
             "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
             "plan_slot_id": "transport-02",
             "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
             "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
             "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажирам рекомендуется планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "resolved_by_removal",
         "post_checks": [
           {
             "line_index": 13,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::дата матча должна быть 22 ноября, как указано в источнике.",
+        "actions": [
+          {
+            "line_index": 15,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Дата матча должна быть 22 ноября, как указано в источнике.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата матча противоречит источнику.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-news-live-pochettino-34915986-fb56454d2a2c",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-news-live-pochettino-34915986",
+            "original_html": "• Маурисио Почеттино готовится занять пост главного тренера Манчестер Юнайтед после своего последнего матча с национальной сборной США; его первый матч с Юнайтед пройдет в воскресенье против Ливерпуля. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-news-live-pochettino-34915986\">MEN Manchester United</a>",
+            "model_replacement_rejected": "fact_lock: 22 ноября",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-city-charges-premier-league-34921178-2aeeb94799f8",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 15,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -526,23 +567,54 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::дата смерти указана неверно, так как страстная пятница в 2026 году выпадает на 10 апреля.",
+        "group_key": "футбол::уточнение даты матча в соответствии с источником.",
+        "actions": [
+          {
+            "line_index": 16,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Уточнение даты матча в соответствии с источником.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата матча противоречит источнику.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "football-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-united-mauricio-pochettino-liverpool-34921646-ab63bc03c4ba",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-united-mauricio-pochettino-liverpool-34921646",
+            "original_html": "• Стивен Джеррард предупредил, что поздний приход Маурисио Почеттино в Манчестер Юнайтед может негативно сказаться на их шансах в матче против Ливерпуля 22 ноября. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-united-mauricio-pochettino-liverpool-34921646\">MEN Manchester United</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 16,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::дата протестов указана неверно.",
         "actions": [
           {
             "line_index": 18,
             "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Дата смерти указана неверно, так как Страстная пятница в 2026 году выпадает на 10 апреля.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
+            "reason": "Дата протестов указана неверно.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата протестов указана неверно.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
             "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-the-only-witness-deceased-son-34904436-f3eb191e5328",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/the-only-witness-deceased-son-34904436",
-            "original_html": "• Семья Льюиса Кента, 29 лет, из Салфорда, выразила обеспокоенность по поводу практик охраны полиции на коронерском расследовании его смерти, произошедшей в Страстную пятницу, 3 апреля 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/the-only-witness-deceased-son-34904436\">MEN Latest News</a>",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-hospitals-pay-row-34921047-637347c7440f",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/greater-manchester-hospitals-pay-row-34921047",
+            "original_html": "• Более 400 сотрудников театров в четырех больницах Greater Manchester начнут забастовку с 18 ноября из-за спора о зарплате, с дальнейшими забастовками 23, 24 и 27 ноября; протест запланирован в центре Манчестера в следующую пятницу (27 ноября). <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/greater-manchester-hospitals-pay-row-34921047\">MEN</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -558,30 +630,30 @@
         "known_factual_error": true
       },
       {
-        "group_key": "дальние анонсы::добавлено название исполнителя для ясности.",
+        "group_key": "городской радар::добавлено имя обвиняемого для точности.",
         "actions": [
           {
-            "line_index": 24,
-            "section": "Дальние анонсы",
+            "line_index": 21,
+            "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Добавлено название исполнителя для ясности.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
+            "reason": "Добавлено имя обвиняемого для точности.",
+            "risk": "sensitive",
+            "critical_error": true,
+            "critical_problem": "Не указано имя обвиняемого, что может быть важно для идентификации.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "future_announcements-01",
-            "candidate_fingerprint": "event-event-del-amitri-past-to-present-four-decades-of-their-greatest-music-2026-11-27-bridgewater-hall-7465ed0c8f16",
-            "original_url_identity": "ticketmaster.co.uk/del-amitri-past-to-present-four-manchester-27-11-2026/event/1F006454EB109A8A",
-            "original_html": "• <b>Four Decades Of Their Greatest Music</b> — 27 ноября, Bridgewater Hall. Билеты уже в продаже на официальной странице. <a href=\"https://ticketmaster.co.uk/del-amitri-past-to-present-four-manchester-27-11-2026/event/1F006454EB109A8A\">Ticketmaster</a>",
+            "plan_slot_id": "city_watch-04",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c6m2lmx8zewgo-7ca5becc266f",
+            "original_url_identity": "bbc.com/news/articles/c6m2lmx8zewgo",
+            "original_html": "• Предъявлено обвинение — 32-летний мужчина обвиняется в изнасиловании 15-летней девочки рядом с рекреационной площадкой Эклс в Salford; он предстанет перед судом в понедельник. <a href=\"https://bbc.co.uk/news/articles/c6m2lmx8zewgo\">BBC Manchester</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 24,
+            "line_index": 21,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -589,27 +661,104 @@
         "known_factual_error": true
       },
       {
-        "group_key": "главная история дня::удаление повторяющегося текста.",
+        "group_key": "свежие новости::дублирование информации о сносе башен seven sisters",
+        "actions": [
+          {
+            "line_index": 6,
+            "section": "Свежие новости",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о сносе башен Seven Sisters.",
+            "risk": "format",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о сносе башен Seven Sisters.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-04",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cvj6lzy6ng0xo-1a553fc965c6",
+            "original_url_identity": "bbc.com/news/articles/cvj6lzy6ng0xo",
+            "original_html": "• Rochdale Boroughwide Housing подтвердила снос башен Seven Sisters, которые содержат 766 квартир, чтобы заменить их примерно 600 домами. Жители продолжают бороться с этим решением. <a href=\"https://bbc.co.uk/news/articles/cvj6lzy6ng0xo\">BBC Manchester</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchesters-400-clean-air-34920877-db1263258b60",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 6,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "topic:planning:rochdale demolition of rochdale s seven sisters flats devastating residents say|new story|2026 11 17",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::дублирование информации о сносе башен seven sisters",
+        "actions": [
+          {
+            "line_index": 20,
+            "section": "Городской радар",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о сносе башен Seven Sisters.",
+            "risk": "format",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о сносе башен Seven Sisters.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "city_watch-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-a-sad-day-college-bank-34921202-e8d983e45f57",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/a-sad-day-college-bank-34921202",
+            "original_html": "• Rochdale Boroughwide Housing приняло решение о сносе башен-близнецов Seven Sisters в College Bank и замене их на 601 новое жилье, что завершает десятилетие неопределенности для жителей. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/a-sad-day-college-bank-34921202\">MEN Latest News</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-greater-manchester-borough-hour-hour-34920541-f1c330b910e1",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 20,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "topic:planning:rochdale rochdale town centre a sad day for college bank and for rochdale as seven sisters tower blocks to be demolished|new story|2026 11 16",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "главная история дня::critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no russian rendering in the shipped line",
         "actions": [
           {
             "line_index": 1,
             "section": "Главная история дня",
-            "requested_action": "patch",
-            "reason": "Удаление повторяющегося текста.",
-            "risk": "format",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'stabbed' (weapon_violence/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
             "critical_error": true,
-            "critical_problem": "Повторение текста в начале строки.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
+            "critical_problem": "",
+            "completeness_concept": "weapon_violence",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
             "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-urgent-appeal-find-missing-bolton-34915634-82ab3342da36",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/urgent-appeal-find-missing-bolton-34915634",
-            "original_html": "<b>Появилось обновление по обращению — Появилось обновление по обращению — Полиция Bolton срочно обращается за помощью в поисках 14-летней Фиби, которая в последний раз была замечена 15 ноября 2026 года в полдень у Пожарной станции на Chorley New Road.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/urgent-appeal-find-missing-bolton-34915634\">MEN Latest News</a>",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cwq6e2883d99o-72f59ec282b2",
+            "original_url_identity": "bbc.com/news/articles/cwq6e2883d99o",
+            "original_html": "<b>В Крампсале 27-летний мужчина был смертельно ранен группой в балаклавах; 26-летний подозреваемый задержан по подозрению в убийстве.</b> <a href=\"https://bbc.com/news/articles/cwq6e2883d99o\">BBC Manchester</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-alleged-abusers-charged-sex-offences-34920463-7527ae17dc05",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "resolved_by_replacement",
         "post_checks": [
           {
             "line_index": 1,
@@ -620,97 +769,35 @@
         "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::дата отмены поездов не соответствует текущей дате.",
+        "group_key": "билеты / ticket radar::critical source fact dropped in translation: 'death' (death/who/what) has no russian rendering in the shipped line",
         "actions": [
           {
-            "line_index": 12,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "patch",
-            "reason": "Дата отмены поездов не соответствует текущей дате.",
-            "risk": "date",
+            "line_index": 34,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "replace",
+            "reason": "critical source fact dropped in translation: 'Death' (death/who/what) has no Russian rendering in the shipped line",
+            "risk": "translation",
             "critical_error": true,
-            "critical_problem": "Дата отмены поездов не соответствует текущей дате.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "transport-01",
-            "candidate_fingerprint": "url-tfgm-com-travel-updates-travel-alerts-buses-replace-late-night-northern-services-between-manchester-oxford-road-and-li-d21216c70875",
-            "original_url_identity": "tfgm.com/travel-updates/travel-alerts/buses-replace-late-night-northern-services-between-manchester-oxford-road-and-li",
-            "original_html": "• Northern: до 19 ноября отменены поздние вечерние поезда между Manchester Oxford Road и Liverpool Lime Street. Вместо них будут курсировать автобусы. <a href=\"https://tfgm.com/travel-updates/travel-alerts/buses-replace-late-night-northern-services-between-manchester-oxford-road-and-li\">TfGM</a>",
-            "verification": "judge correction matches the existing visible facts",
+            "critical_problem": "",
+            "completeness_concept": "death",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "ticket_radar-02",
+            "candidate_fingerprint": "event-event-eagles-of-death-metal-2026-11-17-manchester-new-century-hall-7d0cf59accd0",
+            "original_url_identity": "ticketmaster.co.uk/eagles-of-death-metal-manchester-17-11-2026/event/37006454E6E4BD4C",
+            "original_html": "• <b>Eagles of Death Metal</b> — 17 ноября, Manchester New Century Hall. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/eagles-of-death-metal-manchester-17-11-2026/event/37006454E6E4BD4C\">Ticketmaster</a>",
+            "deterministic_rewrite_rejected": "post_check: critical concept still absent: death, replacement drops death",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 12,
+            "line_index": 34,
             "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::некорректное указание даты события.",
-        "actions": [
-          {
-            "line_index": 18,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Некорректное указание даты события.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Некорректное указание даты смерти.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-the-only-witness-deceased-son-34904436-f3eb191e5328",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/the-only-witness-deceased-son-34904436",
-            "original_html": "• Семья Льюиса Кента, 29 лет, из Салфорда, выразила обеспокоенность по поводу практик охраны полиции на коронерском расследовании его смерти, произошедшей в Страстную пятницу, 3 апреля 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/the-only-witness-deceased-son-34904436\">MEN Latest News</a>",
-            "verification": "judge correction matches the existing visible facts",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 18,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "дальние анонсы::отсутствие информации о месте проведения.",
-        "actions": [
-          {
-            "line_index": 24,
-            "section": "Дальние анонсы",
-            "requested_action": "patch",
-            "reason": "Отсутствие информации о месте проведения.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Отсутствует название исполнителя в тексте анонса.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "future_announcements-01",
-            "candidate_fingerprint": "event-event-del-amitri-past-to-present-four-decades-of-their-greatest-music-2026-11-27-bridgewater-hall-7465ed0c8f16",
-            "original_url_identity": "ticketmaster.co.uk/del-amitri-past-to-present-four-manchester-27-11-2026/event/1F006454EB109A8A",
-            "original_html": "• <b>Four Decades Of Their Greatest Music</b> — 27 ноября, Bridgewater Hall. Билеты уже в продаже на официальной странице. <a href=\"https://ticketmaster.co.uk/del-amitri-past-to-present-four-manchester-27-11-2026/event/1F006454EB109A8A\">Ticketmaster</a>",
-            "verification": "judge correction matches the existing visible facts",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 24,
-            "passed": true,
-            "detail": "existing fact verified"
+            "detail": "slot removed and source absent"
           }
         ],
         "known_factual_error": true
@@ -721,243 +808,182 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 3,
+      "skipped": 1,
       "reports": [
         {
-          "fingerprint": "event-event-del-amitri-past-to-present-four-decades-of-their-greatest-music-2026-11-27-bridgewater-hall-7465ed0c8f16",
-          "title": "Del Amitri: Past to Present - Four Decades Of Their Greatest Music — event 2026-11-27 — public sale 2026-02-27 09:30",
+          "fingerprint": "event-event-eagles-of-death-metal-2026-11-17-manchester-new-century-hall-7d0cf59accd0",
+          "title": "Eagles of Death Metal — event 2026-11-17 — public sale 2026-02-27 10:00",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/del-amitri-past-to-present-four-manchester-27-11-2026/event/1F006454EB109A8A",
-          "candidate_evidence_chars": 335
-        },
-        {
-          "fingerprint": "url-tfgm-com-travel-updates-travel-alerts-buses-replace-late-night-northern-services-between-manchester-oxford-road-and-li-d21216c70875",
-          "title": "Buses replace late night Northern services between Manchester Oxford Road and Liverpool Lime Street from Monday 16 to Thursday 19 November",
-          "status": "skipped",
-          "reason": "tfgm_ephemeral_alert",
-          "url": "https://tfgm.com/travel-updates/travel-alerts/buses-replace-late-night-northern-services-between-manchester-oxford-road-and-li",
-          "candidate_evidence_chars": 75
-        },
-        {
-          "fingerprint": "event-event-del-amitri-past-to-present-four-decades-of-their-greatest-music-2026-11-27-bridgewater-hall-7465ed0c8f16",
-          "title": "Del Amitri: Past to Present - Four Decades Of Their Greatest Music — event 2026-11-27 — public sale 2026-02-27 09:30",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/del-amitri-past-to-present-four-manchester-27-11-2026/event/1F006454EB109A8A",
-          "candidate_evidence_chars": 335
+          "url": "https://ticketmaster.co.uk/eagles-of-death-metal-manchester-17-11-2026/event/37006454E6E4BD4C",
+          "candidate_evidence_chars": 379
         }
       ]
     },
-    "enrich_improved": 8,
-    "false_positive_existing_fact": 4,
+    "enrich_improved": 10,
+    "false_positive_existing_fact": 2,
+    "no_eligible_backup": 2,
+    "deterministic_rewrite_rejected": 2,
+    "deterministic_rewrite_built": 1,
+    "deterministic_post_check_rejected": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 29,
-      "matched_lines": 29,
+      "checked_lines": 36,
+      "matched_lines": 36,
       "applicable_lines": 2,
       "unmatched_lines": 0,
-      "critical_omission_count": 1,
-      "critical_omissions": [
-        {
-          "line_index": 3,
-          "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/armed-police-swarm-salford-estate-34915021",
-          "concept": "homicide",
-          "obligation": "charge/verdict/victim",
-          "source_hit": "murder"
-        }
-      ],
+      "critical_omission_count": 0,
+      "critical_omissions": [],
       "noncritical_omissions": [],
-      "critical_errors": [
-        {
-          "line_index": 3,
-          "section": "Свежие новости",
-          "risk": "translation",
-          "problem": "critical source fact dropped in translation: 'murder' (homicide/charge/verdict/victim) has no Russian rendering in the shipped line",
-          "suggested_action": "repair",
-          "completeness_concept": "homicide"
-        }
-      ],
+      "critical_errors": [],
       "warnings": [],
       "recovered": 0,
       "pulled_for_rework": 0,
-      "still_missing": 1
+      "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 29,
-      "resolved_in_place": 29,
+      "checked_lines": 36,
+      "resolved_in_place": 36,
       "unresolved": 0,
       "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved"
   },
-  "notes": "Исправлено повторение текста в начале строки.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Ошибка в географии: Крампсал и Солфорд — разные районы, требуется исправление.; Исправлена дата завершения работ на трамвайных линиях, чтобы отразить, что они уже завершены.; Строка корректно описывает ситуаци",
+  "notes": "Строка соответствует требованиям: событие в GM, информация точная и актуальная.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление термина 'депутат' на 'член парламента' для точности.; Информация о приостановке трамвайных линий устарела, так как указанный период завершился до текущей даты.; Ст",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Повторение текста в начале строки.",
-        "risk": "format",
-        "suggested_action": "repair"
-      },
-      {
         "line_index": 3,
         "section": "Свежие новости",
-        "problem": "Ошибка географии: Крампсал указан как часть Солфорда, но это отдельный район.",
-        "risk": "geo",
+        "problem": "Неправильное использование термина 'депутат'.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
         "line_index": 13,
         "section": "Общественный транспорт сегодня",
-        "problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло на момент публикации.",
+        "problem": "Дата завершения работ указана как 1 ноября 2026 года, но текущая дата 17 ноября 2026 года, что делает информацию устаревшей.",
+        "risk": "date",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 15,
+        "section": "Футбол",
+        "problem": "Дата матча противоречит источнику.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 16,
+        "section": "Футбол",
+        "problem": "Дата матча противоречит источнику.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
         "line_index": 18,
         "section": "Городской радар",
-        "problem": "Некорректное указание даты смерти.",
-        "risk": "factual",
+        "problem": "Дата протестов указана неверно.",
+        "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 24,
-        "section": "Дальние анонсы",
-        "problem": "Отсутствует название исполнителя в тексте анонса.",
-        "risk": "factual",
+        "line_index": 21,
+        "section": "Городской радар",
+        "problem": "Не указано имя обвиняемого, что может быть важно для идентификации.",
+        "risk": "sensitive",
         "suggested_action": "repair"
       },
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Повторение текста в начале строки.",
-        "risk": "format",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 3,
+        "line_index": 6,
         "section": "Свежие новости",
-        "problem": "Текст обрывается на середине предложения.",
+        "problem": "Дублирование информации о сносе башен Seven Sisters.",
         "risk": "format",
-        "suggested_action": "repair"
+        "suggested_action": "strip"
       },
       {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
-        "problem": "Дата отмены поездов не соответствует текущей дате.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 18,
+        "line_index": 20,
         "section": "Городской радар",
-        "problem": "Некорректное указание даты события.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 24,
-        "section": "Дальние анонсы",
-        "problem": "Отсутствие информации о месте проведения.",
+        "problem": "Дублирование информации о сносе башен Seven Sisters.",
         "risk": "format",
-        "suggested_action": "repair"
+        "suggested_action": "strip"
       }
     ],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• Полиция Bolton срочно обращается за помощью в поисках 14-летней Фиби, которая в последний раз была замечена 15 ноября 2026 года в полдень у Пожарной станции на Chorley New Road.",
-        "reason": "Удаление повторяющегося текста в начале строки.",
-        "risk": "format"
-      },
-      {
         "line_index": 3,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• В субботу, 14 ноября, в 1:30 ночи, полиция получила сообщение о ножевом ранении 27-летнего мужчины в Крампсале, который позже скончался в больнице. В ответ на это вооруженные полицейские провели обыск в жилом комплексе Cherry Tree Court на Kiwi Street в Солфорде, однако арестов не было, и расследование продолжается.",
-        "reason": "Крампсал и Солфорд — разные районы, ошибка в географии.",
-        "risk": "geo"
+        "replacement_text": "• Гостиница Cresta Court в Алтринчаме, по словам местного члена парламента Коннора Рэнда, прекратит размещение искателей убежища в течение следующих трех месяцев. Это решение стало результатом двухлетних протестов и кампаний против размещения мигрантов в отелях, которые, по мнению Рэнда, не подходят для таких целей и негативно сказываются на местном сообществе.",
+        "reason": "Использование термина 'депутат' вместо 'член парламента' может ввести в заблуждение, так как в контексте Великобритании 'депутат' обычно относится к местным советникам, а не к членам парламента.",
+        "risk": "factual"
       },
       {
         "line_index": 13,
         "section": "Общественный транспорт сегодня",
+        "action": "strip",
+        "reason": "Информация о приостановке трамвайных линий устарела, так как указанный период завершился до текущей даты.",
+        "risk": "date"
+      },
+      {
+        "line_index": 15,
+        "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере были полностью приостановлены для проведения инженерных работ. Пассажирам рекомендуется планировать свои поездки заранее и использовать замещающие автобусы.",
-        "reason": "Дата завершения работ уже прошла, необходимо указать, что работы завершены.",
+        "replacement_text": "• Маурисио Почеттино готовится занять пост главного тренера Манчестер Юнайтед после своего последнего матча с национальной сборной США; его первый матч с Юнайтед пройдет в воскресенье против Ливерпуля 22 ноября.",
+        "reason": "Дата матча должна быть 22 ноября, как указано в источнике.",
+        "risk": "date"
+      },
+      {
+        "line_index": 16,
+        "section": "Футбол",
+        "action": "patch",
+        "replacement_text": "• Стивен Джеррард предупредил, что поздний приход Маурисио Почеттино в Манчестер Юнайтед может негативно сказаться на их шансах в матче против Ливерпуля в воскресенье.",
+        "reason": "Уточнение даты матча в соответствии с источником.",
         "risk": "date"
       },
       {
         "line_index": 18,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Семья Льюиса Кента, 29 лет, из Салфорда, выразила обеспокоенность по поводу практик охраны полиции на коронерском расследовании его смерти, произошедшей в Страстную пятницу, 3 апреля 2025 года.",
-        "reason": "Дата смерти указана неверно, так как Страстная пятница в 2026 году выпадает на 10 апреля.",
-        "risk": "factual"
+        "replacement_text": "• Более 400 сотрудников театров в четырех больницах Greater Manchester начнут забастовку с 18 ноября из-за спора о зарплате, с дальнейшими забастовками 23, 24 и 27 ноября; протест запланирован в центре Манчестера в следующую пятницу (24 ноября).",
+        "reason": "Дата протестов указана неверно.",
+        "risk": "date"
       },
       {
-        "line_index": 24,
-        "section": "Дальние анонсы",
+        "line_index": 21,
+        "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Del Amitri: Four Decades Of Their Greatest Music — 27 ноября, Bridgewater Hall. Билеты уже в продаже на официальной странице.",
-        "reason": "Добавлено название исполнителя для ясности.",
-        "risk": "factual"
+        "replacement_text": "• Предъявлено обвинение — 32-летний Аарон МакКолл обвиняется в изнасиловании 15-летней девочки рядом с рекреационной площадкой Эклс в Salford; он предстанет перед судом в понедельник.",
+        "reason": "Добавлено имя обвиняемого для точности.",
+        "risk": "sensitive"
       },
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• Полиция Bolton срочно обращается за помощью в поисках 14-летней Фиби, которая в последний раз была замечена 15 ноября 2026 года в полдень у Пожарной станции на Chorley New Road.",
-        "reason": "Удаление повторяющегося текста.",
-        "risk": "format"
-      },
-      {
-        "line_index": 3,
+        "line_index": 6,
         "section": "Свежие новости",
         "action": "strip",
         "replacement_text": "",
-        "reason": "Текст обрывается, требуется полное предложение.",
+        "reason": "Дублирование информации о сносе башен Seven Sisters.",
         "risk": "format"
       },
       {
-        "line_index": 12,
-        "section": "Общественный транспорт сегодня",
-        "action": "patch",
-        "replacement_text": "• Northern: до 19 ноября отменены поздние вечерние поезда между Manchester Oxford Road и Liverpool Lime Street. Вместо них будут курсировать автобусы.",
-        "reason": "Дата отмены поездов не соответствует текущей дате.",
-        "risk": "date"
-      },
-      {
-        "line_index": 18,
+        "line_index": 20,
         "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Семья Льюиса Кента, 29 лет, из Салфорда, выразила обеспокоенность по поводу практик охраны полиции на коронерском расследовании его смерти, произошедшей в Страстную пятницу, 3 апреля 2026 года.",
-        "reason": "Некорректное указание даты события.",
-        "risk": "date"
-      },
-      {
-        "line_index": 24,
-        "section": "Дальние анонсы",
-        "action": "patch",
-        "replacement_text": "• Four Decades Of Their Greatest Music — 27 ноября, Bridgewater Hall. Билеты уже в продаже на официальной странице.",
-        "reason": "Отсутствие информации о месте проведения.",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации о сносе башен Seven Sisters.",
         "risk": "format"
       }
     ],
     "warnings": [
-      "Недостаточное количество элементов в разделе 'Что важно сегодня'.",
-      "Отсутствие блока 'Еда, открытия и рынки'."
+      "Секция 'Что важно сегодня' содержит только один элемент, что ниже минимального порога."
     ],
-    "notes": "Исправлено повторение текста в начале строки.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Ошибка в географии: Крампсал и Солфорд — разные районы, требуется исправление.; Исправлена дата завершения работ на трамвайных линиях, чтобы отразить, что они уже завершены.; Строка корректно описывает ситуаци",
+    "notes": "Строка соответствует требованиям: событие в GM, информация точная и актуальная.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление термина 'депутат' на 'член парламента' для точности.; Информация о приостановке трамвайных линий устарела, так как указанный период завершился до текущей даты.; Ст",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 12,
+      "chunk_count": 13,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -970,13 +996,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2723,
-          "duration_seconds": 2.064
+          "estimated_tokens": 2591,
+          "duration_seconds": 1.149
         },
         {
           "chunk_id": "chunk-02",
@@ -993,8 +1019,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2451,
-          "duration_seconds": 1.315
+          "estimated_tokens": 2488,
+          "duration_seconds": 1.214
         },
         {
           "chunk_id": "chunk-03",
@@ -1011,8 +1037,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7173,
-          "duration_seconds": 2.527
+          "estimated_tokens": 7011,
+          "duration_seconds": 2.14
         },
         {
           "chunk_id": "chunk-04",
@@ -1029,8 +1055,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3134,
-          "duration_seconds": 2.564
+          "estimated_tokens": 3191,
+          "duration_seconds": 1.615
         },
         {
           "chunk_id": "chunk-05",
@@ -1047,8 +1073,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2698,
-          "duration_seconds": 1.272
+          "estimated_tokens": 2704,
+          "duration_seconds": 0.971
         },
         {
           "chunk_id": "chunk-06",
@@ -1060,38 +1086,56 @@
           "sections": [
             "Футбол"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3606,
-          "duration_seconds": 0.934
+          "estimated_tokens": 3699,
+          "duration_seconds": 2.222
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
             18,
-            22
+            28
           ],
           "sections": [
             "Городской радар"
           ],
           "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4849,
-          "duration_seconds": 2.393
+          "estimated_tokens": 7858,
+          "duration_seconds": 47.687
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            23,
-            23
+            29,
+            29
+          ],
+          "sections": [
+            "Еда, открытия и рынки"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2800,
+          "duration_seconds": 0.923
+        },
+        {
+          "chunk_id": "chunk-09",
+          "status": "ok",
+          "line_range": [
+            30,
+            31
           ],
           "sections": [
             "IT и бизнес"
@@ -1101,33 +1145,33 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2624,
-          "duration_seconds": 2.772
-        },
-        {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            24,
-            24
-          ],
-          "sections": [
-            "Дальние анонсы"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2755,
-          "duration_seconds": 15.049
+          "estimated_tokens": 3156,
+          "duration_seconds": 0.827
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            25,
-            27
+            32,
+            32
+          ],
+          "sections": [
+            "Business/tech события для тебя"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2896,
+          "duration_seconds": 4.435
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            33,
+            36
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -1137,15 +1181,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3862,
-          "duration_seconds": 27.279
+          "estimated_tokens": 4550,
+          "duration_seconds": 26.543
         },
         {
-          "chunk_id": "chunk-11",
+          "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
-            28,
-            28
+            37,
+            37
           ],
           "sections": [
             "Крупные концерты вне GM"
@@ -1155,15 +1199,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2696,
-          "duration_seconds": 5.71
+          "estimated_tokens": 2702,
+          "duration_seconds": 6.035
         },
         {
-          "chunk_id": "chunk-12",
+          "chunk_id": "chunk-13",
           "status": "ok",
           "line_range": [
-            29,
-            29
+            38,
+            38
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
@@ -1174,7 +1218,7 @@
           "warning_count": 0,
           "error": "",
           "estimated_tokens": 2765,
-          "duration_seconds": 12.218
+          "duration_seconds": 6.02
         }
       ],
       "reduce": {
@@ -1183,12 +1227,12 @@
         "line_range": [],
         "sections": [],
         "decision": "repair_required",
-        "critical_error_count": 5,
-        "action_count": 5,
-        "warning_count": 2,
+        "critical_error_count": 2,
+        "action_count": 2,
+        "warning_count": 1,
         "error": "",
-        "estimated_tokens": 9868,
-        "duration_seconds": 26.493
+        "estimated_tokens": 10210,
+        "duration_seconds": 22.515
       },
       "max_workers": 3,
       "chunk_line_target": 12,
