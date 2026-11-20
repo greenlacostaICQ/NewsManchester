@@ -1,5 +1,5 @@
 {
-  "status": "partial",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
   "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
@@ -7,169 +7,154 @@
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-11-19",
-  "pipeline_run_id": "20261119T080151+0000",
-  "digest_sha256": "ad6da9f7f59fc5fb3a5bdae61243f2f5cb2f519712a8961c2e2ae6e3deda96f7",
-  "duration_seconds": 108.887,
+  "run_date_london": "2026-11-20",
+  "pipeline_run_id": "20261120T080145+0000",
+  "digest_sha256": "2631211e2f6a7f25b0315ab4a05ad556bc586eb19c091c37dcb772ddd5b4e973",
+  "duration_seconds": 95.494,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 4,
+      "line_index": 10,
       "section": "Свежие новости",
-      "problem": "Событие произошло в Глостершире, что не соответствует geo_scope GM.",
-      "risk": "geo",
+      "problem": "Дублирование информации о том же инциденте на M60.",
+      "risk": "format",
       "suggested_action": "strip"
     },
     {
-      "line_index": 7,
-      "section": "Свежие новости",
-      "problem": "Событие произошло в Вулверхэмптоне, что не соответствует geo_scope GM.",
-      "risk": "geo",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 16,
+      "line_index": 15,
       "section": "Общественный транспорт сегодня",
-      "problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+      "problem": "Дата события в прошлом, не актуальна для текущего выпуска.",
       "risk": "date",
       "suggested_action": "strip"
     },
     {
-      "line_index": 18,
-      "section": "Что важно сегодня",
-      "problem": "Некорректное указание роли погибшего.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 19,
+      "line_index": 17,
       "section": "Футбол",
-      "problem": "Возраст Джей Джей Габриэля указан как 16 лет, но это не подтверждено в источнике.",
+      "problem": "Неправильное указание тренера Манчестер Юнайтед.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 24,
+      "line_index": 20,
       "section": "Выходные в GM",
-      "problem": "Несоответствие цены: указано 'вход свободный', но в источнике цена £10.",
+      "problem": "Неправильная дата события.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 30,
+      "section": "Выходные в GM",
+      "problem": "Дублирование события с разными местами проведения.",
       "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 37,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 38,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 43,
-      "section": "Городской радар",
-      "problem": "География события не соответствует geo_scope.",
-      "risk": "geo",
       "suggested_action": "strip"
     },
     {
-      "line_index": 5,
-      "section": "Свежие новости",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'stab' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "weapon_violence"
+      "line_index": 35,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 40,
+      "section": "Городской радар",
+      "problem": "Не указано имя осужденного и жертвы, что может вызвать путаницу.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 47,
+      "section": "IT и бизнес",
+      "problem": "Неправильная категория для музыкальной группы.",
+      "risk": "factual",
+      "suggested_action": "strip"
     },
     {
       "line_index": 10,
       "section": "Свежие новости",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'grooming' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "sexual_offence"
+      "problem": "Дублирование информации о M60.",
+      "risk": "format",
+      "suggested_action": "strip"
     }
   ],
   "actions": [
     {
-      "line_index": 4,
+      "line_index": 10,
       "section": "Свежие новости",
       "action": "strip",
-      "reason": "Событие произошло в Глостершире, что не соответствует geo_scope GM.",
-      "risk": "geo",
+      "reason": "Повторение информации о том же инциденте на M60, уже упомянутом в строке 6.",
+      "risk": "format",
       "replacement_text": ""
     },
     {
-      "line_index": 7,
-      "section": "Свежие новости",
-      "action": "strip",
-      "reason": "Событие произошло в Вулверхэмптоне, что не соответствует geo_scope GM.",
-      "risk": "geo",
-      "replacement_text": ""
-    },
-    {
-      "line_index": 16,
+      "line_index": 15,
       "section": "Общественный транспорт сегодня",
       "action": "strip",
-      "reason": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+      "reason": "Событие завершилось до текущей даты выпуска.",
       "risk": "date",
       "replacement_text": ""
     },
     {
-      "line_index": 18,
-      "section": "Что важно сегодня",
-      "action": "patch",
-      "replacement_text": "• В суде были показаны кадры, на которых работники играют в футбол на опасном мусорном заводе в Большом Манчестере, где в марте 2023 года погиб сотрудник Джон Грейвсон.",
-      "reason": "Уточнение роли погибшего как сотрудника завода.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 19,
+      "line_index": 17,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Джей Джей Габриэль объявил о своем уходе из Манчестер Юнайтед и, как ожидается, присоединится к Реал Мадрид, что вызвало беспокойство в Испании.",
-      "reason": "Возраст Джей Джей Габриэля не подтвержден в источнике.",
+      "replacement_text": "• Новый тренер Манчестер Юнайтед Эрик тен Хаг готовится к своему первому матчу против Ливерпуля в воскресенье после инцидента с дроном, который снимал тренировку.",
+      "reason": "Маурисио Почеттино не является тренером Манчестер Юнайтед.",
       "risk": "factual"
     },
     {
-      "line_index": 24,
+      "line_index": 20,
       "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• 20 ноября в People's History Museum — Winter Makers Market. На площадке: рынок, вход £10, ремесленные товары, еда, живая музыка.",
-      "reason": "Указана неверная информация о стоимости входа.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 37,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 10 мая — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
-      "reason": "Дата события в источнике указана как 10 мая 2026 года.",
+      "replacement_text": "• Кинофестиваль SEE MY WORLD, представляющий панафриканское кино, пройдет в театре Contact 21 ноября с 14:00 до 23:00.",
+      "reason": "Дата события указана неверно, должна быть 21 ноября.",
       "risk": "date"
     },
     {
-      "line_index": 38,
+      "line_index": 30,
       "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 4 апреля — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
-      "reason": "Дата события в источнике указана как 4 апреля 2026 года.",
-      "risk": "date"
-    },
-    {
-      "line_index": 43,
-      "section": "Городской радар",
       "action": "strip",
-      "reason": "Событие происходит в Бельгии и Франции, что не соответствует geo_scope GM.",
-      "risk": "geo",
+      "reason": "Дублирование события Chorlton Makers' Market с разными местами проведения.",
+      "risk": "factual",
       "replacement_text": ""
+    },
+    {
+      "line_index": 35,
+      "section": "Выходные в GM",
+      "action": "patch",
+      "replacement_text": "• 22 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. Обратите внимание, что дата может быть изменена.",
+      "reason": "Дата события указана неверно, так как в источнике указано, что будущих дат нет.",
+      "risk": "date"
+    },
+    {
+      "line_index": 40,
+      "section": "Городской радар",
+      "action": "patch",
+      "replacement_text": "• Вынесен приговор — Кайл Ховард, 37 лет, из Рочдейла, был осужден за убийство своей жены Кили Аспиналл 23 мая 2026 года. Приговор был вынесен 18 ноября 2026 года в Манчестерском королевском суде.",
+      "reason": "Уточнение деталей дела для ясности.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 47,
+      "section": "IT и бизнес",
+      "action": "strip",
+      "reason": "Манчестерская группа Westside Cowboy не относится к категории 'IT и бизнес'.",
+      "risk": "factual",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 10,
+      "section": "Свежие новости",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации о M60.",
+      "risk": "format"
     }
   ],
   "warnings": [
-    "judge reduce failed: parse_failed no parseable JSON",
-    "line 18 drops source number/date fact(s): 48"
+    "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога.",
+    "Секция 'Еда, открытия и рынки' отсутствует, что ниже минимального порога.",
+    "Секция 'Business/tech события для тебя' отсутствует, что ниже минимального порога."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -178,33 +163,33 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 5,
-      "Что важно сегодня": 2,
+      "Общественный транспорт сегодня": 4,
+      "Что важно сегодня": 1,
       "Футбол": 2,
       "Выходные в GM": 15,
-      "Городской радар": 11,
-      "Еда, открытия и рынки": 1,
-      "Билеты / Ticket Radar": 10,
+      "Городской радар": 7,
+      "IT и бизнес": 3,
+      "Билеты / Ticket Radar": 8,
       "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 2,
+      "Что важно сегодня": 1,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 11,
+      "Городской радар": 7,
       "Выходные в GM": 15,
-      "Билеты / Ticket Radar": 10,
+      "Билеты / Ticket Radar": 8,
       "Русскоязычные концерты и стендап UK": 1,
-      "Еда, открытия и рынки": 1,
+      "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
       "Футбол": 2
     },
-    "ticket_items": 11,
-    "core_items": 42,
+    "ticket_items": 9,
+    "core_items": 36,
     "writer_quality_counts": {
-      "included_candidates": 59,
-      "rendered_candidates": 58,
+      "included_candidates": 53,
+      "rendered_candidates": 52,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
@@ -215,74 +200,53 @@
       "removed_with_reason": 0
     },
     "source_health_counts": {
-      "ok": 109,
+      "ok": 103,
       "partial": 2,
-      "stale": 2,
-      "empty": 12,
-      "failed": 5,
-      "zero_yield": 71,
+      "stale": 8,
+      "empty": 14,
+      "failed": 4,
+      "zero_yield": 72,
       "no_contribution_breakdown": {
-        "fetch_failed": 5,
-        "all_rejected": 71,
-        "idle_no_items": 22
+        "fetch_failed": 4,
+        "all_rejected": 72,
+        "idle_no_items": 27
       },
       "zero_contribution_by_stage": {
-        "written": 37,
+        "written": 38,
         "selected": 34,
-        "parsed": 22,
-        "fetched": 5
+        "parsed": 27,
+        "fetched": 4
       },
       "weekend_source_coverage_incidents": 51
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 2 item(s), emergency floor 3",
-      "Еда, открытия и рынки: 1 item(s), emergency floor 3",
+      "Что важно сегодня: 1 item(s), emergency floor 3",
+      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "Business/tech события для тебя: 0 item(s), emergency floor 1",
-      "source failures: 5"
+      "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 18 has unchecked number/date token(s): 2023",
-      "patch for line 38 has unchecked number/date token(s): 9:00"
+      "possible duplicate digest line: 6 and 10",
+      "patch for line 20 has unchecked number/date token(s): 14:00, 23:00",
+      "multiple actions target line 10"
     ],
     "can_apply_actions": true,
     "action_count": 9
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 58,
-    "matched_lines": 58,
-    "applicable_lines": 8,
+    "checked_lines": 52,
+    "matched_lines": 52,
+    "applicable_lines": 4,
     "unmatched_lines": 4,
-    "critical_omission_count": 2,
-    "critical_omissions": [
-      {
-        "line_index": 5,
-        "source_url_key": "bbc.com/news/articles/ckq6eg5vqy1po",
-        "concept": "weapon_violence",
-        "obligation": "who/what",
-        "source_hit": "stab"
-      },
-      {
-        "line_index": 10,
-        "source_url_key": "bbc.com/news/articles/cmy86plnw5qvo",
-        "concept": "sexual_offence",
-        "obligation": "charge/verdict/victim",
-        "source_hit": "grooming"
-      }
-    ],
-    "noncritical_omissions": [
-      {
-        "line_index": 18,
-        "dropped": [
-          "48"
-        ]
-      }
-    ],
+    "critical_omission_count": 0,
+    "critical_omissions": [],
+    "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 2,
+    "pulled_for_rework": 0,
     "still_missing": 0
   },
   "repair_executor": {
@@ -290,134 +254,121 @@
     "dry_run": false,
     "fact_lock_version": "v1",
     "requested": 9,
-    "attempted": 5,
-    "applied": 5,
+    "attempted": 6,
+    "applied": 6,
     "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 3,
-    "stripped": 1,
-    "unresolved": 1,
+    "reserve_replacement_used": 2,
+    "stripped": 3,
+    "unresolved": 2,
     "blocking_unresolved": 1,
-    "resolved": 8,
-    "resolved_in_place": 5,
-    "resolved_by_replacement": 2,
-    "resolved_by_removal": 1,
+    "resolved": 7,
+    "resolved_in_place": 4,
+    "resolved_by_replacement": 1,
+    "resolved_by_removal": 2,
     "fact_lock_rejected": 0,
     "enrich_attempted": 9,
     "post_check_errors": [],
-    "geo_contract_rejected": [
-      {
-        "line_index": 7,
-        "section": "Свежие новости",
-        "geo_scope": "gm",
-        "reason": "Событие произошло в Вулверхэмптоне, что не соответствует geo_scope GM.",
-        "gm_anchor_present": true
-      },
-      {
-        "line_index": 43,
-        "section": "Городской радар",
-        "geo_scope": "gm",
-        "reason": "Событие происходит в Бельгии и Франции, что не соответствует geo_scope GM.",
-        "gm_anchor_present": true
-      }
-    ],
+    "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 4,
+        "line_index": 10,
         "section": "Свежие новости",
         "requested_action": "strip",
-        "reason": "Событие произошло в Глостершире, что не соответствует geo_scope GM.",
-        "risk": "geo",
-        "critical_error": true,
-        "critical_problem": "Событие произошло в Глостершире, что не соответствует geo_scope GM.",
+        "reason": "Повторение информации о том же инциденте на M60, уже упомянутом в строке 6.",
+        "risk": "format",
+        "critical_error": false,
+        "critical_problem": "",
         "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchesters-lip-king-laughed-moaned-34933731-e91ab22ba7df",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchesters-lip-king-laughed-moaned-34933731",
-        "original_html": "• На слушании в Коронерском суде Глостершира выяснилось, что 34-летний Джордан Парке, известный как 'Lip King', смеялся и жаловался на усталость во время проведения опасной процедуры бразильской подтяжки ягодиц, в результате которой 33-летняя Алиса Уэбб скончалась в больнице. В ходе расследования стало известно, что Парке ввел ей в семь раз больше рекомендованного объема филлера, что привело к ее коллапсу и остановке сердца. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchesters-lip-king-laughed-moaned-34933731\">MEN Latest News</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-salford-schools-gta-6-warning-34928327-0263c06adff0",
-        "post_check_passed": true
+        "outcome": "unresolved",
+        "method": "removed",
+        "plan_slot_id": "last_24h-08",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m60-live-incident-near-trafford-34937753-c3281ec8236a",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/m60-live-incident-near-trafford-34937753",
+        "original_html": "• M60: на участке есть серьёзные ограничения из-за инцидента, возможны очереди и объезды. Если маршрут идёт через этот коридор сегодня, проверьте карту дорог и заложите больше времени. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/m60-live-incident-near-trafford-34937753\">MEN Latest News</a>",
+        "backup_outcome": "backup_chain_exhausted",
+        "removal_reason": "unrenderable_line",
+        "post_check_passed": false
       },
       {
-        "line_index": 16,
+        "line_index": 15,
         "section": "Общественный транспорт сегодня",
         "requested_action": "strip",
-        "reason": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+        "reason": "Событие завершилось до текущей даты выпуска.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+        "critical_problem": "Дата события в прошлом, не актуальна для текущего выпуска.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "transport-05",
+        "plan_slot_id": "transport-04",
         "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
         "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-        "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажиры должны планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
+        "original_html": "• Metrolink: трамвайные линии в Манчестере (Алтринчем, Траффорд Центр и Экклс) будут полностью закрыты с 19 октября по 1 ноября 2026 года для замены рельсов. Пассажиров просят планировать альтернативные маршруты. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 18,
-        "section": "Что важно сегодня",
-        "requested_action": "patch",
-        "reason": "Уточнение роли погибшего как сотрудника завода.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Некорректное указание роли погибшего.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "today_focus-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-playing-football-middle-busy-site-34929092-5dc9f243c0c1",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/playing-football-middle-busy-site-34929092",
-        "original_html": "• В суде были показаны кадры, на которых работники играют в футбол на опасном мусорном заводе в Большом Манчестере, где в марте 2023 года погиб Джон Грейвсон. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/playing-football-middle-busy-site-34929092\">MEN Latest News</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 19,
+        "line_index": 17,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Возраст Джей Джей Габриэля не подтвержден в источнике.",
+        "reason": "Маурисио Почеттино не является тренером Манчестер Юнайтед.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Возраст Джей Джей Габриэля указан как 16 лет, но это не подтверждено в источнике.",
+        "critical_problem": "Неправильное указание тренера Манчестер Юнайтед.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
         "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-jj-gabriel-man-united-spain-34932994-3c5ff0b56096",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/jj-gabriel-man-united-spain-34932994",
-        "original_html": "• 16-летний Джей Джей Габриэль объявил о своем уходе из Манчестер Юнайтед и, как ожидается, присоединится к Реал Мадрид, что вызвало беспокойство в Испании. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/jj-gabriel-man-united-spain-34932994\">MEN Manchester United</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-united-pochettino-drone-live-34933722-eb45eccdb73b",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-united-pochettino-drone-live-34933722",
+        "original_html": "• Новый тренер Манчестер Юнайтед Маурисио Почеттино готовится к своему первому матчу против Ливерпуля в воскресенье после инцидента с дроном, который снимал тренировку. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-united-pochettino-drone-live-34933722\">MEN Manchester United</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 24,
+        "line_index": 20,
         "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Указана неверная информация о стоимости входа.",
-        "risk": "factual",
+        "reason": "Дата события указана неверно, должна быть 21 ноября.",
+        "risk": "date",
         "critical_error": true,
-        "critical_problem": "Несоответствие цены: указано 'вход свободный', но в источнике цена £10.",
+        "critical_problem": "Неправильная дата события.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-02",
-        "candidate_fingerprint": "event-event-winter-makers-market-2026-11-20-people-s-history-museum-1192f7fe2fae",
-        "original_url_identity": "manchestersfinest.com/events/winter-makers-market-at-peoples-history-museum",
-        "original_html": "• 20 ноября в People's History Museum — Winter Makers Market. На площадке: рынок, вход свободный, ремесленные товары, еда, живая музыка. <a href=\"https://manchestersfinest.com/events/winter-makers-market-at-peoples-history-museum\">Manchester's Finest Events</a>",
+        "plan_slot_id": "weekend_activities-01",
+        "candidate_fingerprint": "event-event-see-my-world-brings-pan-african-cinema-from-across-the-north-to-contact-for-its-first-film-2026-11-21-contact-theatre-3b5d51aeae4d",
+        "original_url_identity": "manchestersfinest.com/events/see-my-world-film-festival",
+        "original_html": "• Кинофестиваль SEE MY WORLD, представляющий панафриканское кино, пройдет в театре Contact 21 ноября с 14:00 до 23:00. <a href=\"https://manchestersfinest.com/events/see-my-world-film-festival\">Manchester's Finest Events</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 37,
+        "line_index": 30,
+        "section": "Выходные в GM",
+        "requested_action": "strip",
+        "reason": "Дублирование события Chorlton Makers' Market с разными местами проведения.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дублирование события с разными местами проведения.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "weekend_activities-09",
+        "candidate_fingerprint": "event-id-jsonld-event-77f762eb5105-55f1e7c39973",
+        "original_url_identity": "chorlton.coop/event/chorlton-makers-market/2026-11-21",
+        "original_html": "• 21 ноября в Manchester Road and Oswald Road School Car Park — Chorlton Makers' Market. На площадке: рынок, ремесленные товары, еда, живая музыка. <a href=\"https://chorlton.coop/event/chorlton-makers-market/2026-11-21\">Chorlton Makers Market</a>",
+        "replacement_fingerprint": "event-event-national-theatre-bacchae-at-lowry-2026-11-20-lowry-69793d53aaba",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 35,
         "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Дата события в источнике указана как 10 мая 2026 года.",
+        "reason": "Дата события указана неверно, так как в источнике указано, что будущих дат нет.",
         "risk": "date",
         "critical_error": true,
         "critical_problem": "Дата события указана неверно.",
@@ -425,118 +376,119 @@
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
         "plan_slot_id": "weekend_activities-13",
-        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2027-05-10-burnage-rfc-9a3e9cdf54f4",
         "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
         "original_html": "• 22 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 38,
-        "section": "Выходные в GM",
+        "line_index": 40,
+        "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Дата события в источнике указана как 4 апреля 2026 года.",
-        "risk": "date",
+        "reason": "Уточнение деталей дела для ясности.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
+        "critical_problem": "Не указано имя осужденного и жертвы, что может вызвать путаницу.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-14",
-        "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
-        "original_html": "• 21 ноября — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
-        "verification": "structured fact already rendered correctly",
+        "method": "model_patch",
+        "plan_slot_id": "city_watch-03",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cm930lw782z7o-b6a72273e2fc",
+        "original_url_identity": "bbc.com/news/articles/cm930lw782z7o",
+        "original_html": "• Вынесен приговор — Убийство произошло 23 мая 2026 года, а приговор был вынесен 18 ноября 2026 года в Манчестерском королевском суде. <a href=\"https://bbc.co.uk/news/articles/cm930lw782z7o\">BBC Manchester</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 5,
-        "section": "Свежие новости",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'stab' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-        "risk": "translation",
+        "line_index": 47,
+        "section": "IT и бизнес",
+        "requested_action": "strip",
+        "reason": "Манчестерская группа Westside Cowboy не относится к категории 'IT и бизнес'.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "",
-        "completeness_concept": "weapon_violence",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-03",
-        "candidate_fingerprint": "url-bbc-com-news-articles-ckq6eg5vqy1po-d943a24357b5",
-        "original_url_identity": "bbc.com/news/articles/ckq6eg5vqy1po",
-        "original_html": "• В результате расследования убийства в Крампсале, где 27-летний мужчина был смертельно ранен, полиция арестовала семь человек. Инцидент произошёл в субботу, 18 ноября 2026 года, около 01:30 по Гринвичу. Полиция призывает свидетелей или тех, кто может предоставить информацию, обратиться к ним, так как расследование продолжается. <a href=\"https://bbc.co.uk/news/articles/ckq6eg5vqy1po\">BBC Manchester</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-woman-22-suffering-devastating-34927681-d385929a5c5a",
+        "critical_problem": "Неправильная категория для музыкальной группы.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "tech_business-03",
+        "candidate_fingerprint": "url-bbc-com-news-articles-c6eq4l4y81l2o-e48cc101124f",
+        "original_url_identity": "bbc.com/news/articles/c6eq4l4y81l2o",
+        "original_html": "• Манчестерская группа Westside Cowboy была названа Артистом года 2026 по версии BBC Introducing, что подчеркивает их стремительный рост от пабов до фестивалей в Великобритании. <a href=\"https://bbc.co.uk/news/articles/c6eq4l4y81l2o\">BBC Manchester</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
         "line_index": 10,
         "section": "Свежие новости",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'grooming' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
-        "risk": "translation",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о M60.",
+        "risk": "format",
         "critical_error": true,
-        "critical_problem": "",
-        "completeness_concept": "sexual_offence",
+        "critical_problem": "Дублирование информации о том же инциденте на M60.",
+        "completeness_concept": "",
         "outcome": "unresolved",
         "method": "reserve_replacement",
         "plan_slot_id": "last_24h-08",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cmy86plnw5qvo-b0f165cafb96",
-        "original_url_identity": "bbc.com/news/articles/cmy86plnw5qvo",
-        "original_html": "• Правительство Великобритании намерено депортировать Шабира Ахмеда, лидера банды, занимающейся сутенёрством в Рочдейле, который был освобождён из тюрьмы в июле. <a href=\"https://bbc.co.uk/news/articles/cmy86plnw5qvo\">BBC Manchester</a>",
-        "replacement_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-11-18-councillors-to-vote-on-calls-to-scrap-planned-timperley-parking-charges-8790edfc416c",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m60-live-incident-near-trafford-34937753-c3281ec8236a",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/m60-live-incident-near-trafford-34937753",
+        "original_html": "• M60: на участке есть серьёзные ограничения из-за инцидента, возможны очереди и объезды. Если маршрут идёт через этот коридор сегодня, проверьте карту дорог и заложите больше времени. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/m60-live-incident-near-trafford-34937753\">MEN Latest News</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-trial-live-nine-men-34843691-a3497ae4ad1c",
         "post_check_passed": false
       }
     ],
     "operations": [
       {
-        "group_key": "свежие новости::событие произошло в глостершире, что не соответствует geo_scope gm.",
+        "group_key": "свежие новости::повторение информации о том же инциденте на m60, уже упомянутом в строке 6.",
         "actions": [
           {
-            "line_index": 4,
+            "line_index": 10,
             "section": "Свежие новости",
             "requested_action": "strip",
-            "reason": "Событие произошло в Глостершире, что не соответствует geo_scope GM.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "Событие произошло в Глостершире, что не соответствует geo_scope GM.",
+            "reason": "Повторение информации о том же инциденте на M60, уже упомянутом в строке 6.",
+            "risk": "format",
+            "critical_error": false,
+            "critical_problem": "",
             "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchesters-lip-king-laughed-moaned-34933731-e91ab22ba7df",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/manchesters-lip-king-laughed-moaned-34933731",
-            "original_html": "• На слушании в Коронерском суде Глостершира выяснилось, что 34-летний Джордан Парке, известный как 'Lip King', смеялся и жаловался на усталость во время проведения опасной процедуры бразильской подтяжки ягодиц, в результате которой 33-летняя Алиса Уэбб скончалась в больнице. В ходе расследования стало известно, что Парке ввел ей в семь раз больше рекомендованного объема филлера, что привело к ее коллапсу и остановке сердца. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/manchesters-lip-king-laughed-moaned-34933731\">MEN Latest News</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-salford-schools-gta-6-warning-34928327-0263c06adff0",
-            "post_check_passed": true
+            "outcome": "unresolved",
+            "method": "removed",
+            "plan_slot_id": "last_24h-08",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m60-live-incident-near-trafford-34937753-c3281ec8236a",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/m60-live-incident-near-trafford-34937753",
+            "original_html": "• M60: на участке есть серьёзные ограничения из-за инцидента, возможны очереди и объезды. Если маршрут идёт через этот коридор сегодня, проверьте карту дорог и заложите больше времени. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/m60-live-incident-near-trafford-34937753\">MEN Latest News</a>",
+            "backup_outcome": "backup_chain_exhausted",
+            "removal_reason": "unrenderable_line",
+            "post_check_passed": false
           }
         ],
-        "outcome": "resolved_by_replacement",
+        "outcome": "unresolved",
         "post_checks": [
           {
-            "line_index": 4,
-            "passed": true,
-            "detail": "post-check passed"
+            "line_index": 10,
+            "passed": false,
+            "detail": "removed source is still visible"
           }
         ],
-        "known_factual_error": true
+        "known_factual_error": false
       },
       {
-        "group_key": "общественный транспорт сегодня::дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+        "group_key": "общественный транспорт сегодня::событие завершилось до текущей даты выпуска.",
         "actions": [
           {
-            "line_index": 16,
+            "line_index": 15,
             "section": "Общественный транспорт сегодня",
             "requested_action": "strip",
-            "reason": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+            "reason": "Событие завершилось до текущей даты выпуска.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+            "critical_problem": "Дата события в прошлом, не актуальна для текущего выпуска.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "transport-05",
+            "plan_slot_id": "transport-04",
             "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
             "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-            "original_html": "• Metrolink: С 19 октября по 1 ноября 2026 года три трамвайные линии в Манчестере будут полностью приостановлены для проведения инженерных работ. Пассажиры должны планировать свои поездки заранее и использовать замещающие автобусы. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
+            "original_html": "• Metrolink: трамвайные линии в Манчестере (Алтринчем, Траффорд Центр и Экклс) будут полностью закрыты с 19 октября по 1 ноября 2026 года для замены рельсов. Пассажиров просят планировать альтернативные маршруты. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -545,7 +497,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 16,
+            "line_index": 15,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -553,54 +505,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "что важно сегодня::уточнение роли погибшего как сотрудника завода.",
+        "group_key": "футбол::маурисио почеттино не является тренером манчестер юнайтед.",
         "actions": [
           {
-            "line_index": 18,
-            "section": "Что важно сегодня",
-            "requested_action": "patch",
-            "reason": "Уточнение роли погибшего как сотрудника завода.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Некорректное указание роли погибшего.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "today_focus-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-playing-football-middle-busy-site-34929092-5dc9f243c0c1",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/playing-football-middle-busy-site-34929092",
-            "original_html": "• В суде были показаны кадры, на которых работники играют в футбол на опасном мусорном заводе в Большом Манчестере, где в марте 2023 года погиб Джон Грейвсон. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/playing-football-middle-busy-site-34929092\">MEN Latest News</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 18,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::возраст джей джей габриэля не подтвержден в источнике.",
-        "actions": [
-          {
-            "line_index": 19,
+            "line_index": 17,
             "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Возраст Джей Джей Габриэля не подтвержден в источнике.",
+            "reason": "Маурисио Почеттино не является тренером Манчестер Юнайтед.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Возраст Джей Джей Габриэля указан как 16 лет, но это не подтверждено в источнике.",
+            "critical_problem": "Неправильное указание тренера Манчестер Юнайтед.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
             "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-jj-gabriel-man-united-spain-34932994-3c5ff0b56096",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/jj-gabriel-man-united-spain-34932994",
-            "original_html": "• 16-летний Джей Джей Габриэль объявил о своем уходе из Манчестер Юнайтед и, как ожидается, присоединится к Реал Мадрид, что вызвало беспокойство в Испании. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/jj-gabriel-man-united-spain-34932994\">MEN Manchester United</a>",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-manchester-united-pochettino-drone-live-34933722-eb45eccdb73b",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/manchester-united-pochettino-drone-live-34933722",
+            "original_html": "• Новый тренер Манчестер Юнайтед Маурисио Почеттино готовится к своему первому матчу против Ливерпуля в воскресенье после инцидента с дроном, который снимал тренировку. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/manchester-united-pochettino-drone-live-34933722\">MEN Manchester United</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -608,7 +529,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 19,
+            "line_index": 17,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -616,23 +537,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::указана неверная информация о стоимости входа.",
+        "group_key": "выходные в gm::дата события указана неверно, должна быть 21 ноября.",
         "actions": [
           {
-            "line_index": 24,
+            "line_index": 20,
             "section": "Выходные в GM",
             "requested_action": "patch",
-            "reason": "Указана неверная информация о стоимости входа.",
-            "risk": "factual",
+            "reason": "Дата события указана неверно, должна быть 21 ноября.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Несоответствие цены: указано 'вход свободный', но в источнике цена £10.",
+            "critical_problem": "Неправильная дата события.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-02",
-            "candidate_fingerprint": "event-event-winter-makers-market-2026-11-20-people-s-history-museum-1192f7fe2fae",
-            "original_url_identity": "manchestersfinest.com/events/winter-makers-market-at-peoples-history-museum",
-            "original_html": "• 20 ноября в People's History Museum — Winter Makers Market. На площадке: рынок, вход свободный, ремесленные товары, еда, живая музыка. <a href=\"https://manchestersfinest.com/events/winter-makers-market-at-peoples-history-museum\">Manchester's Finest Events</a>",
+            "plan_slot_id": "weekend_activities-01",
+            "candidate_fingerprint": "event-event-see-my-world-brings-pan-african-cinema-from-across-the-north-to-contact-for-its-first-film-2026-11-21-contact-theatre-3b5d51aeae4d",
+            "original_url_identity": "manchestersfinest.com/events/see-my-world-film-festival",
+            "original_html": "• Кинофестиваль SEE MY WORLD, представляющий панафриканское кино, пройдет в театре Contact 21 ноября с 14:00 до 23:00. <a href=\"https://manchestersfinest.com/events/see-my-world-film-festival\">Manchester's Finest Events</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -640,7 +561,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 24,
+            "line_index": 20,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -648,13 +569,51 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::дата события в источнике указана как 10 мая 2026 года.",
+        "group_key": "выходные в gm::дублирование события chorlton makers' market с разными местами проведения",
         "actions": [
           {
-            "line_index": 37,
+            "line_index": 30,
+            "section": "Выходные в GM",
+            "requested_action": "strip",
+            "reason": "Дублирование события Chorlton Makers' Market с разными местами проведения.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование события с разными местами проведения.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "weekend_activities-09",
+            "candidate_fingerprint": "event-id-jsonld-event-77f762eb5105-55f1e7c39973",
+            "original_url_identity": "chorlton.coop/event/chorlton-makers-market/2026-11-21",
+            "original_html": "• 21 ноября в Manchester Road and Oswald Road School Car Park — Chorlton Makers' Market. На площадке: рынок, ремесленные товары, еда, живая музыка. <a href=\"https://chorlton.coop/event/chorlton-makers-market/2026-11-21\">Chorlton Makers Market</a>",
+            "replacement_fingerprint": "event-event-national-theatre-bacchae-at-lowry-2026-11-20-lowry-69793d53aaba",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 30,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "ticket:chorlton makers market|2026-11-21|manchester road and oswald road school car park",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата события указана неверно, так как в источнике указано, что будущих дат нет.",
+        "actions": [
+          {
+            "line_index": 35,
             "section": "Выходные в GM",
             "requested_action": "patch",
-            "reason": "Дата события в источнике указана как 10 мая 2026 года.",
+            "reason": "Дата события указана неверно, так как в источнике указано, что будущих дат нет.",
             "risk": "date",
             "critical_error": true,
             "critical_problem": "Дата события указана неверно.",
@@ -662,7 +621,7 @@
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
             "plan_slot_id": "weekend_activities-13",
-            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2027-05-10-burnage-rfc-9a3e9cdf54f4",
             "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
             "original_html": "• 22 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
             "verification": "structured fact already rendered correctly",
@@ -672,7 +631,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 37,
+            "line_index": 35,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -680,63 +639,30 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::дата события в источнике указана как 4 апреля 2026 года.",
+        "group_key": "городской радар::уточнение деталей дела для ясности.",
         "actions": [
           {
-            "line_index": 38,
-            "section": "Выходные в GM",
+            "line_index": 40,
+            "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Дата события в источнике указана как 4 апреля 2026 года.",
-            "risk": "date",
+            "reason": "Уточнение деталей дела для ясности.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
+            "critical_problem": "Не указано имя осужденного и жертвы, что может вызвать путаницу.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-14",
-            "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
-            "original_html": "• 21 ноября — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
-            "verification": "structured fact already rendered correctly",
+            "method": "model_patch",
+            "plan_slot_id": "city_watch-03",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cm930lw782z7o-b6a72273e2fc",
+            "original_url_identity": "bbc.com/news/articles/cm930lw782z7o",
+            "original_html": "• Вынесен приговор — Убийство произошло 23 мая 2026 года, а приговор был вынесен 18 ноября 2026 года в Манчестерском королевском суде. <a href=\"https://bbc.co.uk/news/articles/cm930lw782z7o\">BBC Manchester</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 38,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "свежие новости::critical source fact dropped in translation: 'stab' (weapon_violence/who/what) has no russian rendering in the shipped line",
-        "actions": [
-          {
-            "line_index": 5,
-            "section": "Свежие новости",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'stab' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-            "risk": "translation",
-            "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "weapon_violence",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-03",
-            "candidate_fingerprint": "url-bbc-com-news-articles-ckq6eg5vqy1po-d943a24357b5",
-            "original_url_identity": "bbc.com/news/articles/ckq6eg5vqy1po",
-            "original_html": "• В результате расследования убийства в Крампсале, где 27-летний мужчина был смертельно ранен, полиция арестовала семь человек. Инцидент произошёл в субботу, 18 ноября 2026 года, около 01:30 по Гринвичу. Полиция призывает свидетелей или тех, кто может предоставить информацию, обратиться к ним, так как расследование продолжается. <a href=\"https://bbc.co.uk/news/articles/ckq6eg5vqy1po\">BBC Manchester</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-woman-22-suffering-devastating-34927681-d385929a5c5a",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 5,
+            "line_index": 40,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -744,24 +670,57 @@
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::critical source fact dropped in translation: 'grooming' (sexual_offence/charge/verdict/victim) has no russian rendering in the shipped line",
+        "group_key": "it и бизнес::манчестерская группа westside cowboy не относится к категории 'it и бизнес'.",
+        "actions": [
+          {
+            "line_index": 47,
+            "section": "IT и бизнес",
+            "requested_action": "strip",
+            "reason": "Манчестерская группа Westside Cowboy не относится к категории 'IT и бизнес'.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неправильная категория для музыкальной группы.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "tech_business-03",
+            "candidate_fingerprint": "url-bbc-com-news-articles-c6eq4l4y81l2o-e48cc101124f",
+            "original_url_identity": "bbc.com/news/articles/c6eq4l4y81l2o",
+            "original_html": "• Манчестерская группа Westside Cowboy была названа Артистом года 2026 по версии BBC Introducing, что подчеркивает их стремительный рост от пабов до фестивалей в Великобритании. <a href=\"https://bbc.co.uk/news/articles/c6eq4l4y81l2o\">BBC Manchester</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 47,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::дублирование информации о m60",
         "actions": [
           {
             "line_index": 10,
             "section": "Свежие новости",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'grooming' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
-            "risk": "translation",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о M60.",
+            "risk": "format",
             "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "sexual_offence",
+            "critical_problem": "Дублирование информации о том же инциденте на M60.",
+            "completeness_concept": "",
             "outcome": "unresolved",
             "method": "reserve_replacement",
             "plan_slot_id": "last_24h-08",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cmy86plnw5qvo-b0f165cafb96",
-            "original_url_identity": "bbc.com/news/articles/cmy86plnw5qvo",
-            "original_html": "• Правительство Великобритании намерено депортировать Шабира Ахмеда, лидера банды, занимающейся сутенёрством в Рочдейле, который был освобождён из тюрьмы в июле. <a href=\"https://bbc.co.uk/news/articles/cmy86plnw5qvo\">BBC Manchester</a>",
-            "replacement_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-11-18-councillors-to-vote-on-calls-to-scrap-planned-timperley-parking-charges-8790edfc416c",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m60-live-incident-near-trafford-34937753-c3281ec8236a",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/m60-live-incident-near-trafford-34937753",
+            "original_html": "• M60: на участке есть серьёзные ограничения из-за инцидента, возможны очереди и объезды. Если маршрут идёт через этот коридор сегодня, проверьте карту дорог и заложите больше времени. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/m60-live-incident-near-trafford-34937753\">MEN Latest News</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-manchester-trial-live-nine-men-34843691-a3497ae4ad1c",
             "post_check_passed": false
           }
         ],
@@ -771,6 +730,12 @@
             "line_index": 10,
             "passed": false,
             "detail": "shared prose policy still fails"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "story:public safety after incident|stockport|trafford|m60 recap as three separate incidents cause traffic mayhem across motorway|same story new facts|2026 11 19",
+            "visible_count": 0,
+            "passed": true
           }
         ],
         "known_factual_error": true
@@ -784,36 +749,27 @@
       "skipped": 0
     },
     "enrich_improved": 9,
-    "no_eligible_backup": 1,
-    "false_positive_existing_fact": 4,
-    "deterministic_rewrite_rejected": 2,
+    "backup_chain_exhausted": 1,
+    "no_eligible_backup": 2,
+    "false_positive_existing_fact": 3,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 57,
-      "matched_lines": 57,
+      "checked_lines": 50,
+      "matched_lines": 50,
       "applicable_lines": 5,
       "unmatched_lines": 4,
       "critical_omission_count": 0,
       "critical_omissions": [],
-      "noncritical_omissions": [
-        {
-          "line_index": 17,
-          "dropped": [
-            "48"
-          ]
-        }
-      ],
+      "noncritical_omissions": [],
       "critical_errors": [],
-      "warnings": [
-        "line 17 drops source number/date fact(s): 48"
-      ],
+      "warnings": [],
       "recovered": 0,
       "pulled_for_rework": 0,
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 61,
-      "resolved_in_place": 60,
+      "checked_lines": 54,
+      "resolved_in_place": 53,
       "unresolved": 1,
       "findings": [
         {
@@ -827,152 +783,154 @@
     },
     "status": "unresolved"
   },
-  "notes": "Строка соответствует всем требованиям: событие в GM, информация актуальна и полезна для местных жителей.; Прогноз погоды соответствует источнику и географическому охвату. Ошибок нет.; Некоторые события не соответствуют географическому охвату GM.; Строка о Metrolink содержит устаревшую информацию о датах работ.; Уточнен",
+  "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Дублирование информации о M60 в строках 6 и 10. Удалить строку 10.; Строка о закрытии трамвайных линий содержит устаревшую информацию.; Строка соответствует требованиям: событие в G",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 4,
+        "line_index": 10,
         "section": "Свежие новости",
-        "problem": "Событие произошло в Глостершире, что не соответствует geo_scope GM.",
-        "risk": "geo",
+        "problem": "Дублирование информации о том же инциденте на M60.",
+        "risk": "format",
         "suggested_action": "strip"
       },
       {
-        "line_index": 7,
-        "section": "Свежие новости",
-        "problem": "Событие произошло в Вулверхэмптоне, что не соответствует geo_scope GM.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 16,
+        "line_index": 15,
         "section": "Общественный транспорт сегодня",
-        "problem": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+        "problem": "Дата события в прошлом, не актуальна для текущего выпуска.",
         "risk": "date",
         "suggested_action": "strip"
       },
       {
-        "line_index": 18,
-        "section": "Что важно сегодня",
-        "problem": "Некорректное указание роли погибшего.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 19,
+        "line_index": 17,
         "section": "Футбол",
-        "problem": "Возраст Джей Джей Габриэля указан как 16 лет, но это не подтверждено в источнике.",
+        "problem": "Неправильное указание тренера Манчестер Юнайтед.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 24,
+        "line_index": 20,
         "section": "Выходные в GM",
-        "problem": "Несоответствие цены: указано 'вход свободный', но в источнике цена £10.",
-        "risk": "factual",
+        "problem": "Неправильная дата события.",
+        "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 37,
+        "line_index": 30,
+        "section": "Выходные в GM",
+        "problem": "Дублирование события с разными местами проведения.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 35,
         "section": "Выходные в GM",
         "problem": "Дата события указана неверно.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 38,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 43,
+        "line_index": 40,
         "section": "Городской радар",
-        "problem": "География события не соответствует geo_scope.",
-        "risk": "geo",
+        "problem": "Не указано имя осужденного и жертвы, что может вызвать путаницу.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 47,
+        "section": "IT и бизнес",
+        "problem": "Неправильная категория для музыкальной группы.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 10,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о M60.",
+        "risk": "format",
         "suggested_action": "strip"
       }
     ],
     "actions": [
       {
-        "line_index": 4,
+        "line_index": 10,
         "section": "Свежие новости",
         "action": "strip",
-        "reason": "Событие произошло в Глостершире, что не соответствует geo_scope GM.",
-        "risk": "geo"
+        "reason": "Повторение информации о том же инциденте на M60, уже упомянутом в строке 6.",
+        "risk": "format"
       },
       {
-        "line_index": 7,
-        "section": "Свежие новости",
-        "action": "strip",
-        "reason": "Событие произошло в Вулверхэмптоне, что не соответствует geo_scope GM.",
-        "risk": "geo"
-      },
-      {
-        "line_index": 16,
+        "line_index": 15,
         "section": "Общественный транспорт сегодня",
         "action": "strip",
-        "reason": "Дата завершения работ указана как 1 ноября 2026 года, что уже прошло.",
+        "reason": "Событие завершилось до текущей даты выпуска.",
         "risk": "date"
       },
       {
-        "line_index": 18,
-        "section": "Что важно сегодня",
-        "action": "patch",
-        "replacement_text": "• В суде были показаны кадры, на которых работники играют в футбол на опасном мусорном заводе в Большом Манчестере, где в марте 2023 года погиб сотрудник Джон Грейвсон.",
-        "reason": "Уточнение роли погибшего как сотрудника завода.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 19,
+        "line_index": 17,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Джей Джей Габриэль объявил о своем уходе из Манчестер Юнайтед и, как ожидается, присоединится к Реал Мадрид, что вызвало беспокойство в Испании.",
-        "reason": "Возраст Джей Джей Габриэля не подтвержден в источнике.",
+        "replacement_text": "• Новый тренер Манчестер Юнайтед Эрик тен Хаг готовится к своему первому матчу против Ливерпуля в воскресенье после инцидента с дроном, который снимал тренировку.",
+        "reason": "Маурисио Почеттино не является тренером Манчестер Юнайтед.",
         "risk": "factual"
       },
       {
-        "line_index": 24,
+        "line_index": 20,
         "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• 20 ноября в People's History Museum — Winter Makers Market. На площадке: рынок, вход £10, ремесленные товары, еда, живая музыка.",
-        "reason": "Указана неверная информация о стоимости входа.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 37,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 10 мая — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
-        "reason": "Дата события в источнике указана как 10 мая 2026 года.",
+        "replacement_text": "• Кинофестиваль SEE MY WORLD, представляющий панафриканское кино, пройдет в театре Contact 21 ноября с 14:00 до 23:00.",
+        "reason": "Дата события указана неверно, должна быть 21 ноября.",
         "risk": "date"
       },
       {
-        "line_index": 38,
+        "line_index": 30,
         "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 4 апреля — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
-        "reason": "Дата события в источнике указана как 4 апреля 2026 года.",
-        "risk": "date"
-      },
-      {
-        "line_index": 43,
-        "section": "Городской радар",
         "action": "strip",
-        "reason": "Событие происходит в Бельгии и Франции, что не соответствует geo_scope GM.",
-        "risk": "geo"
+        "reason": "Дублирование события Chorlton Makers' Market с разными местами проведения.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 35,
+        "section": "Выходные в GM",
+        "action": "patch",
+        "replacement_text": "• 22 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. Обратите внимание, что дата может быть изменена.",
+        "reason": "Дата события указана неверно, так как в источнике указано, что будущих дат нет.",
+        "risk": "date"
+      },
+      {
+        "line_index": 40,
+        "section": "Городской радар",
+        "action": "patch",
+        "replacement_text": "• Вынесен приговор — Кайл Ховард, 37 лет, из Рочдейла, был осужден за убийство своей жены Кили Аспиналл 23 мая 2026 года. Приговор был вынесен 18 ноября 2026 года в Манчестерском королевском суде.",
+        "reason": "Уточнение деталей дела для ясности.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 47,
+        "section": "IT и бизнес",
+        "action": "strip",
+        "reason": "Манчестерская группа Westside Cowboy не относится к категории 'IT и бизнес'.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 10,
+        "section": "Свежие новости",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации о M60.",
+        "risk": "format"
       }
     ],
     "warnings": [
-      "judge reduce failed: parse_failed no parseable JSON"
+      "Секция 'Что важно сегодня' содержит только 1 элемент, что ниже минимального порога.",
+      "Секция 'Еда, открытия и рынки' отсутствует, что ниже минимального порога.",
+      "Секция 'Business/tech события для тебя' отсутствует, что ниже минимального порога."
     ],
-    "notes": "Строка соответствует всем требованиям: событие в GM, информация актуальна и полезна для местных жителей.; Прогноз погоды соответствует источнику и географическому охвату. Ошибок нет.; Некоторые события не соответствуют географическому охвату GM.; Строка о Metrolink содержит устаревшую информацию о датах работ.; Уточнен",
+    "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Дублирование информации о M60 в строках 6 и 10. Удалить строку 10.; Строка о закрытии трамвайных линий содержит устаревшую информацию.; Строка соответствует требованиям: событие в G",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "partial",
+      "status": "ok",
       "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
@@ -991,8 +949,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2789,
-          "duration_seconds": 1.201
+          "estimated_tokens": 2669,
+          "duration_seconds": 1.113
         },
         {
           "chunk_id": "chunk-02",
@@ -1009,8 +967,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2471,
-          "duration_seconds": 1.21
+          "estimated_tokens": 2438,
+          "duration_seconds": 1.074
         },
         {
           "chunk_id": "chunk-03",
@@ -1023,19 +981,19 @@
             "Свежие новости"
           ],
           "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6931,
-          "duration_seconds": 3.798
+          "estimated_tokens": 7270,
+          "duration_seconds": 2.503
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            16
+            15
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -1045,33 +1003,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4509,
-          "duration_seconds": 2.326
+          "estimated_tokens": 4326,
+          "duration_seconds": 1.861
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            17,
-            18
+            16,
+            16
           ],
           "sections": [
             "Что важно сегодня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3288,
-          "duration_seconds": 2.838
+          "estimated_tokens": 2680,
+          "duration_seconds": 0.975
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            19,
-            20
+            17,
+            18
           ],
           "sections": [
             "Футбол"
@@ -1081,33 +1039,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3134,
-          "duration_seconds": 2.783
+          "estimated_tokens": 3128,
+          "duration_seconds": 2.105
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            21,
-            32
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 7869,
-          "duration_seconds": 50.324
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            33,
-            39
+            19,
+            30
           ],
           "sections": [
             "Выходные в GM"
@@ -1117,15 +1057,33 @@
           "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5990,
-          "duration_seconds": 6.959
+          "estimated_tokens": 8018,
+          "duration_seconds": 63.534
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            31,
+            37
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 5965,
+          "duration_seconds": 2.461
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            40,
-            50
+            38,
+            44
           ],
           "sections": [
             "Городской радар"
@@ -1135,33 +1093,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 8051,
-          "duration_seconds": 65.471
+          "estimated_tokens": 5762,
+          "duration_seconds": 22.751
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            51,
-            51
+            45,
+            47
           ],
           "sections": [
-            "Еда, открытия и рынки"
+            "IT и бизнес"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2764,
-          "duration_seconds": 1.279
+          "estimated_tokens": 3743,
+          "duration_seconds": 7.881
         },
         {
           "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            52,
-            61
+            48,
+            55
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -1171,15 +1129,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7861,
-          "duration_seconds": 17.225
+          "estimated_tokens": 6768,
+          "duration_seconds": 33.348
         },
         {
           "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
-            62,
-            62
+            56,
+            56
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
@@ -1190,21 +1148,21 @@
           "warning_count": 0,
           "error": "",
           "estimated_tokens": 2765,
-          "duration_seconds": 6.358
+          "duration_seconds": 4.481
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
-        "critical_error_count": 0,
-        "action_count": 0,
-        "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 11428,
-        "duration_seconds": 30.416
+        "decision": "repair_required",
+        "critical_error_count": 1,
+        "action_count": 1,
+        "warning_count": 3,
+        "error": "",
+        "estimated_tokens": 11134,
+        "duration_seconds": 24.869
       },
       "max_workers": 3,
       "chunk_line_target": 12,
