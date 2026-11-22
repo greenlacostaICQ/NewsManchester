@@ -1,80 +1,102 @@
 {
-  "status": "partial",
+  "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 3 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-11-21",
-  "pipeline_run_id": "20261121T080145+0000",
-  "digest_sha256": "d2a04a3564600ee506daffe0679732a776db87eb494326b07e8bd150cc32f808",
-  "duration_seconds": 96.904,
+  "run_date_london": "2026-11-22",
+  "pipeline_run_id": "20261122T080139+0000",
+  "digest_sha256": "0e349fcf0b226e1f6d9714ab188676f7a56264ec75f1d0ea034298965adacb1b",
+  "duration_seconds": 81.319,
   "confidence": 0.9,
   "critical_errors": [
     {
       "line_index": 1,
       "section": "Главная история дня",
-      "problem": "Некорректное указание даты доставки в больницу и вызова экстренных служб.",
+      "problem": "Неверное указание офиса премьер-министра. Энди Бернхэм не является премьер-министром.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 4,
+      "line_index": 7,
       "section": "Свежие новости",
-      "problem": "Дата события указана неверно. 20 ноября 2026 года - это пятница, а не суббота.",
-      "risk": "date",
+      "problem": "Неправильное использование термина 'лидер банды сутенёров'.",
+      "risk": "sensitive",
       "suggested_action": "repair"
     },
     {
       "line_index": 16,
       "section": "Общественный транспорт сегодня",
-      "problem": "Устаревшая информация о закрытии трамвайных линий.",
+      "problem": "Дата события в прошлом, не актуально для текущего выпуска.",
       "risk": "date",
       "suggested_action": "strip"
     },
     {
       "line_index": 17,
       "section": "Футбол",
-      "problem": "Неверное указание команды. Маурисио Почеттино не является тренером Манчестер Юнайтед.",
+      "problem": "Неверная информация о клубе. Маурисио Почеттино не является менеджером Манчестер Юнайтед.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 20,
+      "line_index": 27,
       "section": "Выходные в GM",
       "problem": "Дата события указана неверно.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 35,
+      "line_index": 30,
       "section": "Выходные в GM",
       "problem": "Дата события указана неверно.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 38,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 39,
-      "section": "Выходные в GM",
-      "problem": "Дата события указана неверно.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 41,
+      "line_index": 33,
       "section": "Городской радар",
-      "problem": "Неправильное количество детских садов.",
+      "problem": "Не указано, что смерть ребёнка расследуется как инцидент.",
+      "risk": "sensitive",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 42,
+      "section": "Билеты / Ticket Radar",
+      "problem": "Duplicate event with incorrect venue.",
+      "risk": "factual",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 1,
+      "section": "Главная история дня",
+      "problem": "Неправильное указание офиса премьер-министра. Энди Бернхэм не является премьер-министром.",
       "risk": "factual",
       "suggested_action": "repair"
+    },
+    {
+      "line_index": 17,
+      "section": "Футбол",
+      "problem": "Дублирование информации о Маурисио Почеттино и его первом матче.",
+      "risk": "format",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 18,
+      "section": "Футбол",
+      "problem": "Дублирование информации о Маурисио Почеттино и его первом матче.",
+      "risk": "format",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 7,
+      "section": "Свежие новости",
+      "risk": "translation",
+      "problem": "critical source fact dropped in translation: 'grooming' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
+      "suggested_action": "repair",
+      "completeness_concept": "sexual_offence"
     }
   ],
   "actions": [
@@ -82,23 +104,23 @@
       "line_index": 1,
       "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• Трёхлетний мальчик по имени Тиаго Уолл, который скончался после вызова полиции в детский сад Cosy Toes в Миддлтоне, был назван. Он был доставлен в больницу 2 ноября после того, как экстренные службы прибыли на место происшествия. В связи с трагедией детский сад закрыт, а следствие продолжается, в то время как семья Тиаго получает поддержку от специалистов.",
-      "reason": "Исправление даты доставки в больницу на 2 ноября, чтобы соответствовать фактам.",
+      "replacement_text": "• Сотрудники полиции Большого Манчестера находятся на \"грани срыва\" из-за необходимости охраны офиса Энди Бернхэма, с отменой выходных и привлечением помощи от других сил.",
+      "reason": "Энди Бернхэм является мэром Большого Манчестера, а не премьер-министром.",
       "risk": "factual"
     },
     {
-      "line_index": 4,
+      "line_index": 7,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• В пятницу, 20 ноября 2026 года, три детских сада в Миддлтоне закрыли свои двери после трагического инцидента в Cosy Toes Day Nursery, где погиб трёхлетний ребёнок. Власти начали расследование, и Ofsted приостановила регистрацию Cosy Toes на шесть недель из-за опасений за безопасность детей.",
-      "reason": "Дата события указана неверно. 20 ноября 2026 года - это пятница, а не суббота.",
-      "risk": "date"
+      "replacement_text": "• Жертва лидера банды в Rochdale, известная как 'Анджелина', боится, что он живёт рядом с ней. Она планирует переезд более чем на 200 миль, чтобы избежать встречи с Шабиром Ахмедом, который был осуждён за преступления против несовершеннолетних. Ахмед, отбывший 14 лет из 19, не может быть депортирован из-за закона 1971 года, что вызывает общественное недовольство.",
+      "reason": "Термин 'лидер банды сутенёров' может быть воспринят как сенсационный и неуместный в данном контексте.",
+      "risk": "sensitive"
     },
     {
       "line_index": 16,
       "section": "Общественный транспорт сегодня",
       "action": "strip",
-      "reason": "Информация о закрытии трамвайных линий устарела, так как указанные даты уже прошли.",
+      "reason": "Событие завершилось 1 ноября 2026 года, не актуально для выпуска от 22 ноября 2026 года.",
       "risk": "date",
       "replacement_text": ""
     },
@@ -106,54 +128,69 @@
       "line_index": 17,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• 21 ноября 2026 года Маурисио Почеттино ввел три новых правила для игроков Манчестер Юнайтед, включая детальный обзор академии и полное участие в наборе игроков. Однако, Почеттино не является тренером Манчестер Юнайтед.",
-      "reason": "Неверное указание команды. Маурисио Почеттино не является тренером Манчестер Юнайтед.",
+      "replacement_text": "• Маурисио Почеттино ввел три новых правила в Челси перед своим первым матчем против Ливерпуля.",
+      "reason": "Маурисио Почеттино является менеджером Челси, а не Манчестер Юнайтед.",
       "risk": "factual"
     },
     {
-      "line_index": 20,
+      "line_index": 27,
       "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• 19 ноября — Makers Market в Great Northern Square, Манчестер. На площадке: рынок, вход свободный, ремесленные товары, еда, подходит для семьи.",
-      "reason": "Дата начала события указана неверно. Согласно источнику, событие начинается 19 ноября.",
+      "replacement_text": "• 22 ноября в Macron Stadium — Car Boot Directory. На площадке: автомобильная барахолка, для покупателей с 7:00, вход свободный, еда, можно с собакой.",
+      "reason": "Дата события указана неверно, требуется исправление.",
       "risk": "date"
     },
     {
-      "line_index": 35,
+      "line_index": 30,
       "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 22 ноября в Macron Stadium — автомобильная барахолка Car Boot Directory. Для покупателей с 7:00, вход свободный, еда, можно с собакой.",
-      "reason": "Дата события должна быть 22 ноября 2026 года.",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дата события указана неверно, требуется удаление.",
       "risk": "date"
     },
     {
-      "line_index": 38,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 22 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
-      "reason": "Дата события должна быть 22 ноября 2026 года.",
-      "risk": "date"
-    },
-    {
-      "line_index": 39,
-      "section": "Выходные в GM",
-      "action": "patch",
-      "replacement_text": "• 22 ноября — автомобильная барахолка на аэродроме Бартон. Для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
-      "reason": "Дата события должна быть 22 ноября 2026 года.",
-      "risk": "date"
-    },
-    {
-      "line_index": 41,
+      "line_index": 33,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• Ofsted приостановил работу четырех детских садов Cosy Toes Ltd в Миддлтоне после смерти трехлетнего Тьяго Уолла.",
-      "reason": "Уточнение количества и названия детских садов.",
+      "replacement_text": "• Ofsted приостановил работу четырех детских садов в Миддлтоне после смерти трехлетнего Тиаго Уолла в Cosy Toes Day Nursery. Смерть расследуется как инцидент.",
+      "reason": "Уточнение, что смерть ребёнка расследуется как инцидент, важно для контекста.",
+      "risk": "sensitive"
+    },
+    {
+      "line_index": 42,
+      "section": "Билеты / Ticket Radar",
+      "action": "strip",
+      "reason": "Duplicate entry for Swae Lee with incorrect venue. The event has been moved to Manchester Academy.",
+      "risk": "factual",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 1,
+      "section": "Главная история дня",
+      "action": "patch",
+      "replacement_text": "• Сотрудники полиции Большого Манчестера находятся на \"грани срыва\" из-за необходимости охраны офиса мэра Энди Бернхэма, с отменой выходных и привлечением помощи от других сил.",
+      "reason": "Энди Бернхэм является мэром, а не премьер-министром.",
       "risk": "factual"
+    },
+    {
+      "line_index": 17,
+      "section": "Футбол",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации о Маурисио Почеттино.",
+      "risk": "format"
+    },
+    {
+      "line_index": 18,
+      "section": "Футбол",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации о Маурисио Почеттино.",
+      "risk": "format"
     }
   ],
   "warnings": [
-    "Некоторые события в разделе 'Билеты / Ticket Radar' имеют даты, которые находятся далеко в будущем, что может снизить актуальность информации для читателей.",
-    "judge reduce failed: parse_failed no parseable JSON"
+    "Отсутствие блока 'Что важно сегодня' и 'Еда, открытия и рынки' снижает полноту выпуска."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -163,11 +200,11 @@
       "Погода": 1,
       "Свежие новости": 9,
       "Общественный транспорт сегодня": 5,
-      "Футбол": 2,
-      "Выходные в GM": 18,
-      "Городской радар": 6,
-      "IT и бизнес": 1,
-      "Билеты / Ticket Radar": 12,
+      "Футбол": 3,
+      "Выходные в GM": 8,
+      "Городской радар": 9,
+      "Билеты / Ticket Radar": 10,
+      "Крупные концерты вне GM": 1,
       "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
@@ -175,96 +212,106 @@
       "Что важно сегодня": 0,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 6,
-      "Выходные в GM": 18,
-      "Билеты / Ticket Radar": 12,
+      "Городской радар": 9,
+      "Выходные в GM": 8,
+      "Билеты / Ticket Radar": 10,
       "Русскоязычные концерты и стендап UK": 1,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 0,
-      "Футбол": 2
+      "Футбол": 3
     },
-    "ticket_items": 13,
-    "core_items": 37,
+    "ticket_items": 12,
+    "core_items": 31,
     "writer_quality_counts": {
-      "included_candidates": 58,
-      "rendered_candidates": 56,
+      "included_candidates": 49,
+      "rendered_candidates": 48,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
       "dropped_low_quality": 1,
-      "replaced_from_plan_backup": 1,
+      "replaced_from_plan_backup": 0,
       "removed_with_reason": 1
     },
     "source_health_counts": {
-      "ok": 108,
+      "ok": 100,
       "partial": 2,
-      "stale": 5,
-      "empty": 11,
-      "failed": 4,
-      "zero_yield": 74,
+      "stale": 7,
+      "empty": 14,
+      "failed": 7,
+      "zero_yield": 67,
       "no_contribution_breakdown": {
-        "fetch_failed": 4,
-        "all_rejected": 74,
-        "idle_no_items": 24
+        "fetch_failed": 7,
+        "all_rejected": 67,
+        "idle_no_items": 29
       },
       "zero_contribution_by_stage": {
-        "written": 42,
-        "selected": 32,
-        "parsed": 24,
-        "fetched": 4
+        "written": 37,
+        "parsed": 29,
+        "fetched": 7,
+        "selected": 30
       },
-      "weekend_source_coverage_incidents": 48
+      "weekend_source_coverage_incidents": 53
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 0 item(s), emergency floor 3",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
       "Business/tech события для тебя: 0 item(s), emergency floor 1",
-      "source failures: 4"
+      "source failures: 7"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 35 has unchecked number/date token(s): 7:00",
-      "patch for line 39 has unchecked number/date token(s): 9:00"
+      "patch for line 7 has unchecked number/date token(s): 14, 1971",
+      "patch for line 27 has unchecked number/date token(s): 7:00",
+      "multiple actions target line 1",
+      "multiple actions target line 17"
     ],
     "can_apply_actions": true,
-    "action_count": 9
+    "action_count": 11
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 56,
-    "matched_lines": 56,
-    "applicable_lines": 4,
-    "unmatched_lines": 4,
-    "critical_omission_count": 0,
-    "critical_omissions": [],
+    "checked_lines": 48,
+    "matched_lines": 48,
+    "applicable_lines": 6,
+    "unmatched_lines": 3,
+    "critical_omission_count": 1,
+    "critical_omissions": [
+      {
+        "line_index": 7,
+        "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/victim-of-rochdale-grooming-gang-34946810",
+        "concept": "sexual_offence",
+        "obligation": "charge/verdict/victim",
+        "source_hit": "grooming"
+      }
+    ],
     "noncritical_omissions": [],
     "recovered": 0,
     "pulled_for_rework": 0,
-    "still_missing": 0
+    "still_missing": 1
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 9,
-    "attempted": 3,
-    "applied": 3,
-    "model_patch_applied": 1,
+    "requested": 11,
+    "attempted": 8,
+    "applied": 8,
+    "model_patch_applied": 3,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 1,
-    "stripped": 1,
+    "reserve_replacement_used": 2,
+    "stripped": 3,
     "unresolved": 0,
-    "blocking_unresolved": 0,
-    "resolved": 7,
-    "resolved_in_place": 5,
+    "blocking_unresolved": 1,
+    "resolved": 10,
+    "resolved_in_place": 6,
     "resolved_by_replacement": 1,
-    "resolved_by_removal": 1,
+    "resolved_by_removal": 3,
     "fact_lock_rejected": 0,
-    "enrich_attempted": 9,
+    "enrich_attempted": 11,
     "post_check_errors": [],
     "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
@@ -273,34 +320,34 @@
         "line_index": 1,
         "section": "Главная история дня",
         "requested_action": "patch",
-        "reason": "Исправление даты доставки в больницу на 2 ноября, чтобы соответствовать фактам.",
+        "reason": "Энди Бернхэм является мэром Большого Манчестера, а не премьер-министром.",
         "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Некорректное указание даты доставки в больницу и вызова экстренных служб.",
+        "critical_error": false,
+        "critical_problem": "",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
         "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-beautiful-boy-3-who-died-34935293-161b6f417f76",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/beautiful-boy-3-who-died-34935293",
-        "original_html": "<b>Трёхлетний мальчик по имени Тиаго Уолл, который скончался после вызова полиции в детский сад Cosy Toes в Миддлтоне, был назван.</b> Он был доставлен в больницу 5 ноября после того, как экстренные службы прибыли на место происшествия 2 ноября. В связи с трагедией детский сад закрыт, а следствие продолжается, в то время как семья Тиаго получает поддержку от специалистов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/beautiful-boy-3-who-died-34935293\">MEN Latest News</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-cops-breaking-point-gmp-struggles-34938622-f75909564abc",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/cops-breaking-point-gmp-struggles-34938622",
+        "original_html": "<b>Сотрудники полиции Большого Манчестера находятся на \"грани срыва\" из-за необходимости охраны офиса премьер-министра Энди Бернхэма, с отменой выходных и привлечением помощи от других сил.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/cops-breaking-point-gmp-struggles-34938622\">MEN</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 4,
+        "line_index": 7,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Дата события указана неверно. 20 ноября 2026 года - это пятница, а не суббота.",
-        "risk": "date",
+        "reason": "Термин 'лидер банды сутенёров' может быть воспринят как сенсационный и неуместный в данном контексте.",
+        "risk": "sensitive",
         "critical_error": true,
-        "critical_problem": "Дата события указана неверно. 20 ноября 2026 года - это пятница, а не суббота.",
-        "completeness_concept": "",
+        "critical_problem": "Неправильное использование термина 'лидер банды сутенёров'.",
+        "completeness_concept": "sexual_offence",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "last_24h-02",
-        "candidate_fingerprint": "url-itv-com-news-granada-2026-11-20-three-more-nurseries-close-down-following-death-of-three-year-old-85922d5f136f",
-        "original_url_identity": "itv.com/news/granada/2026-11-20/three-more-nurseries-close-down-following-death-of-three-year-old",
-        "original_html": "• В пятницу, 20 ноября 2026 года, три детских сада в Миддлтоне закрыли свои двери после трагического инцидента в Cosy Toes Day Nursery, где погиб трёхлетний ребёнок. Власти начали расследование, и Ofsted приостановила регистрацию Cosy Toes на шесть недель из-за опасений за безопасность детей. <a href=\"https://itv.com/news/granada/2026-11-20/three-more-nurseries-close-down-following-death-of-three-year-old\">ITV Granada Greater Manchester</a>",
+        "plan_slot_id": "last_24h-05",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-victim-of-rochdale-grooming-gang-34946810-e9d8c85c76fb",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/victim-of-rochdale-grooming-gang-34946810",
+        "original_html": "• Жертва лидера банды сутенёров в Rochdale, известная как 'Анджелина', боится, что он живёт рядом с ней. Она планирует переезд более чем на 200 миль, чтобы избежать встречи с Шабиром Ахмедом, который был осуждён за преступления против несовершеннолетних. Ахмед, отбывший 14 лет из 19, не может быть депортирован из-за закона 1971 года, что вызывает общественное недовольство. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/victim-of-rochdale-grooming-gang-34946810\">MEN</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
@@ -308,17 +355,17 @@
         "line_index": 16,
         "section": "Общественный транспорт сегодня",
         "requested_action": "strip",
-        "reason": "Информация о закрытии трамвайных линий устарела, так как указанные даты уже прошли.",
+        "reason": "Событие завершилось 1 ноября 2026 года, не актуально для выпуска от 22 ноября 2026 года.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Устаревшая информация о закрытии трамвайных линий.",
+        "critical_problem": "Дата события в прошлом, не актуально для текущего выпуска.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
         "plan_slot_id": "transport-05",
         "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
         "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-        "original_html": "• Metrolink: трамвайные линии в Манчестере (Алтринчем, Trafford Центр и Eccles) были полностью закрыты с 19 октября по 1 ноября 2026 года для замены рельсов. Пассажиров просят планировать альтернативные маршруты. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
+        "original_html": "• Metrolink: трамвайные линии в Манчестере (Алтринчем, Траффорд Центр и Эклс) будут полностью закрыты с 19 октября по 1 ноября 2026 года для замены рельсов. Пассажиров просят планировать альтернативные маршруты. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
@@ -327,131 +374,166 @@
         "line_index": 17,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Неверное указание команды. Маурисио Почеттино не является тренером Манчестер Юнайтед.",
+        "reason": "Маурисио Почеттино является менеджером Челси, а не Манчестер Юнайтед.",
         "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неверное указание команды. Маурисио Почеттино не является тренером Манчестер Юнайтед.",
+        "critical_error": false,
+        "critical_problem": "",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
+        "method": "model_patch",
         "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-mauricio-pochettino-rules-34946143-e785f0ee8024",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-mauricio-pochettino-rules-34946143",
-        "original_html": "• 21 ноября 2026 года Маурисио Почеттино ввел три новых правила для игроков Манчестер Юнайтед, включая детальный обзор академии и полное участие в наборе игроков. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-mauricio-pochettino-rules-34946143\">MEN Manchester United</a>",
-        "verification": "structured fact already rendered correctly",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-live-mauricio-pochettino-34946608-27f796bd09a6",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-live-mauricio-pochettino-34946608",
+        "original_html": "• Маурисио Почеттино ввел три новых правила в Манчестер Юнайтед перед своим первым матчем против Ливерпуля. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-live-mauricio-pochettino-34946608\">MEN Manchester United</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 20,
+        "line_index": 27,
         "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Дата начала события указана неверно. Согласно источнику, событие начинается 19 ноября.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "weekend_activities-01",
-        "candidate_fingerprint": "event-event-makers-market-in-great-northern-square-great-northern-manchester-2026-11-19-great-northern-square-edc3e56e2849",
-        "original_url_identity": "thegreatnorthern.com/event/makers-market-in-great-northern-square",
-        "original_html": "• 21 ноября — Makers Market в Great Northern Square, Манчестер. На площадке: рынок, вход свободный, ремесленные товары, еда, подходит для семьи. <a href=\"https://thegreatnorthern.com/event/makers-market-in-great-northern-square\">Great Northern Makers Market</a>",
-        "model_replacement_rejected": "post_check: structured event date is not rendered correctly",
-        "replacement_fingerprint": "event-event-laura-lexx-yo-yo-salford-2026-11-22-lowry-8535371c856d",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 35,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события должна быть 22 ноября 2026 года.",
+        "reason": "Дата события указана неверно, требуется исправление.",
         "risk": "date",
         "critical_error": true,
         "critical_problem": "Дата события указана неверно.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-13",
+        "plan_slot_id": "weekend_activities-04",
         "candidate_fingerprint": "event-event-car-boot-directory-2027-10-07-6f1a262f41ab",
         "original_url_identity": "carbootdirectory.co.uk/listings/bolton-car-boot",
-        "original_html": "• 22 ноября в Macron Stadium — автомобильная барахолка Car Boot Directory. Для покупателей с 7:00, вход свободный, еда, можно с собакой. <a href=\"https://carbootdirectory.co.uk/listings/bolton-car-boot\">Bolton Car Boot Sale</a>",
+        "original_html": "• 22 ноября в Macron Stadium — Car Boot Directory. На площадке: автомобильная барахолка, для покупателей с 7:00, вход свободный, еда, можно с собакой. <a href=\"https://carbootdirectory.co.uk/listings/bolton-car-boot\">Bolton Car Boot Sale</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 38,
+        "line_index": 30,
         "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события должна быть 22 ноября 2026 года.",
+        "requested_action": "strip",
+        "reason": "Дата события указана неверно, требуется удаление.",
         "risk": "date",
         "critical_error": true,
         "critical_problem": "Дата события указана неверно.",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-16",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "weekend_activities-07",
         "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
         "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
         "original_html": "• 22 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-        "verification": "structured fact already rendered correctly",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 39,
-        "section": "Выходные в GM",
-        "requested_action": "patch",
-        "reason": "Дата события должна быть 22 ноября 2026 года.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события указана неверно.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-17",
-        "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
-        "original_html": "• 21 ноября — автомобильная барахолка на аэродроме Бартон. Для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
-        "verification": "structured fact already rendered correctly",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 41,
+        "line_index": 33,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Уточнение количества и названия детских садов.",
+        "reason": "Уточнение, что смерть ребёнка расследуется как инцидент, важно для контекста.",
+        "risk": "sensitive",
+        "critical_error": true,
+        "critical_problem": "Не указано, что смерть ребёнка расследуется как инцидент.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "model_patch",
+        "plan_slot_id": "city_watch-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-four-greater-manchester-nurseries-suspended-34942273-c18188165e1b",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/four-greater-manchester-nurseries-suspended-34942273",
+        "original_html": "• Ofsted приостановил работу четырех детских садов в Миддлтоне после смерти трехлетнего Тиаго Уолла в Cosy Toes Day Nursery. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/four-greater-manchester-nurseries-suspended-34942273\">MEN</a>",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 42,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "strip",
+        "reason": "Duplicate entry for Swae Lee with incorrect venue. The event has been moved to Manchester Academy.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неправильное количество детских садов.",
+        "critical_problem": "Duplicate event with incorrect venue.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "ticket_radar-03",
+        "candidate_fingerprint": "event-event-swae-lee-event-moved-to-manchester-academy-2026-11-29-o2-ritz-manchester-4cd11f828804",
+        "original_url_identity": "ticketmaster.co.uk/swae-lee-event-moved-to-manchester-manchester-29-11-2026/event/3E0065390F2C7E1F",
+        "original_html": "• <b>Swae Lee</b> — 29 ноября, O2 Ritz Manchester. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/swae-lee-event-moved-to-manchester-manchester-29-11-2026/event/3E0065390F2C7E1F\">Ticketmaster</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "duplicate_after_plan",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 1,
+        "section": "Главная история дня",
+        "requested_action": "patch",
+        "reason": "Энди Бернхэм является мэром, а не премьер-министром.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Неверное указание офиса премьер-министра. Энди Бернхэм не является премьер-министром.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cw8r7kljvee8o-5717bed57c34",
-        "original_url_identity": "bbc.com/news/articles/cw8r7kljvee8o",
-        "original_html": "• Ofsted приостановил работу четырех детских садов в Миддлтоне после смерти трехлетнего Тьяго Уолла. <a href=\"https://bbc.co.uk/news/articles/cw8r7kljvee8o\">BBC Manchester</a>",
+        "plan_slot_id": "lead",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-cops-breaking-point-gmp-struggles-34938622-f75909564abc",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/cops-breaking-point-gmp-struggles-34938622",
+        "original_html": "<b>Сотрудники полиции Большого Манчестера находятся на \"грани срыва\" из-за необходимости охраны офиса премьер-министра Энди Бернхэма, с отменой выходных и привлечением помощи от других сил.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/cops-breaking-point-gmp-struggles-34938622\">MEN</a>",
         "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 17,
+        "section": "Футбол",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о Маурисио Почеттино.",
+        "risk": "format",
+        "critical_error": true,
+        "critical_problem": "Неверная информация о клубе. Маурисио Почеттино не является менеджером Манчестер Юнайтед.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-live-mauricio-pochettino-34946608-27f796bd09a6",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-live-mauricio-pochettino-34946608",
+        "original_html": "• Маурисио Почеттино ввел три новых правила в Манчестер Юнайтед перед своим первым матчем против Ливерпуля. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-live-mauricio-pochettino-34946608\">MEN Manchester United</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-anderson-maresca-fulham-34948485-933269d21794",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 18,
+        "section": "Футбол",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о Маурисио Почеттино.",
+        "risk": "format",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о Маурисио Почеттино и его первом матче.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "football-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-premier-league-explain-erling-haaland-34947517-efb9cd256474",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/premier-league-explain-erling-haaland-34947517",
+        "original_html": "• Гол Эрлинга Холанда за Манчестер Сити в матче против Фулхэма был отменен после проверки VAR, подтвердившей, что вратарь контролировал мяч. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/premier-league-explain-erling-haaland-34947517\">MEN Manchester City</a>",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-mauricio-pochettino-man-united-liverpool-34947643-e441bc47ea94",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::исправление даты доставки в больницу на 2 ноября, чтобы соответствовать фактам.",
+        "group_key": "главная история дня::энди бернхэм является мэром большого манчестера, а не премьер-министром.",
         "actions": [
           {
             "line_index": 1,
             "section": "Главная история дня",
             "requested_action": "patch",
-            "reason": "Исправление даты доставки в больницу на 2 ноября, чтобы соответствовать фактам.",
+            "reason": "Энди Бернхэм является мэром Большого Манчестера, а не премьер-министром.",
             "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Некорректное указание даты доставки в больницу и вызова экстренных служб.",
+            "critical_error": false,
+            "critical_problem": "",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
             "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-beautiful-boy-3-who-died-34935293-161b6f417f76",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/beautiful-boy-3-who-died-34935293",
-            "original_html": "<b>Трёхлетний мальчик по имени Тиаго Уолл, который скончался после вызова полиции в детский сад Cosy Toes в Миддлтоне, был назван.</b> Он был доставлен в больницу 5 ноября после того, как экстренные службы прибыли на место происшествия 2 ноября. В связи с трагедией детский сад закрыт, а следствие продолжается, в то время как семья Тиаго получает поддержку от специалистов. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/beautiful-boy-3-who-died-34935293\">MEN Latest News</a>",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-cops-breaking-point-gmp-struggles-34938622-f75909564abc",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/cops-breaking-point-gmp-struggles-34938622",
+            "original_html": "<b>Сотрудники полиции Большого Манчестера находятся на \"грани срыва\" из-за необходимости охраны офиса премьер-министра Энди Бернхэма, с отменой выходных и привлечением помощи от других сил.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/cops-breaking-point-gmp-struggles-34938622\">MEN</a>",
             "post_check_passed": true
           }
         ],
@@ -466,23 +548,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::дата события указана неверно. 20 ноября 2026 года - это пятница, а не суббота.",
+        "group_key": "свежие новости::термин 'лидер банды сутенёров' может быть воспринят как сенсационный и неуместный в данном контексте.",
         "actions": [
           {
-            "line_index": 4,
+            "line_index": 7,
             "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Дата события указана неверно. 20 ноября 2026 года - это пятница, а не суббота.",
-            "risk": "date",
+            "reason": "Термин 'лидер банды сутенёров' может быть воспринят как сенсационный и неуместный в данном контексте.",
+            "risk": "sensitive",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно. 20 ноября 2026 года - это пятница, а не суббота.",
-            "completeness_concept": "",
+            "critical_problem": "Неправильное использование термина 'лидер банды сутенёров'.",
+            "completeness_concept": "sexual_offence",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-02",
-            "candidate_fingerprint": "url-itv-com-news-granada-2026-11-20-three-more-nurseries-close-down-following-death-of-three-year-old-85922d5f136f",
-            "original_url_identity": "itv.com/news/granada/2026-11-20/three-more-nurseries-close-down-following-death-of-three-year-old",
-            "original_html": "• В пятницу, 20 ноября 2026 года, три детских сада в Миддлтоне закрыли свои двери после трагического инцидента в Cosy Toes Day Nursery, где погиб трёхлетний ребёнок. Власти начали расследование, и Ofsted приостановила регистрацию Cosy Toes на шесть недель из-за опасений за безопасность детей. <a href=\"https://itv.com/news/granada/2026-11-20/three-more-nurseries-close-down-following-death-of-three-year-old\">ITV Granada Greater Manchester</a>",
+            "plan_slot_id": "last_24h-05",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-victim-of-rochdale-grooming-gang-34946810-e9d8c85c76fb",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/victim-of-rochdale-grooming-gang-34946810",
+            "original_html": "• Жертва лидера банды сутенёров в Rochdale, известная как 'Анджелина', боится, что он живёт рядом с ней. Она планирует переезд более чем на 200 миль, чтобы избежать встречи с Шабиром Ахмедом, который был осуждён за преступления против несовершеннолетних. Ахмед, отбывший 14 лет из 19, не может быть депортирован из-за закона 1971 года, что вызывает общественное недовольство. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/victim-of-rochdale-grooming-gang-34946810\">MEN</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -490,7 +572,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 4,
+            "line_index": 7,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -498,23 +580,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::информация о закрытии трамвайных линий устарела, так как указанные даты уже прошли.",
+        "group_key": "общественный транспорт сегодня::событие завершилось 1 ноября 2026 года, не актуально для выпуска от 22 ноября 2026 года.",
         "actions": [
           {
             "line_index": 16,
             "section": "Общественный транспорт сегодня",
             "requested_action": "strip",
-            "reason": "Информация о закрытии трамвайных линий устарела, так как указанные даты уже прошли.",
+            "reason": "Событие завершилось 1 ноября 2026 года, не актуально для выпуска от 22 ноября 2026 года.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Устаревшая информация о закрытии трамвайных линий.",
+            "critical_problem": "Дата события в прошлом, не актуально для текущего выпуска.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
             "plan_slot_id": "transport-05",
             "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
             "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-            "original_html": "• Metrolink: трамвайные линии в Манчестере (Алтринчем, Trafford Центр и Eccles) были полностью закрыты с 19 октября по 1 ноября 2026 года для замены рельсов. Пассажиров просят планировать альтернативные маршруты. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
+            "original_html": "• Metrolink: трамвайные линии в Манчестере (Алтринчем, Траффорд Центр и Эклс) будут полностью закрыты с 19 октября по 1 ноября 2026 года для замены рельсов. Пассажиров просят планировать альтернативные маршруты. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -531,24 +613,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::неверное указание команды. маурисио почеттино не является тренером манчестер юнайтед.",
+        "group_key": "футбол::маурисио почеттино является менеджером челси, а не манчестер юнайтед.",
         "actions": [
           {
             "line_index": 17,
             "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Неверное указание команды. Маурисио Почеттино не является тренером Манчестер Юнайтед.",
+            "reason": "Маурисио Почеттино является менеджером Челси, а не Манчестер Юнайтед.",
             "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неверное указание команды. Маурисио Почеттино не является тренером Манчестер Юнайтед.",
+            "critical_error": false,
+            "critical_problem": "",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
+            "method": "model_patch",
             "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-mauricio-pochettino-rules-34946143-e785f0ee8024",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-mauricio-pochettino-rules-34946143",
-            "original_html": "• 21 ноября 2026 года Маурисио Почеттино ввел три новых правила для игроков Манчестер Юнайтед, включая детальный обзор академии и полное участие в наборе игроков. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-mauricio-pochettino-rules-34946143\">MEN Manchester United</a>",
-            "verification": "structured fact already rendered correctly",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-live-mauricio-pochettino-34946608-27f796bd09a6",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-live-mauricio-pochettino-34946608",
+            "original_html": "• Маурисио Почеттино ввел три новых правила в Манчестер Юнайтед перед своим первым матчем против Ливерпуля. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-live-mauricio-pochettino-34946608\">MEN Manchester United</a>",
             "post_check_passed": true
           }
         ],
@@ -556,39 +637,6 @@
         "post_checks": [
           {
             "line_index": 17,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дата начала события указана неверно. согласно источнику, событие начинается 19 ноября.",
-        "actions": [
-          {
-            "line_index": 20,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата начала события указана неверно. Согласно источнику, событие начинается 19 ноября.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "weekend_activities-01",
-            "candidate_fingerprint": "event-event-makers-market-in-great-northern-square-great-northern-manchester-2026-11-19-great-northern-square-edc3e56e2849",
-            "original_url_identity": "thegreatnorthern.com/event/makers-market-in-great-northern-square",
-            "original_html": "• 21 ноября — Makers Market в Great Northern Square, Манчестер. На площадке: рынок, вход свободный, ремесленные товары, еда, подходит для семьи. <a href=\"https://thegreatnorthern.com/event/makers-market-in-great-northern-square\">Great Northern Makers Market</a>",
-            "model_replacement_rejected": "post_check: structured event date is not rendered correctly",
-            "replacement_fingerprint": "event-event-laura-lexx-yo-yo-salford-2026-11-22-lowry-8535371c856d",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 20,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -596,59 +644,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "выходные в gm::дата события должна быть 22 ноября 2026 года.",
+        "group_key": "выходные в gm::дата события указана неверно, требуется исправление.",
         "actions": [
           {
-            "line_index": 35,
+            "line_index": 27,
             "section": "Выходные в GM",
             "requested_action": "patch",
-            "reason": "Дата события должна быть 22 ноября 2026 года.",
+            "reason": "Дата события указана неверно, требуется исправление.",
             "risk": "date",
             "critical_error": true,
             "critical_problem": "Дата события указана неверно.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-13",
+            "plan_slot_id": "weekend_activities-04",
             "candidate_fingerprint": "event-event-car-boot-directory-2027-10-07-6f1a262f41ab",
             "original_url_identity": "carbootdirectory.co.uk/listings/bolton-car-boot",
-            "original_html": "• 22 ноября в Macron Stadium — автомобильная барахолка Car Boot Directory. Для покупателей с 7:00, вход свободный, еда, можно с собакой. <a href=\"https://carbootdirectory.co.uk/listings/bolton-car-boot\">Bolton Car Boot Sale</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 38,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события должна быть 22 ноября 2026 года.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-16",
-            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-            "original_html": "• 22 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          },
-          {
-            "line_index": 39,
-            "section": "Выходные в GM",
-            "requested_action": "patch",
-            "reason": "Дата события должна быть 22 ноября 2026 года.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события указана неверно.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-17",
-            "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
-            "original_html": "• 21 ноября — автомобильная барахолка на аэродроме Бартон. Для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+            "original_html": "• 22 ноября в Macron Stadium — Car Boot Directory. На площадке: автомобильная барахолка, для покупателей с 7:00, вход свободный, еда, можно с собакой. <a href=\"https://carbootdirectory.co.uk/listings/bolton-car-boot\">Bolton Car Boot Sale</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -656,17 +668,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 35,
-            "passed": true,
-            "detail": "existing fact verified"
-          },
-          {
-            "line_index": 38,
-            "passed": true,
-            "detail": "existing fact verified"
-          },
-          {
-            "line_index": 39,
+            "line_index": 27,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -674,23 +676,126 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::уточнение количества и названия детских садов.",
+        "group_key": "выходные в gm::дата события указана неверно, требуется удаление.",
         "actions": [
           {
-            "line_index": 41,
+            "line_index": 30,
+            "section": "Выходные в GM",
+            "requested_action": "strip",
+            "reason": "Дата события указана неверно, требуется удаление.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "weekend_activities-07",
+            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+            "original_html": "• 22 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 30,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::уточнение, что смерть ребёнка расследуется как инцидент, важно для контекста.",
+        "actions": [
+          {
+            "line_index": 33,
             "section": "Городской радар",
             "requested_action": "patch",
-            "reason": "Уточнение количества и названия детских садов.",
+            "reason": "Уточнение, что смерть ребёнка расследуется как инцидент, важно для контекста.",
+            "risk": "sensitive",
+            "critical_error": true,
+            "critical_problem": "Не указано, что смерть ребёнка расследуется как инцидент.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "model_patch",
+            "plan_slot_id": "city_watch-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-four-greater-manchester-nurseries-suspended-34942273-c18188165e1b",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/four-greater-manchester-nurseries-suspended-34942273",
+            "original_html": "• Ofsted приостановил работу четырех детских садов в Миддлтоне после смерти трехлетнего Тиаго Уолла в Cosy Toes Day Nursery. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/four-greater-manchester-nurseries-suspended-34942273\">MEN</a>",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 33,
+            "passed": true,
+            "detail": "post-check passed"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::duplicate entry for swae lee with incorrect venue",
+        "actions": [
+          {
+            "line_index": 42,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "strip",
+            "reason": "Duplicate entry for Swae Lee with incorrect venue. The event has been moved to Manchester Academy.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неправильное количество детских садов.",
+            "critical_problem": "Duplicate event with incorrect venue.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "ticket_radar-03",
+            "candidate_fingerprint": "event-event-swae-lee-event-moved-to-manchester-academy-2026-11-29-o2-ritz-manchester-4cd11f828804",
+            "original_url_identity": "ticketmaster.co.uk/swae-lee-event-moved-to-manchester-manchester-29-11-2026/event/3E0065390F2C7E1F",
+            "original_html": "• <b>Swae Lee</b> — 29 ноября, O2 Ritz Manchester. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/swae-lee-event-moved-to-manchester-manchester-29-11-2026/event/3E0065390F2C7E1F\">Ticketmaster</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "duplicate_after_plan",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 42,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "ticket:swae lee|2026-11-29|o2 ritz manchester",
+            "visible_count": 0,
+            "passed": true
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "главная история дня::энди бернхэм является мэром, а не премьер-министром.",
+        "actions": [
+          {
+            "line_index": 1,
+            "section": "Главная история дня",
+            "requested_action": "patch",
+            "reason": "Энди Бернхэм является мэром, а не премьер-министром.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неверное указание офиса премьер-министра. Энди Бернхэм не является премьер-министром.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cw8r7kljvee8o-5717bed57c34",
-            "original_url_identity": "bbc.com/news/articles/cw8r7kljvee8o",
-            "original_html": "• Ofsted приостановил работу четырех детских садов в Миддлтоне после смерти трехлетнего Тьяго Уолла. <a href=\"https://bbc.co.uk/news/articles/cw8r7kljvee8o\">BBC Manchester</a>",
+            "plan_slot_id": "lead",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-cops-breaking-point-gmp-struggles-34938622-f75909564abc",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/cops-breaking-point-gmp-struggles-34938622",
+            "original_html": "<b>Сотрудники полиции Большого Манчестера находятся на \"грани срыва\" из-за необходимости охраны офиса премьер-министра Энди Бернхэма, с отменой выходных и привлечением помощи от других сил.</b> <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/cops-breaking-point-gmp-struggles-34938622\">MEN</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -698,9 +803,76 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 41,
+            "line_index": 1,
             "passed": true,
             "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::дублирование информации о маурисио почеттино",
+        "actions": [
+          {
+            "line_index": 17,
+            "section": "Футбол",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о Маурисио Почеттино.",
+            "risk": "format",
+            "critical_error": true,
+            "critical_problem": "Неверная информация о клубе. Маурисио Почеттино не является менеджером Манчестер Юнайтед.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-live-mauricio-pochettino-34946608-27f796bd09a6",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-live-mauricio-pochettino-34946608",
+            "original_html": "• Маурисио Почеттино ввел три новых правила в Манчестер Юнайтед перед своим первым матчем против Ливерпуля. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-live-mauricio-pochettino-34946608\">MEN Manchester United</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-anderson-maresca-fulham-34948485-933269d21794",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 18,
+            "section": "Футбол",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о Маурисио Почеттино.",
+            "risk": "format",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о Маурисио Почеттино и его первом матче.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "football-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-premier-league-explain-erling-haaland-34947517-efb9cd256474",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/premier-league-explain-erling-haaland-34947517",
+            "original_html": "• Гол Эрлинга Холанда за Манчестер Сити в матче против Фулхэма был отменен после проверки VAR, подтвердившей, что вратарь контролировал мяч. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/premier-league-explain-erling-haaland-34947517\">MEN Manchester City</a>",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-mauricio-pochettino-man-united-liverpool-34947643-e441bc47ea94",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 17,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "line_index": 18,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "topic:local_cost:old trafford manchester trafford old trafford man united news mauricio pochettino calls for ban as january transfer target speaks out|same story new facts|2026 11 21",
+            "visible_count": 0,
+            "passed": true
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "story:manchester city|news|manchester|same story new facts|2026 11 21",
+            "visible_count": 0,
+            "passed": true
           }
         ],
         "known_factual_error": true
@@ -711,37 +883,62 @@
       "improved": 0,
       "failed": 0,
       "empty_or_not_better": 0,
-      "skipped": 0
+      "skipped": 1,
+      "reports": [
+        {
+          "fingerprint": "event-event-swae-lee-event-moved-to-manchester-academy-2026-11-29-o2-ritz-manchester-4cd11f828804",
+          "title": "Swae Lee - Event moved to Manchester Academy — event 2026-11-29 — public sale 2026-10-01 10:00",
+          "status": "skipped",
+          "reason": "structured_ticket_candidate",
+          "url": "https://ticketmaster.co.uk/swae-lee-event-moved-to-manchester-manchester-29-11-2026/event/3E0065390F2C7E1F",
+          "candidate_evidence_chars": 381
+        }
+      ]
     },
-    "enrich_improved": 9,
-    "false_positive_existing_fact": 6,
-    "no_eligible_backup": 1,
-    "model_post_check_rejected": 1,
-    "deterministic_fact_lock_rejected": 1,
+    "enrich_improved": 11,
+    "false_positive_existing_fact": 3,
+    "no_eligible_backup": 3,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 55,
-      "matched_lines": 55,
-      "applicable_lines": 4,
-      "unmatched_lines": 4,
-      "critical_omission_count": 0,
-      "critical_omissions": [],
+      "checked_lines": 45,
+      "matched_lines": 45,
+      "applicable_lines": 6,
+      "unmatched_lines": 3,
+      "critical_omission_count": 1,
+      "critical_omissions": [
+        {
+          "line_index": 7,
+          "source_url_key": "manchestereveningnews.co.uk/news/greater-manchester-news/victim-of-rochdale-grooming-gang-34946810",
+          "concept": "sexual_offence",
+          "obligation": "charge/verdict/victim",
+          "source_hit": "grooming"
+        }
+      ],
       "noncritical_omissions": [],
-      "critical_errors": [],
+      "critical_errors": [
+        {
+          "line_index": 7,
+          "section": "Свежие новости",
+          "risk": "translation",
+          "problem": "critical source fact dropped in translation: 'grooming' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
+          "suggested_action": "repair",
+          "completeness_concept": "sexual_offence"
+        }
+      ],
       "warnings": [],
       "recovered": 0,
       "pulled_for_rework": 0,
-      "still_missing": 0
+      "still_missing": 1
     },
     "final_prose_policy": {
-      "checked_lines": 59,
-      "resolved_in_place": 59,
+      "checked_lines": 48,
+      "resolved_in_place": 48,
       "unresolved": 0,
       "findings": []
     },
-    "status": "resolved"
+    "status": "unresolved"
   },
-  "notes": "Исправлена дата доставки в больницу для соответствия фактам.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в дате события в строке 4.; Строка 16 содержит устаревшую информацию о закрытии трамвайных линий, так как указанные даты уже прошли.; Ошибка в указании команды для Маурисио Поч",
+  "notes": "Исправление необходимо для корректного указания должности Энди Бернхэма.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного и уважительного освещения темы.; Строка о закрытии трамвайных линий устарела, так как событие завершилось до текущей даты.; Ошибка в строке 17:",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
@@ -749,65 +946,79 @@
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "problem": "Некорректное указание даты доставки в больницу и вызова экстренных служб.",
+        "problem": "Неверное указание офиса премьер-министра. Энди Бернхэм не является премьер-министром.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 4,
+        "line_index": 7,
         "section": "Свежие новости",
-        "problem": "Дата события указана неверно. 20 ноября 2026 года - это пятница, а не суббота.",
-        "risk": "date",
+        "problem": "Неправильное использование термина 'лидер банды сутенёров'.",
+        "risk": "sensitive",
         "suggested_action": "repair"
       },
       {
         "line_index": 16,
         "section": "Общественный транспорт сегодня",
-        "problem": "Устаревшая информация о закрытии трамвайных линий.",
+        "problem": "Дата события в прошлом, не актуально для текущего выпуска.",
         "risk": "date",
         "suggested_action": "strip"
       },
       {
         "line_index": 17,
         "section": "Футбол",
-        "problem": "Неверное указание команды. Маурисио Почеттино не является тренером Манчестер Юнайтед.",
+        "problem": "Неверная информация о клубе. Маурисио Почеттино не является менеджером Манчестер Юнайтед.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 20,
+        "line_index": 27,
         "section": "Выходные в GM",
         "problem": "Дата события указана неверно.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 35,
+        "line_index": 30,
         "section": "Выходные в GM",
         "problem": "Дата события указана неверно.",
         "risk": "date",
         "suggested_action": "repair"
       },
       {
-        "line_index": 38,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 39,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 41,
+        "line_index": 33,
         "section": "Городской радар",
-        "problem": "Неправильное количество детских садов.",
+        "problem": "Не указано, что смерть ребёнка расследуется как инцидент.",
+        "risk": "sensitive",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 42,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Duplicate event with incorrect venue.",
+        "risk": "factual",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 1,
+        "section": "Главная история дня",
+        "problem": "Неправильное указание офиса премьер-министра. Энди Бернхэм не является премьер-министром.",
         "risk": "factual",
         "suggested_action": "repair"
+      },
+      {
+        "line_index": 17,
+        "section": "Футбол",
+        "problem": "Дублирование информации о Маурисио Почеттино и его первом матче.",
+        "risk": "format",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 18,
+        "section": "Футбол",
+        "problem": "Дублирование информации о Маурисио Почеттино и его первом матче.",
+        "risk": "format",
+        "suggested_action": "strip"
       }
     ],
     "actions": [
@@ -815,83 +1026,97 @@
         "line_index": 1,
         "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• Трёхлетний мальчик по имени Тиаго Уолл, который скончался после вызова полиции в детский сад Cosy Toes в Миддлтоне, был назван. Он был доставлен в больницу 2 ноября после того, как экстренные службы прибыли на место происшествия. В связи с трагедией детский сад закрыт, а следствие продолжается, в то время как семья Тиаго получает поддержку от специалистов.",
-        "reason": "Исправление даты доставки в больницу на 2 ноября, чтобы соответствовать фактам.",
+        "replacement_text": "• Сотрудники полиции Большого Манчестера находятся на \"грани срыва\" из-за необходимости охраны офиса Энди Бернхэма, с отменой выходных и привлечением помощи от других сил.",
+        "reason": "Энди Бернхэм является мэром Большого Манчестера, а не премьер-министром.",
         "risk": "factual"
       },
       {
-        "line_index": 4,
+        "line_index": 7,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• В пятницу, 20 ноября 2026 года, три детских сада в Миддлтоне закрыли свои двери после трагического инцидента в Cosy Toes Day Nursery, где погиб трёхлетний ребёнок. Власти начали расследование, и Ofsted приостановила регистрацию Cosy Toes на шесть недель из-за опасений за безопасность детей.",
-        "reason": "Дата события указана неверно. 20 ноября 2026 года - это пятница, а не суббота.",
-        "risk": "date"
+        "replacement_text": "• Жертва лидера банды в Rochdale, известная как 'Анджелина', боится, что он живёт рядом с ней. Она планирует переезд более чем на 200 миль, чтобы избежать встречи с Шабиром Ахмедом, который был осуждён за преступления против несовершеннолетних. Ахмед, отбывший 14 лет из 19, не может быть депортирован из-за закона 1971 года, что вызывает общественное недовольство.",
+        "reason": "Термин 'лидер банды сутенёров' может быть воспринят как сенсационный и неуместный в данном контексте.",
+        "risk": "sensitive"
       },
       {
         "line_index": 16,
         "section": "Общественный транспорт сегодня",
         "action": "strip",
-        "reason": "Информация о закрытии трамвайных линий устарела, так как указанные даты уже прошли.",
+        "reason": "Событие завершилось 1 ноября 2026 года, не актуально для выпуска от 22 ноября 2026 года.",
         "risk": "date"
       },
       {
         "line_index": 17,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• 21 ноября 2026 года Маурисио Почеттино ввел три новых правила для игроков Манчестер Юнайтед, включая детальный обзор академии и полное участие в наборе игроков. Однако, Почеттино не является тренером Манчестер Юнайтед.",
-        "reason": "Неверное указание команды. Маурисио Почеттино не является тренером Манчестер Юнайтед.",
+        "replacement_text": "• Маурисио Почеттино ввел три новых правила в Челси перед своим первым матчем против Ливерпуля.",
+        "reason": "Маурисио Почеттино является менеджером Челси, а не Манчестер Юнайтед.",
         "risk": "factual"
       },
       {
-        "line_index": 20,
+        "line_index": 27,
         "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• 19 ноября — Makers Market в Great Northern Square, Манчестер. На площадке: рынок, вход свободный, ремесленные товары, еда, подходит для семьи.",
-        "reason": "Дата начала события указана неверно. Согласно источнику, событие начинается 19 ноября.",
+        "replacement_text": "• 22 ноября в Macron Stadium — Car Boot Directory. На площадке: автомобильная барахолка, для покупателей с 7:00, вход свободный, еда, можно с собакой.",
+        "reason": "Дата события указана неверно, требуется исправление.",
         "risk": "date"
       },
       {
-        "line_index": 35,
+        "line_index": 30,
         "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 22 ноября в Macron Stadium — автомобильная барахолка Car Boot Directory. Для покупателей с 7:00, вход свободный, еда, можно с собакой.",
-        "reason": "Дата события должна быть 22 ноября 2026 года.",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дата события указана неверно, требуется удаление.",
         "risk": "date"
       },
       {
-        "line_index": 38,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 22 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
-        "reason": "Дата события должна быть 22 ноября 2026 года.",
-        "risk": "date"
-      },
-      {
-        "line_index": 39,
-        "section": "Выходные в GM",
-        "action": "patch",
-        "replacement_text": "• 22 ноября — автомобильная барахолка на аэродроме Бартон. Для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи.",
-        "reason": "Дата события должна быть 22 ноября 2026 года.",
-        "risk": "date"
-      },
-      {
-        "line_index": 41,
+        "line_index": 33,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• Ofsted приостановил работу четырех детских садов Cosy Toes Ltd в Миддлтоне после смерти трехлетнего Тьяго Уолла.",
-        "reason": "Уточнение количества и названия детских садов.",
+        "replacement_text": "• Ofsted приостановил работу четырех детских садов в Миддлтоне после смерти трехлетнего Тиаго Уолла в Cosy Toes Day Nursery. Смерть расследуется как инцидент.",
+        "reason": "Уточнение, что смерть ребёнка расследуется как инцидент, важно для контекста.",
+        "risk": "sensitive"
+      },
+      {
+        "line_index": 42,
+        "section": "Билеты / Ticket Radar",
+        "action": "strip",
+        "reason": "Duplicate entry for Swae Lee with incorrect venue. The event has been moved to Manchester Academy.",
         "risk": "factual"
+      },
+      {
+        "line_index": 1,
+        "section": "Главная история дня",
+        "action": "patch",
+        "replacement_text": "• Сотрудники полиции Большого Манчестера находятся на \"грани срыва\" из-за необходимости охраны офиса мэра Энди Бернхэма, с отменой выходных и привлечением помощи от других сил.",
+        "reason": "Энди Бернхэм является мэром, а не премьер-министром.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 17,
+        "section": "Футбол",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации о Маурисио Почеттино.",
+        "risk": "format"
+      },
+      {
+        "line_index": 18,
+        "section": "Футбол",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации о Маурисио Почеттино.",
+        "risk": "format"
       }
     ],
     "warnings": [
-      "Некоторые события в разделе 'Билеты / Ticket Radar' имеют даты, которые находятся далеко в будущем, что может снизить актуальность информации для читателей.",
-      "judge reduce failed: parse_failed no parseable JSON"
+      "Отсутствие блока 'Что важно сегодня' и 'Еда, открытия и рынки' снижает полноту выпуска."
     ],
-    "notes": "Исправлена дата доставки в больницу для соответствия фактам.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправлена ошибка в дате события в строке 4.; Строка 16 содержит устаревшую информацию о закрытии трамвайных линий, так как указанные даты уже прошли.; Ошибка в указании команды для Маурисио Поч",
+    "notes": "Исправление необходимо для корректного указания должности Энди Бернхэма.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправление необходимо для корректного и уважительного освещения темы.; Строка о закрытии трамвайных линий устарела, так как событие завершилось до текущей даты.; Ошибка в строке 17:",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "partial",
-      "chunk_count": 11,
+      "status": "ok",
+      "chunk_count": 10,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -909,8 +1134,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2758,
-          "duration_seconds": 1.8
+          "estimated_tokens": 2700,
+          "duration_seconds": 2.05
         },
         {
           "chunk_id": "chunk-02",
@@ -927,8 +1152,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2435,
-          "duration_seconds": 0.972
+          "estimated_tokens": 2445,
+          "duration_seconds": 1.1
         },
         {
           "chunk_id": "chunk-03",
@@ -945,8 +1170,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7026,
-          "duration_seconds": 2.012
+          "estimated_tokens": 7393,
+          "duration_seconds": 2.198
         },
         {
           "chunk_id": "chunk-04",
@@ -963,15 +1188,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4579,
-          "duration_seconds": 1.581
+          "estimated_tokens": 4838,
+          "duration_seconds": 1.564
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
             17,
-            18
+            19
           ],
           "sections": [
             "Футбол"
@@ -981,51 +1206,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3156,
-          "duration_seconds": 1.947
+          "estimated_tokens": 3622,
+          "duration_seconds": 1.905
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
-            19,
+            20,
             30
           ],
           "sections": [
             "Выходные в GM"
           ],
           "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 8265,
-          "duration_seconds": 42.779
+          "estimated_tokens": 7565,
+          "duration_seconds": 32.839
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
             31,
-            40
-          ],
-          "sections": [
-            "Выходные в GM"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 3,
-          "action_count": 3,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 7672,
-          "duration_seconds": 2.87
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            41,
-            46
+            39
           ],
           "sections": [
             "Городской радар"
@@ -1035,51 +1242,51 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 5143,
-          "duration_seconds": 16.58
+          "estimated_tokens": 7005,
+          "duration_seconds": 1.936
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            40,
+            49
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 7783,
+          "duration_seconds": 47.079
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            47,
-            47
+            50,
+            50
           ],
           "sections": [
-            "IT и бизнес"
+            "Крупные концерты вне GM"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2686,
-          "duration_seconds": 2.553
+          "estimated_tokens": 2728,
+          "duration_seconds": 4.532
         },
         {
           "chunk_id": "chunk-10",
           "status": "ok",
           "line_range": [
-            48,
-            59
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "warn",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 1,
-          "error": "",
-          "estimated_tokens": 9327,
-          "duration_seconds": 57.318
-        },
-        {
-          "chunk_id": "chunk-11",
-          "status": "ok",
-          "line_range": [
-            60,
-            60
+            51,
+            51
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
@@ -1089,22 +1296,22 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2765,
-          "duration_seconds": 5.368
+          "estimated_tokens": 2771,
+          "duration_seconds": 6.346
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "parse_failed",
+        "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "",
-        "critical_error_count": 0,
-        "action_count": 0,
-        "warning_count": 0,
-        "error": "no parseable JSON",
-        "estimated_tokens": 11033,
-        "duration_seconds": 28.179
+        "decision": "repair_required",
+        "critical_error_count": 3,
+        "action_count": 3,
+        "warning_count": 1,
+        "error": "",
+        "estimated_tokens": 10804,
+        "duration_seconds": 25.581
       },
       "max_workers": 3,
       "chunk_line_target": 12,
