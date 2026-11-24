@@ -2,138 +2,157 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair completed with honest unresolved non-factual findings: operations=0, prose=1",
+  "reason": "pre-send repair executor applied 4 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-11-23",
-  "pipeline_run_id": "20261123T080159+0000",
-  "digest_sha256": "9c9709db6c2115df42b7cea829f46f0cd97f071b0b3593a019619825cc6b62a1",
-  "duration_seconds": 57.569,
+  "run_date_london": "2026-11-24",
+  "pipeline_run_id": "20261124T080143+0000",
+  "digest_sha256": "34524a019444d8e564487a629361e96903cbeecdea9780f39fdc1bfe9c942f8f",
+  "duration_seconds": 65.613,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Текст содержит ошибку в дате события.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 3,
+      "line_index": 8,
       "section": "Свежие новости",
-      "problem": "Возраст погибшего мужчины указан неверно.",
+      "problem": "Текст вводит в заблуждение, утверждая, что муж будет давать показания против девяти мужчин, хотя это не подтверждается источником.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
       "line_index": 15,
       "section": "Общественный транспорт сегодня",
-      "problem": "Событие произошло 21 ноября, но не указано, что это информация о прошедшем инциденте.",
-      "risk": "date",
+      "problem": "Текст утверждает, что движение возобновилось, но это не подтверждается источником.",
+      "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 18,
+      "line_index": 17,
       "section": "Футбол",
-      "problem": "Маурисио Почеттино не является менеджером Манчестер Юнайтед.",
+      "problem": "Неверная информация о красной карточке Джованни Ди Лоренцо в прошлом сезоне.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 22,
+      "line_index": 24,
       "section": "Городской радар",
-      "problem": "Неправильное имя уволенного тренера.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Дата события указана неверно. 22 ноября 2026 года — это воскресенье, а не суббота.",
-      "risk": "date",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 19,
-      "section": "Городской радар",
-      "problem": "Дублирование информации о концерте Don Toliver в Co-op Live.",
-      "risk": "format",
+      "problem": "Субъект инцидента не из Greater Manchester, что нарушает geo_scope.",
+      "risk": "geo",
       "suggested_action": "strip"
     },
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'stabbing' (weapon_violence/who/what) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "weapon_violence"
+      "line_index": 28,
+      "section": "Business/tech события для тебя",
+      "problem": "Некорректная информация о стоимости участия.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 29,
+      "section": "Дальние анонсы",
+      "problem": "Событие не соответствует географическому контракту раздела.",
+      "risk": "geo",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 3,
+      "section": "Свежие новости",
+      "problem": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 4,
+      "section": "Свежие новости",
+      "problem": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 5,
+      "section": "Свежие новости",
+      "problem": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+      "risk": "factual",
+      "suggested_action": "repair"
     }
   ],
   "actions": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• В субботу, 21 ноября 2026 года, двое 18-летних мужчин были stabbed у входа в Александра Парк в Oldham.",
-      "reason": "Дата события указана неверно. Согласно источнику, инцидент произошел 21 ноября 2026 года.",
-      "risk": "date"
-    },
-    {
-      "line_index": 3,
+      "line_index": 8,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• Мужчина в возрасте 80 лет скончался после того, как его сбила машина на станции Роуд в Суинтоне 22 ноября; 38-летний мужчина арестован по подозрению в опасном вождении, приведшем к смерти.",
-      "reason": "Указан неверный возраст погибшего мужчины.",
+      "replacement_text": "• В Stockport муж, который более 20 лет подвергал свою жену наркотическому изнасилованию, рекламировал в интернете свои намерения \"искать немного дополнительного веселья и игр\". Он признал свою вину по нескольким обвинениям, включая изнасилование и сексуальное насилие.",
+      "reason": "Текст вводит в заблуждение, утверждая, что муж будет давать показания против девяти мужчин, хотя это не подтверждается источником.",
       "risk": "factual"
     },
     {
       "line_index": 15,
       "section": "Общественный транспорт сегодня",
       "action": "patch",
-      "replacement_text": "• National Rail: полиция была вызвана на станцию Манчестерского аэропорта 21 ноября после сообщений о подозрительной сумке. Движение поездов было остановлено с 17:05 до 20:45, позже сумка была признана безопасной. Это событие уже завершилось.",
-      "reason": "Уточнение, что инцидент уже завершился, чтобы избежать путаницы.",
-      "risk": "date"
+      "replacement_text": "• National Rail: грузовик застрял под железнодорожным мостом в Бромли Кросс, что привело к сбоям в движении поездов. Транспортное средство было убрано около 14:45, но возможны задержки.",
+      "reason": "Уточнение статуса движения поездов после инцидента.",
+      "risk": "factual"
     },
     {
-      "line_index": 18,
+      "line_index": 17,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• Первый матч Маурисио Почеттино в качестве менеджера Манчестер Юнайтед закончился поражением 4-0 от Ливерпуля, после того как Лени Йоро был удален с поля на 10-й минуте. Следующий матч против Спортинга Лиссабон состоится в среду.",
-      "reason": "Маурисио Почеттино не является менеджером Манчестер Юнайтед.",
+      "replacement_text": "• Кевин Де Брюйне готовится к эмоциональному возвращению в Манчестер Сити, когда Наполи посетит Эттихад в Лиге чемпионов. В прошлом сезоне его возвращение было омрачено травмой.",
+      "reason": "Неверная информация о красной карточке Джованни Ди Лоренцо в прошлом сезоне.",
       "risk": "factual"
     },
     {
-      "line_index": 22,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Футбольный клуб Rochdale AFC уволил главного тренера Джима Бентли. Процесс назначения нового тренера уже начат.",
-      "reason": "Неправильное имя уволенного тренера.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• Появилось обновление по обращению — В воскресенье, 22 ноября 2026 года, двое 18-летних мужчин были stabbed у входа в Александра Парк в Oldham. Их травмы не угрожают жизни, и полиция призывает сообщить любую информацию, которая может помочь в расследовании.",
-      "reason": "Исправление даты на правильный день недели.",
-      "risk": "date"
-    },
-    {
-      "line_index": 19,
+      "line_index": 24,
       "section": "Городской радар",
       "action": "strip",
+      "reason": "Инцидент с паспортом произошел с жителем Staffordshire, что не соответствует geo_scope GM.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 28,
+      "section": "Business/tech события для тебя",
+      "action": "patch",
+      "replacement_text": "• #networking Networking South - Trafford - November Tuesday 24 Nov 8:30am - 10:30am — 24 ноября, Old Trafford. Уровень: большая конференция/экспо; Доступ: бесплатно для членов, £22 для не-членов. Почему тебе: спокойная практика профессионального английского; плотный нетворк большой конференции или экспо. Действие: зарегистрируйтесь.",
+      "reason": "Указана неверная информация о стоимости участия: бесплатно только для членов, £22 для не-членов.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 29,
+      "section": "Дальние анонсы",
+      "action": "strip",
+      "reason": "Событие не соответствует географическому контракту раздела, так как оно должно быть в Greater Manchester.",
+      "risk": "geo",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 3,
+      "section": "Свежие новости",
+      "action": "strip",
       "replacement_text": "",
-      "reason": "Удаление дублирующей информации о концерте Don Toliver.",
-      "risk": "format"
+      "reason": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 4,
+      "section": "Свежие новости",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+      "risk": "factual"
+    },
+    {
+      "line_index": 5,
+      "section": "Свежие новости",
+      "action": "strip",
+      "replacement_text": "",
+      "reason": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+      "risk": "factual"
     }
   ],
   "warnings": [
-    "Недостаточное количество элементов в секции 'Что важно сегодня'.",
-    "Недостаточное количество элементов в секции 'Городской радар'.",
-    "Недостаточное количество элементов в секции 'Билеты / Ticket Radar'.",
-    "Отсутствие секции 'Еда, открытия и рынки'."
+    "Отсутствие блока 'Что важно сегодня' и 'Еда, открытия и рынки' снижает полноту выпуска."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -144,11 +163,11 @@
       "Свежие новости": 9,
       "Общественный транспорт сегодня": 4,
       "Футбол": 3,
-      "Городской радар": 4,
+      "Городской радар": 7,
+      "IT и бизнес": 2,
       "Business/tech события для тебя": 1,
       "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 1,
-      "Крупные концерты вне GM": 2,
+      "Билеты / Ticket Radar": 4,
       "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
@@ -156,84 +175,72 @@
       "Что важно сегодня": 0,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 4,
-      "Билеты / Ticket Radar": 1,
+      "Городской радар": 7,
+      "Билеты / Ticket Radar": 4,
       "Русскоязычные концерты и стендап UK": 1,
       "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 1,
       "Футбол": 3
     },
-    "ticket_items": 4,
-    "core_items": 19,
+    "ticket_items": 5,
+    "core_items": 22,
     "writer_quality_counts": {
-      "included_candidates": 31,
-      "rendered_candidates": 28,
+      "included_candidates": 34,
+      "rendered_candidates": 34,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 2,
-      "replaced_from_plan_backup": 1,
-      "removed_with_reason": 2
+      "dropped_low_quality": 0,
+      "replaced_from_plan_backup": 0,
+      "removed_with_reason": 0
     },
     "source_health_counts": {
-      "ok": 100,
+      "ok": 96,
       "partial": 2,
       "stale": 10,
-      "empty": 13,
-      "failed": 5,
-      "zero_yield": 78,
+      "empty": 18,
+      "failed": 4,
+      "zero_yield": 71,
       "no_contribution_breakdown": {
-        "fetch_failed": 5,
-        "all_rejected": 78,
-        "idle_no_items": 30
+        "fetch_failed": 4,
+        "all_rejected": 71,
+        "idle_no_items": 35
       },
       "zero_contribution_by_stage": {
-        "written": 44,
-        "parsed": 30,
-        "selected": 34,
-        "fetched": 5
+        "written": 42,
+        "selected": 29,
+        "parsed": 35,
+        "fetched": 4
       },
       "weekend_source_coverage_incidents": 61
     },
     "input_alerts_before_judge": [
       "Что важно сегодня: 0 item(s), emergency floor 3",
-      "Городской радар: 4 item(s), emergency floor 5",
-      "Билеты / Ticket Radar: 1 item(s), emergency floor 2",
       "Еда, открытия и рынки: 0 item(s), emergency floor 3",
-      "source failures: 5"
+      "source failures: 4"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 3 has unchecked number/date token(s): 80",
-      "patch for line 15 has unchecked number/date token(s): 17:05, 20:45",
-      "multiple actions target line 1"
+      "patch for line 15 has unchecked number/date token(s): 14:45"
     ],
     "can_apply_actions": true,
-    "action_count": 7
+    "action_count": 9
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 28,
-    "matched_lines": 28,
-    "applicable_lines": 2,
+    "checked_lines": 34,
+    "matched_lines": 34,
+    "applicable_lines": 6,
     "unmatched_lines": 0,
-    "critical_omission_count": 1,
-    "critical_omissions": [
-      {
-        "line_index": 1,
-        "source_url_key": "bbc.com/news/articles/cq0k6x6nxr6ko",
-        "concept": "weapon_violence",
-        "obligation": "who/what",
-        "source_hit": "stabbing"
-      }
-    ],
+    "critical_omission_count": 0,
+    "critical_omissions": [],
     "noncritical_omissions": [],
     "recovered": 0,
-    "pulled_for_rework": 1,
+    "pulled_for_rework": 0,
     "still_missing": 0
   },
   "repair_executor": {
@@ -241,58 +248,54 @@
     "dry_run": false,
     "fact_lock_version": "v1",
     "requested": 7,
-    "attempted": 5,
+    "attempted": 4,
     "applied": 4,
     "model_patch_applied": 0,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 2,
-    "stripped": 2,
+    "reserve_replacement_used": 3,
+    "stripped": 1,
     "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 7,
+    "resolved": 5,
     "resolved_in_place": 3,
-    "resolved_by_replacement": 2,
-    "resolved_by_removal": 2,
-    "fact_lock_rejected": 2,
+    "resolved_by_replacement": 1,
+    "resolved_by_removal": 1,
+    "fact_lock_rejected": 1,
     "enrich_attempted": 7,
     "post_check_errors": [],
-    "geo_contract_rejected": [],
+    "geo_contract_rejected": [
+      {
+        "line_index": 24,
+        "section": "Городской радар",
+        "geo_scope": "gm",
+        "reason": "Инцидент с паспортом произошел с жителем Staffordshire, что не соответствует geo_scope GM.",
+        "gm_anchor_present": true
+      },
+      {
+        "line_index": 29,
+        "section": "Дальние анонсы",
+        "geo_scope": "gm",
+        "reason": "Событие не соответствует географическому контракту раздела, так как оно должно быть в Greater Manchester.",
+        "gm_anchor_present": true
+      }
+    ],
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "requested_action": "patch",
-        "reason": "Дата события указана неверно. Согласно источнику, инцидент произошел 21 ноября 2026 года.",
-        "risk": "date",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cq0k6x6nxr6ko-68ee0459dcfb",
-        "original_url_identity": "bbc.com/news/articles/cq0k6x6nxr6ko",
-        "original_html": "<b>Появилось обновление по обращению — В субботу, 22 ноября 2026 года, двое 18-летних мужчин были stabbed у входа в Александра Парк в Oldham.</b> Их травмы не угрожают жизни, и полиция призывает сообщить любую информацию, которая может помочь в расследовании. <a href=\"https://bbc.com/news/articles/cq0k6x6nxr6ko\">BBC Manchester</a>",
-        "model_replacement_rejected": "fact_lock: 21 ноября 2026",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-this-harpurhey-not-harrogate-its-34941625-b13f3974accd",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 3,
+        "line_index": 8,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Указан неверный возраст погибшего мужчины.",
+        "reason": "Текст вводит в заблуждение, утверждая, что муж будет давать показания против девяти мужчин, хотя это не подтверждается источником.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Возраст погибшего мужчины указан неверно.",
+        "critical_problem": "Текст вводит в заблуждение, утверждая, что муж будет давать показания против девяти мужчин, хотя это не подтверждается источником.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-80s-dies-after-being-34951337-b0fa1c2e02a7",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-80s-dies-after-being-34951337",
-        "original_html": "• Мужчина скончался после того, как его сбила машина на станции Роуд в Суинтоне 22 ноября; 38-летний мужчина арестован по подозрению в опасном вождении, приведшем к смерти. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-80s-dies-after-being-34951337\">MEN</a>",
+        "plan_slot_id": "last_24h-06",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-man-admits-sexual-assaulting-34953024-3d5c4f281116",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-man-admits-sexual-assaulting-34953024",
+        "original_html": "• Томми Голден, 59 лет, признал себя виновным в сексуальном насилии над женщиной, которую более 20 лет насиловал её муж. Следующее заседание назначено на 17 декабря 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-man-admits-sexual-assaulting-34953024\">MEN Latest News</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
@@ -300,149 +303,132 @@
         "line_index": 15,
         "section": "Общественный транспорт сегодня",
         "requested_action": "patch",
-        "reason": "Уточнение, что инцидент уже завершился, чтобы избежать путаницы.",
-        "risk": "date",
+        "reason": "Уточнение статуса движения поездов после инцидента.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Событие произошло 21 ноября, но не указано, что это информация о прошедшем инциденте.",
+        "critical_problem": "Текст утверждает, что движение возобновилось, но это не подтверждается источником.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
         "plan_slot_id": "transport-04",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-called-manchester-airport-station-34948804-e40224c619c1",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-called-manchester-airport-station-34948804",
-        "original_html": "• National Rail: полиция была вызвана на станцию Манчестерского аэропорта 21 ноября после сообщений о подозрительной сумке. Движение поездов было остановлено с 17:05 до 20:45, позже сумка была признана безопасной. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-called-manchester-airport-station-34948804\">MEN</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-hgv-wedged-beneath-bromley-cross-34956178-cf5f5d2e25b2",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/hgv-wedged-beneath-bromley-cross-34956178",
+        "original_html": "• National Rail: грузовик застрял под железнодорожным мостом в Бромли Кросс, что привело к сбоям в движении поездов. Транспортное средство было убрано около 14:45, и движение возобновилось. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/hgv-wedged-beneath-bromley-cross-34956178\">MEN</a>",
         "model_replacement_rejected": "fact_lock: national rail",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 18,
+        "line_index": 17,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Маурисио Почеттино не является менеджером Манчестер Юнайтед.",
+        "reason": "Неверная информация о красной карточке Джованни Ди Лоренцо в прошлом сезоне.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Маурисио Почеттино не является менеджером Манчестер Юнайтед.",
+        "critical_problem": "Неверная информация о красной карточке Джованни Ди Лоренцо в прошлом сезоне.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "football-03",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-mauricio-pochettino-must-show-ruthless-34950311-e4914fbb0a63",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/mauricio-pochettino-must-show-ruthless-34950311",
-        "original_html": "• Первый матч Маурисио Почеттино в качестве менеджера Манчестер Юнайтед закончился поражением 4-0 от Ливерпуля, после того как Лени Йоро был удален с поля на 10-й минуте. Следующий матч против Спортинга Лиссабон состоится в среду. <a href=\"https://manchestereveningnews.co.uk/sport/football/mauricio-pochettino-must-show-ruthless-34950311\">MEN Manchester United</a>",
-        "verification": "judge correction matches the existing visible facts",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 22,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Неправильное имя уволенного тренера.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Неправильное имя уволенного тренера.",
-        "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-06",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-breaking-rochdale-afc-sack-manager-34949387-623b5d9a7974",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/breaking-rochdale-afc-sack-manager-34949387",
-        "original_html": "• Футбольный клуб Rochdale AFC уволил главного тренера Иэна Уотсона. Процесс назначения нового тренера уже начат. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/breaking-rochdale-afc-sack-manager-34949387\">MEN</a>",
+        "plan_slot_id": "football-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-de-bruyne-guardiola-34956229-0e25cfd6f237",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-de-bruyne-guardiola-34956229",
+        "original_html": "• Кевин Де Брюйне готовится к эмоциональному возвращению в Манчестер Сити, когда Наполи посетит Эттихад в Лиге чемпионов. В прошлом сезоне его возвращение было омрачено красной карточкой Джованни Ди Лоренцо. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-de-bruyne-guardiola-34956229\">MEN Manchester City</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 1,
-        "section": "Главная история дня",
+        "line_index": 28,
+        "section": "Business/tech события для тебя",
         "requested_action": "patch",
-        "reason": "Исправление даты на правильный день недели.",
-        "risk": "date",
+        "reason": "Указана неверная информация о стоимости участия: бесплатно только для членов, £22 для не-членов.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Текст содержит ошибку в дате события.",
-        "completeness_concept": "weapon_violence",
-        "outcome": "resolved_by_replacement",
-        "method": "reserve_replacement",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cq0k6x6nxr6ko-68ee0459dcfb",
-        "original_url_identity": "bbc.com/news/articles/cq0k6x6nxr6ko",
-        "original_html": "<b>Появилось обновление по обращению — В субботу, 22 ноября 2026 года, двое 18-летних мужчин были stabbed у входа в Александра Парк в Oldham.</b> Их травмы не угрожают жизни, и полиция призывает сообщить любую информацию, которая может помочь в расследовании. <a href=\"https://bbc.com/news/articles/cq0k6x6nxr6ko\">BBC Manchester</a>",
-        "model_replacement_rejected": "post_check: critical concept still absent: weapon_violence, replacement drops weapon_violence",
-        "replacement_fingerprint": "url-bbc-com-news-articles-cj5y16v79kd1o-573e1b247860",
+        "critical_problem": "Некорректная информация о стоимости участия.",
+        "completeness_concept": "",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "professional_events-01",
+        "candidate_fingerprint": "event-event-networking-networking-south-trafford-november-tuesday-24-nov-8-30am-10-30am-2026-11-24-old-trafford-dec9c5c805db",
+        "original_url_identity": "gmchamber.co.uk/events/networking-south-trafford-november",
+        "original_html": "• #networking Networking South - Trafford - November Tuesday 24 Nov 8:30am - 10:30am — 24 ноября, Old Trafford. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: спокойная практика профессионального английского; плотный нетворк большой конференции или экспо. Действие: зарегистрируйтесь. <a href=\"https://gmchamber.co.uk/events/networking-south-trafford-november\">GM Chamber Events</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 19,
-        "section": "Городской радар",
+        "line_index": 3,
+        "section": "Свежие новости",
         "requested_action": "strip",
-        "reason": "Удаление дублирующей информации о концерте Don Toliver.",
-        "risk": "format",
+        "reason": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дублирование информации о концерте Don Toliver в Co-op Live.",
+        "critical_problem": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
         "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-c9e851dn8516o-3cbe8ee6982f",
-        "original_url_identity": "bbc.com/news/articles/c9e851dn8516o",
-        "original_html": "• Тысячи людей были эвакуированы из Co-op Live в Манчестере после того, как в толпе на концерте американского рэпера Дон Толивера было выпущено неизвестное вещество; один человек был госпитализирован, более 50 человек оценивались на наличие симптомов. <a href=\"https://bbc.co.uk/news/articles/c9e851dn8516o\">BBC Manchester</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-01",
+        "candidate_fingerprint": "url-aboutmanchester-co-uk-89-people-displayed-symptoms-after-suspected-tear-gas-released-at-coop-arena-say-police-8867f3fb4ee1",
+        "original_url_identity": "aboutmanchester.co.uk/89-people-displayed-symptoms-after-suspected-tear-gas-released-at-coop-arena-say-police",
+        "original_html": "• Вчера в Coop Arena 89 человек проявили симптомы, связанные с предполагаемым воздействием слезоточивого газа. Одна женщина была госпитализирована в Manchester Royal Infirmary для дальнейшего обследования, остальные 88 человек прошли дегазацию на месте и были размещены в Etihad Stadium. Полиция заявила, что это изолированный инцидент и угрозы для общественности нет, однако на месте происшествия будут продолжаться проверки. <a href=\"https://aboutmanchester.co.uk/89-people-displayed-symptoms-after-suspected-tear-gas-released-at-coop-arena-say-police\">About Manchester News</a>",
+        "replacement_fingerprint": "url-manchestermill-co-uk-you-can-educate-you-can-empower-but-you-cant-hide-f7308b796e8f",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 4,
+        "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-questions-over-co-op-live-34955919-94e790427298",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/questions-over-co-op-live-34955919",
+        "original_html": "• Во время концерта американского рэпера Дон Толивера в Co-op Live в Манчестере 89 зрителей пострадали из-за распыления газа, что привело к объявлению о крупной чрезвычайной ситуации. Свидетели сообщали, что люди кричали 'Я не могу дышать', а также возникли вопросы о безопасности, так как проверки сумок, по сообщениям, не проводились. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/questions-over-co-op-live-34955919\">MEN</a>",
+        "replacement_fingerprint": "url-aboutmanchester-co-uk-a-manchester-tradespersons-route-through-tool-tax-relief-08e58f65cdf8",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 5,
+        "section": "Свежие новости",
+        "requested_action": "strip",
+        "reason": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+        "risk": "factual",
+        "critical_error": true,
+        "critical_problem": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "last_24h-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-co-op-live-security-slammed-34954106-b68cc4c9730e",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/co-op-live-security-slammed-34954106",
+        "original_html": "• На концерте Дон Толивера в Co-op Live 22 ноября возникли серьезные проблемы с безопасностью: фанаты заметили, что у них не проверяли сумки, а также в зал была пронесена фаера. В результате инцидента, связанного с неизвестным веществом, более 80 человек получили медицинскую помощь, один из них был госпитализирован. Полиция пока не раскрыла детали о природе вещества и его источнике. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/co-op-live-security-slammed-34954106\">MEN Latest News</a>",
+        "replacement_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-11-23-plans-unveiled-for-four-new-padel-courts-at-hale-barns-hotel-b8f2530e85fa",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::дата события указана неверно. согласно источнику, инцидент произошел 21 ноября 2026 года.",
+        "group_key": "свежие новости::текст вводит в заблуждение, утверждая, что муж будет давать показания против девяти мужчин, хотя это не подтверждается источником.",
         "actions": [
           {
-            "line_index": 1,
-            "section": "Главная история дня",
-            "requested_action": "patch",
-            "reason": "Дата события указана неверно. Согласно источнику, инцидент произошел 21 ноября 2026 года.",
-            "risk": "date",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_replacement",
-            "method": "reserve_replacement",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cq0k6x6nxr6ko-68ee0459dcfb",
-            "original_url_identity": "bbc.com/news/articles/cq0k6x6nxr6ko",
-            "original_html": "<b>Появилось обновление по обращению — В субботу, 22 ноября 2026 года, двое 18-летних мужчин были stabbed у входа в Александра Парк в Oldham.</b> Их травмы не угрожают жизни, и полиция призывает сообщить любую информацию, которая может помочь в расследовании. <a href=\"https://bbc.com/news/articles/cq0k6x6nxr6ko\">BBC Manchester</a>",
-            "model_replacement_rejected": "fact_lock: 21 ноября 2026",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-this-harpurhey-not-harrogate-its-34941625-b13f3974accd",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_replacement",
-        "post_checks": [
-          {
-            "line_index": 1,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "свежие новости::указан неверный возраст погибшего мужчины.",
-        "actions": [
-          {
-            "line_index": 3,
+            "line_index": 8,
             "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Указан неверный возраст погибшего мужчины.",
+            "reason": "Текст вводит в заблуждение, утверждая, что муж будет давать показания против девяти мужчин, хотя это не подтверждается источником.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Возраст погибшего мужчины указан неверно.",
+            "critical_problem": "Текст вводит в заблуждение, утверждая, что муж будет давать показания против девяти мужчин, хотя это не подтверждается источником.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-man-80s-dies-after-being-34951337-b0fa1c2e02a7",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/man-80s-dies-after-being-34951337",
-            "original_html": "• Мужчина скончался после того, как его сбила машина на станции Роуд в Суинтоне 22 ноября; 38-летний мужчина арестован по подозрению в опасном вождении, приведшем к смерти. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/man-80s-dies-after-being-34951337\">MEN</a>",
+            "plan_slot_id": "last_24h-06",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-new-man-admits-sexual-assaulting-34953024-3d5c4f281116",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/new-man-admits-sexual-assaulting-34953024",
+            "original_html": "• Томми Голден, 59 лет, признал себя виновным в сексуальном насилии над женщиной, которую более 20 лет насиловал её муж. Следующее заседание назначено на 17 декабря 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/new-man-admits-sexual-assaulting-34953024\">MEN Latest News</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -450,7 +436,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 3,
+            "line_index": 8,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -458,23 +444,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::уточнение, что инцидент уже завершился, чтобы избежать путаницы.",
+        "group_key": "общественный транспорт сегодня::уточнение статуса движения поездов после инцидента.",
         "actions": [
           {
             "line_index": 15,
             "section": "Общественный транспорт сегодня",
             "requested_action": "patch",
-            "reason": "Уточнение, что инцидент уже завершился, чтобы избежать путаницы.",
-            "risk": "date",
+            "reason": "Уточнение статуса движения поездов после инцидента.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Событие произошло 21 ноября, но не указано, что это информация о прошедшем инциденте.",
+            "critical_problem": "Текст утверждает, что движение возобновилось, но это не подтверждается источником.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
             "plan_slot_id": "transport-04",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-police-called-manchester-airport-station-34948804-e40224c619c1",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/police-called-manchester-airport-station-34948804",
-            "original_html": "• National Rail: полиция была вызвана на станцию Манчестерского аэропорта 21 ноября после сообщений о подозрительной сумке. Движение поездов было остановлено с 17:05 до 20:45, позже сумка была признана безопасной. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/police-called-manchester-airport-station-34948804\">MEN</a>",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-hgv-wedged-beneath-bromley-cross-34956178-cf5f5d2e25b2",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/hgv-wedged-beneath-bromley-cross-34956178",
+            "original_html": "• National Rail: грузовик застрял под железнодорожным мостом в Бромли Кросс, что привело к сбоям в движении поездов. Транспортное средство было убрано около 14:45, и движение возобновилось. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/hgv-wedged-beneath-bromley-cross-34956178\">MEN</a>",
             "model_replacement_rejected": "fact_lock: national rail",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
@@ -492,55 +478,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::маурисио почеттино не является менеджером манчестер юнайтед.",
+        "group_key": "футбол::неверная информация о красной карточке джованни ди лоренцо в прошлом сезоне.",
         "actions": [
           {
-            "line_index": 18,
+            "line_index": 17,
             "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Маурисио Почеттино не является менеджером Манчестер Юнайтед.",
+            "reason": "Неверная информация о красной карточке Джованни Ди Лоренцо в прошлом сезоне.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Маурисио Почеттино не является менеджером Манчестер Юнайтед.",
+            "critical_problem": "Неверная информация о красной карточке Джованни Ди Лоренцо в прошлом сезоне.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "football-03",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-mauricio-pochettino-must-show-ruthless-34950311-e4914fbb0a63",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/mauricio-pochettino-must-show-ruthless-34950311",
-            "original_html": "• Первый матч Маурисио Почеттино в качестве менеджера Манчестер Юнайтед закончился поражением 4-0 от Ливерпуля, после того как Лени Йоро был удален с поля на 10-й минуте. Следующий матч против Спортинга Лиссабон состоится в среду. <a href=\"https://manchestereveningnews.co.uk/sport/football/mauricio-pochettino-must-show-ruthless-34950311\">MEN Manchester United</a>",
-            "verification": "judge correction matches the existing visible facts",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 18,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::неправильное имя уволенного тренера.",
-        "actions": [
-          {
-            "line_index": 22,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Неправильное имя уволенного тренера.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Неправильное имя уволенного тренера.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-06",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-breaking-rochdale-afc-sack-manager-34949387-623b5d9a7974",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/breaking-rochdale-afc-sack-manager-34949387",
-            "original_html": "• Футбольный клуб Rochdale AFC уволил главного тренера Иэна Уотсона. Процесс назначения нового тренера уже начат. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/breaking-rochdale-afc-sack-manager-34949387\">MEN</a>",
+            "plan_slot_id": "football-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-de-bruyne-guardiola-34956229-0e25cfd6f237",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-de-bruyne-guardiola-34956229",
+            "original_html": "• Кевин Де Брюйне готовится к эмоциональному возвращению в Манчестер Сити, когда Наполи посетит Эттихад в Лиге чемпионов. В прошлом сезоне его возвращение было омрачено красной карточкой Джованни Ди Лоренцо. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-de-bruyne-guardiola-34956229\">MEN Manchester City</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -548,7 +502,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 22,
+            "line_index": 17,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -556,71 +510,127 @@
         "known_factual_error": true
       },
       {
-        "group_key": "главная история дня::исправление даты на правильный день недели.",
+        "group_key": "business/tech события для тебя::указана неверная информация о стоимости участия: бесплатно только для членов, £22 для не-членов.",
         "actions": [
           {
-            "line_index": 1,
-            "section": "Главная история дня",
+            "line_index": 28,
+            "section": "Business/tech события для тебя",
             "requested_action": "patch",
-            "reason": "Исправление даты на правильный день недели.",
-            "risk": "date",
+            "reason": "Указана неверная информация о стоимости участия: бесплатно только для членов, £22 для не-членов.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Текст содержит ошибку в дате события.",
-            "completeness_concept": "weapon_violence",
+            "critical_problem": "Некорректная информация о стоимости участия.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "professional_events-01",
+            "candidate_fingerprint": "event-event-networking-networking-south-trafford-november-tuesday-24-nov-8-30am-10-30am-2026-11-24-old-trafford-dec9c5c805db",
+            "original_url_identity": "gmchamber.co.uk/events/networking-south-trafford-november",
+            "original_html": "• #networking Networking South - Trafford - November Tuesday 24 Nov 8:30am - 10:30am — 24 ноября, Old Trafford. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: спокойная практика профессионального английского; плотный нетворк большой конференции или экспо. Действие: зарегистрируйтесь. <a href=\"https://gmchamber.co.uk/events/networking-south-trafford-november\">GM Chamber Events</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 28,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "свежие новости::дублирование информации о газовом инциденте на концерте дон толивера",
+        "actions": [
+          {
+            "line_index": 3,
+            "section": "Свежие новости",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+            "completeness_concept": "",
             "outcome": "resolved_by_replacement",
             "method": "reserve_replacement",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cq0k6x6nxr6ko-68ee0459dcfb",
-            "original_url_identity": "bbc.com/news/articles/cq0k6x6nxr6ko",
-            "original_html": "<b>Появилось обновление по обращению — В субботу, 22 ноября 2026 года, двое 18-летних мужчин были stabbed у входа в Александра Парк в Oldham.</b> Их травмы не угрожают жизни, и полиция призывает сообщить любую информацию, которая может помочь в расследовании. <a href=\"https://bbc.com/news/articles/cq0k6x6nxr6ko\">BBC Manchester</a>",
-            "model_replacement_rejected": "post_check: critical concept still absent: weapon_violence, replacement drops weapon_violence",
-            "replacement_fingerprint": "url-bbc-com-news-articles-cj5y16v79kd1o-573e1b247860",
+            "plan_slot_id": "last_24h-01",
+            "candidate_fingerprint": "url-aboutmanchester-co-uk-89-people-displayed-symptoms-after-suspected-tear-gas-released-at-coop-arena-say-police-8867f3fb4ee1",
+            "original_url_identity": "aboutmanchester.co.uk/89-people-displayed-symptoms-after-suspected-tear-gas-released-at-coop-arena-say-police",
+            "original_html": "• Вчера в Coop Arena 89 человек проявили симптомы, связанные с предполагаемым воздействием слезоточивого газа. Одна женщина была госпитализирована в Manchester Royal Infirmary для дальнейшего обследования, остальные 88 человек прошли дегазацию на месте и были размещены в Etihad Stadium. Полиция заявила, что это изолированный инцидент и угрозы для общественности нет, однако на месте происшествия будут продолжаться проверки. <a href=\"https://aboutmanchester.co.uk/89-people-displayed-symptoms-after-suspected-tear-gas-released-at-coop-arena-say-police\">About Manchester News</a>",
+            "replacement_fingerprint": "url-manchestermill-co-uk-you-can-educate-you-can-empower-but-you-cant-hide-f7308b796e8f",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 4,
+            "section": "Свежие новости",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-questions-over-co-op-live-34955919-94e790427298",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/questions-over-co-op-live-34955919",
+            "original_html": "• Во время концерта американского рэпера Дон Толивера в Co-op Live в Манчестере 89 зрителей пострадали из-за распыления газа, что привело к объявлению о крупной чрезвычайной ситуации. Свидетели сообщали, что люди кричали 'Я не могу дышать', а также возникли вопросы о безопасности, так как проверки сумок, по сообщениям, не проводились. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/questions-over-co-op-live-34955919\">MEN</a>",
+            "replacement_fingerprint": "url-aboutmanchester-co-uk-a-manchester-tradespersons-route-through-tool-tax-relief-08e58f65cdf8",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 5,
+            "section": "Свежие новости",
+            "requested_action": "strip",
+            "reason": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "last_24h-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-co-op-live-security-slammed-34954106-b68cc4c9730e",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/co-op-live-security-slammed-34954106",
+            "original_html": "• На концерте Дон Толивера в Co-op Live 22 ноября возникли серьезные проблемы с безопасностью: фанаты заметили, что у них не проверяли сумки, а также в зал была пронесена фаера. В результате инцидента, связанного с неизвестным веществом, более 80 человек получили медицинскую помощь, один из них был госпитализирован. Полиция пока не раскрыла детали о природе вещества и его источнике. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/co-op-live-security-slammed-34954106\">MEN Latest News</a>",
+            "replacement_fingerprint": "url-altrincham-todaynews-co-uk-news-2026-11-23-plans-unveiled-for-four-new-padel-courts-at-hale-barns-hotel-b8f2530e85fa",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 1,
+            "line_index": 3,
             "passed": true,
             "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "городской радар::удаление дублирующей информации о концерте don toliver",
-        "actions": [
+          },
           {
-            "line_index": 19,
-            "section": "Городской радар",
-            "requested_action": "strip",
-            "reason": "Удаление дублирующей информации о концерте Don Toliver.",
-            "risk": "format",
-            "critical_error": true,
-            "critical_problem": "Дублирование информации о концерте Don Toliver в Co-op Live.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-c9e851dn8516o-3cbe8ee6982f",
-            "original_url_identity": "bbc.com/news/articles/c9e851dn8516o",
-            "original_html": "• Тысячи людей были эвакуированы из Co-op Live в Манчестере после того, как в толпе на концерте американского рэпера Дон Толивера было выпущено неизвестное вещество; один человек был госпитализирован, более 50 человек оценивались на наличие симптомов. <a href=\"https://bbc.co.uk/news/articles/c9e851dn8516o\">BBC Manchester</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 19,
+            "line_index": 4,
             "passed": true,
-            "detail": "slot removed and source absent"
+            "detail": "post-check passed"
+          },
+          {
+            "line_index": 5,
+            "passed": true,
+            "detail": "post-check passed"
           },
           {
             "check": "duplicate_identity",
-            "identity": "story:bbc|co op|public safety after incident|manchester|new story|2026 11 23",
+            "identity": "topic:memorial:co op live manchester the serious questions co op live needs to answer after 89 concertgoers hit by gas incident on night bags were not chec|new story|2026 11 23",
+            "visible_count": 0,
+            "passed": true
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "topic:incident:manchester 89 people displayed symptoms after suspected tear gas released at coop arena say police about manchester|new story|2026 11 23",
+            "visible_count": 0,
+            "passed": true
+          },
+          {
+            "check": "duplicate_identity",
+            "identity": "topic:incident:co op live manchester co op live security slammed by don toliver fans as bags not checked and flare brought in|new story|2026 11 23",
             "visible_count": 0,
             "passed": true
           }
@@ -636,15 +646,14 @@
       "skipped": 0
     },
     "enrich_improved": 7,
-    "deterministic_rewrite_rejected": 3,
     "false_positive_existing_fact": 3,
-    "no_eligible_backup": 2,
-    "model_post_check_rejected": 1,
+    "deterministic_rewrite_rejected": 1,
+    "no_eligible_backup": 1,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 26,
-      "matched_lines": 26,
-      "applicable_lines": 1,
+      "checked_lines": 33,
+      "matched_lines": 33,
+      "applicable_lines": 6,
       "unmatched_lines": 0,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -656,142 +665,158 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 26,
-      "resolved_in_place": 25,
-      "unresolved": 1,
-      "findings": [
-        {
-          "line_index": 26,
-          "section": "Русскоязычные концерты и стендап UK",
-          "outcome": "unresolved",
-          "code": "bad_editorial_prose",
-          "severity": "error",
-          "marker": "проверьте дату"
-        }
-      ]
+      "checked_lines": 33,
+      "resolved_in_place": 33,
+      "unresolved": 0,
+      "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved"
   },
-  "notes": "Дата события должна быть исправлена на 21 ноября 2026 года.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Ошибка в возрасте погибшего мужчины в строке 3 требует исправления.; Уточнение завершённости инцидента на станции Манчестерского аэропорта необходимо для ясности.; Ошибка в строке 18: Маурисио По",
+  "notes": "Строка соответствует всем требованиям: география, факты и юридическая точность соблюдены.; Прогноз погоды соответствует источнику и географическому охвату.; Ошибка в строке 8 требует исправления, чтобы избежать дезинформации.; Уточнён статус движения поездов после инцидента в Бромли Кросс.; Исправлена ошибка в описании",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Текст содержит ошибку в дате события.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 3,
+        "line_index": 8,
         "section": "Свежие новости",
-        "problem": "Возраст погибшего мужчины указан неверно.",
+        "problem": "Текст вводит в заблуждение, утверждая, что муж будет давать показания против девяти мужчин, хотя это не подтверждается источником.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
         "line_index": 15,
         "section": "Общественный транспорт сегодня",
-        "problem": "Событие произошло 21 ноября, но не указано, что это информация о прошедшем инциденте.",
-        "risk": "date",
+        "problem": "Текст утверждает, что движение возобновилось, но это не подтверждается источником.",
+        "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 18,
+        "line_index": 17,
         "section": "Футбол",
-        "problem": "Маурисио Почеттино не является менеджером Манчестер Юнайтед.",
+        "problem": "Неверная информация о красной карточке Джованни Ди Лоренцо в прошлом сезоне.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 22,
+        "line_index": 24,
         "section": "Городской радар",
-        "problem": "Неправильное имя уволенного тренера.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Дата события указана неверно. 22 ноября 2026 года — это воскресенье, а не суббота.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 19,
-        "section": "Городской радар",
-        "problem": "Дублирование информации о концерте Don Toliver в Co-op Live.",
-        "risk": "format",
+        "problem": "Субъект инцидента не из Greater Manchester, что нарушает geo_scope.",
+        "risk": "geo",
         "suggested_action": "strip"
+      },
+      {
+        "line_index": 28,
+        "section": "Business/tech события для тебя",
+        "problem": "Некорректная информация о стоимости участия.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 29,
+        "section": "Дальние анонсы",
+        "problem": "Событие не соответствует географическому контракту раздела.",
+        "risk": "geo",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 4,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 5,
+        "section": "Свежие новости",
+        "problem": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+        "risk": "factual",
+        "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• В субботу, 21 ноября 2026 года, двое 18-летних мужчин были stabbed у входа в Александра Парк в Oldham.",
-        "reason": "Дата события указана неверно. Согласно источнику, инцидент произошел 21 ноября 2026 года.",
-        "risk": "date"
-      },
-      {
-        "line_index": 3,
+        "line_index": 8,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• Мужчина в возрасте 80 лет скончался после того, как его сбила машина на станции Роуд в Суинтоне 22 ноября; 38-летний мужчина арестован по подозрению в опасном вождении, приведшем к смерти.",
-        "reason": "Указан неверный возраст погибшего мужчины.",
+        "replacement_text": "• В Stockport муж, который более 20 лет подвергал свою жену наркотическому изнасилованию, рекламировал в интернете свои намерения \"искать немного дополнительного веселья и игр\". Он признал свою вину по нескольким обвинениям, включая изнасилование и сексуальное насилие.",
+        "reason": "Текст вводит в заблуждение, утверждая, что муж будет давать показания против девяти мужчин, хотя это не подтверждается источником.",
         "risk": "factual"
       },
       {
         "line_index": 15,
         "section": "Общественный транспорт сегодня",
         "action": "patch",
-        "replacement_text": "• National Rail: полиция была вызвана на станцию Манчестерского аэропорта 21 ноября после сообщений о подозрительной сумке. Движение поездов было остановлено с 17:05 до 20:45, позже сумка была признана безопасной. Это событие уже завершилось.",
-        "reason": "Уточнение, что инцидент уже завершился, чтобы избежать путаницы.",
-        "risk": "date"
+        "replacement_text": "• National Rail: грузовик застрял под железнодорожным мостом в Бромли Кросс, что привело к сбоям в движении поездов. Транспортное средство было убрано около 14:45, но возможны задержки.",
+        "reason": "Уточнение статуса движения поездов после инцидента.",
+        "risk": "factual"
       },
       {
-        "line_index": 18,
+        "line_index": 17,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• Первый матч Маурисио Почеттино в качестве менеджера Манчестер Юнайтед закончился поражением 4-0 от Ливерпуля, после того как Лени Йоро был удален с поля на 10-й минуте. Следующий матч против Спортинга Лиссабон состоится в среду.",
-        "reason": "Маурисио Почеттино не является менеджером Манчестер Юнайтед.",
+        "replacement_text": "• Кевин Де Брюйне готовится к эмоциональному возвращению в Манчестер Сити, когда Наполи посетит Эттихад в Лиге чемпионов. В прошлом сезоне его возвращение было омрачено травмой.",
+        "reason": "Неверная информация о красной карточке Джованни Ди Лоренцо в прошлом сезоне.",
         "risk": "factual"
       },
       {
-        "line_index": 22,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Футбольный клуб Rochdale AFC уволил главного тренера Джима Бентли. Процесс назначения нового тренера уже начат.",
-        "reason": "Неправильное имя уволенного тренера.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• Появилось обновление по обращению — В воскресенье, 22 ноября 2026 года, двое 18-летних мужчин были stabbed у входа в Александра Парк в Oldham. Их травмы не угрожают жизни, и полиция призывает сообщить любую информацию, которая может помочь в расследовании.",
-        "reason": "Исправление даты на правильный день недели.",
-        "risk": "date"
-      },
-      {
-        "line_index": 19,
+        "line_index": 24,
         "section": "Городской радар",
         "action": "strip",
+        "reason": "Инцидент с паспортом произошел с жителем Staffordshire, что не соответствует geo_scope GM.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 28,
+        "section": "Business/tech события для тебя",
+        "action": "patch",
+        "replacement_text": "• #networking Networking South - Trafford - November Tuesday 24 Nov 8:30am - 10:30am — 24 ноября, Old Trafford. Уровень: большая конференция/экспо; Доступ: бесплатно для членов, £22 для не-членов. Почему тебе: спокойная практика профессионального английского; плотный нетворк большой конференции или экспо. Действие: зарегистрируйтесь.",
+        "reason": "Указана неверная информация о стоимости участия: бесплатно только для членов, £22 для не-членов.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 29,
+        "section": "Дальние анонсы",
+        "action": "strip",
+        "reason": "Событие не соответствует географическому контракту раздела, так как оно должно быть в Greater Manchester.",
+        "risk": "geo"
+      },
+      {
+        "line_index": 3,
+        "section": "Свежие новости",
+        "action": "strip",
         "replacement_text": "",
-        "reason": "Удаление дублирующей информации о концерте Don Toliver.",
-        "risk": "format"
+        "reason": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 4,
+        "section": "Свежие новости",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+        "risk": "factual"
+      },
+      {
+        "line_index": 5,
+        "section": "Свежие новости",
+        "action": "strip",
+        "replacement_text": "",
+        "reason": "Дублирование информации о газовом инциденте на концерте Дон Толивера.",
+        "risk": "factual"
       }
     ],
     "warnings": [
-      "Недостаточное количество элементов в секции 'Что важно сегодня'.",
-      "Недостаточное количество элементов в секции 'Городской радар'.",
-      "Недостаточное количество элементов в секции 'Билеты / Ticket Radar'.",
-      "Отсутствие секции 'Еда, открытия и рынки'."
+      "Отсутствие блока 'Что важно сегодня' и 'Еда, открытия и рынки' снижает полноту выпуска."
     ],
-    "notes": "Дата события должна быть исправлена на 21 ноября 2026 года.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Ошибка в возрасте погибшего мужчины в строке 3 требует исправления.; Уточнение завершённости инцидента на станции Манчестерского аэропорта необходимо для ясности.; Ошибка в строке 18: Маурисио По",
+    "notes": "Строка соответствует всем требованиям: география, факты и юридическая точность соблюдены.; Прогноз погоды соответствует источнику и географическому охвату.; Ошибка в строке 8 требует исправления, чтобы избежать дезинформации.; Уточнён статус движения поездов после инцидента в Бромли Кросс.; Исправлена ошибка в описании",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
@@ -808,13 +833,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2640,
-          "duration_seconds": 2.805
+          "estimated_tokens": 2773,
+          "duration_seconds": 1.256
         },
         {
           "chunk_id": "chunk-02",
@@ -831,8 +856,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2435,
-          "duration_seconds": 1.446
+          "estimated_tokens": 2471,
+          "duration_seconds": 1.028
         },
         {
           "chunk_id": "chunk-03",
@@ -849,8 +874,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7222,
-          "duration_seconds": 2.952
+          "estimated_tokens": 7171,
+          "duration_seconds": 3.357
         },
         {
           "chunk_id": "chunk-04",
@@ -867,8 +892,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4230,
-          "duration_seconds": 2.83
+          "estimated_tokens": 4142,
+          "duration_seconds": 1.799
         },
         {
           "chunk_id": "chunk-05",
@@ -885,15 +910,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3707,
-          "duration_seconds": 2.983
+          "estimated_tokens": 3711,
+          "duration_seconds": 2.643
         },
         {
           "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
             19,
-            22
+            25
           ],
           "sections": [
             "Городской радар"
@@ -903,51 +928,69 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4243,
-          "duration_seconds": 2.44
+          "estimated_tokens": 5592,
+          "duration_seconds": 1.878
         },
         {
           "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            23,
-            23
+            26,
+            27
           ],
           "sections": [
-            "Business/tech события для тебя"
+            "IT и бизнес"
           ],
           "decision": "pass",
           "critical_error_count": 0,
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2822,
-          "duration_seconds": 1.306
+          "estimated_tokens": 3208,
+          "duration_seconds": 20.726
         },
         {
           "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
-            24,
-            24
+            28,
+            28
           ],
           "sections": [
-            "Дальние анонсы"
+            "Business/tech события для тебя"
           ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2756,
-          "duration_seconds": 2.625
+          "estimated_tokens": 2867,
+          "duration_seconds": 2.673
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            25,
-            25
+            29,
+            29
+          ],
+          "sections": [
+            "Дальние анонсы"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2670,
+          "duration_seconds": 6.835
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            30,
+            33
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -957,33 +1000,15 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2782,
-          "duration_seconds": 14.817
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            26,
-            27
-          ],
-          "sections": [
-            "Крупные концерты вне GM"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3260,
-          "duration_seconds": 21.747
+          "estimated_tokens": 4401,
+          "duration_seconds": 27.248
         },
         {
           "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            28,
-            28
+            34,
+            34
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
@@ -993,8 +1018,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2769,
-          "duration_seconds": 6.367
+          "estimated_tokens": 2765,
+          "duration_seconds": 5.624
         }
       ],
       "reduce": {
@@ -1003,12 +1028,12 @@
         "line_range": [],
         "sections": [],
         "decision": "repair_required",
-        "critical_error_count": 2,
-        "action_count": 2,
-        "warning_count": 4,
+        "critical_error_count": 3,
+        "action_count": 3,
+        "warning_count": 1,
         "error": "",
-        "estimated_tokens": 9655,
-        "duration_seconds": 24.645
+        "estimated_tokens": 9927,
+        "duration_seconds": 25.858
       },
       "max_workers": 3,
       "chunk_line_target": 12,
