@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "run_date_london": "2026-11-24",
-  "created_at_london": "2026-11-24T08:15:04.153837+00:00",
+  "run_date_london": "2026-11-25",
+  "created_at_london": "2026-11-25T08:17:54.797998+00:00",
   "policy": "Every candidate must have selected / reserve / needs_enrichment / drop. Pending dedupe is not a valid final state.",
   "totals": {
-    "selected": 685,
-    "reserve": 90,
+    "selected": 683,
+    "reserve": 81,
     "needs_enrichment": 1,
-    "drop": 567,
+    "drop": 596,
     "pending": 0
   },
   "pending_dedupe_left": [],
@@ -23,17 +23,84 @@
     },
     "last_24h": {
       "heading": "Свежие новости",
-      "total": 92,
-      "selected": 31,
-      "reserve": 3,
+      "total": 89,
+      "selected": 30,
+      "reserve": 4,
       "needs_enrichment": 0,
-      "drop": 58,
+      "drop": 55,
       "examples": [
         {
           "verdict": "drop",
-          "title": "'People were screaming in pain', Manchester's Co-op Live gig-goers say",
+          "title": "Warrington care service still needs improvement amid planned cuts",
           "source_label": "BBC Manchester",
-          "reason": "Semantic intra-batch duplicate (cos=0.895); kept more complete fresh-news facts «BBC Manchester»."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: story is centred outside Greater Manchester; publisher section chrome was ignored."
+        },
+        {
+          "verdict": "drop",
+          "title": "Domestic abuse prevention orders a 'step in right direction'",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Substance at Don Toliver Manchester show may be linked to robberies, police say",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "John Stones faces 2028 trial over alleged motoring offence",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Warrington care service still needs improvement amid planned cuts",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Restaurant boss banned over £363k furlough claims",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Memorial plaques and urns worth £20k stolen from Stockport cemetery",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Banning cars near schools at rush hour 'would make big difference'",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate remains suppressed after history checks. LLM-review: Тот же заголовок и сюжет, новых конкретных фактов по сравнению с прошлой публикацией нет"
+        }
+      ]
+    },
+    "today_focus": {
+      "heading": "Что важно сегодня",
+      "total": 3,
+      "selected": 3,
+      "reserve": 0,
+      "needs_enrichment": 0,
+      "drop": 0,
+      "examples": []
+    },
+    "city_watch": {
+      "heading": "Городской радар",
+      "total": 70,
+      "selected": 31,
+      "reserve": 16,
+      "needs_enrichment": 0,
+      "drop": 23,
+      "examples": [
+        {
+          "verdict": "drop",
+          "title": "Manchester's Co-op Live evacuated after 'unknown substance' let off in crowd at concert by US rapper Don Toliver",
+          "source_label": "BBC Manchester",
+          "reason": "Semantic intra-batch duplicate (cos=0.865); kept stronger source «BBC Manchester»."
         },
         {
           "verdict": "drop",
@@ -43,147 +110,67 @@
         },
         {
           "verdict": "drop",
-          "title": "Two men admit sex offences against Stockport woman drugged and raped by husband",
-          "source_label": "BBC Manchester",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Blue plaque unveiled at Frank Worthington's Halifax home",
-          "source_label": "BBC Manchester",
-          "reason": "Held as same-block backup for recovery."
-        },
-        {
-          "verdict": "drop",
-          "title": "Girl, 8, 'overwhelmed' by football shirt challenge support",
-          "source_label": "BBC Manchester",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=news, anchor=none, tier=filler)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Planning row in Housing Secretary Angela Rayner's constituency",
-          "source_label": "BBC Manchester",
-          "reason": "Held as same-block backup for recovery."
-        },
-        {
-          "verdict": "drop",
-          "title": "Banning cars near schools at rush hour 'would make big difference'",
-          "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        },
-        {
-          "verdict": "drop",
           "title": "Manchester's Co-op Live evacuated after 'unknown substance' let off in crowd at concert by US rapper Don Toliver",
           "source_label": "BBC Manchester Web",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
-        }
-      ]
-    },
-    "today_focus": {
-      "heading": "Что важно сегодня",
-      "total": 3,
-      "selected": 2,
-      "reserve": 1,
-      "needs_enrichment": 0,
-      "drop": 0,
-      "examples": [
-        {
-          "verdict": "reserve",
-          "title": "Police 'working to establish whether crime committed' after Co-op Live evacuated",
-          "source_label": "MEN Latest News",
-          "reason": "Board rejected: duplicate"
-        }
-      ]
-    },
-    "city_watch": {
-      "heading": "Городской радар",
-      "total": 65,
-      "selected": 23,
-      "reserve": 20,
-      "needs_enrichment": 1,
-      "drop": 21,
-      "examples": [
-        {
-          "verdict": "drop",
-          "title": "Greater Manchester Police appeal after two men injured in Oldham park stabbing",
-          "source_label": "BBC Manchester",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+          "reason": "Cheap pre-enrich duplicate remains suppressed after history checks."
         },
         {
           "verdict": "drop",
-          "title": "Greater Manchester Police appeal after two men injured in Oldham park stabbing",
+          "title": "'People were screaming in pain', Manchester's Co-op Live gig-goers say",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate remains suppressed after history checks."
+        },
+        {
+          "verdict": "drop",
+          "title": "Stockport: Drug rape husband wanted 'extra fun', court told",
           "source_label": "BBC Manchester Web",
           "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         },
         {
-          "verdict": "reserve",
-          "title": "I flew on Global Airlines' Manchester-to-New York superjumbo - I'm not surprised they went bust",
-          "source_label": "MEN Latest News",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Don Toliver Co-op Live incident LIVE as police issue new statement as 89 people treated after suspected tear gas released",
-          "source_label": "MEN News Sitemap",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Struggling for a Saturday job and facing £70k uni debts, students say NEET crisis is no surprise",
-          "source_label": "MEN News Sitemap",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
+          "verdict": "drop",
+          "title": "Two men admit sex offences against Stockport woman drugged and raped by husband",
+          "source_label": "BBC Manchester Web",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         },
         {
           "verdict": "drop",
-          "title": "Police to 'invite parents to station' after Heywood town centre plagued by large group of youths",
-          "source_label": "MEN News Sitemap",
-          "reason": "Dedupe found a previous publication; final repeat decision is deferred to plan-digest (provisional=exact_fingerprint_unchanged_evidence). LLM-review: Тот же сюжет о молодёжи в Хейвуде, новых конкретных фактов нет | Validator: previous publication found on 2026-11-23; plan-digest will make the final repeat decision (provisional=exact_fingerprint_unchanged_evidence, anchor=none, ttl=3d). | Validator: editorial_contract rejected item (story_type=incident, anchor=none, tier=filler)."
-        },
-        {
-          "verdict": "drop",
-          "title": "'I'm a children's nurse, but seeing my premature baby in an incubator terrified me'",
-          "source_label": "MEN News Sitemap",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: editorial_contract rejected item (story_type=news, anchor=none, tier=filler)."
-        },
-        {
-          "verdict": "drop",
-          "title": "Police issue update on hazardous substances investigation in Droylsden as households still displaced after four days",
-          "source_label": "MEN News Sitemap",
+          "title": "Court hears Stockport drug rape husband advertised online wanting 'extra fun and games'",
+          "source_label": "ITV Granada Greater Manchester",
           "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Fourth person arrested over damage to multiple occupation houses across Greater Manchester",
+          "source_label": "ITV Granada Greater Manchester",
+          "reason": "Held as same-block backup for recovery."
         }
       ]
     },
     "transport": {
       "heading": "Общественный транспорт сегодня",
-      "total": 9,
+      "total": 8,
       "selected": 4,
       "reserve": 1,
       "needs_enrichment": 0,
-      "drop": 4,
+      "drop": 3,
       "examples": [
         {
           "verdict": "drop",
-          "title": "Manchester tram lines to close for two weeks for engineering work",
-          "source_label": "ITV Granada Greater Manchester",
-          "reason": "Curator drop: Старое сообщение о закрытии трамвайных линий без актуальной даты."
+          "title": "Manchester Airport Tram Stop - Escalator out of service",
+          "source_label": "TfGM",
+          "reason": "Visible repeat policy allows this item: operational_anchor:service_status. | Validator: lift/escalator/step-free alert has no service cancellation, diversion, closure or replacement-travel impact."
         },
         {
           "verdict": "drop",
-          "title": "Piccadilly Tram Stop - Lift out of service",
+          "title": "Heaton Park Tram Stop - Lift out of service",
           "source_label": "TfGM",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: lift/escalator/step-free alert has no service cancellation, diversion, closure or replacement-travel impact."
-        },
-        {
-          "verdict": "drop",
-          "title": "Hollinwood Tram Stop - Lift out of service",
-          "source_label": "TfGM",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: lift/escalator/step-free alert has no service cancellation, diversion, closure or replacement-travel impact."
+          "reason": "Visible repeat policy allows this item: operational_anchor:service_status. | Validator: lift/escalator/step-free alert has no service cancellation, diversion, closure or replacement-travel impact."
         },
         {
           "verdict": "drop",
           "title": "Derker Tram Stop - Lift out of service",
           "source_label": "TfGM",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: lift/escalator/step-free alert has no service cancellation, diversion, closure or replacement-travel impact."
         },
         {
           "verdict": "reserve",
@@ -193,30 +180,20 @@
         }
       ]
     },
-    "next_7_days": {
-      "heading": "Что важно в ближайшие 7 дней",
-      "total": 1,
-      "selected": 0,
-      "reserve": 1,
-      "needs_enrichment": 0,
-      "drop": 0,
-      "examples": [
-        {
-          "verdict": "reserve",
-          "title": "The M62, M56 and M61 motorways in Greater Manchester will all close this week",
-          "source_label": "MEN",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        }
-      ]
-    },
     "tech_business": {
       "heading": "IT и бизнес",
       "total": 12,
-      "selected": 6,
+      "selected": 4,
       "reserve": 1,
       "needs_enrichment": 0,
-      "drop": 5,
+      "drop": 7,
       "examples": [
+        {
+          "verdict": "drop",
+          "title": "Scott and Adam Thomas to switch on Printworks' Christmas lights this Decembe | About Manchester",
+          "source_label": "About Manchester News",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: corrected section routing before translation (section_routing:it_content). | Validator: soft civic/award/awareness item has no practical reader value for the morning issue."
+        },
         {
           "verdict": "drop",
           "title": "Festival returns to celebrate the best of the borough's businesses",
@@ -224,16 +201,22 @@
           "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: corrected section routing before translation (section_routing:it_content). | Validator: soft civic/award/awareness item has no practical reader value for the morning issue."
         },
         {
-          "verdict": "reserve",
+          "verdict": "drop",
           "title": "Introducing The Inside Track: A new way to get more from your Manchester Digital membership | Manchester Digital",
           "source_label": "Manchester Digital",
-          "reason": "Board rejected: pure_pr"
+          "reason": "Curator drop: Чистый PR без новостного повода."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Prolific North",
+          "source_label": "Prolific North Manchester",
+          "reason": "Board rejected: pr_marketing"
         },
         {
           "verdict": "drop",
-          "title": "Umbro takes cues from social feeds in website overhaul by Manchester's Absurd",
+          "title": "Prolific North",
           "source_label": "Prolific North Manchester",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: tech/business PR (anniversary/award/campaign) with no concrete business action — jobs, investment, opening/closure, or contract."
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         },
         {
           "verdict": "drop",
@@ -257,11 +240,11 @@
     },
     "weekend_activities": {
       "heading": "Выходные в GM",
-      "total": 175,
-      "selected": 7,
-      "reserve": 24,
-      "needs_enrichment": 0,
-      "drop": 144,
+      "total": 203,
+      "selected": 13,
+      "reserve": 26,
+      "needs_enrichment": 1,
+      "drop": 163,
       "examples": [
         {
           "verdict": "drop",
@@ -313,83 +296,19 @@
         }
       ]
     },
-    "future_announcements": {
-      "heading": "Дальние анонсы",
-      "total": 66,
-      "selected": 43,
-      "reserve": 20,
-      "needs_enrichment": 0,
-      "drop": 3,
-      "examples": [
-        {
-          "verdict": "drop",
-          "title": "Wellness Wednesdays",
-          "source_label": "MediaCity What's On",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Demoted from weekend_activities to future_announcements: recurring event's next weekend occurrence is 4 days out. | Validator: event-like candidate has no concrete upcoming date."
-        },
-        {
-          "verdict": "drop",
-          "title": "Ocean Colour Scene - Venue Premium Tickets — event 2026-11-28 — public sale 2025-10-17 10:00",
-          "source_label": "Ticketmaster Manchester Onsale",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Wet Wet Wet - Celebrating 40 Years of 'Popped In Souled Out' — event 2027-10-18 — public sale 2026-04-17 10:00",
-          "source_label": "Ticketmaster Liverpool Onsale",
-          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: public_onsale opened 220 day(s) ago; moved out of ticket_radar. | Validator: celebrity-sighting card has no news angle (no crime/civic verb, no fresh date, no money/casualty, no GM borough)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "The SK Lowdown",
-          "source_label": "SK Lowdown Markets",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "London's longest-running production of A Christmas Carol heads to Lowry this December",
-          "source_label": "Manchester Wire",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Kitty Yoga Manchester",
-          "source_label": "DesignMyNight Manchester",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Electric Shuffle Manchester Brunch",
-          "source_label": "DesignMyNight Bank Holiday",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        },
-        {
-          "verdict": "reserve",
-          "title": "The Manchester Craft Beer Experience",
-          "source_label": "DesignMyNight Bank Holiday",
-          "reason": "Outside DeepSeek ranking board (soft max 90)."
-        }
-      ]
-    },
     "ticket_radar": {
       "heading": "Билеты / Ticket Radar",
-      "total": 94,
-      "selected": 78,
+      "total": 93,
+      "selected": 76,
       "reserve": 1,
       "needs_enrichment": 0,
-      "drop": 15,
+      "drop": 16,
       "examples": [
         {
           "verdict": "drop",
           "title": "Blossoms Plus Support From The Royston Club Sat 28 Nov 2026 - Fri 11 Dec 2026",
           "source_label": "Co-op Live",
           "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "drop",
-          "title": "Interpol & Bloc Party Co-Headline Tour — event 2026-11-24 — public sale 2025-11-07 09:00",
-          "source_label": "Ticketmaster Manchester Upcoming",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         },
         {
           "verdict": "drop",
@@ -417,6 +336,12 @@
         },
         {
           "verdict": "drop",
+          "title": "The Smyths — event 2026-11-28 — public sale 2026-01-30 10:00",
+          "source_label": "Ticketmaster Manchester Upcoming",
+          "reason": "Cheap pre-enrich duplicate remains suppressed after history checks."
+        },
+        {
+          "verdict": "drop",
           "title": "Esther Yang violin",
           "source_label": "Bridgewater Hall",
           "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: event quality gate failed (date, district, price_or_free_or_booking)."
@@ -429,25 +354,77 @@
         }
       ]
     },
+    "future_announcements": {
+      "heading": "Дальние анонсы",
+      "total": 55,
+      "selected": 40,
+      "reserve": 13,
+      "needs_enrichment": 0,
+      "drop": 2,
+      "examples": [
+        {
+          "verdict": "drop",
+          "title": "Ocean Colour Scene - Venue Premium Tickets — event 2026-11-28 — public sale 2025-10-17 10:00",
+          "source_label": "Ticketmaster Manchester Onsale",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Wet Wet Wet - Celebrating 40 Years of 'Popped In Souled Out' — event 2027-10-18 — public sale 2026-04-17 10:00",
+          "source_label": "Ticketmaster Liverpool Onsale",
+          "reason": "Dedupe: live item has no exact/history repeat; accepted for editorial selection. | Validator: public_onsale opened 221 day(s) ago; moved out of ticket_radar. | Validator: celebrity-sighting card has no news angle (no crime/civic verb, no fresh date, no money/casualty, no GM borough)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "The SK Lowdown",
+          "source_label": "SK Lowdown Markets",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Everything to know ahead of this year's Manchester Christmas Parade",
+          "source_label": "Manchester Wire",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "London's longest-running production of A Christmas Carol heads to Lowry this December",
+          "source_label": "Manchester Wire",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Burlesque Bottomless Brunch",
+          "source_label": "DesignMyNight Bank Holiday",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "AllDay Musicals - Sat 5th Dec Freight Island - Manchester",
+          "source_label": "Skiddle Manchester Festivals",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Motherland Drag Fest",
+          "source_label": "Skiddle Manchester Festivals",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        }
+      ]
+    },
     "outside_gm_tickets": {
       "heading": "Крупные концерты вне GM",
-      "total": 780,
-      "selected": 477,
+      "total": 779,
+      "selected": 472,
       "reserve": 0,
       "needs_enrichment": 0,
-      "drop": 303,
+      "drop": 307,
       "examples": [
         {
           "verdict": "drop",
           "title": "The Holiday: The Film with Live orchestra — event 2026-11-30 — public sale 2026-03-27 10:00",
           "source_label": "Ticketmaster Liverpool Onsale",
           "reason": "Non-music ticket (film) removed from the music ticket radar."
-        },
-        {
-          "verdict": "drop",
-          "title": "Little Angels Big Bad and Back Tour — event 2026-11-24 — public sale 2026-02-13 09:00",
-          "source_label": "Ticketmaster Liverpool Upcoming",
-          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
         },
         {
           "verdict": "drop",
@@ -484,14 +461,20 @@
           "title": "Electric Six — event 2026-12-03 — public sale 2026-02-27 10:00",
           "source_label": "Ticketmaster Liverpool Upcoming",
           "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Shed Seven — event 2026-12-04 — public sale 2026-04-24 10:00",
+          "source_label": "Ticketmaster Liverpool Upcoming",
+          "reason": "Cheap pre-enrich duplicate remains suppressed after history checks."
         }
       ]
     },
     "openings": {
       "heading": "Еда, открытия и рынки",
-      "total": 9,
+      "total": 10,
       "selected": 3,
-      "reserve": 5,
+      "reserve": 6,
       "needs_enrichment": 0,
       "drop": 1,
       "examples": [
@@ -509,20 +492,26 @@
         },
         {
           "verdict": "reserve",
-          "title": "Andrew Sheridan's Counter is now open in Manchester's City Centre | About Manchester",
+          "title": "Andrew Sheridan's Counter is now open in Manchester's City Centre",
           "source_label": "About Manchester Food & Drink",
           "reason": "Held as same-block backup for recovery."
         },
         {
           "verdict": "reserve",
-          "title": "St Michael's to welcome Pasture Restaurant Group to Manchester | About Manchester",
+          "title": "St Michael's to welcome Pasture Restaurant Group to Manchester",
           "source_label": "About Manchester Food & Drink",
           "reason": "Held as same-block backup for recovery."
         },
         {
           "verdict": "reserve",
-          "title": "Christmas arrives at Chorlton's Horse and Jockey | About Manchester",
+          "title": "Market Place Bolton invites you to ‘A Day of Christmas Magic' | About Manchester",
           "source_label": "About Manchester Food & Drink",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Cult Manchester breakfast brand Eggslut to open for dine-in on Christmas Day",
+          "source_label": "The Manc Eats",
           "reason": "Held as same-block backup for recovery."
         },
         {
@@ -535,59 +524,59 @@
     },
     "football": {
       "heading": "Футбол",
-      "total": 29,
-      "selected": 6,
+      "total": 31,
+      "selected": 2,
       "reserve": 13,
       "needs_enrichment": 0,
-      "drop": 10,
+      "drop": 16,
       "examples": [
         {
-          "verdict": "drop",
-          "title": "Liverpool 4-0 Man Utd | Extended Action",
+          "verdict": "reserve",
+          "title": "LIVE TRAINING | United Prepare for Sporting Showdown | UEFA Champions League",
           "source_label": "Manchester United",
+          "reason": "Outside pre-rewrite shortlist for football."
+        },
+        {
+          "verdict": "drop",
+          "title": "Cherki calls for more following Napoli draw",
+          "source_label": "Manchester City Men",
+          "reason": "Cheap pre-enrich duplicate — same URL/title kept from stronger source."
+        },
+        {
+          "verdict": "reserve",
+          "title": "Man United news LIVE: Mauricio Pochettino already 'protesting' as Glazers admit to mistake",
+          "source_label": "MEN Manchester United",
+          "reason": "Outside DeepSeek ranking board (soft max 90)."
+        },
+        {
+          "verdict": "drop",
+          "title": "Man United presented with transfer swap opportunity as Mauricio Pochettino 'causes concern'",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Champions League trip has exposed brutal new Manchester United reality",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "5 Man United rule changes Mauricio Pochettino has made from Michael Carrick reign and why",
+          "source_label": "MEN Manchester United",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
+        },
+        {
+          "verdict": "drop",
+          "title": "Michael Carrick linked with second job after Man United exit as manager receives firm offer",
+          "source_label": "MEN Manchester United",
           "reason": "Curator drop: Чистый PR без новостного повода."
         },
         {
           "verdict": "drop",
-          "title": "Manchester United should have one final demand to make of Bruno Fernandes",
+          "title": "How Manchester United should line up vs Sporting Lisbon in Champions League fixture",
           "source_label": "MEN Manchester United",
           "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Man United latest: Brazilian striker issues come-and-get-me plea as Pochettino gets his wish",
-          "source_label": "MEN Manchester United",
-          "reason": "Outside pre-rewrite shortlist for football."
-        },
-        {
-          "verdict": "drop",
-          "title": "Manchester United outcast deserves his first start of the season",
-          "source_label": "MEN Manchester United",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Manchester United's board slammed for a decision that has 'blown up'",
-          "source_label": "MEN Manchester United",
-          "reason": "Outside pre-rewrite shortlist for football."
-        },
-        {
-          "verdict": "drop",
-          "title": "Man United news: Pochettino 'strikes agreement with board' as exciting stadium announcement made",
-          "source_label": "MEN Manchester United",
-          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
-        },
-        {
-          "verdict": "reserve",
-          "title": "JJ Gabriel set for immediate Real Madrid setback as ex-Man United wonderkid put in his place",
-          "source_label": "MEN Manchester United",
-          "reason": "Outside pre-rewrite shortlist for football."
-        },
-        {
-          "verdict": "reserve",
-          "title": "Man City need a change after hitting reset but Champions League can keep Enzo Maresca safe",
-          "source_label": "MEN Manchester City",
-          "reason": "Outside pre-rewrite shortlist for football."
         }
       ]
     },
@@ -622,9 +611,9 @@
         },
         {
           "verdict": "drop",
-          "title": "#manufacturing & engineering Developing the Skills to Power Advanced Manufacturing Wednesday 25 Nov 10am - 12pm",
-          "source_label": "GM Chamber Events",
-          "reason": "Semantic dedup: near-duplicate of event-ev"
+          "title": "DigitalHER InspireHER Breakfast | AJ Bell | Manchester Digital",
+          "source_label": "Manchester Digital Events",
+          "reason": "Intra-batch topic duplicate — same story kept from stronger source."
         }
       ]
     }
