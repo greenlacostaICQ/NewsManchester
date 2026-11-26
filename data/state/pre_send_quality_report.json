@@ -1,128 +1,128 @@
 {
-  "status": "ok",
+  "status": "partial",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair left 1 known factual operation(s) unresolved; delivery continues as degraded",
+  "reason": "pre-send repair executor applied 3 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-11-25",
-  "pipeline_run_id": "20261125T080206+0000",
-  "digest_sha256": "da637b73b0cedfcdb6878408be61c42790323da5a13510e4d2c1e9e427c9b16e",
-  "duration_seconds": 65.665,
+  "run_date_london": "2026-11-26",
+  "pipeline_run_id": "20261126T080156+0000",
+  "digest_sha256": "b8940885f9a4583e1cbc05523efc08fb4fe1298c4231d9933aa347739e079ea8",
+  "duration_seconds": 97.68,
   "confidence": 0.9,
   "critical_errors": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "problem": "Дата суда указана как 29 сентября 2028 года, что противоречит текущей дате выпуска.",
-      "risk": "date",
+      "line_index": 5,
+      "section": "Свежие новости",
+      "problem": "Текст неясно указывает на статус дела и количество обвиняемых.",
+      "risk": "sensitive",
       "suggested_action": "repair"
     },
     {
-      "line_index": 7,
-      "section": "Свежие новости",
-      "problem": "Дублирование информации о Джейми из Bury и Манчестера.",
-      "risk": "factual",
-      "suggested_action": "strip"
-    },
-    {
-      "line_index": 15,
+      "line_index": 19,
       "section": "Общественный транспорт сегодня",
-      "problem": "Дата события в прошлом, не актуально для сегодняшнего выпуска.",
+      "problem": "Дата закрытия трамвайных линий указана как 2026 год, что не соответствует текущей дате выпуска.",
       "risk": "date",
       "suggested_action": "strip"
     },
     {
-      "line_index": 16,
+      "line_index": 22,
       "section": "Футбол",
-      "problem": "Неверное указание команды, открывшей счёт.",
+      "problem": "Неверное указание роли Маурисио Почеттино.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 18,
-      "section": "Городской радар",
-      "problem": "Неверное утверждение о связи вещества с кражами.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 29,
-      "section": "Дальние анонсы",
-      "problem": "Отсутствует ссылка на покупку билетов, что нарушает требования блока.",
-      "risk": "product",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 7,
-      "section": "Свежие новости",
-      "problem": "Дублирование информации о Джейми из Bury.",
-      "risk": "format",
+      "line_index": 31,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно. Указана дата 29 ноября, но в источнике указано, что событие проходит с 10 мая по 30 августа 2026 года.",
+      "risk": "date",
       "suggested_action": "strip"
+    },
+    {
+      "line_index": 33,
+      "section": "Городской радар",
+      "problem": "Неверное указание должности Энди Бернхэма.",
+      "risk": "factual",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 45,
+      "section": "Business/tech события для тебя",
+      "problem": "Название события и дата не переведены на русский язык.",
+      "risk": "translation",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 47,
+      "section": "Билеты / Ticket Radar",
+      "problem": "Указано неверное место проведения события.",
+      "risk": "factual",
+      "suggested_action": "repair"
     }
   ],
   "actions": [
     {
-      "line_index": 1,
-      "section": "Главная история дня",
-      "action": "patch",
-      "replacement_text": "• Английский защитник Джон Стоунс предстанет перед судом в будущем по обвинению в не предоставлении информации о водителе полиции. Он отвергает обвинения и утверждает, что не получил запрос от полиции. Стоунс, который этим летом подписал контракт с Интером, ранее уже был осужден за превышение скорости и получил штраф в размере £1,052.",
-      "reason": "Дата суда указана как 2028 год, что не соответствует текущей дате выпуска.",
-      "risk": "date"
-    },
-    {
-      "line_index": 7,
+      "line_index": 5,
       "section": "Свежие новости",
-      "action": "strip",
-      "reason": "Дублирование информации о Джейми из Bury и Манчестера.",
-      "risk": "factual",
-      "replacement_text": ""
+      "action": "patch",
+      "replacement_text": "• Женщина из Стокпорта рассказала полиции, что не может поверить, что её муж на протяжении 20 лет подсыпал ей наркотики и насиловал. Девять мужчин, включая её мужа, находятся под судом за сексуальные преступления, 25 ноября 2026 года.",
+      "reason": "Уточнение, что девять мужчин, включая её мужа, находятся под судом.",
+      "risk": "sensitive"
     },
     {
-      "line_index": 15,
+      "line_index": 19,
       "section": "Общественный транспорт сегодня",
       "action": "strip",
-      "reason": "Событие завершилось 1 ноября 2026 года, не актуально для текущего выпуска.",
+      "reason": "Дата события указана как 2026 год, что не соответствует текущей дате выпуска.",
       "risk": "date",
       "replacement_text": ""
     },
     {
-      "line_index": 16,
+      "line_index": 22,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• 24 ноября 2026 года команда Манчестер Сити сыграла вничью с Наполи. Аийюб Буауди забил свой первый гол в профессиональной карьере, сравняв счёт после того, как Расмус Хёйлунд открыл счёт за Наполи. Игрок матча Шерки отметил, что команде необходимо больше работать для достижения побед.",
-      "reason": "Исправление фактической ошибки в описании матча.",
+      "replacement_text": "• Маурисио Почеттино, тренер Челси, призвал игроков Манчестер Юнайтед поддержать вратаря Сенне Ламменса после его ошибок в матче со Спортингом.",
+      "reason": "Маурисио Почеттино является тренером Челси, а не Манчестер Юнайтед.",
       "risk": "factual"
     },
     {
-      "line_index": 18,
+      "line_index": 31,
+      "section": "Выходные в GM",
+      "action": "strip",
+      "reason": "Дата события не соответствует информации из источника.",
+      "risk": "date",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 33,
       "section": "Городской радар",
       "action": "patch",
-      "replacement_text": "• На концерте Дон Толивера в Co-op Live в Манчестере произошла массовая эвакуация из-за неизвестного вещества. Полиция расследует возможную связь с кражами ювелирных изделий.",
-      "reason": "Утверждение о связи вещества с кражами должно быть представлено как расследуемая возможность, а не как факт.",
+      "replacement_text": "• Мэр Манчестера Энди Бернхэм предложил поддержку сотрудникам Poundland в Makerfield после объявления о банкротстве, призвав пострадавших работников обратиться в его офис.",
+      "reason": "Неверное указание должности Энди Бернхэма как премьер-министра.",
       "risk": "factual"
     },
     {
-      "line_index": 29,
-      "section": "Дальние анонсы",
+      "line_index": 45,
+      "section": "Business/tech события для тебя",
       "action": "patch",
-      "replacement_text": "• Dominum — 8 декабря, O2 Ritz Manchester. Билеты и время указаны на официальной странице. [Купить билеты](https://www.ticketmaster.co.uk/dominum-the-night-is-calling-tour-manchester-08-12-2026/event/3E00645BB3B35788)",
-      "reason": "Добавление ссылки на покупку билетов для соответствия требованиям блока.",
-      "risk": "product"
+      "replacement_text": "• Конференция по цифровой экономике Великобритании 2026, четверг, 26 ноября, 9:30 - 17:00 — 26 ноября, Манчестер. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; плотный нетворк большой конференции или экспо. Действие: зарегистрируйтесь.",
+      "reason": "Название события и дата должны быть переведены на русский язык для лучшего понимания.",
+      "risk": "translation"
     },
     {
-      "line_index": 7,
-      "section": "Свежие новости",
-      "action": "strip",
-      "reason": "Дублирование информации о Джейми из Bury.",
-      "risk": "format",
-      "replacement_text": ""
+      "line_index": 47,
+      "section": "Билеты / Ticket Radar",
+      "action": "patch",
+      "replacement_text": "• Swae Lee — 29 ноября, Manchester Academy. Билеты и время указаны на официальной странице.",
+      "reason": "Событие перенесено в Manchester Academy.",
+      "risk": "factual"
     }
   ],
   "warnings": [
-    "Отсутствует блок 'Что важно сегодня', что снижает полноту выпуска."
+    "judge reduce failed: parse_failed no parseable JSON"
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -131,32 +131,34 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 4,
+      "Общественный транспорт сегодня": 8,
+      "Что важно сегодня": 2,
       "Футбол": 2,
-      "Городской радар": 9,
-      "Еда, открытия и рынки": 1,
+      "Выходные в GM": 6,
+      "Городской радар": 8,
+      "IT и бизнес": 5,
       "Business/tech события для тебя": 1,
-      "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 6,
+      "Билеты / Ticket Radar": 11,
       "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 0,
+      "Что важно сегодня": 2,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 9,
-      "Билеты / Ticket Radar": 6,
+      "Городской радар": 8,
+      "Выходные в GM": 6,
+      "Билеты / Ticket Radar": 11,
       "Русскоязычные концерты и стендап UK": 1,
-      "Еда, открытия и рынки": 1,
+      "Еда, открытия и рынки": 0,
       "Business/tech события для тебя": 1,
       "Футбол": 2
     },
-    "ticket_items": 7,
-    "core_items": 24,
+    "ticket_items": 12,
+    "core_items": 30,
     "writer_quality_counts": {
-      "included_candidates": 36,
-      "rendered_candidates": 36,
+      "included_candidates": 55,
+      "rendered_candidates": 55,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
@@ -167,47 +169,45 @@
       "removed_with_reason": 0
     },
     "source_health_counts": {
-      "ok": 109,
+      "ok": 105,
       "partial": 2,
-      "stale": 3,
+      "stale": 8,
       "empty": 12,
-      "failed": 4,
-      "zero_yield": 82,
+      "failed": 5,
+      "zero_yield": 72,
       "no_contribution_breakdown": {
-        "fetch_failed": 4,
-        "all_rejected": 82,
-        "idle_no_items": 23
+        "fetch_failed": 5,
+        "all_rejected": 72,
+        "idle_no_items": 24
       },
       "zero_contribution_by_stage": {
-        "written": 49,
-        "selected": 33,
-        "parsed": 23,
-        "fetched": 4
+        "written": 40,
+        "selected": 32,
+        "parsed": 24,
+        "fetched": 5
       },
-      "weekend_source_coverage_incidents": 61
+      "weekend_source_coverage_incidents": 55
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 0 item(s), emergency floor 3",
-      "Еда, открытия и рынки: 1 item(s), emergency floor 3",
-      "source failures: 4"
+      "Что важно сегодня: 2 item(s), emergency floor 3",
+      "Еда, открытия и рынки: 0 item(s), emergency floor 3",
+      "source failures: 5"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
     "warnings": [
-      "patch for line 1 has unchecked number/date token(s): 1,052",
-      "patch for line 29 has unchecked number/date token(s): 8",
-      "multiple actions target line 7"
+      "patch for line 45 has unchecked number/date token(s): 17:00, 9:30"
     ],
     "can_apply_actions": true,
     "action_count": 7
   },
   "translation_completeness": {
     "version": "v1",
-    "checked_lines": 36,
-    "matched_lines": 36,
-    "applicable_lines": 3,
-    "unmatched_lines": 0,
+    "checked_lines": 55,
+    "matched_lines": 55,
+    "applicable_lines": 4,
+    "unmatched_lines": 2,
     "critical_omission_count": 0,
     "critical_omissions": [],
     "noncritical_omissions": [],
@@ -220,18 +220,18 @@
     "dry_run": false,
     "fact_lock_version": "v1",
     "requested": 7,
-    "attempted": 5,
-    "applied": 5,
-    "model_patch_applied": 2,
+    "attempted": 3,
+    "applied": 3,
+    "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
     "reserve_replacement_used": 1,
-    "stripped": 2,
-    "unresolved": 1,
-    "blocking_unresolved": 1,
-    "resolved": 6,
-    "resolved_in_place": 4,
-    "resolved_by_replacement": 0,
-    "resolved_by_removal": 2,
+    "stripped": 1,
+    "unresolved": 0,
+    "blocking_unresolved": 0,
+    "resolved": 7,
+    "resolved_in_place": 5,
+    "resolved_by_replacement": 1,
+    "resolved_by_removal": 1,
     "fact_lock_rejected": 0,
     "enrich_attempted": 7,
     "post_check_errors": [],
@@ -239,158 +239,158 @@
     "source_link_metadata_rejected": [],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
+        "line_index": 5,
+        "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Дата суда указана как 2028 год, что не соответствует текущей дате выпуска.",
-        "risk": "date",
+        "reason": "Уточнение, что девять мужчин, включая её мужа, находятся под судом.",
+        "risk": "sensitive",
         "critical_error": true,
-        "critical_problem": "Дата суда указана как 29 сентября 2028 года, что противоречит текущей дате выпуска.",
+        "critical_problem": "Текст неясно указывает на статус дела и количество обвиняемых.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "lead",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cqkgm5djjgxro-1e3c34a46b42",
-        "original_url_identity": "bbc.com/news/articles/cqkgm5djjgxro",
-        "original_html": "<b>Английский защитник Джон Стоунс предстанет перед судом 29 сентября 2028 года в Уоррингтоне по обвинению в не предоставлении информации о водителе полиции.</b> Он отвергает обвинения и утверждает, что не получил запрос от полиции. Стоунс, который этим летом подписал контракт с Интером, ранее уже был осужден за превышение скорости и получил штраф в размере £1,052. <a href=\"https://bbc.co.uk/news/articles/cqkgm5djjgxro\">BBC Manchester</a>",
+        "plan_slot_id": "last_24h-03",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-stockport-wife-drugged-raped-husband-34963476-5f9e0740f22e",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/stockport-wife-drugged-raped-husband-34963476",
+        "original_html": "• Женщина из Стокпорта рассказала полиции, что не может поверить, что её муж на протяжении 20 лет подсыпал ей наркотики и насиловал; девять мужчин находятся под судом за сексуальные преступления, 25 ноября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/stockport-wife-drugged-raped-husband-34963476\">MEN</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 7,
-        "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о Джейми из Bury и Манчестера.",
-        "risk": "factual",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "unresolved",
-        "method": "reserve_replacement",
-        "plan_slot_id": "last_24h-05",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-family-manchester-boy-who-fell-34961707-c37351eca781",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/family-manchester-boy-who-fell-34961707",
-        "original_html": "• Семья 17-летнего Джейми из Манчестера, который упал с балкона шестого этажа отеля в Бенидорме 10 ноября, сообщила, что он открыл глаза спустя две недели после инцидента. Джейми был госпитализирован с серьезными травмами, включая переломы и повреждение легкого, и сейчас его семья собирает средства на возвращение его в Великобританию. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/family-manchester-boy-who-fell-34961707\">MEN</a>",
-        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m61-traffic-live-serious-crash-34961411-e93285aae398",
-        "post_check_passed": false
-      },
-      {
-        "line_index": 15,
+        "line_index": 19,
         "section": "Общественный транспорт сегодня",
         "requested_action": "strip",
-        "reason": "Событие завершилось 1 ноября 2026 года, не актуально для текущего выпуска.",
+        "reason": "Дата события указана как 2026 год, что не соответствует текущей дате выпуска.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события в прошлом, не актуально для сегодняшнего выпуска.",
+        "critical_problem": "Дата закрытия трамвайных линий указана как 2026 год, что не соответствует текущей дате выпуска.",
         "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "transport-04",
+        "plan_slot_id": "transport-08",
         "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
         "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-        "original_html": "• Metrolink: линии трамваев в Манчестере (Altrincham, Trafford Centre, Eccles) будут полностью закрыты на две недели с 19 октября по 1 ноября 2026 года для проведения инженерных работ. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
+        "original_html": "• Metrolink: трамвайные линии в Манчестере (Алтринчем, Trafford Центр и Eccles) будут полностью закрыты с 19 октября по 1 ноября 2026 года для замены рельсов. Пассажирам рекомендуется планировать альтернативные маршруты. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 16,
+        "line_index": 22,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Исправление фактической ошибки в описании матча.",
+        "reason": "Маурисио Почеттино является тренером Челси, а не Манчестер Юнайтед.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неверное указание команды, открывшей счёт.",
+        "critical_problem": "Неверное указание роли Маурисио Почеттино.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
         "plan_slot_id": "football-01",
-        "candidate_fingerprint": "url-mancity-com-news-mens-cherki-post-napoli-ucl-reaction-24th-63931130-a57568e9f2e8",
-        "original_url_identity": "mancity.com/news/mens/cherki-post-napoli-ucl-reaction-24th-63931130",
-        "original_html": "• 24 ноября 2026 года команда Манчестер Сити сыграла вничью с Наполи. Расмус Хёйлунд открыл счёт, а Аийюб Буауди забил свой первый гол в профессиональной карьере. Игрок матча Шерки отметил, что команде необходимо больше работать для достижения побед. <a href=\"https://mancity.com/news/mens/cherki-post-napoli-ucl-reaction-24th-63931130\">Manchester City</a>",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-mauricio-pochettino-calls-manchester-united-34967489-97cf0da9ce34",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/mauricio-pochettino-calls-manchester-united-34967489",
+        "original_html": "• Маурисио Почеттино призвал игроков Манчестер Юнайтед поддержать вратаря Сенне Ламменса после его ошибок в матче со Спортингом. <a href=\"https://manchestereveningnews.co.uk/sport/football/mauricio-pochettino-calls-manchester-united-34967489\">MEN Manchester United</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 18,
+        "line_index": 31,
+        "section": "Выходные в GM",
+        "requested_action": "strip",
+        "reason": "Дата события не соответствует информации из источника.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно. Указана дата 29 ноября, но в источнике указано, что событие проходит с 10 мая по 30 августа 2026 года.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "weekend_activities-04",
+        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2027-05-10-burnage-rfc-9a3e9cdf54f4",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+        "original_html": "• 29 ноября — автомобильная барахолка Burnage RFC. Вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+        "replacement_fingerprint": "event-event-far-from-the-norm-sing-child-sing-2026-11-27-lowry-cfb4b4ac6bac",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 33,
         "section": "Городской радар",
         "requested_action": "patch",
-        "reason": "Утверждение о связи вещества с кражами должно быть представлено как расследуемая возможность, а не как факт.",
+        "reason": "Неверное указание должности Энди Бернхэма как премьер-министра.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Неверное утверждение о связи вещества с кражами.",
+        "critical_problem": "Неверное указание должности Энди Бернхэма.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-cqrmgvnzwrm3o-d174525a92b9",
-        "original_url_identity": "bbc.com/news/articles/cqrmgvnzwrm3o",
-        "original_html": "• На концерте Дон Толивера в Co-op Live в Манчестере произошла массовая эвакуация из-за неизвестного вещества, которое может быть связано с девятью кражами ювелирных изделий. <a href=\"https://bbc.co.uk/news/articles/cqrmgvnzwrm3o\">BBC Manchester</a>",
+        "plan_slot_id": "city_watch-02",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-prime-minister-andy-burnham-offers-34967223-89d801723848",
+        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/prime-minister-andy-burnham-offers-34967223",
+        "original_html": "• Мэр Манчестера Энди Бернхэм предложил поддержку сотрудникам Poundland в Makerfield после объявления о банкротстве, призвав пострадавших работников обратиться в его офис. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/prime-minister-andy-burnham-offers-34967223\">MEN</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 29,
-        "section": "Дальние анонсы",
+        "line_index": 45,
+        "section": "Business/tech события для тебя",
         "requested_action": "patch",
-        "reason": "Добавление ссылки на покупку билетов для соответствия требованиям блока.",
-        "risk": "product",
+        "reason": "Название события и дата должны быть переведены на русский язык для лучшего понимания.",
+        "risk": "translation",
         "critical_error": true,
-        "critical_problem": "Отсутствует ссылка на покупку билетов, что нарушает требования блока.",
+        "critical_problem": "Название события и дата не переведены на русский язык.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "future_announcements-01",
-        "candidate_fingerprint": "event-event-dominum-the-night-is-calling-tour-2026-12-08-o2-ritz-manchester-0e4d46fedcea",
-        "original_url_identity": "ticketmaster.co.uk/dominum-the-night-is-calling-tour-manchester-08-12-2026/event/3E00645BB3B35788",
-        "original_html": "• <b>Dominum</b> — 8 декабря, O2 Ritz Manchester. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/dominum-the-night-is-calling-tour-manchester-08-12-2026/event/3E00645BB3B35788\">Ticketmaster</a>",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "professional_events-01",
+        "candidate_fingerprint": "event-event-technology-uk-digital-economy-conference-2026-thursday-26-nov-9-30am-5pm-2026-11-26-manchester-0eb16a181bd3",
+        "original_url_identity": "gmchamber.co.uk/events/uk-digital-economy-conference-2026",
+        "original_html": "• technology UK Digital Economy Conference 2026 Thursday 26 Nov 9:30am - 5pm — 26 ноября, Manchester. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; плотный нетворк большой конференции или экспо. Действие: зарегистрируйтесь. <a href=\"https://gmchamber.co.uk/events/uk-digital-economy-conference-2026\">GM Chamber Events</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 7,
-        "section": "Свежие новости",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о Джейми из Bury.",
-        "risk": "format",
+        "line_index": 47,
+        "section": "Билеты / Ticket Radar",
+        "requested_action": "patch",
+        "reason": "Событие перенесено в Manchester Academy.",
+        "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дублирование информации о Джейми из Bury и Манчестера.",
+        "critical_problem": "Указано неверное место проведения события.",
         "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "last_24h-05",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-family-manchester-boy-who-fell-34961707-c37351eca781",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/family-manchester-boy-who-fell-34961707",
-        "original_html": "• Семья 17-летнего Джейми из Манчестера, который упал с балкона шестого этажа отеля в Бенидорме 10 ноября, сообщила, что он открыл глаза спустя две недели после инцидента. Джейми был госпитализирован с серьезными травмами, включая переломы и повреждение легкого, и сейчас его семья собирает средства на возвращение его в Великобританию. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/family-manchester-boy-who-fell-34961707\">MEN</a>",
-        "backup_outcome": "backup_chain_exhausted",
-        "removal_reason": "duplicate_after_plan",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "ticket_radar-02",
+        "candidate_fingerprint": "event-event-swae-lee-event-moved-to-manchester-academy-2026-11-29-o2-ritz-manchester-4cd11f828804",
+        "original_url_identity": "ticketmaster.co.uk/swae-lee-event-moved-to-manchester-manchester-29-11-2026/event/3E0065390F2C7E1F",
+        "original_html": "• <b>Swae Lee</b> — 29 ноября, O2 Ritz Manchester. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/swae-lee-event-moved-to-manchester-manchester-29-11-2026/event/3E0065390F2C7E1F\">Ticketmaster</a>",
+        "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       }
     ],
     "operations": [
       {
-        "group_key": "главная история дня::дата суда указана как 2028 год, что не соответствует текущей дате выпуска.",
+        "group_key": "свежие новости::уточнение, что девять мужчин, включая её мужа, находятся под судом.",
         "actions": [
           {
-            "line_index": 1,
-            "section": "Главная история дня",
+            "line_index": 5,
+            "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Дата суда указана как 2028 год, что не соответствует текущей дате выпуска.",
-            "risk": "date",
+            "reason": "Уточнение, что девять мужчин, включая её мужа, находятся под судом.",
+            "risk": "sensitive",
             "critical_error": true,
-            "critical_problem": "Дата суда указана как 29 сентября 2028 года, что противоречит текущей дате выпуска.",
+            "critical_problem": "Текст неясно указывает на статус дела и количество обвиняемых.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "lead",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cqkgm5djjgxro-1e3c34a46b42",
-            "original_url_identity": "bbc.com/news/articles/cqkgm5djjgxro",
-            "original_html": "<b>Английский защитник Джон Стоунс предстанет перед судом 29 сентября 2028 года в Уоррингтоне по обвинению в не предоставлении информации о водителе полиции.</b> Он отвергает обвинения и утверждает, что не получил запрос от полиции. Стоунс, который этим летом подписал контракт с Интером, ранее уже был осужден за превышение скорости и получил штраф в размере £1,052. <a href=\"https://bbc.co.uk/news/articles/cqkgm5djjgxro\">BBC Manchester</a>",
+            "plan_slot_id": "last_24h-03",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-stockport-wife-drugged-raped-husband-34963476-5f9e0740f22e",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/stockport-wife-drugged-raped-husband-34963476",
+            "original_html": "• Женщина из Стокпорта рассказала полиции, что не может поверить, что её муж на протяжении 20 лет подсыпал ей наркотики и насиловал; девять мужчин находятся под судом за сексуальные преступления, 25 ноября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/stockport-wife-drugged-raped-husband-34963476\">MEN</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 1,
+            "line_index": 5,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -398,61 +398,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::дублирование информации о джейми из bury и манчестера",
+        "group_key": "общественный транспорт сегодня::дата события указана как 2026 год, что не соответствует текущей дате выпуска.",
         "actions": [
           {
-            "line_index": 7,
-            "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о Джейми из Bury и Манчестера.",
-            "risk": "factual",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "unresolved",
-            "method": "reserve_replacement",
-            "plan_slot_id": "last_24h-05",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-family-manchester-boy-who-fell-34961707-c37351eca781",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/family-manchester-boy-who-fell-34961707",
-            "original_html": "• Семья 17-летнего Джейми из Манчестера, который упал с балкона шестого этажа отеля в Бенидорме 10 ноября, сообщила, что он открыл глаза спустя две недели после инцидента. Джейми был госпитализирован с серьезными травмами, включая переломы и повреждение легкого, и сейчас его семья собирает средства на возвращение его в Великобританию. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/family-manchester-boy-who-fell-34961707\">MEN</a>",
-            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-m61-traffic-live-serious-crash-34961411-e93285aae398",
-            "post_check_passed": false
-          }
-        ],
-        "outcome": "unresolved",
-        "post_checks": [
-          {
-            "line_index": 7,
-            "passed": false,
-            "detail": "final line missing"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "topic:planning:manchester family of manchester boy who fell 60ft from benidorm balcony issue update from his bedside|new story|2026 11 25",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "общественный транспорт сегодня::событие завершилось 1 ноября 2026 года, не актуально для текущего выпуска.",
-        "actions": [
-          {
-            "line_index": 15,
+            "line_index": 19,
             "section": "Общественный транспорт сегодня",
             "requested_action": "strip",
-            "reason": "Событие завершилось 1 ноября 2026 года, не актуально для текущего выпуска.",
+            "reason": "Дата события указана как 2026 год, что не соответствует текущей дате выпуска.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата события в прошлом, не актуально для сегодняшнего выпуска.",
+            "critical_problem": "Дата закрытия трамвайных линий указана как 2026 год, что не соответствует текущей дате выпуска.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "transport-04",
+            "plan_slot_id": "transport-08",
             "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
             "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
-            "original_html": "• Metrolink: линии трамваев в Манчестере (Altrincham, Trafford Centre, Eccles) будут полностью закрыты на две недели с 19 октября по 1 ноября 2026 года для проведения инженерных работ. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
+            "original_html": "• Metrolink: трамвайные линии в Манчестере (Алтринчем, Trafford Центр и Eccles) будут полностью закрыты с 19 октября по 1 ноября 2026 года для замены рельсов. Пассажирам рекомендуется планировать альтернативные маршруты. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -461,7 +423,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 15,
+            "line_index": 19,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -469,23 +431,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "футбол::исправление фактической ошибки в описании матча.",
+        "group_key": "футбол::маурисио почеттино является тренером челси, а не манчестер юнайтед.",
         "actions": [
           {
-            "line_index": 16,
+            "line_index": 22,
             "section": "Футбол",
             "requested_action": "patch",
-            "reason": "Исправление фактической ошибки в описании матча.",
+            "reason": "Маурисио Почеттино является тренером Челси, а не Манчестер Юнайтед.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Неверное указание команды, открывшей счёт.",
+            "critical_problem": "Неверное указание роли Маурисио Почеттино.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
             "plan_slot_id": "football-01",
-            "candidate_fingerprint": "url-mancity-com-news-mens-cherki-post-napoli-ucl-reaction-24th-63931130-a57568e9f2e8",
-            "original_url_identity": "mancity.com/news/mens/cherki-post-napoli-ucl-reaction-24th-63931130",
-            "original_html": "• 24 ноября 2026 года команда Манчестер Сити сыграла вничью с Наполи. Расмус Хёйлунд открыл счёт, а Аийюб Буауди забил свой первый гол в профессиональной карьере. Игрок матча Шерки отметил, что команде необходимо больше работать для достижения побед. <a href=\"https://mancity.com/news/mens/cherki-post-napoli-ucl-reaction-24th-63931130\">Manchester City</a>",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-mauricio-pochettino-calls-manchester-united-34967489-97cf0da9ce34",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/mauricio-pochettino-calls-manchester-united-34967489",
+            "original_html": "• Маурисио Почеттино призвал игроков Манчестер Юнайтед поддержать вратаря Сенне Ламменса после его ошибок в матче со Спортингом. <a href=\"https://manchestereveningnews.co.uk/sport/football/mauricio-pochettino-calls-manchester-united-34967489\">MEN Manchester United</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -493,7 +455,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 16,
+            "line_index": 22,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -501,62 +463,31 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::утверждение о связи вещества с кражами должно быть представлено как расследуемая возможность, а не как факт.",
+        "group_key": "выходные в gm::дата события не соответствует информации из источника.",
         "actions": [
           {
-            "line_index": 18,
-            "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Утверждение о связи вещества с кражами должно быть представлено как расследуемая возможность, а не как факт.",
-            "risk": "factual",
+            "line_index": 31,
+            "section": "Выходные в GM",
+            "requested_action": "strip",
+            "reason": "Дата события не соответствует информации из источника.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Неверное утверждение о связи вещества с кражами.",
+            "critical_problem": "Дата события указана неверно. Указана дата 29 ноября, но в источнике указано, что событие проходит с 10 мая по 30 августа 2026 года.",
             "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-cqrmgvnzwrm3o-d174525a92b9",
-            "original_url_identity": "bbc.com/news/articles/cqrmgvnzwrm3o",
-            "original_html": "• На концерте Дон Толивера в Co-op Live в Манчестере произошла массовая эвакуация из-за неизвестного вещества, которое может быть связано с девятью кражами ювелирных изделий. <a href=\"https://bbc.co.uk/news/articles/cqrmgvnzwrm3o\">BBC Manchester</a>",
-            "verification": "structured fact already rendered correctly",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "weekend_activities-04",
+            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2027-05-10-burnage-rfc-9a3e9cdf54f4",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+            "original_html": "• 29 ноября — автомобильная барахолка Burnage RFC. Вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+            "replacement_fingerprint": "event-event-far-from-the-norm-sing-child-sing-2026-11-27-lowry-cfb4b4ac6bac",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "resolved_by_replacement",
         "post_checks": [
           {
-            "line_index": 18,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "дальние анонсы::добавление ссылки на покупку билетов для соответствия требованиям блока.",
-        "actions": [
-          {
-            "line_index": 29,
-            "section": "Дальние анонсы",
-            "requested_action": "patch",
-            "reason": "Добавление ссылки на покупку билетов для соответствия требованиям блока.",
-            "risk": "product",
-            "critical_error": true,
-            "critical_problem": "Отсутствует ссылка на покупку билетов, что нарушает требования блока.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "future_announcements-01",
-            "candidate_fingerprint": "event-event-dominum-the-night-is-calling-tour-2026-12-08-o2-ritz-manchester-0e4d46fedcea",
-            "original_url_identity": "ticketmaster.co.uk/dominum-the-night-is-calling-tour-manchester-08-12-2026/event/3E00645BB3B35788",
-            "original_html": "• <b>Dominum</b> — 8 декабря, O2 Ritz Manchester. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/dominum-the-night-is-calling-tour-manchester-08-12-2026/event/3E00645BB3B35788\">Ticketmaster</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 29,
+            "line_index": 31,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -564,40 +495,97 @@
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::дублирование информации о джейми из bury",
+        "group_key": "городской радар::неверное указание должности энди бернхэма как премьер-министра.",
         "actions": [
           {
-            "line_index": 7,
-            "section": "Свежие новости",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о Джейми из Bury.",
-            "risk": "format",
+            "line_index": 33,
+            "section": "Городской радар",
+            "requested_action": "patch",
+            "reason": "Неверное указание должности Энди Бернхэма как премьер-министра.",
+            "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Дублирование информации о Джейми из Bury и Манчестера.",
+            "critical_problem": "Неверное указание должности Энди Бернхэма.",
             "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "last_24h-05",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-family-manchester-boy-who-fell-34961707-c37351eca781",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/family-manchester-boy-who-fell-34961707",
-            "original_html": "• Семья 17-летнего Джейми из Манчестера, который упал с балкона шестого этажа отеля в Бенидорме 10 ноября, сообщила, что он открыл глаза спустя две недели после инцидента. Джейми был госпитализирован с серьезными травмами, включая переломы и повреждение легкого, и сейчас его семья собирает средства на возвращение его в Великобританию. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/family-manchester-boy-who-fell-34961707\">MEN</a>",
-            "backup_outcome": "backup_chain_exhausted",
-            "removal_reason": "duplicate_after_plan",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "city_watch-02",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-prime-minister-andy-burnham-offers-34967223-89d801723848",
+            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/prime-minister-andy-burnham-offers-34967223",
+            "original_html": "• Мэр Манчестера Энди Бернхэм предложил поддержку сотрудникам Poundland в Makerfield после объявления о банкротстве, призвав пострадавших работников обратиться в его офис. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/prime-minister-andy-burnham-offers-34967223\">MEN</a>",
+            "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_by_removal",
+        "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 7,
+            "line_index": 33,
             "passed": true,
-            "detail": "slot removed and source absent"
-          },
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "business/tech события для тебя::название события и дата должны быть переведены на русский язык для лучшего понимания.",
+        "actions": [
           {
-            "check": "duplicate_identity",
-            "identity": "topic:planning:manchester family of manchester boy who fell 60ft from benidorm balcony issue update from his bedside|new story|2026 11 25",
-            "visible_count": 0,
-            "passed": true
+            "line_index": 45,
+            "section": "Business/tech события для тебя",
+            "requested_action": "patch",
+            "reason": "Название события и дата должны быть переведены на русский язык для лучшего понимания.",
+            "risk": "translation",
+            "critical_error": true,
+            "critical_problem": "Название события и дата не переведены на русский язык.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "professional_events-01",
+            "candidate_fingerprint": "event-event-technology-uk-digital-economy-conference-2026-thursday-26-nov-9-30am-5pm-2026-11-26-manchester-0eb16a181bd3",
+            "original_url_identity": "gmchamber.co.uk/events/uk-digital-economy-conference-2026",
+            "original_html": "• technology UK Digital Economy Conference 2026 Thursday 26 Nov 9:30am - 5pm — 26 ноября, Manchester. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; плотный нетворк большой конференции или экспо. Действие: зарегистрируйтесь. <a href=\"https://gmchamber.co.uk/events/uk-digital-economy-conference-2026\">GM Chamber Events</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 45,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "билеты / ticket radar::событие перенесено в manchester academy.",
+        "actions": [
+          {
+            "line_index": 47,
+            "section": "Билеты / Ticket Radar",
+            "requested_action": "patch",
+            "reason": "Событие перенесено в Manchester Academy.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Указано неверное место проведения события.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "ticket_radar-02",
+            "candidate_fingerprint": "event-event-swae-lee-event-moved-to-manchester-academy-2026-11-29-o2-ritz-manchester-4cd11f828804",
+            "original_url_identity": "ticketmaster.co.uk/swae-lee-event-moved-to-manchester-manchester-29-11-2026/event/3E0065390F2C7E1F",
+            "original_html": "• <b>Swae Lee</b> — 29 ноября, O2 Ritz Manchester. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/swae-lee-event-moved-to-manchester-manchester-29-11-2026/event/3E0065390F2C7E1F\">Ticketmaster</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 47,
+            "passed": true,
+            "detail": "existing fact verified"
           }
         ],
         "known_factual_error": true
@@ -611,25 +599,24 @@
       "skipped": 1,
       "reports": [
         {
-          "fingerprint": "event-event-dominum-the-night-is-calling-tour-2026-12-08-o2-ritz-manchester-0e4d46fedcea",
-          "title": "Dominum - The Night Is Calling Tour — event 2026-12-08 — public sale 2026-03-04 09:00",
+          "fingerprint": "event-event-swae-lee-event-moved-to-manchester-academy-2026-11-29-o2-ritz-manchester-4cd11f828804",
+          "title": "Swae Lee - Event moved to Manchester Academy — event 2026-11-29 — public sale 2026-10-01 10:00",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/dominum-the-night-is-calling-tour-manchester-08-12-2026/event/3E00645BB3B35788",
-          "candidate_evidence_chars": 343
+          "url": "https://ticketmaster.co.uk/swae-lee-event-moved-to-manchester-manchester-29-11-2026/event/3E0065390F2C7E1F",
+          "candidate_evidence_chars": 381
         }
       ]
     },
     "enrich_improved": 7,
     "no_eligible_backup": 1,
-    "false_positive_existing_fact": 2,
-    "backup_chain_exhausted": 1,
+    "false_positive_existing_fact": 4,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 34,
-      "matched_lines": 34,
-      "applicable_lines": 3,
-      "unmatched_lines": 0,
+      "checked_lines": 54,
+      "matched_lines": 54,
+      "applicable_lines": 4,
+      "unmatched_lines": 2,
       "critical_omission_count": 0,
       "critical_omissions": [],
       "noncritical_omissions": [],
@@ -640,131 +627,132 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 34,
-      "resolved_in_place": 34,
+      "checked_lines": 56,
+      "resolved_in_place": 56,
       "unresolved": 0,
       "findings": []
     },
-    "status": "unresolved"
+    "status": "resolved"
   },
-  "notes": "Дата суда в будущем вызывает путаницу, исправлено на более общее указание.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Дублирование информации о Джейми из Bury и Манчестера в строках 4 и 7.; Строка о закрытии трамвайных линий устарела, так как событие завершилось.; Исправлена ошибка в описании матч",
+  "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Уточнение количества обвиняемых и их связи с жертвой необходимо для ясности.; Строка о закрытии трамвайных линий содержит дату, которая не соответствует текущему времени, и должна б",
   "raw": {
     "decision": "repair_required",
     "confidence": 0.9,
     "critical_errors": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "problem": "Дата суда указана как 29 сентября 2028 года, что противоречит текущей дате выпуска.",
-        "risk": "date",
+        "line_index": 5,
+        "section": "Свежие новости",
+        "problem": "Текст неясно указывает на статус дела и количество обвиняемых.",
+        "risk": "sensitive",
         "suggested_action": "repair"
       },
       {
-        "line_index": 7,
-        "section": "Свежие новости",
-        "problem": "Дублирование информации о Джейми из Bury и Манчестера.",
-        "risk": "factual",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 15,
+        "line_index": 19,
         "section": "Общественный транспорт сегодня",
-        "problem": "Дата события в прошлом, не актуально для сегодняшнего выпуска.",
+        "problem": "Дата закрытия трамвайных линий указана как 2026 год, что не соответствует текущей дате выпуска.",
         "risk": "date",
         "suggested_action": "strip"
       },
       {
-        "line_index": 16,
+        "line_index": 22,
         "section": "Футбол",
-        "problem": "Неверное указание команды, открывшей счёт.",
+        "problem": "Неверное указание роли Маурисио Почеттино.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
-        "line_index": 18,
-        "section": "Городской радар",
-        "problem": "Неверное утверждение о связи вещества с кражами.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 29,
-        "section": "Дальние анонсы",
-        "problem": "Отсутствует ссылка на покупку билетов, что нарушает требования блока.",
-        "risk": "product",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 7,
-        "section": "Свежие новости",
-        "problem": "Дублирование информации о Джейми из Bury.",
-        "risk": "format",
+        "line_index": 31,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно. Указана дата 29 ноября, но в источнике указано, что событие проходит с 10 мая по 30 августа 2026 года.",
+        "risk": "date",
         "suggested_action": "strip"
+      },
+      {
+        "line_index": 33,
+        "section": "Городской радар",
+        "problem": "Неверное указание должности Энди Бернхэма.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 45,
+        "section": "Business/tech события для тебя",
+        "problem": "Название события и дата не переведены на русский язык.",
+        "risk": "translation",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 47,
+        "section": "Билеты / Ticket Radar",
+        "problem": "Указано неверное место проведения события.",
+        "risk": "factual",
+        "suggested_action": "repair"
       }
     ],
     "actions": [
       {
-        "line_index": 1,
-        "section": "Главная история дня",
-        "action": "patch",
-        "replacement_text": "• Английский защитник Джон Стоунс предстанет перед судом в будущем по обвинению в не предоставлении информации о водителе полиции. Он отвергает обвинения и утверждает, что не получил запрос от полиции. Стоунс, который этим летом подписал контракт с Интером, ранее уже был осужден за превышение скорости и получил штраф в размере £1,052.",
-        "reason": "Дата суда указана как 2028 год, что не соответствует текущей дате выпуска.",
-        "risk": "date"
-      },
-      {
-        "line_index": 7,
+        "line_index": 5,
         "section": "Свежие новости",
-        "action": "strip",
-        "reason": "Дублирование информации о Джейми из Bury и Манчестера.",
-        "risk": "factual"
+        "action": "patch",
+        "replacement_text": "• Женщина из Стокпорта рассказала полиции, что не может поверить, что её муж на протяжении 20 лет подсыпал ей наркотики и насиловал. Девять мужчин, включая её мужа, находятся под судом за сексуальные преступления, 25 ноября 2026 года.",
+        "reason": "Уточнение, что девять мужчин, включая её мужа, находятся под судом.",
+        "risk": "sensitive"
       },
       {
-        "line_index": 15,
+        "line_index": 19,
         "section": "Общественный транспорт сегодня",
         "action": "strip",
-        "reason": "Событие завершилось 1 ноября 2026 года, не актуально для текущего выпуска.",
+        "reason": "Дата события указана как 2026 год, что не соответствует текущей дате выпуска.",
         "risk": "date"
       },
       {
-        "line_index": 16,
+        "line_index": 22,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• 24 ноября 2026 года команда Манчестер Сити сыграла вничью с Наполи. Аийюб Буауди забил свой первый гол в профессиональной карьере, сравняв счёт после того, как Расмус Хёйлунд открыл счёт за Наполи. Игрок матча Шерки отметил, что команде необходимо больше работать для достижения побед.",
-        "reason": "Исправление фактической ошибки в описании матча.",
+        "replacement_text": "• Маурисио Почеттино, тренер Челси, призвал игроков Манчестер Юнайтед поддержать вратаря Сенне Ламменса после его ошибок в матче со Спортингом.",
+        "reason": "Маурисио Почеттино является тренером Челси, а не Манчестер Юнайтед.",
         "risk": "factual"
       },
       {
-        "line_index": 18,
+        "line_index": 31,
+        "section": "Выходные в GM",
+        "action": "strip",
+        "reason": "Дата события не соответствует информации из источника.",
+        "risk": "date"
+      },
+      {
+        "line_index": 33,
         "section": "Городской радар",
         "action": "patch",
-        "replacement_text": "• На концерте Дон Толивера в Co-op Live в Манчестере произошла массовая эвакуация из-за неизвестного вещества. Полиция расследует возможную связь с кражами ювелирных изделий.",
-        "reason": "Утверждение о связи вещества с кражами должно быть представлено как расследуемая возможность, а не как факт.",
+        "replacement_text": "• Мэр Манчестера Энди Бернхэм предложил поддержку сотрудникам Poundland в Makerfield после объявления о банкротстве, призвав пострадавших работников обратиться в его офис.",
+        "reason": "Неверное указание должности Энди Бернхэма как премьер-министра.",
         "risk": "factual"
       },
       {
-        "line_index": 29,
-        "section": "Дальние анонсы",
+        "line_index": 45,
+        "section": "Business/tech события для тебя",
         "action": "patch",
-        "replacement_text": "• Dominum — 8 декабря, O2 Ritz Manchester. Билеты и время указаны на официальной странице. [Купить билеты](https://www.ticketmaster.co.uk/dominum-the-night-is-calling-tour-manchester-08-12-2026/event/3E00645BB3B35788)",
-        "reason": "Добавление ссылки на покупку билетов для соответствия требованиям блока.",
-        "risk": "product"
+        "replacement_text": "• Конференция по цифровой экономике Великобритании 2026, четверг, 26 ноября, 9:30 - 17:00 — 26 ноября, Манчестер. Уровень: большая конференция/экспо; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; плотный нетворк большой конференции или экспо. Действие: зарегистрируйтесь.",
+        "reason": "Название события и дата должны быть переведены на русский язык для лучшего понимания.",
+        "risk": "translation"
       },
       {
-        "line_index": 7,
-        "section": "Свежие новости",
-        "action": "strip",
-        "reason": "Дублирование информации о Джейми из Bury.",
-        "risk": "format"
+        "line_index": 47,
+        "section": "Билеты / Ticket Radar",
+        "action": "patch",
+        "replacement_text": "• Swae Lee — 29 ноября, Manchester Academy. Билеты и время указаны на официальной странице.",
+        "reason": "Событие перенесено в Manchester Academy.",
+        "risk": "factual"
       }
     ],
     "warnings": [
-      "Отсутствует блок 'Что важно сегодня', что снижает полноту выпуска."
+      "judge reduce failed: parse_failed no parseable JSON"
     ],
-    "notes": "Дата суда в будущем вызывает путаницу, исправлено на более общее указание.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Дублирование информации о Джейми из Bury и Манчестера в строках 4 и 7.; Строка о закрытии трамвайных линий устарела, так как событие завершилось.; Исправлена ошибка в описании матч",
+    "notes": "Строка соответствует всем требованиям: география, факты и контекст верны.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Уточнение количества обвиняемых и их связи с жертвой необходимо для ясности.; Строка о закрытии трамвайных линий содержит дату, которая не соответствует текущему времени, и должна б",
     "map_reduce": {
       "mode": "map_reduce",
-      "status": "ok",
-      "chunk_count": 11,
+      "status": "partial",
+      "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -777,13 +765,13 @@
           "sections": [
             "Главная история дня"
           ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2648,
-          "duration_seconds": 3.732
+          "estimated_tokens": 2778,
+          "duration_seconds": 1.201
         },
         {
           "chunk_id": "chunk-02",
@@ -800,8 +788,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2435,
-          "duration_seconds": 1.479
+          "estimated_tokens": 2434,
+          "duration_seconds": 0.931
         },
         {
           "chunk_id": "chunk-03",
@@ -818,15 +806,15 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7086,
-          "duration_seconds": 2.631
+          "estimated_tokens": 7163,
+          "duration_seconds": 3.416
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            15
+            19
           ],
           "sections": [
             "Общественный транспорт сегодня"
@@ -836,15 +824,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 4164,
-          "duration_seconds": 2.413
+          "estimated_tokens": 5610,
+          "duration_seconds": 1.982
         },
         {
           "chunk_id": "chunk-05",
           "status": "ok",
           "line_range": [
-            16,
-            17
+            20,
+            21
+          ],
+          "sections": [
+            "Что важно сегодня"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3211,
+          "duration_seconds": 0.849
+        },
+        {
+          "chunk_id": "chunk-06",
+          "status": "ok",
+          "line_range": [
+            22,
+            23
           ],
           "sections": [
             "Футбол"
@@ -854,15 +860,33 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3189,
-          "duration_seconds": 2.348
+          "estimated_tokens": 3124,
+          "duration_seconds": 2.065
         },
         {
-          "chunk_id": "chunk-06",
+          "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
-            18,
-            26
+            24,
+            31
+          ],
+          "sections": [
+            "Выходные в GM"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 6098,
+          "duration_seconds": 23.312
+        },
+        {
+          "chunk_id": "chunk-08",
+          "status": "ok",
+          "line_range": [
+            32,
+            39
           ],
           "sections": [
             "Городской радар"
@@ -872,87 +896,69 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 6873,
-          "duration_seconds": 2.494
-        },
-        {
-          "chunk_id": "chunk-07",
-          "status": "ok",
-          "line_range": [
-            27,
-            27
-          ],
-          "sections": [
-            "Еда, открытия и рынки"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2776,
-          "duration_seconds": 1.755
-        },
-        {
-          "chunk_id": "chunk-08",
-          "status": "ok",
-          "line_range": [
-            28,
-            28
-          ],
-          "sections": [
-            "Business/tech события для тебя"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2854,
-          "duration_seconds": 19.653
+          "estimated_tokens": 6407,
+          "duration_seconds": 43.544
         },
         {
           "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            29,
-            29
+            40,
+            44
           ],
           "sections": [
-            "Дальние анонсы"
+            "IT и бизнес"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 4712,
+          "duration_seconds": 1.749
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            45,
+            45
+          ],
+          "sections": [
+            "Business/tech события для тебя"
           ],
           "decision": "repair_required",
           "critical_error_count": 1,
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2709,
-          "duration_seconds": 7.88
-        },
-        {
-          "chunk_id": "chunk-10",
-          "status": "ok",
-          "line_range": [
-            30,
-            35
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 5571,
-          "duration_seconds": 30.856
+          "estimated_tokens": 2860,
+          "duration_seconds": 7.537
         },
         {
           "chunk_id": "chunk-11",
           "status": "ok",
           "line_range": [
-            36,
-            36
+            46,
+            56
+          ],
+          "sections": [
+            "Билеты / Ticket Radar"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 8422,
+          "duration_seconds": 52.104
+        },
+        {
+          "chunk_id": "chunk-12",
+          "status": "ok",
+          "line_range": [
+            57,
+            57
           ],
           "sections": [
             "Русскоязычные концерты и стендап UK"
@@ -962,22 +968,22 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2763,
-          "duration_seconds": 4.5
+          "estimated_tokens": 2765,
+          "duration_seconds": 5.208
         }
       ],
       "reduce": {
         "chunk_id": "reduce",
-        "status": "ok",
+        "status": "parse_failed",
         "line_range": [],
         "sections": [],
-        "decision": "repair_required",
-        "critical_error_count": 1,
-        "action_count": 1,
-        "warning_count": 1,
-        "error": "",
-        "estimated_tokens": 9930,
-        "duration_seconds": 23.807
+        "decision": "",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 0,
+        "error": "no parseable JSON",
+        "estimated_tokens": 11250,
+        "duration_seconds": 28.482
       },
       "max_workers": 3,
       "chunk_line_target": 12,
