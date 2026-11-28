@@ -2,100 +2,100 @@
   "status": "ok",
   "decision": "warn",
   "can_send": true,
-  "reason": "pre-send repair executor applied 12 repair(s); every operation passed its post-check",
+  "reason": "pre-send repair executor applied 9 repair(s); every operation passed its post-check",
   "model": "gpt-4o",
   "provider": "openai",
   "prompt_version": "v4",
   "block_policy_version": "2026-08-10.p3",
-  "run_date_london": "2026-11-27",
-  "pipeline_run_id": "20261127T080151+0000",
-  "digest_sha256": "be7d20ba33a31137452a33c41f68f3f17ee81e01350c3c46d24e79c8c4870702",
-  "duration_seconds": 130.883,
-  "confidence": 0.9,
+  "run_date_london": "2026-11-28",
+  "pipeline_run_id": "20261128T080141+0000",
+  "digest_sha256": "facac8aa235b96171304381f72619ad38cb4d465019ec66f93fd62e8f0858336",
+  "duration_seconds": 101.715,
+  "confidence": 0.85,
   "critical_errors": [
     {
       "line_index": 1,
       "section": "Главная история дня",
-      "problem": "Текст содержит слово 'stabbed', которое не переведено на русский язык.",
+      "problem": "Текст содержит непереведённое слово 'stabbed'.",
       "risk": "translation",
       "suggested_action": "repair"
     },
     {
-      "line_index": 3,
+      "line_index": 8,
       "section": "Свежие новости",
-      "problem": "Текст может вводить в заблуждение, что девять мужчин обвиняются в преступлениях, связанных с делом мужа, хотя они могут быть обвиняемыми по отдельным делам.",
+      "problem": "Текст не соответствует фактам из источника.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 4,
-      "section": "Свежие новости",
-      "problem": "Текст может вводить в заблуждение, что мужчина признан виновным, хотя он только признал вину.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 14,
+      "line_index": 15,
       "section": "Общественный транспорт сегодня",
-      "problem": "География события не соответствует geo_scope.",
-      "risk": "geo",
+      "problem": "Дата указана неверно, 28 и 29 ноября 2026 года - это суббота и воскресенье.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 16,
+      "section": "Общественный транспорт сегодня",
+      "problem": "Указанные даты закрытия трамвайных линий уже прошли.",
+      "risk": "date",
       "suggested_action": "strip"
     },
     {
-      "line_index": 18,
+      "line_index": 17,
       "section": "Футбол",
-      "problem": "Текст утверждает, что Манчестер Сити был признан виновным в нарушении финансовых правил, что не подтверждается источником.",
+      "problem": "Неверное количество клубов, требующих санкции.",
       "risk": "factual",
       "suggested_action": "repair"
     },
     {
-      "line_index": 30,
+      "line_index": 21,
       "section": "Выходные в GM",
-      "problem": "Некорректное указание географии: Waterside Farm, Otterspool Road находится в Стокпорте, а не в Манчестере.",
-      "risk": "geo",
+      "problem": "Дата начала события указана неверно.",
+      "risk": "date",
       "suggested_action": "repair"
     },
     {
       "line_index": 32,
       "section": "Выходные в GM",
-      "problem": "Дата события указана неверно. В тексте указано 29 ноября, но в данных события указано 10 мая.",
+      "problem": "Дата события указана неверно.",
       "risk": "date",
       "suggested_action": "repair"
     },
     {
-      "line_index": 33,
-      "section": "Городской радар",
-      "problem": "Текст может вызвать недопонимание, что женщина обвиняет себя, а не спрашивает полицию.",
-      "risk": "sensitive",
+      "line_index": 34,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
+      "suggested_action": "repair"
+    },
+    {
+      "line_index": 36,
+      "section": "Выходные в GM",
+      "problem": "Дата события указана неверно.",
+      "risk": "date",
       "suggested_action": "repair"
     },
     {
       "line_index": 38,
-      "section": "IT и бизнес",
-      "problem": "Некорректное описание изменений Bee Network.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 43,
-      "section": "Business/tech события для тебя",
-      "problem": "Некорректное указание места проведения события.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 47,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дублирование события Jungle на одну и ту же дату, но в разных местах.",
-      "risk": "factual",
-      "suggested_action": "repair"
-    },
-    {
-      "line_index": 55,
-      "section": "Билеты / Ticket Radar",
-      "problem": "Дата события в прошлом относительно текущей даты выпуска.",
-      "risk": "date",
+      "section": "Городской радар",
+      "problem": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
+      "risk": "sensitive",
       "suggested_action": "strip"
+    },
+    {
+      "line_index": 41,
+      "section": "Городской радар",
+      "problem": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
+      "risk": "sensitive",
+      "suggested_action": "strip"
+    },
+    {
+      "line_index": 44,
+      "section": "Еда, открытия и рынки",
+      "problem": "Неверное указание места открытия ресторана.",
+      "risk": "factual",
+      "suggested_action": "repair"
     },
     {
       "line_index": 1,
@@ -104,22 +104,6 @@
       "problem": "critical source fact dropped in translation: 'stabbing' (weapon_violence/who/what) has no Russian rendering in the shipped line",
       "suggested_action": "repair",
       "completeness_concept": "weapon_violence"
-    },
-    {
-      "line_index": 33,
-      "section": "Городской радар",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'raped' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "sexual_offence"
-    },
-    {
-      "line_index": 34,
-      "section": "Городской радар",
-      "risk": "translation",
-      "problem": "critical source fact dropped in translation: 'rape' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
-      "suggested_action": "repair",
-      "completeness_concept": "sexual_offence"
     }
   ],
   "actions": [
@@ -127,126 +111,112 @@
       "line_index": 1,
       "section": "Главная история дня",
       "action": "patch",
-      "replacement_text": "• 31-летний Стефан Гарнер, ранее осуждённый за изнасилование, был приговорён к пожизненному заключению за убийство своей беременной подруги Эмбер О'Брайен, которую он ударил ножом более 60 раз. Убийство произошло 19 апреля в его квартире в Блэкли, где полиция обнаружила тело Эмбер, находящееся в ужасном состоянии. Суд признал Гарнера виновным в убийстве, и он должен провести минимум 23 года в тюрьме.",
+      "replacement_text": "• Вынесен приговор — 31-летний Стефан Гарнер был приговорен к пожизненному заключению с минимальным сроком 23 года за убийство своей беременной девушки Эмбер О'Брайен, которую он зарезал более 60 раз. В ходе судебного разбирательства стало известно, что он является осужденным за изнасилование. Убийство произошло 19 апреля 2026 года, приговор вынесен 26 ноября 2026 года.",
       "reason": "Исправление непереведённого слова 'stabbed'.",
       "risk": "translation"
     },
     {
-      "line_index": 3,
+      "line_index": 8,
       "section": "Свежие новости",
       "action": "patch",
-      "replacement_text": "• В суде на Миншулл Стрит 26 ноября муж, который на протяжении более 20 лет насиловал и подсыпал наркотики своей жене, впервые дал показания. Он признал, что испытывает \"вину и стыд\" за причинённую боль, и рассказал о том, как использовал онлайн-чаты для получения сексуального удовольствия. На суде также присутствуют девять мужчин, обвиняемых в различных преступлениях.",
-      "reason": "Уточнение, что девять мужчин обвиняются в различных преступлениях, не обязательно связанных с делом мужа.",
+      "replacement_text": "• Женатый мужчина рассказал о смертельной аварии с такси в Болтоне, в которой погибли четыре человека, и о том, как травмы по-прежнему влияют на его жизнь. Он и его супруг были в такси с двумя друзьями, когда произошло столкновение.",
+      "reason": "Добавление контекста о том, что мужчина был в такси с супругом и друзьями, как указано в источнике.",
       "risk": "factual"
     },
     {
-      "line_index": 4,
-      "section": "Свежие новости",
+      "line_index": 15,
+      "section": "Общественный транспорт сегодня",
       "action": "patch",
-      "replacement_text": "• Мужчина, признавший вину в изнасиловании своей жены с участием других мужчин, заявил в суде, что если бы она проснулась во время насилия, то была бы \"в ужасе\". Он признал вину в нескольких сексуальных преступлениях, включая изнасилование и применение вещества с целью совершения преступления, и сейчас его дело рассматривается в Манчестерском суде Minshull Street.",
-      "reason": "Уточнение, что мужчина признал вину, но не был признан виновным судом.",
-      "risk": "factual"
+      "replacement_text": "• Northern заменяет поезда автобусами между Блэкберном и Клитеро / Колном / Бернли в субботу 28 и воскресенье 29 ноября 2026 года.",
+      "reason": "Уточнение года для корректного восприятия даты.",
+      "risk": "date"
     },
     {
-      "line_index": 14,
+      "line_index": 16,
       "section": "Общественный транспорт сегодня",
       "action": "strip",
-      "reason": "Событие происходит вне Greater Manchester, что нарушает geo_scope.",
-      "risk": "geo",
+      "reason": "Информация о закрытии трамвайных линий устарела.",
+      "risk": "date",
       "replacement_text": ""
     },
     {
-      "line_index": 18,
+      "line_index": 17,
       "section": "Футбол",
       "action": "patch",
-      "replacement_text": "• 26 ноября 2026 года Манчестер Юнайтед, Ливерпуль и Тоттенхэм наняли юридическую фирму Wiggin для подготовки исков против Манчестер Сити, обвиняемого в нарушении финансовых правил Премьер-лиги.",
-      "reason": "Утверждение о признании вины Манчестер Сити не подтверждено источником.",
+      "replacement_text": "• Три клуба из Премьер-лиги требуют, чтобы владельцы Манчестер Сити были вынуждены продать клуб, если апелляция клуба по нарушению финансовых правил окажется неуспешной.",
+      "reason": "Указано неверное количество клубов, требующих санкции.",
       "risk": "factual"
     },
     {
-      "line_index": 30,
+      "line_index": 21,
       "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• 29 ноября в Waterside Farm, Otterspool Road — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный.",
-      "reason": "Указание правильного местоположения события в Стокпорте.",
-      "risk": "geo"
+      "replacement_text": "• 27 ноября — Makers Market на Great Northern Square в Манчестере. На площадке: рынок, ремесленные товары, еда.",
+      "reason": "Дата начала события должна быть 27 ноября, согласно источнику.",
+      "risk": "date"
     },
     {
       "line_index": 32,
       "section": "Выходные в GM",
       "action": "patch",
-      "replacement_text": "• 10 мая — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
-      "reason": "Дата события должна соответствовать данным из источника.",
+      "replacement_text": "• 7 октября в Macron Stadium — Car Boot Directory. На площадке: автомобильная барахолка, для покупателей с 7:00, вход свободный, ремесленные товары, еда.",
+      "reason": "Дата события указана неверно, исправлено на 7 октября.",
       "risk": "date"
     },
     {
-      "line_index": 33,
-      "section": "Городской радар",
-      "action": "patch",
-      "replacement_text": "• Женщина, которую муж 20 лет насиловал и подсыпал ей наркотики, спросила полицию, не она ли виновата в произошедшем, как стало известно в суде.",
-      "reason": "Уточнение формулировки, чтобы избежать недопонимания.",
-      "risk": "sensitive"
-    },
-    {
-      "line_index": 38,
-      "section": "IT и бизнес",
-      "action": "patch",
-      "replacement_text": "• Bee Network объявил о значительных изменениях, включая внедрение светофоров с поддержкой ИИ и восстановление семидневного железнодорожного обслуживания после двухлетнего перерыва.",
-      "reason": "Уточнение фактов о семидневном железнодорожном обслуживании.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 43,
-      "section": "Business/tech события для тебя",
-      "action": "patch",
-      "replacement_text": "• Google AI Works for Small Businesses: Manchester Thursday 3 Dec 10am - 3:30pm — 3 декабря, Pendulum Hotel, Sackville Street, Manchester. Уровень: высокий уровень; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь.",
-      "reason": "Указано только 'Manchester', но необходимо уточнить место проведения — Pendulum Hotel.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 47,
-      "section": "Билеты / Ticket Radar",
-      "action": "patch",
-      "replacement_text": "• Jungle (DJ Set) — 27 ноября, Albert Hall. Событие проходит сегодня.",
-      "reason": "Уточнение формата события для различения с другим событием Jungle.",
-      "risk": "factual"
-    },
-    {
-      "line_index": 55,
-      "section": "Билеты / Ticket Radar",
+      "line_index": 34,
+      "section": "Выходные в GM",
       "action": "strip",
-      "reason": "Событие уже прошло, дата в прошлом.",
+      "reason": "Событие не актуально, так как дата прошла.",
       "risk": "date",
       "replacement_text": ""
     },
     {
-      "line_index": 58,
-      "section": "Билеты / Ticket Radar",
+      "line_index": 36,
+      "section": "Выходные в GM",
+      "action": "strip",
+      "reason": "Событие не актуально, так как дата прошла.",
+      "risk": "date",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 38,
+      "section": "Городской радар",
+      "action": "strip",
+      "reason": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
+      "risk": "sensitive",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 41,
+      "section": "Городской радар",
+      "action": "strip",
+      "reason": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
+      "risk": "sensitive",
+      "replacement_text": ""
+    },
+    {
+      "line_index": 44,
+      "section": "Еда, открытия и рынки",
       "action": "patch",
-      "replacement_text": "• A Night of Sade (трибьют-шоу) — 3 апреля, Manchester Academy; цена £21.00. Билеты и время указаны на официальной странице.",
-      "reason": "Уточнение, что это трибьют-шоу, а не выступление Sade.",
+      "replacement_text": "• Опубликованы новые изображения предстоящего ресторана Nobu в 76-этажном небоскребе в Манчестере; открытие запланировано на 2032 год.",
+      "reason": "Указание места открытия ресторана Nobu в небоскребе Viadux 2 не подтверждено в источнике.",
       "risk": "factual"
     },
     {
-      "line_index": 15,
-      "section": "Что важно сегодня",
-      "action": "strip",
-      "replacement_text": "",
-      "reason": "Дублирование информации о 15-летней девочке, пострадавшей в ДТП.",
-      "risk": "format"
-    },
-    {
-      "line_index": 45,
+      "line_index": 49,
       "section": "Билеты / Ticket Radar",
       "action": "strip",
-      "replacement_text": "",
-      "reason": "Дублирование события Jungle в Co-op Live и Albert Hall.",
-      "risk": "format"
+      "reason": "Duplicate listing for Swae Lee event with incorrect venue information.",
+      "risk": "factual",
+      "replacement_text": ""
     }
   ],
   "warnings": [
-    "Недостаточное количество элементов в секциях 'Что важно сегодня' и 'Городской радар'.",
-    "Преобладание билетов в выпуске, что может снизить интерес к основным новостям."
+    "Некоторые события имеют неверные даты, что может ввести читателей в заблуждение.",
+    "Отсутствует блок 'Что важно сегодня', что может снизить информативность выпуска.",
+    "Секция 'Билеты / Ticket Radar' содержит 12 элементов, что может доминировать над основными новостями.",
+    "Несколько строк в 'Выходные в GM' и 'Городской радар' требуют правки, что может повлиять на качество информации."
   ],
   "product_completeness": {
     "block_policy_version": "2026-08-10.p3",
@@ -255,86 +225,83 @@
       "Главная история дня": 1,
       "Погода": 1,
       "Свежие новости": 9,
-      "Общественный транспорт сегодня": 3,
-      "Что важно сегодня": 2,
+      "Общественный транспорт сегодня": 5,
       "Футбол": 3,
-      "Выходные в GM": 9,
-      "Городской радар": 4,
-      "Еда, открытия и рынки": 1,
-      "IT и бизнес": 5,
-      "Business/tech события для тебя": 1,
-      "Дальние анонсы": 1,
-      "Билеты / Ticket Radar": 14,
-      "Крупные концерты вне GM": 1,
+      "Выходные в GM": 13,
+      "Городской радар": 7,
+      "Еда, открытия и рынки": 3,
+      "IT и бизнес": 1,
+      "Билеты / Ticket Radar": 12,
       "Русскоязычные концерты и стендап UK": 1
     },
     "core_counts": {
       "Погода": 1,
-      "Что важно сегодня": 2,
+      "Что важно сегодня": 0,
       "Свежие новости": 9,
       "Главная история дня": 1,
-      "Городской радар": 4,
-      "Выходные в GM": 9,
-      "Билеты / Ticket Radar": 14,
+      "Городской радар": 7,
+      "Выходные в GM": 13,
+      "Билеты / Ticket Radar": 12,
       "Русскоязычные концерты и стендап UK": 1,
-      "Еда, открытия и рынки": 1,
-      "Business/tech события для тебя": 1,
+      "Еда, открытия и рынки": 3,
+      "Business/tech события для тебя": 0,
       "Футбол": 3
     },
-    "ticket_items": 16,
-    "core_items": 31,
+    "ticket_items": 13,
+    "core_items": 37,
     "writer_quality_counts": {
-      "included_candidates": 58,
+      "included_candidates": 56,
       "rendered_candidates": 56,
       "blocked_for_quality": 0,
       "held_for_editorial_quality": 0,
       "dropped_missing_draft_line": 0,
       "dropped_ticket_not_selected": 0,
       "dropped_english_passthrough": 0,
-      "dropped_low_quality": 1,
-      "replaced_from_plan_backup": 1,
-      "removed_with_reason": 1
+      "dropped_low_quality": 0,
+      "replaced_from_plan_backup": 0,
+      "removed_with_reason": 0
     },
     "source_health_counts": {
-      "ok": 102,
+      "ok": 99,
       "partial": 2,
-      "stale": 10,
-      "empty": 11,
-      "failed": 6,
-      "zero_yield": 69,
+      "stale": 6,
+      "empty": 14,
+      "failed": 11,
+      "zero_yield": 58,
       "no_contribution_breakdown": {
-        "fetch_failed": 6,
-        "all_rejected": 69,
-        "idle_no_items": 25
+        "fetch_failed": 11,
+        "all_rejected": 58,
+        "idle_no_items": 29
       },
       "zero_contribution_by_stage": {
-        "written": 38,
-        "selected": 31,
-        "fetched": 6,
-        "parsed": 25
+        "selected": 26,
+        "written": 32,
+        "parsed": 29,
+        "fetched": 11
       },
-      "weekend_source_coverage_incidents": 53
+      "weekend_source_coverage_incidents": 51
     },
     "input_alerts_before_judge": [
-      "Что важно сегодня: 2 item(s), emergency floor 3",
-      "Городской радар: 4 item(s), emergency floor 5",
-      "Еда, открытия и рынки: 1 item(s), emergency floor 3",
-      "source failures: 6"
+      "Что важно сегодня: 0 item(s), emergency floor 3",
+      "Business/tech события для тебя: 0 item(s), emergency floor 1",
+      "source failures: 11"
     ]
   },
   "deterministic_post_check": {
     "errors": [],
-    "warnings": [],
+    "warnings": [
+      "patch for line 32 has unchecked number/date token(s): 7:00"
+    ],
     "can_apply_actions": true,
-    "action_count": 15
+    "action_count": 13
   },
   "translation_completeness": {
     "version": "v1",
     "checked_lines": 56,
     "matched_lines": 56,
-    "applicable_lines": 5,
+    "applicable_lines": 6,
     "unmatched_lines": 4,
-    "critical_omission_count": 3,
+    "critical_omission_count": 1,
     "critical_omissions": [
       {
         "line_index": 1,
@@ -342,56 +309,34 @@
         "concept": "weapon_violence",
         "obligation": "who/what",
         "source_hit": "stabbing"
-      },
-      {
-        "line_index": 33,
-        "source_url_key": "bbc.com/news/articles/c38x0vd2yyx5o",
-        "concept": "sexual_offence",
-        "obligation": "charge/verdict/victim",
-        "source_hit": "raped"
-      },
-      {
-        "line_index": 34,
-        "source_url_key": "itv.com/news/granada/2026-11-23/court-hears-drug-rape-husband-advertised-online-wanting-extra-fun-and-games",
-        "concept": "sexual_offence",
-        "obligation": "charge/verdict/victim",
-        "source_hit": "rape"
       }
     ],
     "noncritical_omissions": [],
-    "recovered": 1,
-    "pulled_for_rework": 2,
+    "recovered": 0,
+    "pulled_for_rework": 1,
     "still_missing": 0
   },
   "repair_executor": {
     "enabled": true,
     "dry_run": false,
     "fact_lock_version": "v1",
-    "requested": 15,
-    "attempted": 12,
-    "applied": 12,
-    "model_patch_applied": 5,
+    "requested": 13,
+    "attempted": 9,
+    "applied": 9,
+    "model_patch_applied": 1,
     "deterministic_rewrite_used": 0,
-    "reserve_replacement_used": 0,
-    "stripped": 7,
+    "reserve_replacement_used": 2,
+    "stripped": 6,
     "unresolved": 0,
     "blocking_unresolved": 0,
-    "resolved": 15,
-    "resolved_in_place": 8,
-    "resolved_by_replacement": 0,
-    "resolved_by_removal": 7,
-    "fact_lock_rejected": 1,
-    "enrich_attempted": 15,
+    "resolved": 11,
+    "resolved_in_place": 5,
+    "resolved_by_replacement": 2,
+    "resolved_by_removal": 4,
+    "fact_lock_rejected": 0,
+    "enrich_attempted": 13,
     "post_check_errors": [],
-    "geo_contract_rejected": [
-      {
-        "line_index": 30,
-        "section": "Выходные в GM",
-        "geo_scope": "gm",
-        "reason": "Указание правильного местоположения события в Стокпорте.",
-        "gm_anchor_present": true
-      }
-    ],
+    "geo_contract_rejected": [],
     "source_link_metadata_rejected": [],
     "actions": [
       {
@@ -401,272 +346,246 @@
         "reason": "Исправление непереведённого слова 'stabbed'.",
         "risk": "translation",
         "critical_error": true,
-        "critical_problem": "Текст содержит слово 'stabbed', которое не переведено на русский язык.",
+        "critical_problem": "Текст содержит непереведённое слово 'stabbed'.",
         "completeness_concept": "weapon_violence",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
         "plan_slot_id": "lead",
         "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-killers-rapist-past-revealed-hes-34970492-fb7d2c000bb0",
         "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/killers-rapist-past-revealed-hes-34970492",
-        "original_html": "<b>31-летний Стефан Гарнер, ранее осуждённый за изнасилование, был приговорён к пожизненному заключению за убийство своей беременной подруги Эмбер О'Брайен, которую он stabbed более 60 раз.</b> Убийство произошло 19 апреля в его квартире в Блэкли, где полиция обнаружила тело Эмбер, находящееся в ужасном состоянии. Суд признал Гарнера виновным в убийстве, и он должен провести минимум 23 года в тюрьме. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/killers-rapist-past-revealed-hes-34970492\">MEN Latest News</a>",
+        "original_html": "<b>Вынесен приговор — 31-летний Стефан Гарнер был приговорен к пожизненному заключению с минимальным сроком 23 года за убийство своей беременной девушки Эмбер О'Брайен, которую он stabbed более 60 раз.</b> В ходе судебного разбирательства стало известно, что он является осужденным за изнасилование. Убийство произошло 19 апреля 2026 года, приговор вынесен 26 ноября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/killers-rapist-past-revealed-hes-34970492\">MEN</a>",
+        "model_replacement_rejected": "post_check: critical concept still absent: weapon_violence, replacement drops weapon_violence",
+        "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-selfless-mum-23-died-suddenly-34976834-d155672b478b",
         "post_check_passed": true
       },
       {
-        "line_index": 3,
+        "line_index": 8,
         "section": "Свежие новости",
         "requested_action": "patch",
-        "reason": "Уточнение, что девять мужчин обвиняются в различных преступлениях, не обязательно связанных с делом мужа.",
+        "reason": "Добавление контекста о том, что мужчина был в такси с супругом и друзьями, как указано в источнике.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Текст может вводить в заблуждение, что девять мужчин обвиняются в преступлениях, связанных с делом мужа, хотя они могут быть обвиняемыми по отдельным делам.",
+        "critical_problem": "Текст не соответствует фактам из источника.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "model_patch",
-        "plan_slot_id": "last_24h-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-stockport-husband-who-drugged-raped-34972632-b777b1109b09",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/stockport-husband-who-drugged-raped-34972632",
-        "original_html": "• В суде на Миншулл Стрит 26 ноября муж, который на протяжении более 20 лет насиловал и подсыпал наркотики своей жене, впервые дал показания. Он признал, что испытывает \"вину и стыд\" за причинённую боль, и рассказал о том, как использовал онлайн-чаты для получения сексуального удовольствия. На суде также присутствуют девять мужчин, обвиняемых в различных преступлениях, связанных с этим делом. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/stockport-husband-who-drugged-raped-34972632\">MEN Latest News</a>",
+        "plan_slot_id": "last_24h-06",
+        "candidate_fingerprint": "url-bbc-com-news-articles-cm9w9y5xjvdjo-d84e98f5ec78",
+        "original_url_identity": "bbc.com/news/articles/cm9w9y5xjvdjo",
+        "original_html": "• Женатый мужчина рассказал о смертельной аварии с такси в Болтоне, в которой погибли четыре человека, и о том, как травмы по-прежнему влияют на его жизнь. <a href=\"https://bbc.com/news/articles/cm9w9y5xjvdjo\">BBC Manchester</a>",
         "post_check_passed": true
       },
       {
-        "line_index": 4,
-        "section": "Свежие новости",
-        "requested_action": "patch",
-        "reason": "Уточнение, что мужчина признал вину, но не был признан виновным судом.",
-        "risk": "factual",
-        "critical_error": true,
-        "critical_problem": "Текст может вводить в заблуждение, что мужчина признан виновным, хотя он только признал вину.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "last_24h-02",
-        "candidate_fingerprint": "url-bbc-com-news-articles-ck053epz2ppmo-7f339616a190",
-        "original_url_identity": "bbc.com/news/articles/ck053epz2ppmo",
-        "original_html": "• Мужчина, признанный виновным в изнасиловании своей жены с участием других мужчин, заявил в суде, что если бы она проснулась во время насилия, то была бы \"в ужасе\". Он признал вину в нескольких сексуальных преступлениях, включая изнасилование и применение вещества с целью совершения преступления, и сейчас его дело рассматривается в Манчестерском суде Minshull Street. <a href=\"https://bbc.com/news/articles/ck053epz2ppmo\">BBC Manchester</a>",
-        "model_replacement_rejected": "fact_lock: minshull street",
-        "deterministic_rewrite_rejected": "post_check: replacement drops sexual_offence",
-        "backup_outcome": "backup_chain_exhausted",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 14,
+        "line_index": 15,
         "section": "Общественный транспорт сегодня",
-        "requested_action": "strip",
-        "reason": "Событие происходит вне Greater Manchester, что нарушает geo_scope.",
-        "risk": "geo",
+        "requested_action": "patch",
+        "reason": "Уточнение года для корректного восприятия даты.",
+        "risk": "date",
         "critical_error": true,
-        "critical_problem": "География события не соответствует geo_scope.",
+        "critical_problem": "Дата указана неверно, 28 и 29 ноября 2026 года - это суббота и воскресенье.",
         "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "transport-03",
+        "outcome": "resolved_in_place",
+        "method": "verified_existing_fact",
+        "plan_slot_id": "transport-04",
         "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-northern-buses-replace-trains-between-blackburn-and-clitheroe-colne-burnley-manc-95c946c24a88",
         "original_url_identity": "nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-blackburn-and-clitheroe-colne-burnley-manc",
-        "original_html": "• Автобусы заменяют поезда между Блэкберном и Клитеро, Колном и Бернли в выходные 28-29 ноября. <a href=\"https://nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-blackburn-and-clitheroe-colne-burnley-manc\">National Rail Enquiries</a>",
+        "original_html": "• Northern заменяет поезда автобусами между Блэкберном и Клитеро / Колном / Бернли в субботу 28 и воскресенье 29 ноября. <a href=\"https://nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-blackburn-and-clitheroe-colne-burnley-manc\">National Rail Enquiries</a>",
+        "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 16,
+        "section": "Общественный транспорт сегодня",
+        "requested_action": "strip",
+        "reason": "Информация о закрытии трамвайных линий устарела.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Указанные даты закрытия трамвайных линий уже прошли.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "transport-05",
+        "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
+        "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
+        "original_html": "• Metrolink: трамвайные линии в Манчестере (Алтринчем, Trafford Центр и Eccles) будут полностью закрыты с 19 октября по 1 ноября 2026 года для замены рельсов. Пассажиров просят планировать альтернативные маршруты. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 18,
+        "line_index": 17,
         "section": "Футбол",
         "requested_action": "patch",
-        "reason": "Утверждение о признании вины Манчестер Сити не подтверждено источником.",
+        "reason": "Указано неверное количество клубов, требующих санкции.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Текст утверждает, что Манчестер Сити был признан виновным в нарушении финансовых правил, что не подтверждается источником.",
+        "critical_problem": "Неверное количество клубов, требующих санкции.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "football-02",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-team-up-liverpool-34973008-e37ab637f444",
-        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-team-up-liverpool-34973008",
-        "original_html": "• 26 ноября 2026 года Манчестер Юнайтед, Ливерпуль и Тоттенхэм наняли юридическую фирму Wiggin для подготовки исков против Манчестер Сити после того, как клуб был признан виновным в нарушении финансовых правил Премьер-лиги. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-team-up-liverpool-34973008\">MEN Manchester United</a>",
+        "plan_slot_id": "football-01",
+        "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-premier-league-charges-34973664-94de972a9407",
+        "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34973664",
+        "original_html": "• Три соперника из Премьер-лиги требуют, чтобы владельцы Манчестер Сити были вынуждены продать клуб, если апелляция клуба по нарушению финансовых правил окажется неуспешной. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34973664\">MEN Manchester City</a>",
         "verification": "structured fact already rendered correctly",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 21,
+        "section": "Выходные в GM",
+        "requested_action": "patch",
+        "reason": "Дата начала события должна быть 27 ноября, согласно источнику.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата начала события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "weekend_activities-01",
+        "candidate_fingerprint": "event-event-makers-market-in-great-northern-square-great-northern-manchester-2026-11-27-great-northern-square-62493134c69c",
+        "original_url_identity": "thegreatnorthern.com/event/makers-market-in-great-northern-square",
+        "original_html": "• 28 ноября — Makers Market на Great Northern Square в Манчестере. На площадке: рынок, ремесленные товары, еда. <a href=\"https://thegreatnorthern.com/event/makers-market-in-great-northern-square\">Great Northern Makers Market</a>",
+        "model_replacement_rejected": "post_check: structured event date is not rendered correctly",
+        "reserve_rejections": [
+          {
+            "fingerprint": "event-event-dance-foundations-project-cumbria-2026-11-29-lowry-0e6dee48704f",
+            "errors": [
+              "structured event date is not rendered correctly"
+            ]
+          }
+        ],
+        "backup_outcome": "backup_chain_exhausted",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
         "line_index": 32,
         "section": "Выходные в GM",
         "requested_action": "patch",
-        "reason": "Дата события должна соответствовать данным из источника.",
+        "reason": "Дата события указана неверно, исправлено на 7 октября.",
         "risk": "date",
         "critical_error": true,
-        "critical_problem": "Дата события указана неверно. В тексте указано 29 ноября, но в данных события указано 10 мая.",
+        "critical_problem": "Дата события указана неверно.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "weekend_activities-09",
-        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2027-05-10-burnage-rfc-9a3e9cdf54f4",
-        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-        "original_html": "• 29 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+        "plan_slot_id": "weekend_activities-07",
+        "candidate_fingerprint": "event-event-car-boot-directory-2027-10-07-6f1a262f41ab",
+        "original_url_identity": "carbootdirectory.co.uk/listings/bolton-car-boot",
+        "original_html": "• 29 ноября в Macron Stadium — Car Boot Directory. На площадке: автомобильная барахолка, для покупателей с 7:00, вход свободный, ремесленные товары, еда. <a href=\"https://carbootdirectory.co.uk/listings/bolton-car-boot\">Bolton Car Boot Sale</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 33,
-        "section": "Городской радар",
-        "requested_action": "patch",
-        "reason": "Уточнение формулировки, чтобы избежать недопонимания.",
-        "risk": "sensitive",
+        "line_index": 34,
+        "section": "Выходные в GM",
+        "requested_action": "strip",
+        "reason": "Событие не актуально, так как дата прошла.",
+        "risk": "date",
         "critical_error": true,
-        "critical_problem": "Текст может вызвать недопонимание, что женщина обвиняет себя, а не спрашивает полицию.",
-        "completeness_concept": "sexual_offence",
-        "outcome": "resolved_by_removal",
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
+        "method": "reserve_replacement",
+        "plan_slot_id": "weekend_activities-09",
+        "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+        "original_html": "• 29 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+        "replacement_fingerprint": "event-event-funnyboyz-manchester-presents-benidorm-bingo-2026-11-28-funnyboyz-manchester-95d658b5dbac",
+        "post_check_passed": true
+      },
+      {
+        "line_index": 36,
+        "section": "Выходные в GM",
+        "requested_action": "strip",
+        "reason": "Событие не актуально, так как дата прошла.",
+        "risk": "date",
+        "critical_error": true,
+        "critical_problem": "Дата события указана неверно.",
+        "completeness_concept": "",
+        "outcome": "resolved_by_replacement",
         "method": "removed",
-        "plan_slot_id": "city_watch-01",
-        "candidate_fingerprint": "url-bbc-com-news-articles-c38x0vd2yyx5o-4cc56f881381",
-        "original_url_identity": "bbc.com/news/articles/c38x0vd2yyx5o",
-        "original_html": "• Женщина, которую муж 20 лет насиловал и подсыпал ей наркотики, спросила полицию, не она ли виновата, как стало известно в суде. <a href=\"https://bbc.com/news/articles/c38x0vd2yyx5o\">BBC Manchester</a>",
-        "model_replacement_rejected": "post_check: critical concept still absent: sexual_offence, replacement drops sexual_offence",
+        "plan_slot_id": "weekend_activities-11",
+        "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
+        "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+        "original_html": "• 28 ноября — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
         "line_index": 38,
-        "section": "IT и бизнес",
-        "requested_action": "patch",
-        "reason": "Уточнение фактов о семидневном железнодорожном обслуживании.",
-        "risk": "factual",
+        "section": "Городской радар",
+        "requested_action": "strip",
+        "reason": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
+        "risk": "sensitive",
         "critical_error": true,
-        "critical_problem": "Некорректное описание изменений Bee Network.",
+        "critical_problem": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "tech_business-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bee-network-announces-major-changes-34972302-1ed6184f2f6f",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/bee-network-announces-major-changes-34972302",
-        "original_html": "• Bee Network объявил о значительных изменениях, включая внедрение светофоров с поддержкой ИИ и возвращение поездов по воскресеньям после двухлетнего спора. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/bee-network-announces-major-changes-34972302\">MEN Latest News</a>",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "city_watch-02",
+        "candidate_fingerprint": "url-bbc-com-news-articles-ck053epz2ppmo-7f339616a190",
+        "original_url_identity": "bbc.com/news/articles/ck053epz2ppmo",
+        "original_html": "• Муж, который признался в том, что подсыпал наркотики и изнасиловал свою жену с незнакомцами, заявил в суде, что она была бы \"в ужасе\", если бы проснулась. <a href=\"https://bbc.com/news/articles/ck053epz2ppmo\">BBC Manchester</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 43,
-        "section": "Business/tech события для тебя",
-        "requested_action": "patch",
-        "reason": "Указано только 'Manchester', но необходимо уточнить место проведения — Pendulum Hotel.",
-        "risk": "factual",
+        "line_index": 41,
+        "section": "Городской радар",
+        "requested_action": "strip",
+        "reason": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
+        "risk": "sensitive",
         "critical_error": true,
-        "critical_problem": "Некорректное указание места проведения события.",
+        "critical_problem": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "professional_events-01",
-        "candidate_fingerprint": "event-event-google-ai-works-for-small-businesses-manchester-thursday-3-dec-10am-3-30pm-2026-12-03-manchester-e0530c3a92e6",
-        "original_url_identity": "gmchamber.co.uk/events/google-ai-works-for-small-businesses-manchester",
-        "original_html": "• Google AI Works for Small Businesses: Manchester Thursday 3 Dec 10am - 3:30pm — 3 декабря, Manchester. Уровень: высокий уровень; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь. <a href=\"https://gmchamber.co.uk/events/google-ai-works-for-small-businesses-manchester\">GM Chamber Events</a>",
+        "outcome": "resolved_by_removal",
+        "method": "removed",
+        "plan_slot_id": "city_watch-05",
+        "candidate_fingerprint": "url-itv-com-news-granada-2026-11-23-court-hears-drug-rape-husband-advertised-online-wanting-extra-fun-and-games-e45d197c037a",
+        "original_url_identity": "itv.com/news/granada/2026-11-23/court-hears-drug-rape-husband-advertised-online-wanting-extra-fun-and-games",
+        "original_html": "• Мужчина из Стокпорта, который более 20 лет подсыпал наркотики и изнасиловал свою жену, размещал объявления в интернете с предложением 'дополнительных развлечений'. Он признал себя виновным в нескольких преступлениях, начиная с 2004 года. Судебное заседание прошло 23 ноября 2026 года. <a href=\"https://itv.com/news/granada/2026-11-23/court-hears-drug-rape-husband-advertised-online-wanting-extra-fun-and-games\">ITV Granada Greater Manchester</a>",
+        "backup_outcome": "no_eligible_backup",
+        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       },
       {
-        "line_index": 47,
-        "section": "Билеты / Ticket Radar",
+        "line_index": 44,
+        "section": "Еда, открытия и рынки",
         "requested_action": "patch",
-        "reason": "Уточнение формата события для различения с другим событием Jungle.",
+        "reason": "Указание места открытия ресторана Nobu в небоскребе Viadux 2 не подтверждено в источнике.",
         "risk": "factual",
         "critical_error": true,
-        "critical_problem": "Дублирование события Jungle на одну и ту же дату, но в разных местах.",
+        "critical_problem": "Неверное указание места открытия ресторана.",
         "completeness_concept": "",
         "outcome": "resolved_in_place",
         "method": "verified_existing_fact",
-        "plan_slot_id": "ticket_radar-03",
-        "candidate_fingerprint": "event-event-jungle-dj-set-2026-11-27-albert-hall-a7de04b4b7fd",
-        "original_url_identity": "ticketmaster.co.uk/jungle-dj-set-manchester-27-11-2026/event/1F00654C96D81C64",
-        "original_html": "• <b>Jungle</b> — 27 ноября, Albert Hall. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/jungle-dj-set-manchester-27-11-2026/event/1F00654C96D81C64\">Ticketmaster</a>",
+        "plan_slot_id": "openings-01",
+        "candidate_fingerprint": "url-manchestersfinest-com-eating-and-drinking-new-images-of-nobu-restaurant-opening-in-76-storey-skyscraper-released-d8a0eb1b2c06",
+        "original_url_identity": "manchestersfinest.com/eating-and-drinking/new-images-of-nobu-restaurant-opening-in-76-storey-skyscraper-released",
+        "original_html": "• Опубликованы новые изображения предстоящего ресторана Nobu в 76-этажном небоскребе Viadux 2 в Манчестере; открытие запланировано на 2032 год. <a href=\"https://manchestersfinest.com/eating-and-drinking/new-images-of-nobu-restaurant-opening-in-76-storey-skyscraper-released\">Manchester&#x27;s Finest</a>",
         "verification": "structured fact already rendered correctly",
         "post_check_passed": true
       },
       {
-        "line_index": 55,
+        "line_index": 49,
         "section": "Билеты / Ticket Radar",
         "requested_action": "strip",
-        "reason": "Событие уже прошло, дата в прошлом.",
-        "risk": "date",
-        "critical_error": true,
-        "critical_problem": "Дата события в прошлом относительно текущей даты выпуска.",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "ticket_radar-11",
-        "candidate_fingerprint": "event-event-michael-shannon-jason-narducy-13th-november-2027-2027-11-13-manchester-academy-c8517a5ba929",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13382222/michael-shannon-and-jason-narducy-manchester-academy-2-2027-11-13-19-30-00",
-        "original_html": "• <b>Michael Shannon & Jason Narducy</b> — 13 ноября, Manchester Academy; цена £38.50. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13382222/michael-shannon-and-jason-narducy-manchester-academy-2-2027-11-13-19-30-00\">Manchester Academy</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 58,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "patch",
-        "reason": "Уточнение, что это трибьют-шоу, а не выступление Sade.",
+        "reason": "Duplicate listing for Swae Lee event with incorrect venue information.",
         "risk": "factual",
         "critical_error": false,
         "critical_problem": "",
         "completeness_concept": "",
-        "outcome": "resolved_in_place",
-        "method": "model_patch",
-        "plan_slot_id": "ticket_radar-14",
-        "candidate_fingerprint": "event-event-a-night-of-sade-3rd-april-2027-2027-04-03-manchester-academy-cb5a4cd75d78",
-        "original_url_identity": "manchesteracademy.net/order/gateway/13382231/a-night-of-sade-manchester-academy-2-2027-04-03-19-00-00",
-        "original_html": "• <b>A Night of Sade</b> — 3 апреля, Manchester Academy; цена £21.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13382231/a-night-of-sade-manchester-academy-2-2027-04-03-19-00-00\">Manchester Academy</a>",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 15,
-        "section": "Что важно сегодня",
-        "requested_action": "strip",
-        "reason": "Дублирование информации о 15-летней девочке, пострадавшей в ДТП.",
-        "risk": "format",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
         "outcome": "resolved_by_removal",
         "method": "removed",
-        "plan_slot_id": "today_focus-01",
-        "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-girl-15-life-threatening-condition-34972200-417ba43f75b1",
-        "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/girl-15-life-threatening-condition-34972200",
-        "original_html": "• 15-летняя девочка находится в состоянии, угрожающем жизни, после того, как её сбил автомобиль на Риппонден Роуд в Oldham 25 ноября. Полиция проводит расследование, арестов не было. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/girl-15-life-threatening-condition-34972200\">MEN</a>",
+        "plan_slot_id": "ticket_radar-02",
+        "candidate_fingerprint": "event-event-swae-lee-event-moved-to-manchester-academy-2026-11-29-o2-ritz-manchester-4cd11f828804",
+        "original_url_identity": "ticketmaster.co.uk/swae-lee-event-moved-to-manchester-manchester-29-11-2026/event/3E0065390F2C7E1F",
+        "original_html": "• <b>Swae Lee</b> — 29 ноября, O2 Ritz Manchester. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/swae-lee-event-moved-to-manchester-manchester-29-11-2026/event/3E0065390F2C7E1F\">Ticketmaster</a>",
         "backup_outcome": "no_eligible_backup",
         "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 45,
-        "section": "Билеты / Ticket Radar",
-        "requested_action": "strip",
-        "reason": "Дублирование события Jungle в Co-op Live и Albert Hall.",
-        "risk": "format",
-        "critical_error": false,
-        "critical_problem": "",
-        "completeness_concept": "",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "ticket_radar-01",
-        "candidate_fingerprint": "event-event-jungle-with-special-guests-rio-kosta-fri-27-nov-2026-multiple-times-2026-11-27-co-op-live-60112d2a9e8c",
-        "original_url_identity": "cooplive.com/events/jungle-jkqy",
-        "original_html": "• <b>Jungle</b> — 27 ноября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/jungle-jkqy\">Co-op Live</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "duplicate_after_plan",
-        "post_check_passed": true
-      },
-      {
-        "line_index": 34,
-        "section": "Городской радар",
-        "requested_action": "replace",
-        "reason": "critical source fact dropped in translation: 'rape' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
-        "risk": "translation",
-        "critical_error": true,
-        "critical_problem": "",
-        "completeness_concept": "sexual_offence",
-        "outcome": "resolved_by_removal",
-        "method": "removed",
-        "plan_slot_id": "city_watch-02",
-        "candidate_fingerprint": "url-itv-com-news-granada-2026-11-23-court-hears-drug-rape-husband-advertised-online-wanting-extra-fun-and-games-e45d197c037a",
-        "original_url_identity": "itv.com/news/granada/2026-11-23/court-hears-drug-rape-husband-advertised-online-wanting-extra-fun-and-games",
-        "original_html": "• В суде стало известно, что мужчина из Greater Manchester, который более 20 лет насиловал свою жену, рекламировал в интернете \"поиск дополнительных развлечений\"; он признал себя виновным в нескольких преступлениях с 2004 года. <a href=\"https://itv.com/news/granada/2026-11-23/court-hears-drug-rape-husband-advertised-online-wanting-extra-fun-and-games\">ITV Granada Greater Manchester</a>",
-        "backup_outcome": "no_eligible_backup",
-        "removal_reason": "fact_lock_failed",
         "post_check_passed": true
       }
     ],
@@ -681,18 +600,20 @@
             "reason": "Исправление непереведённого слова 'stabbed'.",
             "risk": "translation",
             "critical_error": true,
-            "critical_problem": "Текст содержит слово 'stabbed', которое не переведено на русский язык.",
+            "critical_problem": "Текст содержит непереведённое слово 'stabbed'.",
             "completeness_concept": "weapon_violence",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
             "plan_slot_id": "lead",
             "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-killers-rapist-past-revealed-hes-34970492-fb7d2c000bb0",
             "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/killers-rapist-past-revealed-hes-34970492",
-            "original_html": "<b>31-летний Стефан Гарнер, ранее осуждённый за изнасилование, был приговорён к пожизненному заключению за убийство своей беременной подруги Эмбер О'Брайен, которую он stabbed более 60 раз.</b> Убийство произошло 19 апреля в его квартире в Блэкли, где полиция обнаружила тело Эмбер, находящееся в ужасном состоянии. Суд признал Гарнера виновным в убийстве, и он должен провести минимум 23 года в тюрьме. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/killers-rapist-past-revealed-hes-34970492\">MEN Latest News</a>",
+            "original_html": "<b>Вынесен приговор — 31-летний Стефан Гарнер был приговорен к пожизненному заключению с минимальным сроком 23 года за убийство своей беременной девушки Эмбер О'Брайен, которую он stabbed более 60 раз.</b> В ходе судебного разбирательства стало известно, что он является осужденным за изнасилование. Убийство произошло 19 апреля 2026 года, приговор вынесен 26 ноября 2026 года. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/killers-rapist-past-revealed-hes-34970492\">MEN</a>",
+            "model_replacement_rejected": "post_check: critical concept still absent: weapon_violence, replacement drops weapon_violence",
+            "replacement_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-selfless-mum-23-died-suddenly-34976834-d155672b478b",
             "post_check_passed": true
           }
         ],
-        "outcome": "resolved_in_place",
+        "outcome": "resolved_by_replacement",
         "post_checks": [
           {
             "line_index": 1,
@@ -703,30 +624,30 @@
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::уточнение, что девять мужчин обвиняются в различных преступлениях, не обязательно связанных с делом мужа.",
+        "group_key": "свежие новости::добавление контекста о том, что мужчина был в такси с супругом и друзьями, как указано в источнике.",
         "actions": [
           {
-            "line_index": 3,
+            "line_index": 8,
             "section": "Свежие новости",
             "requested_action": "patch",
-            "reason": "Уточнение, что девять мужчин обвиняются в различных преступлениях, не обязательно связанных с делом мужа.",
+            "reason": "Добавление контекста о том, что мужчина был в такси с супругом и друзьями, как указано в источнике.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Текст может вводить в заблуждение, что девять мужчин обвиняются в преступлениях, связанных с делом мужа, хотя они могут быть обвиняемыми по отдельным делам.",
+            "critical_problem": "Текст не соответствует фактам из источника.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "model_patch",
-            "plan_slot_id": "last_24h-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-stockport-husband-who-drugged-raped-34972632-b777b1109b09",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/stockport-husband-who-drugged-raped-34972632",
-            "original_html": "• В суде на Миншулл Стрит 26 ноября муж, который на протяжении более 20 лет насиловал и подсыпал наркотики своей жене, впервые дал показания. Он признал, что испытывает \"вину и стыд\" за причинённую боль, и рассказал о том, как использовал онлайн-чаты для получения сексуального удовольствия. На суде также присутствуют девять мужчин, обвиняемых в различных преступлениях, связанных с этим делом. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/stockport-husband-who-drugged-raped-34972632\">MEN Latest News</a>",
+            "plan_slot_id": "last_24h-06",
+            "candidate_fingerprint": "url-bbc-com-news-articles-cm9w9y5xjvdjo-d84e98f5ec78",
+            "original_url_identity": "bbc.com/news/articles/cm9w9y5xjvdjo",
+            "original_html": "• Женатый мужчина рассказал о смертельной аварии с такси в Болтоне, в которой погибли четыре человека, и о том, как травмы по-прежнему влияют на его жизнь. <a href=\"https://bbc.com/news/articles/cm9w9y5xjvdjo\">BBC Manchester</a>",
             "post_check_passed": true
           }
         ],
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 3,
+            "line_index": 8,
             "passed": true,
             "detail": "post-check passed"
           }
@@ -734,25 +655,129 @@
         "known_factual_error": true
       },
       {
-        "group_key": "свежие новости::уточнение, что мужчина признал вину, но не был признан виновным судом.",
+        "group_key": "общественный транспорт сегодня::уточнение года для корректного восприятия даты.",
         "actions": [
           {
-            "line_index": 4,
-            "section": "Свежие новости",
+            "line_index": 15,
+            "section": "Общественный транспорт сегодня",
             "requested_action": "patch",
-            "reason": "Уточнение, что мужчина признал вину, но не был признан виновным судом.",
-            "risk": "factual",
+            "reason": "Уточнение года для корректного восприятия даты.",
+            "risk": "date",
             "critical_error": true,
-            "critical_problem": "Текст может вводить в заблуждение, что мужчина признан виновным, хотя он только признал вину.",
+            "critical_problem": "Дата указана неверно, 28 и 29 ноября 2026 года - это суббота и воскресенье.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "transport-04",
+            "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-northern-buses-replace-trains-between-blackburn-and-clitheroe-colne-burnley-manc-95c946c24a88",
+            "original_url_identity": "nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-blackburn-and-clitheroe-colne-burnley-manc",
+            "original_html": "• Northern заменяет поезда автобусами между Блэкберном и Клитеро / Колном / Бернли в субботу 28 и воскресенье 29 ноября. <a href=\"https://nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-blackburn-and-clitheroe-colne-burnley-manc\">National Rail Enquiries</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 15,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "общественный транспорт сегодня::информация о закрытии трамвайных линий устарела.",
+        "actions": [
+          {
+            "line_index": 16,
+            "section": "Общественный транспорт сегодня",
+            "requested_action": "strip",
+            "reason": "Информация о закрытии трамвайных линий устарела.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Указанные даты закрытия трамвайных линий уже прошли.",
             "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "last_24h-02",
-            "candidate_fingerprint": "url-bbc-com-news-articles-ck053epz2ppmo-7f339616a190",
-            "original_url_identity": "bbc.com/news/articles/ck053epz2ppmo",
-            "original_html": "• Мужчина, признанный виновным в изнасиловании своей жены с участием других мужчин, заявил в суде, что если бы она проснулась во время насилия, то была бы \"в ужасе\". Он признал вину в нескольких сексуальных преступлениях, включая изнасилование и применение вещества с целью совершения преступления, и сейчас его дело рассматривается в Манчестерском суде Minshull Street. <a href=\"https://bbc.com/news/articles/ck053epz2ppmo\">BBC Manchester</a>",
-            "model_replacement_rejected": "fact_lock: minshull street",
-            "deterministic_rewrite_rejected": "post_check: replacement drops sexual_offence",
+            "plan_slot_id": "transport-05",
+            "candidate_fingerprint": "url-itv-com-news-granada-2026-10-18-manchester-tram-lines-to-close-for-two-weeks-for-engineering-work-b228c68692d0",
+            "original_url_identity": "itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work",
+            "original_html": "• Metrolink: трамвайные линии в Манчестере (Алтринчем, Trafford Центр и Eccles) будут полностью закрыты с 19 октября по 1 ноября 2026 года для замены рельсов. Пассажиров просят планировать альтернативные маршруты. <a href=\"https://itv.com/news/granada/2026-10-18/manchester-tram-lines-to-close-for-two-weeks-for-engineering-work\">ITV Granada Greater Manchester</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_removal",
+        "post_checks": [
+          {
+            "line_index": 16,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "футбол::указано неверное количество клубов, требующих санкции.",
+        "actions": [
+          {
+            "line_index": 17,
+            "section": "Футбол",
+            "requested_action": "patch",
+            "reason": "Указано неверное количество клубов, требующих санкции.",
+            "risk": "factual",
+            "critical_error": true,
+            "critical_problem": "Неверное количество клубов, требующих санкции.",
+            "completeness_concept": "",
+            "outcome": "resolved_in_place",
+            "method": "verified_existing_fact",
+            "plan_slot_id": "football-01",
+            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-city-premier-league-charges-34973664-94de972a9407",
+            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34973664",
+            "original_html": "• Три соперника из Премьер-лиги требуют, чтобы владельцы Манчестер Сити были вынуждены продать клуб, если апелляция клуба по нарушению финансовых правил окажется неуспешной. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-city-premier-league-charges-34973664\">MEN Manchester City</a>",
+            "verification": "structured fact already rendered correctly",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_in_place",
+        "post_checks": [
+          {
+            "line_index": 17,
+            "passed": true,
+            "detail": "existing fact verified"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "выходные в gm::дата начала события должна быть 27 ноября, согласно источнику.",
+        "actions": [
+          {
+            "line_index": 21,
+            "section": "Выходные в GM",
+            "requested_action": "patch",
+            "reason": "Дата начала события должна быть 27 ноября, согласно источнику.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата начала события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "weekend_activities-01",
+            "candidate_fingerprint": "event-event-makers-market-in-great-northern-square-great-northern-manchester-2026-11-27-great-northern-square-62493134c69c",
+            "original_url_identity": "thegreatnorthern.com/event/makers-market-in-great-northern-square",
+            "original_html": "• 28 ноября — Makers Market на Great Northern Square в Манчестере. На площадке: рынок, ремесленные товары, еда. <a href=\"https://thegreatnorthern.com/event/makers-market-in-great-northern-square\">Great Northern Makers Market</a>",
+            "model_replacement_rejected": "post_check: structured event date is not rendered correctly",
+            "reserve_rejections": [
+              {
+                "fingerprint": "event-event-dance-foundations-project-cumbria-2026-11-29-lowry-0e6dee48704f",
+                "errors": [
+                  "structured event date is not rendered correctly"
+                ]
+              }
+            ],
             "backup_outcome": "backup_chain_exhausted",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -761,7 +786,7 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 4,
+            "line_index": 21,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -769,88 +794,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "общественный транспорт сегодня::событие происходит вне greater manchester, что нарушает geo_scope.",
-        "actions": [
-          {
-            "line_index": 14,
-            "section": "Общественный транспорт сегодня",
-            "requested_action": "strip",
-            "reason": "Событие происходит вне Greater Manchester, что нарушает geo_scope.",
-            "risk": "geo",
-            "critical_error": true,
-            "critical_problem": "География события не соответствует geo_scope.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "transport-03",
-            "candidate_fingerprint": "url-nationalrail-co-uk-status-and-disruptions-northern-buses-replace-trains-between-blackburn-and-clitheroe-colne-burnley-manc-95c946c24a88",
-            "original_url_identity": "nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-blackburn-and-clitheroe-colne-burnley-manc",
-            "original_html": "• Автобусы заменяют поезда между Блэкберном и Клитеро, Колном и Бернли в выходные 28-29 ноября. <a href=\"https://nationalrail.co.uk/status-and-disruptions/northern-buses-replace-trains-between-blackburn-and-clitheroe-colne-burnley-manc\">National Rail Enquiries</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 14,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "футбол::утверждение о признании вины манчестер сити не подтверждено источником.",
-        "actions": [
-          {
-            "line_index": 18,
-            "section": "Футбол",
-            "requested_action": "patch",
-            "reason": "Утверждение о признании вины Манчестер Сити не подтверждено источником.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Текст утверждает, что Манчестер Сити был признан виновным в нарушении финансовых правил, что не подтверждается источником.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "verified_existing_fact",
-            "plan_slot_id": "football-02",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-sport-football-football-news-man-united-team-up-liverpool-34973008-e37ab637f444",
-            "original_url_identity": "manchestereveningnews.co.uk/sport/football/football-news/man-united-team-up-liverpool-34973008",
-            "original_html": "• 26 ноября 2026 года Манчестер Юнайтед, Ливерпуль и Тоттенхэм наняли юридическую фирму Wiggin для подготовки исков против Манчестер Сити после того, как клуб был признан виновным в нарушении финансовых правил Премьер-лиги. <a href=\"https://manchestereveningnews.co.uk/sport/football/football-news/man-united-team-up-liverpool-34973008\">MEN Manchester United</a>",
-            "verification": "structured fact already rendered correctly",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 18,
-            "passed": true,
-            "detail": "existing fact verified"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "выходные в gm::дата события должна соответствовать данным из источника.",
+        "group_key": "выходные в gm::дата события указана неверно, исправлено на 7 октября.",
         "actions": [
           {
             "line_index": 32,
             "section": "Выходные в GM",
             "requested_action": "patch",
-            "reason": "Дата события должна соответствовать данным из источника.",
+            "reason": "Дата события указана неверно, исправлено на 7 октября.",
             "risk": "date",
             "critical_error": true,
-            "critical_problem": "Дата события указана неверно. В тексте указано 29 ноября, но в данных события указано 10 мая.",
+            "critical_problem": "Дата события указана неверно.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "weekend_activities-09",
-            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2027-05-10-burnage-rfc-9a3e9cdf54f4",
-            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
-            "original_html": "• 29 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+            "plan_slot_id": "weekend_activities-07",
+            "candidate_fingerprint": "event-event-car-boot-directory-2027-10-07-6f1a262f41ab",
+            "original_url_identity": "carbootdirectory.co.uk/listings/bolton-car-boot",
+            "original_html": "• 29 ноября в Macron Stadium — Car Boot Directory. На площадке: автомобильная барахолка, для покупателей с 7:00, вход свободный, ремесленные товары, еда. <a href=\"https://carbootdirectory.co.uk/listings/bolton-car-boot\">Bolton Car Boot Sale</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -866,24 +826,98 @@
         "known_factual_error": true
       },
       {
-        "group_key": "городской радар::уточнение формулировки, чтобы избежать недопонимания.",
+        "group_key": "выходные в gm::событие не актуально, так как дата прошла.",
         "actions": [
           {
-            "line_index": 33,
+            "line_index": 34,
+            "section": "Выходные в GM",
+            "requested_action": "strip",
+            "reason": "Событие не актуально, так как дата прошла.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "reserve_replacement",
+            "plan_slot_id": "weekend_activities-09",
+            "candidate_fingerprint": "event-event-burnage-rfc-car-boot-sale-2026-05-10-burnage-rfc-cb0f71e57f9b",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale",
+            "original_html": "• 29 ноября — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/burnage-rfc-car-boot-sale\">Burnage RFC Car Boot Sale</a>",
+            "replacement_fingerprint": "event-event-funnyboyz-manchester-presents-benidorm-bingo-2026-11-28-funnyboyz-manchester-95d658b5dbac",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 36,
+            "section": "Выходные в GM",
+            "requested_action": "strip",
+            "reason": "Событие не актуально, так как дата прошла.",
+            "risk": "date",
+            "critical_error": true,
+            "critical_problem": "Дата события указана неверно.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_replacement",
+            "method": "removed",
+            "plan_slot_id": "weekend_activities-11",
+            "candidate_fingerprint": "event-event-barton-aerodrome-car-boot-sale-2026-04-04-6ea5bfa2c8ed",
+            "original_url_identity": "manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale",
+            "original_html": "• 28 ноября — Barton Aerodrome car boot sale. На площадке: автомобильная барахолка, для покупателей с 9:00, вход свободный, можно с собакой, подходит для семьи. <a href=\"https://manchester-rocks.co.uk/things-to-do/barton-aerodrome-car-boot-sale\">Barton Aerodrome Car Boot</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          }
+        ],
+        "outcome": "resolved_by_replacement",
+        "post_checks": [
+          {
+            "line_index": 34,
+            "passed": true,
+            "detail": "post-check passed"
+          },
+          {
+            "line_index": 36,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          }
+        ],
+        "known_factual_error": true
+      },
+      {
+        "group_key": "городской радар::содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
+        "actions": [
+          {
+            "line_index": 38,
             "section": "Городской радар",
-            "requested_action": "patch",
-            "reason": "Уточнение формулировки, чтобы избежать недопонимания.",
+            "requested_action": "strip",
+            "reason": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
             "risk": "sensitive",
             "critical_error": true,
-            "critical_problem": "Текст может вызвать недопонимание, что женщина обвиняет себя, а не спрашивает полицию.",
-            "completeness_concept": "sexual_offence",
+            "critical_problem": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
+            "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "city_watch-01",
-            "candidate_fingerprint": "url-bbc-com-news-articles-c38x0vd2yyx5o-4cc56f881381",
-            "original_url_identity": "bbc.com/news/articles/c38x0vd2yyx5o",
-            "original_html": "• Женщина, которую муж 20 лет насиловал и подсыпал ей наркотики, спросила полицию, не она ли виновата, как стало известно в суде. <a href=\"https://bbc.com/news/articles/c38x0vd2yyx5o\">BBC Manchester</a>",
-            "model_replacement_rejected": "post_check: critical concept still absent: sexual_offence, replacement drops sexual_offence",
+            "plan_slot_id": "city_watch-02",
+            "candidate_fingerprint": "url-bbc-com-news-articles-ck053epz2ppmo-7f339616a190",
+            "original_url_identity": "bbc.com/news/articles/ck053epz2ppmo",
+            "original_html": "• Муж, который признался в том, что подсыпал наркотики и изнасиловал свою жену с незнакомцами, заявил в суде, что она была бы \"в ужасе\", если бы проснулась. <a href=\"https://bbc.com/news/articles/ck053epz2ppmo\">BBC Manchester</a>",
+            "backup_outcome": "no_eligible_backup",
+            "removal_reason": "fact_lock_failed",
+            "post_check_passed": true
+          },
+          {
+            "line_index": 41,
+            "section": "Городской радар",
+            "requested_action": "strip",
+            "reason": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
+            "risk": "sensitive",
+            "critical_error": true,
+            "critical_problem": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
+            "completeness_concept": "",
+            "outcome": "resolved_by_removal",
+            "method": "removed",
+            "plan_slot_id": "city_watch-05",
+            "candidate_fingerprint": "url-itv-com-news-granada-2026-11-23-court-hears-drug-rape-husband-advertised-online-wanting-extra-fun-and-games-e45d197c037a",
+            "original_url_identity": "itv.com/news/granada/2026-11-23/court-hears-drug-rape-husband-advertised-online-wanting-extra-fun-and-games",
+            "original_html": "• Мужчина из Стокпорта, который более 20 лет подсыпал наркотики и изнасиловал свою жену, размещал объявления в интернете с предложением 'дополнительных развлечений'. Он признал себя виновным в нескольких преступлениях, начиная с 2004 года. Судебное заседание прошло 23 ноября 2026 года. <a href=\"https://itv.com/news/granada/2026-11-23/court-hears-drug-rape-husband-advertised-online-wanting-extra-fun-and-games\">ITV Granada Greater Manchester</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "fact_lock_failed",
             "post_check_passed": true
@@ -892,7 +926,12 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 33,
+            "line_index": 38,
+            "passed": true,
+            "detail": "slot removed and source absent"
+          },
+          {
+            "line_index": 41,
             "passed": true,
             "detail": "slot removed and source absent"
           }
@@ -900,85 +939,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "it и бизнес::уточнение фактов о семидневном железнодорожном обслуживании.",
+        "group_key": "еда, открытия и рынки::указание места открытия ресторана nobu в небоскребе viadux 2 не подтверждено в источнике.",
         "actions": [
           {
-            "line_index": 38,
-            "section": "IT и бизнес",
+            "line_index": 44,
+            "section": "Еда, открытия и рынки",
             "requested_action": "patch",
-            "reason": "Уточнение фактов о семидневном железнодорожном обслуживании.",
+            "reason": "Указание места открытия ресторана Nobu в небоскребе Viadux 2 не подтверждено в источнике.",
             "risk": "factual",
             "critical_error": true,
-            "critical_problem": "Некорректное описание изменений Bee Network.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "tech_business-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-bee-network-announces-major-changes-34972302-1ed6184f2f6f",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/bee-network-announces-major-changes-34972302",
-            "original_html": "• Bee Network объявил о значительных изменениях, включая внедрение светофоров с поддержкой ИИ и возвращение поездов по воскресеньям после двухлетнего спора. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/bee-network-announces-major-changes-34972302\">MEN Latest News</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 38,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "business/tech события для тебя::указано только 'manchester', но необходимо уточнить место проведения — pendulum hotel.",
-        "actions": [
-          {
-            "line_index": 43,
-            "section": "Business/tech события для тебя",
-            "requested_action": "patch",
-            "reason": "Указано только 'Manchester', но необходимо уточнить место проведения — Pendulum Hotel.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Некорректное указание места проведения события.",
-            "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "professional_events-01",
-            "candidate_fingerprint": "event-event-google-ai-works-for-small-businesses-manchester-thursday-3-dec-10am-3-30pm-2026-12-03-manchester-e0530c3a92e6",
-            "original_url_identity": "gmchamber.co.uk/events/google-ai-works-for-small-businesses-manchester",
-            "original_html": "• Google AI Works for Small Businesses: Manchester Thursday 3 Dec 10am - 3:30pm — 3 декабря, Manchester. Уровень: высокий уровень; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь. <a href=\"https://gmchamber.co.uk/events/google-ai-works-for-small-businesses-manchester\">GM Chamber Events</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 43,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::уточнение формата события для различения с другим событием jungle.",
-        "actions": [
-          {
-            "line_index": 47,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "patch",
-            "reason": "Уточнение формата события для различения с другим событием Jungle.",
-            "risk": "factual",
-            "critical_error": true,
-            "critical_problem": "Дублирование события Jungle на одну и ту же дату, но в разных местах.",
+            "critical_problem": "Неверное указание места открытия ресторана.",
             "completeness_concept": "",
             "outcome": "resolved_in_place",
             "method": "verified_existing_fact",
-            "plan_slot_id": "ticket_radar-03",
-            "candidate_fingerprint": "event-event-jungle-dj-set-2026-11-27-albert-hall-a7de04b4b7fd",
-            "original_url_identity": "ticketmaster.co.uk/jungle-dj-set-manchester-27-11-2026/event/1F00654C96D81C64",
-            "original_html": "• <b>Jungle</b> — 27 ноября, Albert Hall. Событие проходит сегодня. <a href=\"https://ticketmaster.co.uk/jungle-dj-set-manchester-27-11-2026/event/1F00654C96D81C64\">Ticketmaster</a>",
+            "plan_slot_id": "openings-01",
+            "candidate_fingerprint": "url-manchestersfinest-com-eating-and-drinking-new-images-of-nobu-restaurant-opening-in-76-storey-skyscraper-released-d8a0eb1b2c06",
+            "original_url_identity": "manchestersfinest.com/eating-and-drinking/new-images-of-nobu-restaurant-opening-in-76-storey-skyscraper-released",
+            "original_html": "• Опубликованы новые изображения предстоящего ресторана Nobu в 76-этажном небоскребе Viadux 2 в Манчестере; открытие запланировано на 2032 год. <a href=\"https://manchestersfinest.com/eating-and-drinking/new-images-of-nobu-restaurant-opening-in-76-storey-skyscraper-released\">Manchester&#x27;s Finest</a>",
             "verification": "structured fact already rendered correctly",
             "post_check_passed": true
           }
@@ -986,7 +963,7 @@
         "outcome": "resolved_in_place",
         "post_checks": [
           {
-            "line_index": 47,
+            "line_index": 44,
             "passed": true,
             "detail": "existing fact verified"
           }
@@ -994,87 +971,23 @@
         "known_factual_error": true
       },
       {
-        "group_key": "билеты / ticket radar::событие уже прошло, дата в прошлом.",
+        "group_key": "билеты / ticket radar::duplicate listing for swae lee event with incorrect venue information",
         "actions": [
           {
-            "line_index": 55,
+            "line_index": 49,
             "section": "Билеты / Ticket Radar",
             "requested_action": "strip",
-            "reason": "Событие уже прошло, дата в прошлом.",
-            "risk": "date",
-            "critical_error": true,
-            "critical_problem": "Дата события в прошлом относительно текущей даты выпуска.",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "ticket_radar-11",
-            "candidate_fingerprint": "event-event-michael-shannon-jason-narducy-13th-november-2027-2027-11-13-manchester-academy-c8517a5ba929",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13382222/michael-shannon-and-jason-narducy-manchester-academy-2-2027-11-13-19-30-00",
-            "original_html": "• <b>Michael Shannon & Jason Narducy</b> — 13 ноября, Manchester Academy; цена £38.50. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13382222/michael-shannon-and-jason-narducy-manchester-academy-2-2027-11-13-19-30-00\">Manchester Academy</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 55,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "билеты / ticket radar::уточнение, что это трибьют-шоу, а не выступление sade.",
-        "actions": [
-          {
-            "line_index": 58,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "patch",
-            "reason": "Уточнение, что это трибьют-шоу, а не выступление Sade.",
+            "reason": "Duplicate listing for Swae Lee event with incorrect venue information.",
             "risk": "factual",
             "critical_error": false,
             "critical_problem": "",
             "completeness_concept": "",
-            "outcome": "resolved_in_place",
-            "method": "model_patch",
-            "plan_slot_id": "ticket_radar-14",
-            "candidate_fingerprint": "event-event-a-night-of-sade-3rd-april-2027-2027-04-03-manchester-academy-cb5a4cd75d78",
-            "original_url_identity": "manchesteracademy.net/order/gateway/13382231/a-night-of-sade-manchester-academy-2-2027-04-03-19-00-00",
-            "original_html": "• <b>A Night of Sade</b> — 3 апреля, Manchester Academy; цена £21.00. Билеты и время указаны на официальной странице. <a href=\"https://manchesteracademy.net/order/gateway/13382231/a-night-of-sade-manchester-academy-2-2027-04-03-19-00-00\">Manchester Academy</a>",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_in_place",
-        "post_checks": [
-          {
-            "line_index": 58,
-            "passed": true,
-            "detail": "post-check passed"
-          }
-        ],
-        "known_factual_error": true
-      },
-      {
-        "group_key": "что важно сегодня::дублирование информации о #-летней девочке, пострадавшей в дтп",
-        "actions": [
-          {
-            "line_index": 15,
-            "section": "Что важно сегодня",
-            "requested_action": "strip",
-            "reason": "Дублирование информации о 15-летней девочке, пострадавшей в ДТП.",
-            "risk": "format",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
             "outcome": "resolved_by_removal",
             "method": "removed",
-            "plan_slot_id": "today_focus-01",
-            "candidate_fingerprint": "url-manchestereveningnews-co-uk-news-greater-manchester-news-girl-15-life-threatening-condition-34972200-417ba43f75b1",
-            "original_url_identity": "manchestereveningnews.co.uk/news/greater-manchester-news/girl-15-life-threatening-condition-34972200",
-            "original_html": "• 15-летняя девочка находится в состоянии, угрожающем жизни, после того, как её сбил автомобиль на Риппонден Роуд в Oldham 25 ноября. Полиция проводит расследование, арестов не было. <a href=\"https://manchestereveningnews.co.uk/news/greater-manchester-news/girl-15-life-threatening-condition-34972200\">MEN</a>",
+            "plan_slot_id": "ticket_radar-02",
+            "candidate_fingerprint": "event-event-swae-lee-event-moved-to-manchester-academy-2026-11-29-o2-ritz-manchester-4cd11f828804",
+            "original_url_identity": "ticketmaster.co.uk/swae-lee-event-moved-to-manchester-manchester-29-11-2026/event/3E0065390F2C7E1F",
+            "original_html": "• <b>Swae Lee</b> — 29 ноября, O2 Ritz Manchester. Билеты и время указаны на официальной странице. <a href=\"https://ticketmaster.co.uk/swae-lee-event-moved-to-manchester-manchester-29-11-2026/event/3E0065390F2C7E1F\">Ticketmaster</a>",
             "backup_outcome": "no_eligible_backup",
             "removal_reason": "duplicate_after_plan",
             "post_check_passed": true
@@ -1083,87 +996,15 @@
         "outcome": "resolved_by_removal",
         "post_checks": [
           {
-            "line_index": 15,
+            "line_index": 49,
             "passed": true,
             "detail": "slot removed and source absent"
           },
           {
             "check": "duplicate_identity",
-            "identity": "story:public safety after incident|oldham|girl 15 in life threatening condition following oldham crash|new story|2026 11 26",
+            "identity": "ticket:swae lee|2026-11-29|o2 ritz manchester",
             "visible_count": 0,
             "passed": true
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "билеты / ticket radar::дублирование события jungle в co-op live и albert hall",
-        "actions": [
-          {
-            "line_index": 45,
-            "section": "Билеты / Ticket Radar",
-            "requested_action": "strip",
-            "reason": "Дублирование события Jungle в Co-op Live и Albert Hall.",
-            "risk": "format",
-            "critical_error": false,
-            "critical_problem": "",
-            "completeness_concept": "",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "ticket_radar-01",
-            "candidate_fingerprint": "event-event-jungle-with-special-guests-rio-kosta-fri-27-nov-2026-multiple-times-2026-11-27-co-op-live-60112d2a9e8c",
-            "original_url_identity": "cooplive.com/events/jungle-jkqy",
-            "original_html": "• <b>Jungle</b> — 27 ноября, Co-op Live. Событие проходит сегодня. <a href=\"https://cooplive.com/events/jungle-jkqy\">Co-op Live</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "duplicate_after_plan",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 45,
-            "passed": true,
-            "detail": "slot removed and source absent"
-          },
-          {
-            "check": "duplicate_identity",
-            "identity": "ticket:jungle|2026-11-27|co op live",
-            "visible_count": 0,
-            "passed": true
-          }
-        ],
-        "known_factual_error": false
-      },
-      {
-        "group_key": "городской радар::critical source fact dropped in translation: 'rape' (sexual_offence/charge/verdict/victim) has no russian rendering in the shipped line",
-        "actions": [
-          {
-            "line_index": 34,
-            "section": "Городской радар",
-            "requested_action": "replace",
-            "reason": "critical source fact dropped in translation: 'rape' (sexual_offence/charge/verdict/victim) has no Russian rendering in the shipped line",
-            "risk": "translation",
-            "critical_error": true,
-            "critical_problem": "",
-            "completeness_concept": "sexual_offence",
-            "outcome": "resolved_by_removal",
-            "method": "removed",
-            "plan_slot_id": "city_watch-02",
-            "candidate_fingerprint": "url-itv-com-news-granada-2026-11-23-court-hears-drug-rape-husband-advertised-online-wanting-extra-fun-and-games-e45d197c037a",
-            "original_url_identity": "itv.com/news/granada/2026-11-23/court-hears-drug-rape-husband-advertised-online-wanting-extra-fun-and-games",
-            "original_html": "• В суде стало известно, что мужчина из Greater Manchester, который более 20 лет насиловал свою жену, рекламировал в интернете \"поиск дополнительных развлечений\"; он признал себя виновным в нескольких преступлениях с 2004 года. <a href=\"https://itv.com/news/granada/2026-11-23/court-hears-drug-rape-husband-advertised-online-wanting-extra-fun-and-games\">ITV Granada Greater Manchester</a>",
-            "backup_outcome": "no_eligible_backup",
-            "removal_reason": "fact_lock_failed",
-            "post_check_passed": true
-          }
-        ],
-        "outcome": "resolved_by_removal",
-        "post_checks": [
-          {
-            "line_index": 34,
-            "passed": true,
-            "detail": "slot removed and source absent"
           }
         ],
         "known_factual_error": true
@@ -1174,7 +1015,7 @@
       "improved": 0,
       "failed": 1,
       "empty_or_not_better": 0,
-      "skipped": 2,
+      "skipped": 1,
       "reports": [
         {
           "fingerprint": "url-nationalrail-co-uk-status-and-disruptions-northern-buses-replace-trains-between-blackburn-and-clitheroe-colne-burnley-manc-95c946c24a88",
@@ -1184,36 +1025,28 @@
           "error": "RuntimeError: HTTP 404"
         },
         {
-          "fingerprint": "event-event-jungle-dj-set-2026-11-27-albert-hall-a7de04b4b7fd",
-          "title": "Jungle (DJ Set) — event 2026-11-27 — public sale 2026-10-16 10:00",
+          "fingerprint": "event-event-swae-lee-event-moved-to-manchester-academy-2026-11-29-o2-ritz-manchester-4cd11f828804",
+          "title": "Swae Lee - Event moved to Manchester Academy — event 2026-11-29 — public sale 2026-10-01 10:00",
           "status": "skipped",
           "reason": "structured_ticket_candidate",
-          "url": "https://ticketmaster.co.uk/jungle-dj-set-manchester-27-11-2026/event/1F00654C96D81C64",
-          "candidate_evidence_chars": 345
-        },
-        {
-          "fingerprint": "event-event-jungle-with-special-guests-rio-kosta-fri-27-nov-2026-multiple-times-2026-11-27-co-op-live-60112d2a9e8c",
-          "title": "Jungle with special guests Rio Kosta Fri 27 Nov 2026 Multiple times",
-          "status": "skipped",
-          "reason": "structured_ticket_candidate",
-          "url": "https://cooplive.com/events/jungle-jkqy",
-          "candidate_evidence_chars": 0
+          "url": "https://ticketmaster.co.uk/swae-lee-event-moved-to-manchester-manchester-29-11-2026/event/3E0065390F2C7E1F",
+          "candidate_evidence_chars": 381
         }
       ]
     },
-    "enrich_improved": 14,
-    "deterministic_rewrite_built": 1,
-    "deterministic_post_check_rejected": 1,
+    "enrich_improved": 13,
+    "model_post_check_rejected": 2,
+    "deterministic_rewrite_rejected": 1,
+    "false_positive_existing_fact": 4,
+    "no_eligible_backup": 5,
+    "deterministic_fact_lock_rejected": 1,
+    "reserve_post_check_rejected": 1,
     "backup_chain_exhausted": 1,
-    "no_eligible_backup": 6,
-    "false_positive_existing_fact": 3,
-    "model_post_check_rejected": 1,
-    "deterministic_rewrite_rejected": 2,
     "final_fact_completeness": {
       "version": "v1",
-      "checked_lines": 49,
-      "matched_lines": 49,
-      "applicable_lines": 2,
+      "checked_lines": 50,
+      "matched_lines": 50,
+      "applicable_lines": 4,
       "unmatched_lines": 4,
       "critical_omission_count": 0,
       "critical_omissions": [],
@@ -1225,121 +1058,107 @@
       "still_missing": 0
     },
     "final_prose_policy": {
-      "checked_lines": 53,
-      "resolved_in_place": 53,
+      "checked_lines": 54,
+      "resolved_in_place": 54,
       "unresolved": 0,
       "findings": []
     },
     "status": "resolved"
   },
-  "notes": "Исправлено непереведённое слово 'stabbed'.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправления необходимы для точности представления судебных процессов.; Строка 14 нарушает географический контракт, так как событие происходит вне GM.; Обе строки соответствуют требованиям географии и содержат акт",
+  "notes": "Исправлено непереведённое слово 'stabbed'.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка 8 требует уточнения контекста, чтобы соответствовать источнику.; Исправьте даты в строках 15 и 16 для актуальности информации.; Исправлено количество клубов в строке 17.; Исправлена дата начала события для",
   "raw": {
     "decision": "repair_required",
-    "confidence": 0.9,
+    "confidence": 0.85,
     "critical_errors": [
       {
         "line_index": 1,
         "section": "Главная история дня",
-        "problem": "Текст содержит слово 'stabbed', которое не переведено на русский язык.",
+        "problem": "Текст содержит непереведённое слово 'stabbed'.",
         "risk": "translation",
         "suggested_action": "repair"
       },
       {
-        "line_index": 3,
+        "line_index": 8,
         "section": "Свежие новости",
-        "problem": "Текст может вводить в заблуждение, что девять мужчин обвиняются в преступлениях, связанных с делом мужа, хотя они могут быть обвиняемыми по отдельным делам.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 4,
-        "section": "Свежие новости",
-        "problem": "Текст может вводить в заблуждение, что мужчина признан виновным, хотя он только признал вину.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 14,
-        "section": "Общественный транспорт сегодня",
-        "problem": "География события не соответствует geo_scope.",
-        "risk": "geo",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 18,
-        "section": "Футбол",
-        "problem": "Текст утверждает, что Манчестер Сити был признан виновным в нарушении финансовых правил, что не подтверждается источником.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 30,
-        "section": "Выходные в GM",
-        "problem": "Некорректное указание географии: Waterside Farm, Otterspool Road находится в Стокпорте, а не в Манчестере.",
-        "risk": "geo",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 32,
-        "section": "Выходные в GM",
-        "problem": "Дата события указана неверно. В тексте указано 29 ноября, но в данных события указано 10 мая.",
-        "risk": "date",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 33,
-        "section": "Городской радар",
-        "problem": "Текст может вызвать недопонимание, что женщина обвиняет себя, а не спрашивает полицию.",
-        "risk": "sensitive",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 38,
-        "section": "IT и бизнес",
-        "problem": "Некорректное описание изменений Bee Network.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 43,
-        "section": "Business/tech события для тебя",
-        "problem": "Некорректное указание места проведения события.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 47,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дублирование события Jungle на одну и ту же дату, но в разных местах.",
-        "risk": "factual",
-        "suggested_action": "repair"
-      },
-      {
-        "line_index": 55,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Дата события в прошлом относительно текущей даты выпуска.",
-        "risk": "date",
-        "suggested_action": "strip"
-      },
-      {
-        "line_index": 58,
-        "section": "Билеты / Ticket Radar",
-        "problem": "Не указано, что это трибьют-шоу, а не выступление Sade.",
+        "problem": "Текст не соответствует фактам из источника.",
         "risk": "factual",
         "suggested_action": "repair"
       },
       {
         "line_index": 15,
-        "section": "Что важно сегодня",
-        "problem": "Дублирование информации о 15-летней девочке, пострадавшей в ДТП.",
-        "risk": "format",
+        "section": "Общественный транспорт сегодня",
+        "problem": "Дата указана неверно, 28 и 29 ноября 2026 года - это суббота и воскресенье.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 16,
+        "section": "Общественный транспорт сегодня",
+        "problem": "Указанные даты закрытия трамвайных линий уже прошли.",
+        "risk": "date",
         "suggested_action": "strip"
       },
       {
-        "line_index": 45,
+        "line_index": 17,
+        "section": "Футбол",
+        "problem": "Неверное количество клубов, требующих санкции.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 21,
+        "section": "Выходные в GM",
+        "problem": "Дата начала события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 32,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 34,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 36,
+        "section": "Выходные в GM",
+        "problem": "Дата события указана неверно.",
+        "risk": "date",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 38,
+        "section": "Городской радар",
+        "problem": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
+        "risk": "sensitive",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 41,
+        "section": "Городской радар",
+        "problem": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
+        "risk": "sensitive",
+        "suggested_action": "strip"
+      },
+      {
+        "line_index": 44,
+        "section": "Еда, открытия и рынки",
+        "problem": "Неверное указание места открытия ресторана.",
+        "risk": "factual",
+        "suggested_action": "repair"
+      },
+      {
+        "line_index": 49,
         "section": "Билеты / Ticket Radar",
-        "problem": "Дублирование события Jungle в Co-op Live и Albert Hall.",
-        "risk": "format",
+        "problem": "Duplicate event listing with incorrect venue.",
+        "risk": "factual",
         "suggested_action": "strip"
       }
     ],
@@ -1348,130 +1167,112 @@
         "line_index": 1,
         "section": "Главная история дня",
         "action": "patch",
-        "replacement_text": "• 31-летний Стефан Гарнер, ранее осуждённый за изнасилование, был приговорён к пожизненному заключению за убийство своей беременной подруги Эмбер О'Брайен, которую он ударил ножом более 60 раз. Убийство произошло 19 апреля в его квартире в Блэкли, где полиция обнаружила тело Эмбер, находящееся в ужасном состоянии. Суд признал Гарнера виновным в убийстве, и он должен провести минимум 23 года в тюрьме.",
+        "replacement_text": "• Вынесен приговор — 31-летний Стефан Гарнер был приговорен к пожизненному заключению с минимальным сроком 23 года за убийство своей беременной девушки Эмбер О'Брайен, которую он зарезал более 60 раз. В ходе судебного разбирательства стало известно, что он является осужденным за изнасилование. Убийство произошло 19 апреля 2026 года, приговор вынесен 26 ноября 2026 года.",
         "reason": "Исправление непереведённого слова 'stabbed'.",
         "risk": "translation"
       },
       {
-        "line_index": 3,
+        "line_index": 8,
         "section": "Свежие новости",
         "action": "patch",
-        "replacement_text": "• В суде на Миншулл Стрит 26 ноября муж, который на протяжении более 20 лет насиловал и подсыпал наркотики своей жене, впервые дал показания. Он признал, что испытывает \"вину и стыд\" за причинённую боль, и рассказал о том, как использовал онлайн-чаты для получения сексуального удовольствия. На суде также присутствуют девять мужчин, обвиняемых в различных преступлениях.",
-        "reason": "Уточнение, что девять мужчин обвиняются в различных преступлениях, не обязательно связанных с делом мужа.",
+        "replacement_text": "• Женатый мужчина рассказал о смертельной аварии с такси в Болтоне, в которой погибли четыре человека, и о том, как травмы по-прежнему влияют на его жизнь. Он и его супруг были в такси с двумя друзьями, когда произошло столкновение.",
+        "reason": "Добавление контекста о том, что мужчина был в такси с супругом и друзьями, как указано в источнике.",
         "risk": "factual"
       },
       {
-        "line_index": 4,
-        "section": "Свежие новости",
+        "line_index": 15,
+        "section": "Общественный транспорт сегодня",
         "action": "patch",
-        "replacement_text": "• Мужчина, признавший вину в изнасиловании своей жены с участием других мужчин, заявил в суде, что если бы она проснулась во время насилия, то была бы \"в ужасе\". Он признал вину в нескольких сексуальных преступлениях, включая изнасилование и применение вещества с целью совершения преступления, и сейчас его дело рассматривается в Манчестерском суде Minshull Street.",
-        "reason": "Уточнение, что мужчина признал вину, но не был признан виновным судом.",
-        "risk": "factual"
+        "replacement_text": "• Northern заменяет поезда автобусами между Блэкберном и Клитеро / Колном / Бернли в субботу 28 и воскресенье 29 ноября 2026 года.",
+        "reason": "Уточнение года для корректного восприятия даты.",
+        "risk": "date"
       },
       {
-        "line_index": 14,
+        "line_index": 16,
         "section": "Общественный транспорт сегодня",
         "action": "strip",
-        "reason": "Событие происходит вне Greater Manchester, что нарушает geo_scope.",
-        "risk": "geo"
+        "reason": "Информация о закрытии трамвайных линий устарела.",
+        "risk": "date"
       },
       {
-        "line_index": 18,
+        "line_index": 17,
         "section": "Футбол",
         "action": "patch",
-        "replacement_text": "• 26 ноября 2026 года Манчестер Юнайтед, Ливерпуль и Тоттенхэм наняли юридическую фирму Wiggin для подготовки исков против Манчестер Сити, обвиняемого в нарушении финансовых правил Премьер-лиги.",
-        "reason": "Утверждение о признании вины Манчестер Сити не подтверждено источником.",
+        "replacement_text": "• Три клуба из Премьер-лиги требуют, чтобы владельцы Манчестер Сити были вынуждены продать клуб, если апелляция клуба по нарушению финансовых правил окажется неуспешной.",
+        "reason": "Указано неверное количество клубов, требующих санкции.",
         "risk": "factual"
       },
       {
-        "line_index": 30,
+        "line_index": 21,
         "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• 29 ноября в Waterside Farm, Otterspool Road — The BIG Stockport Car Boot, Romiley. На площадке: автомобильная барахолка, вход свободный.",
-        "reason": "Указание правильного местоположения события в Стокпорте.",
-        "risk": "geo"
+        "replacement_text": "• 27 ноября — Makers Market на Great Northern Square в Манчестере. На площадке: рынок, ремесленные товары, еда.",
+        "reason": "Дата начала события должна быть 27 ноября, согласно источнику.",
+        "risk": "date"
       },
       {
         "line_index": 32,
         "section": "Выходные в GM",
         "action": "patch",
-        "replacement_text": "• 10 мая — Burnage RFC car boot sale. На площадке: автомобильная барахолка, вход свободный, подходит для семьи.",
-        "reason": "Дата события должна соответствовать данным из источника.",
+        "replacement_text": "• 7 октября в Macron Stadium — Car Boot Directory. На площадке: автомобильная барахолка, для покупателей с 7:00, вход свободный, ремесленные товары, еда.",
+        "reason": "Дата события указана неверно, исправлено на 7 октября.",
         "risk": "date"
       },
       {
-        "line_index": 33,
-        "section": "Городской радар",
-        "action": "patch",
-        "replacement_text": "• Женщина, которую муж 20 лет насиловал и подсыпал ей наркотики, спросила полицию, не она ли виновата в произошедшем, как стало известно в суде.",
-        "reason": "Уточнение формулировки, чтобы избежать недопонимания.",
-        "risk": "sensitive"
+        "line_index": 34,
+        "section": "Выходные в GM",
+        "action": "strip",
+        "reason": "Событие не актуально, так как дата прошла.",
+        "risk": "date"
+      },
+      {
+        "line_index": 36,
+        "section": "Выходные в GM",
+        "action": "strip",
+        "reason": "Событие не актуально, так как дата прошла.",
+        "risk": "date"
       },
       {
         "line_index": 38,
-        "section": "IT и бизнес",
+        "section": "Городской радар",
+        "action": "strip",
+        "reason": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
+        "risk": "sensitive"
+      },
+      {
+        "line_index": 41,
+        "section": "Городской радар",
+        "action": "strip",
+        "reason": "Содержит чувствительную информацию о преступлении, которая может быть травмирующей.",
+        "risk": "sensitive"
+      },
+      {
+        "line_index": 44,
+        "section": "Еда, открытия и рынки",
         "action": "patch",
-        "replacement_text": "• Bee Network объявил о значительных изменениях, включая внедрение светофоров с поддержкой ИИ и восстановление семидневного железнодорожного обслуживания после двухлетнего перерыва.",
-        "reason": "Уточнение фактов о семидневном железнодорожном обслуживании.",
+        "replacement_text": "• Опубликованы новые изображения предстоящего ресторана Nobu в 76-этажном небоскребе в Манчестере; открытие запланировано на 2032 год.",
+        "reason": "Указание места открытия ресторана Nobu в небоскребе Viadux 2 не подтверждено в источнике.",
         "risk": "factual"
       },
       {
-        "line_index": 43,
-        "section": "Business/tech события для тебя",
-        "action": "patch",
-        "replacement_text": "• Google AI Works for Small Businesses: Manchester Thursday 3 Dec 10am - 3:30pm — 3 декабря, Pendulum Hotel, Sackville Street, Manchester. Уровень: высокий уровень; Доступ: бесплатно. Почему тебе: профессиональный сигнал по AI/product/fintech/digital transformation; спокойная практика профессионального английского. Действие: зарегистрируйтесь.",
-        "reason": "Указано только 'Manchester', но необходимо уточнить место проведения — Pendulum Hotel.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 47,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• Jungle (DJ Set) — 27 ноября, Albert Hall. Событие проходит сегодня.",
-        "reason": "Уточнение формата события для различения с другим событием Jungle.",
-        "risk": "factual"
-      },
-      {
-        "line_index": 55,
+        "line_index": 49,
         "section": "Билеты / Ticket Radar",
         "action": "strip",
-        "reason": "Событие уже прошло, дата в прошлом.",
-        "risk": "date"
-      },
-      {
-        "line_index": 58,
-        "section": "Билеты / Ticket Radar",
-        "action": "patch",
-        "replacement_text": "• A Night of Sade (трибьют-шоу) — 3 апреля, Manchester Academy; цена £21.00. Билеты и время указаны на официальной странице.",
-        "reason": "Уточнение, что это трибьют-шоу, а не выступление Sade.",
+        "reason": "Duplicate listing for Swae Lee event with incorrect venue information.",
         "risk": "factual"
-      },
-      {
-        "line_index": 15,
-        "section": "Что важно сегодня",
-        "action": "strip",
-        "replacement_text": "",
-        "reason": "Дублирование информации о 15-летней девочке, пострадавшей в ДТП.",
-        "risk": "format"
-      },
-      {
-        "line_index": 45,
-        "section": "Билеты / Ticket Radar",
-        "action": "strip",
-        "replacement_text": "",
-        "reason": "Дублирование события Jungle в Co-op Live и Albert Hall.",
-        "risk": "format"
       }
     ],
     "warnings": [
-      "Недостаточное количество элементов в секциях 'Что важно сегодня' и 'Городской радар'.",
-      "Преобладание билетов в выпуске, что может снизить интерес к основным новостям."
+      "Некоторые события имеют неверные даты, что может ввести читателей в заблуждение.",
+      "Отсутствует блок 'Что важно сегодня', что может снизить информативность выпуска.",
+      "Секция 'Билеты / Ticket Radar' содержит 12 элементов, что может доминировать над основными новостями.",
+      "Несколько строк в 'Выходные в GM' и 'Городской радар' требуют правки, что может повлиять на качество информации."
     ],
-    "notes": "Исправлено непереведённое слово 'stabbed'.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Исправления необходимы для точности представления судебных процессов.; Строка 14 нарушает географический контракт, так как событие происходит вне GM.; Обе строки соответствуют требованиям географии и содержат акт",
+    "notes": "Исправлено непереведённое слово 'stabbed'.; Прогноз погоды соответствует требованиям и не содержит ошибок.; Строка 8 требует уточнения контекста, чтобы соответствовать источнику.; Исправьте даты в строках 15 и 16 для актуальности информации.; Исправлено количество клубов в строке 17.; Исправлена дата начала события для",
     "map_reduce": {
       "mode": "map_reduce",
       "status": "ok",
-      "chunk_count": 17,
+      "chunk_count": 12,
       "failed_chunk_count": 0,
       "chunks": [
         {
@@ -1489,8 +1290,8 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2765,
-          "duration_seconds": 2.608
+          "estimated_tokens": 2758,
+          "duration_seconds": 1.934
         },
         {
           "chunk_id": "chunk-02",
@@ -1507,8 +1308,8 @@
           "action_count": 0,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 2487,
-          "duration_seconds": 1.18
+          "estimated_tokens": 2488,
+          "duration_seconds": 0.866
         },
         {
           "chunk_id": "chunk-03",
@@ -1521,51 +1322,33 @@
             "Свежие новости"
           ],
           "decision": "repair_required",
-          "critical_error_count": 2,
-          "action_count": 2,
+          "critical_error_count": 1,
+          "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7227,
-          "duration_seconds": 4.759
+          "estimated_tokens": 6987,
+          "duration_seconds": 2.292
         },
         {
           "chunk_id": "chunk-04",
           "status": "ok",
           "line_range": [
             12,
-            14
+            16
           ],
           "sections": [
             "Общественный транспорт сегодня"
           ],
           "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
+          "critical_error_count": 2,
+          "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3679,
-          "duration_seconds": 1.783
+          "estimated_tokens": 4292,
+          "duration_seconds": 2.336
         },
         {
           "chunk_id": "chunk-05",
-          "status": "ok",
-          "line_range": [
-            15,
-            16
-          ],
-          "sections": [
-            "Что важно сегодня"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 3268,
-          "duration_seconds": 0.807
-        },
-        {
-          "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
             17,
@@ -1579,11 +1362,11 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3681,
-          "duration_seconds": 2.191
+          "estimated_tokens": 3699,
+          "duration_seconds": 1.745
         },
         {
-          "chunk_id": "chunk-07",
+          "chunk_id": "chunk-06",
           "status": "ok",
           "line_range": [
             20,
@@ -1597,141 +1380,87 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 7554,
-          "duration_seconds": 72.234
+          "estimated_tokens": 7256,
+          "duration_seconds": 1.491
         },
         {
-          "chunk_id": "chunk-08",
+          "chunk_id": "chunk-07",
           "status": "ok",
           "line_range": [
             32,
-            32
+            36
           ],
           "sections": [
             "Выходные в GM"
           ],
           "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
+          "critical_error_count": 3,
+          "action_count": 3,
+          "warning_count": 1,
           "error": "",
-          "estimated_tokens": 2748,
-          "duration_seconds": 2.007
+          "estimated_tokens": 5282,
+          "duration_seconds": 27.167
         },
         {
-          "chunk_id": "chunk-09",
-          "status": "ok",
-          "line_range": [
-            33,
-            36
-          ],
-          "sections": [
-            "Городской радар"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 4289,
-          "duration_seconds": 10.391
-        },
-        {
-          "chunk_id": "chunk-10",
+          "chunk_id": "chunk-08",
           "status": "ok",
           "line_range": [
             37,
-            37
-          ],
-          "sections": [
-            "Еда, открытия и рынки"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2839,
-          "duration_seconds": 1.178
-        },
-        {
-          "chunk_id": "chunk-11",
-          "status": "ok",
-          "line_range": [
-            38,
-            42
-          ],
-          "sections": [
-            "IT и бизнес"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 4833,
-          "duration_seconds": 30.865
-        },
-        {
-          "chunk_id": "chunk-12",
-          "status": "ok",
-          "line_range": [
-            43,
             43
           ],
           "sections": [
-            "Business/tech события для тебя"
-          ],
-          "decision": "repair_required",
-          "critical_error_count": 1,
-          "action_count": 1,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2864,
-          "duration_seconds": 6.136
-        },
-        {
-          "chunk_id": "chunk-13",
-          "status": "ok",
-          "line_range": [
-            44,
-            44
-          ],
-          "sections": [
-            "Дальние анонсы"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2733,
-          "duration_seconds": 4.982
-        },
-        {
-          "chunk_id": "chunk-14",
-          "status": "ok",
-          "line_range": [
-            45,
-            56
-          ],
-          "sections": [
-            "Билеты / Ticket Radar"
+            "Городской радар"
           ],
           "decision": "repair_required",
           "critical_error_count": 2,
           "action_count": 2,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 9431,
-          "duration_seconds": 70.567
+          "estimated_tokens": 5907,
+          "duration_seconds": 45.166
         },
         {
-          "chunk_id": "chunk-15",
+          "chunk_id": "chunk-09",
           "status": "ok",
           "line_range": [
-            57,
-            58
+            44,
+            46
+          ],
+          "sections": [
+            "Еда, открытия и рынки"
+          ],
+          "decision": "repair_required",
+          "critical_error_count": 1,
+          "action_count": 1,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 3954,
+          "duration_seconds": 8.207
+        },
+        {
+          "chunk_id": "chunk-10",
+          "status": "ok",
+          "line_range": [
+            47,
+            47
+          ],
+          "sections": [
+            "IT и бизнес"
+          ],
+          "decision": "pass",
+          "critical_error_count": 0,
+          "action_count": 0,
+          "warning_count": 0,
+          "error": "",
+          "estimated_tokens": 2679,
+          "duration_seconds": 4.683
+        },
+        {
+          "chunk_id": "chunk-11",
+          "status": "ok",
+          "line_range": [
+            48,
+            59
           ],
           "sections": [
             "Билеты / Ticket Radar"
@@ -1741,29 +1470,11 @@
           "action_count": 1,
           "warning_count": 0,
           "error": "",
-          "estimated_tokens": 3413,
-          "duration_seconds": 7.924
+          "estimated_tokens": 9273,
+          "duration_seconds": 52.194
         },
         {
-          "chunk_id": "chunk-16",
-          "status": "ok",
-          "line_range": [
-            59,
-            59
-          ],
-          "sections": [
-            "Крупные концерты вне GM"
-          ],
-          "decision": "pass",
-          "critical_error_count": 0,
-          "action_count": 0,
-          "warning_count": 0,
-          "error": "",
-          "estimated_tokens": 2677,
-          "duration_seconds": 4.149
-        },
-        {
-          "chunk_id": "chunk-17",
+          "chunk_id": "chunk-12",
           "status": "ok",
           "line_range": [
             60,
@@ -1778,7 +1489,7 @@
           "warning_count": 0,
           "error": "",
           "estimated_tokens": 2765,
-          "duration_seconds": 6.186
+          "duration_seconds": 4.111
         }
       ],
       "reduce": {
@@ -1786,13 +1497,13 @@
         "status": "ok",
         "line_range": [],
         "sections": [],
-        "decision": "repair_required",
-        "critical_error_count": 2,
-        "action_count": 2,
-        "warning_count": 2,
+        "decision": "warn",
+        "critical_error_count": 0,
+        "action_count": 0,
+        "warning_count": 3,
         "error": "",
-        "estimated_tokens": 11951,
-        "duration_seconds": 26.476
+        "estimated_tokens": 11164,
+        "duration_seconds": 24.99
       },
       "max_workers": 3,
       "chunk_line_target": 12,
